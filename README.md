@@ -16,7 +16,8 @@ For interactive use, the following (without ending semicolon)
 displays the content of the file similar to `ncdump -h file.nc"
 
 ```julia
-ds = NCDatasets.Dataset("file.nc")
+using NCDatasets
+ds = Dataset("file.nc")
 ```
 
 The following displays the information just for the variable `varname` and the global attributes:
@@ -26,12 +27,12 @@ ds["varname"]
 ds.attrib
 ```
 
-Support for NetCDF CF Convention:
+Support for the NetCDF CF Convention:
 * _FillValue will be returned as NA (DataArrays)
 * `scale_factor` and `add_offset` are applied
 * time variables (recognised by the `units` attribute) are returned as `DateTime` object.
 
-The raw data can also be accessed (without the transformation above can also be accessed).
+The raw data can also be accessed (without the transformation above).
 
 
 ## Create a NetCDF file
