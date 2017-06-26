@@ -608,11 +608,11 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
     # do not scale characters and strings
     if eltype(v.var) != Char
         if v.has_scale_factor
-            data[!mask] = v.scale_factor * data[!mask]
+            data = v.scale_factor * data
         end
 
         if v.has_add_offset
-            data[!mask] = data[!mask] + v.add_offset
+            data = data + v.add_offset
         end
     end
 
