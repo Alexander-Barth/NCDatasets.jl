@@ -97,7 +97,7 @@ unit = v.attrib["units"]
 close(ds)
 ```
 
-# Load a file (with unknown structure)
+## Load a file (with unknown structure)
 
 
 If the structure of the NetCDF file is not known before-hand, the program must check if a variable or attribute exist (with the `in` operator) before-loading it or alternatively place the loading in a `try`-`catch` block.

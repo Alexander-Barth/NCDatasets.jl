@@ -198,7 +198,7 @@ const nclong=Cint
 
 
 function nc_inq_libvers()
-    ccall((:nc_inq_libvers,libnetcdf),Ptr{UInt8},())
+    unsafe_string(ccall((:nc_inq_libvers,libnetcdf),Ptr{UInt8},()))
 end
 
 function nc_strerror(ncerr::Integer)

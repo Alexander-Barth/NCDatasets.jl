@@ -15,6 +15,9 @@ end
 ds = Dataset(filename)
 v = ds["var"]
 
+println("NetCDF library: ",NCDatasets.libnetcdf)
+println("NetCDF version: ",NCDatasets.nc_inq_libvers())
+
 @testset "NCDatasets" begin
 
     @time A = v[:,:]
@@ -64,7 +67,7 @@ v.attrib["units"] = "degree Celsius"
 #v.attrib["units_s"] = Int16(111)
 #v.attrib["units_i"] = Int32(111)
 #v.attrib["units_i2"] = 111
-#v.attrib["units_string"] = "this is a string attribute with unicode Ω ∈ ∑ ∫ f(x) dx "  
+v.attrib["comment"] = "this is a string attribute with unicode Ω ∈ ∑ ∫ f(x) dx "
 
 
 close(ds)
