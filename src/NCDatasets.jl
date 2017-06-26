@@ -402,17 +402,17 @@ function Base.getindex(ds::Dataset,varname::String)
 
     has_fillvalue = "_FillValue" in attnames
     if has_fillvalue        
-        fillvalue = ds.attrib["_FillValue"]
+        fillvalue = attrib["_FillValue"]
     end
 
     has_add_offset = "add_offset" in attnames
     if has_add_offset        
-        add_offset = ds.attrib["add_offset"]
+        add_offset = attrib["add_offset"]
     end
 
     has_scale_factor = "scale_factor" in attnames
     if has_scale_factor        
-        scale_factor = ds.attrib["scale_factor"]
+        scale_factor = attrib["scale_factor"]
     end
 
     # return element type of any index operation
