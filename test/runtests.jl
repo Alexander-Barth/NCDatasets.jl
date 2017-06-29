@@ -20,16 +20,16 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
 @testset "NCDatasets" begin
 
-    @time A = v[:,:]
+    A = v[:,:]
     @test A == data
 
-    @time A = v[1:1:end,1:1:end]
+    A = v[1:1:end,1:1:end]
     @test A == data
 
-    @time A = v[1:end,1:1:end]
+    A = v[1:end,1:1:end]
     @test A == data
 
-    @test v[1,1] == data[1,1]
+    v[1,1] == data[1,1]
     @test v[end,end] == data[end,end]
 
     close(ds)
@@ -200,8 +200,26 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     s = IOBuffer()
     filename = "/tmp/toto3.nc"    
     Dataset(filename,"c") do ds
+        # define the dimension "lon" and "lat" with the size 100 and 110 resp.
+        defDim(ds,"lon",100)
+        defDim(ds,"lat",110)
+        
+        # define a global attribute
+        ds.attrib["title"] = "this is a test file"       
+        v = defVar(ds,"temperature",Float32,("lon","lat"))
+        v.attrib["units"] = "degree Celsius"
+        
         show(s,ds)
-        @test contains(String(take!(s)),"Dataset")
+        @test contains(String(take!(s)),"temperature")
+
+        show(s,ds.attrib)
+        @test contains(String(take!(s)),"title")
+
+        show(s,ds["temperature"])
+        @test contains(String(take!(s)),"temperature")
+
+        show(s,ds["temperature"].attrib)
+        @test contains(String(take!(s)),"Celsius")
     end
 
 end

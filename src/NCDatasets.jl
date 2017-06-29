@@ -239,7 +239,7 @@ end
 
 function timeencode(data,units)
     t0,plength = timeunits(units)
-    @show data
+    #@show data
     return [Dates.value(dt - t0) / plength for dt in data ]
 end
 
@@ -555,7 +555,7 @@ function normalizeindexes(sz,indexes)
         elseif indT == StepRange{Int,Int}
             ind[i] = indexes[i]
         else
-            @show indT
+            #@show indT
             error("unsupported index")
         end
     end
@@ -653,8 +653,8 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
 
     #x = Array{eltype(data),ndims(data)}(size(data))
     x = zeros(eltype(v.var),size(data))
-    @show typeof(data)
-    @show eltype(v.var)
+    #@show typeof(data)
+    #@show eltype(v.var)
 
     attnames = keys(v.attrib)
 
