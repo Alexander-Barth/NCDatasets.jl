@@ -6,8 +6,8 @@ data = randn(sz)
 
 filename = "/tmp/test1.nc"
 ds = Dataset(filename,"c") do ds
-    defDim(ds,"lon",123)
-    defDim(ds,"lat",145)
+    defDim(ds,"lon",sz[1])
+    defDim(ds,"lat",sz[2])
     v = defVar(ds,"var",Float64,("lon","lat"))
     v[:,:] = data
 end
@@ -34,105 +34,131 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     close(ds)
 
-end
 
 
-# Create a NetCDF file
+    # Create a NetCDF file
 
-filename = "/tmp/test-2.nc"
-# The mode "c" stands for creating a new file (clobber)
-ds = Dataset(filename,"c")
+    filename = "/tmp/test-2.nc"
+    # The mode "c" stands for creating a new file (clobber)
+    ds = Dataset(filename,"c")
 
-# define the dimension "lon" and "lat" with the size 100 and 110 resp.
-defDim(ds,"lon",100)
-defDim(ds,"lat",110)
+    # define the dimension "lon" and "lat" with the size 100 and 110 resp.
+    defDim(ds,"lon",100)
+    defDim(ds,"lat",110)
 
-# define a global attribute
-ds.attrib["title"] = "this is a test file"
-
-
-v = defVar(ds,"temperature",Float32,("lon","lat"))
-S = defVar(ds,"salinity",Float32,("lon","lat"))
-
-data = [Float32(i+j) for i = 1:100, j = 1:110]
-
-# write a single column
-v[:,1] = data[:,1]
-
-# write a the complete data set
-v[:,:] = data
-
-# write attributes
-v.attrib["units"] = "degree Celsius"
-#v.attrib["units_s"] = Int16(111)
-#v.attrib["units_i"] = Int32(111)
-#v.attrib["units_i2"] = 111
-v.attrib["comment"] = "this is a string attribute with unicode Ω ∈ ∑ ∫ f(x) dx "
+    # define a global attribute
+    ds.attrib["title"] = "this is a test file"
 
 
-close(ds)
+    v = defVar(ds,"temperature",Float32,("lon","lat"))
+    S = defVar(ds,"salinity",Float32,("lon","lat"))
 
-# Load a file (with known structure)
+    data = [Float32(i+j) for i = 1:100, j = 1:110]
 
-# The mode "c" stands for creating a new file (clobber)
-ds = Dataset(filename,"r")
-v = ds["temperature"]
+    # write a single column
+    v[:,1] = data[:,1]
 
-# load a subset
-subdata = v[10:30,30:5:end]
+    # write a the complete data set
+    v[:,:] = data
 
-# load all data
-data = v[:,:]
+    # write attributes
+    v.attrib["units"] = "degree Celsius"
+    v.attrib["comment"] = "this is a string attribute with unicode Ω ∈ ∑ ∫ f(x) dx "
 
-# load an attribute
-unit = v.attrib["units"]
-close(ds)
+    for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
+        # scalar attribute
+        name = "scalar-attrib-$T"
+        @show name
+        v.attrib[name] = T(123)
 
-# Load a file (with unknown structure)
+        if T == Int64
+            # not supported in NetCDF, converted as Int32
+            @test typeof(v.attrib[name]) == Int32
+        else
+            @test typeof(v.attrib[name]) == T
+        end
 
-ds = Dataset(filename,"r")
-
-# check if a file has a variable with a given name
-if "temperature" in ds
-    println("The file has a variable 'temperature'")
-end
-
-# get an list of all variable names
-@show keys(ds)
-
-# iterate over all variables
-for (varname,var) in ds
-    @show (varname,size(var))
-end
-
-# query size of a variable (without loading it)
-v = ds["temperature"]
-@show size(v)
-
-# similar for global and variable attributes
-
-if "title" in ds.attrib
-    println("The file has the global attribute 'title'")
-end
-
-# get an list of all attribute names
-@show keys(ds.attrib)
-
-# iterate over all attributes
-for (attname,attval) in ds.attrib
-    @show (attname,attval)
-end
-
-close(ds)
-
-# when opening a Dataset with a do block, it will be closed automatically when leaving the do block.
-
-Dataset(filename,"r") do ds
-    data = ds["temperature"][:,:]    
-end
+        @test v.attrib[name] == 123
 
 
-@testset "NCDatasets2" begin
+        # vector attribute
+        name = "vector-attrib-$T"
+        @show name
+        v.attrib[name] = T[1,2,3,4]
+
+        if T == Int64
+            # not supported in NetCDF, converted as Int32
+            @test eltype(v.attrib[name]) == Int32
+        else
+            @test eltype(v.attrib[name]) == T
+        end
+
+        @test v.attrib[name] == [1,2,3,4]
+    end
+
+
+    close(ds)
+
+    # Load a file (with known structure)
+
+    # The mode "c" stands for creating a new file (clobber)
+    ds = Dataset(filename,"r")
+    v = ds["temperature"]
+
+    # load a subset
+    subdata = v[10:30,30:5:end]
+
+    # load all data
+    data = v[:,:]
+
+    # load an attribute
+    unit = v.attrib["units"]
+    close(ds)
+
+    # Load a file (with unknown structure)
+
+    ds = Dataset(filename,"r")
+
+    # check if a file has a variable with a given name
+    if "temperature" in ds
+        println("The file has a variable 'temperature'")
+    end
+
+    # get an list of all variable names
+    @show keys(ds)
+
+    # iterate over all variables
+    for (varname,var) in ds
+        @show (varname,size(var))
+    end
+
+    # query size of a variable (without loading it)
+    v = ds["temperature"]
+    @show size(v)
+
+    # similar for global and variable attributes
+
+    if "title" in ds.attrib
+        println("The file has the global attribute 'title'")
+    end
+
+    # get an list of all attribute names
+    @show keys(ds.attrib)
+
+    # iterate over all attributes
+    for (attname,attval) in ds.attrib
+        @show (attname,attval)
+    end
+
+    close(ds)
+
+    # when opening a Dataset with a do block, it will be closed automatically when leaving the do block.
+
+    Dataset(filename,"r") do ds
+        data = ds["temperature"][:,:]    
+    end
+
+
 
     # define scalar
     

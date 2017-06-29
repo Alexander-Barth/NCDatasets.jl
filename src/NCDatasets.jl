@@ -41,8 +41,11 @@ const jlType = Dict(
                     NC_BYTE   => Int8,
                     NC_UBYTE  => UInt8,
                     NC_SHORT  => Int16,
+                    NC_USHORT => UInt16,
                     NC_INT    => Int32,
+                    NC_UINT   => UInt32,
                     NC_INT64  => Int64,
+                    NC_UINT64 => UInt64,
                     NC_FLOAT  => Float32,
                     NC_DOUBLE => Float64,
                     NC_CHAR   => Char,
@@ -293,7 +296,7 @@ end
 Create (mode = "c") or open in read-only (mode = "r") a NetCDF file (or an OPeNDAP URL).
 """
 
-function Dataset(filename::AbstractString,mode::AbstractString = "r")
+function Dataset(filename::AbstractString,mode::AbstractString = "r", format::AbstractString = "netcdf4")
     ncidp = Vector{Cint}(1)
 
     if mode == "r"
@@ -301,6 +304,15 @@ function Dataset(filename::AbstractString,mode::AbstractString = "r")
         status = nc_open(filename,mode,ncidp)
     elseif mode == "c"
         mode  = NC_CLOBBER
+
+        if format == "64bit"
+            mode = mode | NC_64BIT_OFFSET
+        elseif format == "netcdf4_classic"
+            mode = mode | NC_NETCDF4 | NC_CLASSIC_MODEL
+        elseif  format == "netcdf4"
+            mode = mode | NC_NETCDF4
+        end
+
         nc_create(filename,mode,ncidp)       
     end
     ncid = ncidp[1]
