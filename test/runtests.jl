@@ -55,6 +55,9 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     data = [Float32(i+j) for i = 1:100, j = 1:110]
 
+    # write a single value
+    v[1,1] = data[1,1]
+
     # write a single column
     v[:,1] = data[:,1]
 
@@ -97,7 +100,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     end
 
 
-    
+    # test sync
+    sync(ds)
 
     close(ds)
 

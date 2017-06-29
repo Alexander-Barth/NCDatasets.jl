@@ -206,9 +206,9 @@ function nc_strerror(ncerr::Integer)
     ccall((:nc_strerror,libnetcdf),Ptr{UInt8},(Cint,),ncerr)
 end
 
-function nc__create(path,cmode::Integer,initialsz::Integer,chunksizehintp,ncidp)
-    check(ccall((:nc__create,libnetcdf),Cint,(Ptr{UInt8},Cint,Cint,Ptr{Cint},Ptr{Cint}),path,cmode,initialsz,chunksizehintp,ncidp))
-end
+# function nc__create(path,cmode::Integer,initialsz::Integer,chunksizehintp,ncidp)
+#     check(ccall((:nc__create,libnetcdf),Cint,(Ptr{UInt8},Cint,Cint,Ptr{Cint},Ptr{Cint}),path,cmode,initialsz,chunksizehintp,ncidp))
+# end
 
 function nc_create(path,cmode::Integer,ncidp)
     check(ccall((:nc_create,libnetcdf),Cint,(Ptr{UInt8},Cint,Ptr{Cint}),path,cmode,ncidp))
@@ -598,25 +598,25 @@ function nc_inq_dimlen(ncid::Integer,dimid::Integer,lenp)
     check(ccall((:nc_inq_dimlen,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,dimid,lenp))
 end
 
-function nc_rename_dim(ncid::Integer,dimid::Integer,name)
-    check(ccall((:nc_rename_dim,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8}),ncid,dimid,name))
-end
+# function nc_rename_dim(ncid::Integer,dimid::Integer,name)
+#     check(ccall((:nc_rename_dim,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8}),ncid,dimid,name))
+# end
 
 function nc_inq_att(ncid::Integer,varid::Integer,name,xtypep,lenp)
     check(ccall((:nc_inq_att,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{nc_type},Ptr{Cint}),ncid,varid,name,xtypep,lenp))
 end
 
-function nc_inq_attid(ncid::Integer,varid::Integer,name,idp)
-    check(ccall((:nc_inq_attid,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{Cint}),ncid,varid,name,idp))
-end
+# function nc_inq_attid(ncid::Integer,varid::Integer,name,idp)
+#     check(ccall((:nc_inq_attid,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{Cint}),ncid,varid,name,idp))
+# end
 
-function nc_inq_atttype(ncid::Integer,varid::Integer,name,xtypep)
-    check(ccall((:nc_inq_atttype,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{nc_type}),ncid,varid,name,xtypep))
-end
+# function nc_inq_atttype(ncid::Integer,varid::Integer,name,xtypep)
+#     check(ccall((:nc_inq_atttype,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{nc_type}),ncid,varid,name,xtypep))
+# end
 
-function nc_inq_attlen(ncid::Integer,varid::Integer,name,lenp)
-    check(ccall((:nc_inq_attlen,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{Cint}),ncid,varid,name,lenp))
-end
+# function nc_inq_attlen(ncid::Integer,varid::Integer,name,lenp)
+#     check(ccall((:nc_inq_attlen,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{Cint}),ncid,varid,name,lenp))
+# end
 
 function nc_inq_attname(ncid::Integer,varid::Integer,attnum::Integer,name)
     check(ccall((:nc_inq_attname,libnetcdf),Cint,(Cint,Cint,Cint,Ptr{UInt8}),ncid,varid,attnum,name))
