@@ -68,7 +68,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
         # scalar attribute
         name = "scalar-attrib-$T"
-        @show name
+        #@show name
         v.attrib[name] = T(123)
 
         if T == Int64
@@ -83,7 +83,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
         # vector attribute
         name = "vector-attrib-$T"
-        @show name
+        #@show name
         v.attrib[name] = T[1,2,3,4]
 
         if T == Int64
@@ -127,29 +127,20 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     end
 
     # get an list of all variable names
-    @show keys(ds)
+    @test "temperature" in keys(ds)
 
     # iterate over all variables
     for (varname,var) in ds
-        @show (varname,size(var))
+        @test typeof(varname) == String
     end
 
     # query size of a variable (without loading it)
     v = ds["temperature"]
-    @show size(v)
-
-    # similar for global and variable attributes
-
-    if "title" in ds.attrib
-        println("The file has the global attribute 'title'")
-    end
-
-    # get an list of all attribute names
-    @show keys(ds.attrib)
+    @test typeof(size(v)) == Tuple{Int,Int}
 
     # iterate over all attributes
     for (attname,attval) in ds.attrib
-        @show (attname,attval)
+        @test typeof(attname) == String
     end
 
     close(ds)
@@ -192,14 +183,25 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     
     Dataset(filename,"r") do ds
         v2 = ds["time"].var[:]
-        @show v2
         @test v2[1] == 1.
 
         v2 = ds["time"][:]
-        @show v2
         @test v2[1] == DateTime(2000,1,2)
     end
     #rm(filename)
 
     include("test_scaling.jl")
+
+    # error handling
+    @test_throws NCDatasets.NetCDFError Dataset(":/does/not/exist")
+
+
+    # display
+    s = IOBuffer()
+    filename = "/tmp/toto3.nc"    
+    Dataset(filename,"c") do ds
+        show(s,ds)
+        @test contains(String(take!(s)),"Dataset")
+    end
+
 end

@@ -254,13 +254,13 @@ type Attributes
     isdefmode::Vector{Bool}
 end
 
-function Base.display(a::Attributes; indent = "  ")
+function Base.show(io::IO,a::Attributes; indent = "  ")
     # use the same order of attributes than in the NetCDF file
 
     for (attname,attval) in a
-        print(indent,@sprintf("%-20s = ",attname))
-        print_with_color(:blue, @sprintf("%s",attval))
-        print("\n")
+        print(io,indent,@sprintf("%-20s = ",attname))
+        print_with_color(:blue, io, @sprintf("%s",attval))
+        print(io,"\n")
     end
 end
 
@@ -389,18 +389,18 @@ function variable(ds::Dataset,varname::String)
     return Variable{nctype,ndims}(ds.ncid,varid,(shape...),attrib,ds.isdefmode)
 end
 
-function Base.display(ds::Dataset)
-    print_with_color(:red, "Dataset: ",ds.filename,"\n")
-    print("\n")
-    print_with_color(:red, "Global attributes\n")
+function Base.show(io::IO,ds::Dataset)
+    print_with_color(:red, io, "Dataset: ",ds.filename,"\n")
+    print(io,"\n")
+    print_with_color(:red, io, "Variables\n")
 
     for name in keys(ds)
-        display(variable(ds,name))
-        print("\n")
+        show(io,variable(ds,name))
+        print(io,"\n")
     end
 
-    print_with_color(:red, "Variables\n")
-    display(ds.attrib; indent = "  ")
+    print_with_color(:red, io, "Global attributes\n")
+    show(io,ds.attrib; indent = "  ")
 end
 
 function Base.getindex(ds::Dataset,varname::String)
@@ -455,22 +455,22 @@ end
 
 Base.size(v::Variable) = v.shape
 
-function Base.display(v::Variable)
+function Base.show(io::IO,v::Variable)
     name,nctype,dimids,nattr = inqVar(v.ncid,v.varid)
     delim = " × "
 
-    print_with_color(:green, name)
+    print_with_color(:green, io, name)
     if length(v.shape) > 0
-        print("  (",join(v.shape,delim),")\n")
-        print("  Datatype:    ",eltype(v),"\n")
+        print(io,"  (",join(v.shape,delim),")\n")
+        print(io,"  Datatype:    ",eltype(v),"\n")
         dimnames = [inqDim(v.ncid,dimid) for dimid in dimids[end:-1:1]]
-        print("  Dimensions:  ",join(dimnames,delim),"\n")
+        print(io,"  Dimensions:  ",join(dimnames,delim),"\n")
     else
-        print("\n")
+        print(io,"\n")
     end
-    print("  Attributes:\n")
+    print(io,"  Attributes:\n")
 
-    display(v.attrib; indent = "     ")
+    show(io,v.attrib; indent = "     ")
 end
 
 
@@ -704,10 +704,11 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
 end
 
 
-function Base.display(v::CFVariable)
-    display(v.var)
+function Base.show(io::IO,v::CFVariable)
+    show(io,v.var)
 end
 
+Base.display(v::Union{Variable,CFVariable}) = show(STDOUT,v)
 
 export defVar, defDim, Dataset, close, sync
 
