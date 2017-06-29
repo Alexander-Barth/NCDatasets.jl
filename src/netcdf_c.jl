@@ -590,9 +590,9 @@ end
 #     check(ccall((:nc_inq_dim,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{Cint}),ncid,dimid,name,lenp))
 # end
 
-# function nc_inq_dimname(ncid::Integer,dimid::Integer,name)
-#     check(ccall((:nc_inq_dimname,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8}),ncid,dimid,name))
-# end
+function nc_inq_dimname(ncid::Integer,dimid::Integer,name)
+    check(ccall((:nc_inq_dimname,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8}),ncid,dimid,name))
+end
 
 function nc_inq_dimlen(ncid::Integer,dimid::Integer,lenp)
     check(ccall((:nc_inq_dimlen,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,dimid,lenp))

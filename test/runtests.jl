@@ -97,6 +97,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     end
 
 
+    
+
     close(ds)
 
     # Load a file (with known structure)
@@ -198,5 +200,6 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
         @test v2[1] == DateTime(2000,1,2)
     end
     #rm(filename)
-    
+
+    include("test_scaling.jl")
 end

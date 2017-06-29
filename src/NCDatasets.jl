@@ -605,30 +605,32 @@ end
 Base.size(v::CFVariable) = size(v.var)
 
 function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
+    attnames = keys(v.attrib)
+
     data = v.var[indexes...]
     isscalar = ndims(data) == 0
     if isscalar
         data = [data]
     end
 
-    if v.has_fillvalue
-        mask = data .== v.fillvalue
+    if "_FillValue" in attnames
+        mask = data .== v.attrib["_FillValue"]
     else
         mask = falses(data)
     end
 
     # do not scale characters and strings
     if eltype(v.var) != Char
-        if v.has_scale_factor
-            data = v.scale_factor * data
+        if "scale_factor" in attnames
+            data = v.attrib["scale_factor"] * data
         end
 
-        if v.has_add_offset
-            data = data + v.add_offset
+        if "add_offset" in attnames
+            data = data + v.attrib["add_offset"]
         end
     end
 
-    if "units" in v.attrib
+    if "units" in attnames
         units = v.attrib["units"]
         if contains(units," since ")
             # type of data changes
@@ -654,6 +656,9 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
     @show typeof(data)
     @show eltype(v.var)
 
+    attnames = keys(v.attrib)
+
+
     if isa(data,DataArray)
         x[.!isna.(data)] = data[.!isna.(data)]
         mask = isna.(data)
@@ -668,27 +673,27 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
         end
     end
 
-    if "units" in v.attrib
+    if "units" in attnames
         units = v.attrib["units"]
         if contains(units," since ")
             x = timeencode(x,units)
         end
     end
 
-    if v.has_fillvalue
-        x[mask] = v.fillvalue
+    if "_FillValue" in attnames
+        x[mask] = v.attrib["_FillValue"]
     else        
         # should we issue a warning?
     end
 
     # do not scale characters and strings
     if eltype(v.var) != Char
-        if v.has_add_offset
-            x[!mask] = x[!mask] - v.add_offset
+        if "add_offset" in attnames
+            x[.!mask] = x[.!mask] - v.attrib["add_offset"]
         end
 
-        if v.has_scale_factor
-            x[!mask] = x[!mask] / v.scale_factor
+        if "scale_factor" in attnames
+            x[.!mask] = x[.!mask] / v.attrib["scale_factor"]
         end
 
     end
