@@ -8,7 +8,7 @@
 
 
 `NCDatasets` allows to read and create NetCDF files.
-NetCDF data set and attribute list behavior like Julia dictionaries and variables like Julia Arrays.
+NetCDF data set and attribute list behave like Julia dictionaries and variables like Julia arrays.
 
 
 The module `NCDatasets` has support for the following NetCDF CF conventions:
@@ -16,12 +16,13 @@ The module `NCDatasets` has support for the following NetCDF CF conventions:
 * `scale_factor` and `add_offset` are applied
 * time variables (recognized by the `units` attribute) are returned as `DateTime` object.
 
-The raw data can also be accessed (without the transformation above).
+The raw data can also be accessed (without the transformations above).
 
 
 ## Exploring the content of a NetCDF file
 
-Before reading the data from a NetCDF file, it is often useful to explore the list of variables and attributes defined in a NetCDF.
+Before reading the data from a NetCDF file, it is often useful to explore the list of variables and attributes defined in a NetCDF file.
+
 For interactive use, the following (without ending semicolon) 
 displays the content of the file similar to `ncdump -h file.nc"
 
