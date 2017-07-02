@@ -19,6 +19,14 @@ The module `NCDatasets` has support for the following NetCDF CF conventions:
 The raw data can also be accessed (without the transformations above).
 
 
+## Installation
+
+Inside the Julia shell, you can download and install the package by issuing:
+
+```julia
+Pkg.clone("https://github.com/Alexander-Barth/NCDatasets.jl")
+```
+
 ## Exploring the content of a NetCDF file
 
 Before reading the data from a NetCDF file, it is often useful to explore the list of variables and attributes defined in a NetCDF file.
