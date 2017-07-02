@@ -389,8 +389,35 @@ end
 #     check(ccall((:nc_inq_user_type,libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{Cint},Ptr{nc_type},Ptr{Cint},Ptr{Cint}),ncid,xtype,name,size,base_nc_typep,nfieldsp,classp))
 # end
 
-function nc_put_att(ncid::Integer,varid::Integer,name,xtype::Integer,len::Integer,op)
-    check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},nc_type,Cint,Ptr{Void}),ncid,varid,name,xtype,len,op))
+function nc_put_att(ncid::Integer,varid::Integer,name,data)
+#    check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},nc_type,Cint,Ptr{Void}),ncid,varid,name,xtype,len,op))
+
+    # NetCDF does not support 64 bit attributes
+    if eltype(data) == Int64
+        if ndims(data) == 0
+            data = Int32(data)
+        else
+            data = [Int32(elem) for elem in data]
+        end
+    end
+
+    if isa(data,String)
+        cstr = Vector{UInt8}(data)
+        check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},nc_type,Cint,Ptr{Void}),
+                    ncid,varid,name,ncType[eltype(data)],length(cstr),cstr))
+    elseif ndims(data) == 0
+        nctype = ncType[typeof(data)]
+        check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},nc_type,Cint,Ptr{Void}),
+                    ncid,varid,name,ncType[typeof(data)],1,[data]))
+
+    elseif ndims(data) == 1
+        check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},nc_type,Cint,Ptr{Void}),
+                    ncid,varid,name,ncType[eltype(data)],length(data),data))
+    else
+        error("attributes can only be scalars or vectors")
+    end
+
+
 end
 
 function nc_get_att(ncid::Integer,varid::Integer,name)

@@ -80,29 +80,6 @@ function listAtt(ncid,varid)
     return names
 end
 
-function putAtt!(ncid,varid,name,data)
-    # NetCDF does not support 64 bit attributes
-    if eltype(data) == Int64
-        if ndims(data) == 0
-            data = Int32(data)
-        else
-            data = [Int32(elem) for elem in data]
-        end
-    end
-
-    if isa(data,String)
-        cstr = Vector{UInt8}(data)
-        nc_put_att(ncid,varid,name,ncType[eltype(data)],length(cstr),cstr)
-    elseif ndims(data) == 0
-        nctype = ncType[typeof(data)]
-        nc_put_att(ncid,varid,name,ncType[typeof(data)],1,[data])
-    elseif ndims(data) == 1
-        nc_put_att(ncid,varid,name,ncType[eltype(data)],length(data),data)
-    else
-        error("attributes can only be scalars or vectors")
-    end
-end
-
 function datamode(ncid,isdefmode::Vector{Bool})
     if isdefmode[1]
         nc_enddef(ncid)
@@ -174,7 +151,7 @@ end
 
 function Base.setindex!(a::Attributes,data,name::AbstractString)
     defmode(a.ncid,a.isdefmode) # make sure that the file is in define mode
-    return putAtt!(a.ncid,a.varid,name,data)
+    return nc_put_att(a.ncid,a.varid,name,data)
 end
 
 Base.in(name::AbstractString,a::Attributes) = name in listAtt(a.ncid,a.varid)
