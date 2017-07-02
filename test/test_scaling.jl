@@ -1,4 +1,4 @@
-filename = "/tmp/test-8.nc"
+filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
 ds = Dataset(filename,"c")
 

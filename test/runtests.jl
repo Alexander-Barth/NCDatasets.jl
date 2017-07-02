@@ -4,7 +4,7 @@ using Base.Test
 sz = (123,145)
 data = randn(sz)
 
-filename = "/tmp/test1.nc"
+filename = tempname()
 ds = Dataset(filename,"c") do ds
     defDim(ds,"lon",sz[1])
     defDim(ds,"lat",sz[2])
@@ -38,7 +38,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     # Create a NetCDF file
 
-    filename = "/tmp/test-2.nc"
+    filename = tempname()
     # The mode "c" stands for creating a new file (clobber)
     ds = Dataset(filename,"c")
 
@@ -160,7 +160,6 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     # define scalar
     
     filename = tempname()
-    filename = "/tmp/toto.nc"
     
     Dataset(filename,"c") do ds
         v = defVar(ds,"scalar",Float32,())
@@ -174,26 +173,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     end
     rm(filename)
 
-    # time
-    filename = "/tmp/toto3.nc"
-    
-    Dataset(filename,"c") do ds
-        defDim(ds,"time",3)            
-        v = defVar(ds,"time",Float64,("time",))
-        v.attrib["units"] = "days since 2000-01-01 00:00:00"
-        v[:] = [DateTime(2000,1,2), DateTime(2000,1,3), DateTime(2000,1,4)]
-        #v.var[:] = [1.,2.,3.]
-    end
-    
-    Dataset(filename,"r") do ds
-        v2 = ds["time"].var[:]
-        @test v2[1] == 1.
-
-        v2 = ds["time"][:]
-        @test v2[1] == DateTime(2000,1,2)
-    end
-    #rm(filename)
-
+    include("test_timeunits.jl")
     include("test_scaling.jl")
 
     # error handling
@@ -202,7 +182,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     # display
     s = IOBuffer()
-    filename = "/tmp/toto3.nc"    
+    filename = tempname()
     Dataset(filename,"c") do ds
         # define the dimension "lon" and "lat" with the size 100 and 110 resp.
         defDim(ds,"lon",100)
