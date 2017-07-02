@@ -631,8 +631,13 @@ end
 #     check(ccall((:nc_rename_dim,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8}),ncid,dimid,name))
 # end
 
-function nc_inq_att(ncid::Integer,varid::Integer,name,xtypep,lenp)
+function nc_inq_att(ncid::Integer,varid::Integer,name)
+    xtypep = zeros(nc_type,1)
+    lenp = zeros(Csize_t,1)
+
     check(ccall((:nc_inq_att,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{nc_type},Ptr{Cint}),ncid,varid,name,xtypep,lenp))
+
+    return xtypep[1],lenp[1]
 end
 
 # function nc_inq_attid(ncid::Integer,varid::Integer,name,idp)
@@ -647,8 +652,14 @@ end
 #     check(ccall((:nc_inq_attlen,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{Cint}),ncid,varid,name,lenp))
 # end
 
-function nc_inq_attname(ncid::Integer,varid::Integer,attnum::Integer,name)
-    check(ccall((:nc_inq_attname,libnetcdf),Cint,(Cint,Cint,Cint,Ptr{UInt8}),ncid,varid,attnum,name))
+function nc_inq_attname(ncid::Integer,varid::Integer,attnum::Integer)
+    cname = zeros(UInt8,NC_MAX_NAME+1)
+        
+    check(ccall((:nc_inq_attname,libnetcdf),Cint,(Cint,Cint,Cint,Ptr{UInt8}),ncid,varid,attnum,cname))
+    # really necessary?
+    cname[end]=0
+
+   return unsafe_string(pointer(cname))
 end
 
 # function nc_copy_att(ncid_in::Integer,varid_in::Integer,name,ncid_out::Integer,varid_out::Integer)
@@ -815,8 +826,12 @@ function nc_inq_vardimid(ncid::Integer,varid::Integer,dimidsp)
     check(ccall((:nc_inq_vardimid,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,dimidsp))
 end
 
-function nc_inq_varnatts(ncid::Integer,varid::Integer,nattsp)
+function nc_inq_varnatts(ncid::Integer,varid::Integer)
+    nattsp = Vector{Cint}(1)
+    
     check(ccall((:nc_inq_varnatts,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,nattsp))
+
+    return nattsp[1]
 end
 
 # function nc_rename_var(ncid::Integer,varid::Integer,name)

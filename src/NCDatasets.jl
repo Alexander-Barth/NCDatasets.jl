@@ -57,27 +57,6 @@ const ncType = Dict(value => key for (key, value) in jlType)
 function inqVar(ncid,varid)
     name,xtype,dimids,nattr = nc_inq_var(ncid,varid)
     return name,jlType[xtype],dimids,nattr
-
-    # cname = zeros(UInt8,NC_MAX_NAME+1)
-    # nc_inq_varname(ncid,varid,cname)
-    # name = unsafe_string(pointer(cname))
-
-    # ndimsp = zeros(Int,1)
-    # nc_inq_varndims(ncid,varid,ndimsp)
-    # ndims = ndimsp[1]
-
-    # dimids = zeros(Cint,ndims)
-    # nc_inq_vardimid(ncid,varid,dimids)
-
-    # xtypep = zeros(nc_type,1)
-    # nc_inq_vartype(ncid,varid,xtypep)
-    # nctype = jlType[xtypep[1]]
-
-    # nattsp = Vector{Cint}(1)
-    # nc_inq_varnatts(ncid,varid,nattsp)
-    # nattr = nattsp[1]
-
-    # return name,nctype,dimids,nattr
 end
 
 function listVar(ncid)
@@ -91,17 +70,11 @@ function listVar(ncid)
 end
 
 function listAtt(ncid,varid)
-    nattsp = Vector{Cint}(1)
-    nc_inq_varnatts(ncid,varid,nattsp)
-    natts = nattsp[1]
-
-    cname = zeros(UInt8,NC_MAX_NAME+1)
+    natts = nc_inq_varnatts(ncid,varid)
     names = Vector{String}(natts)
     
     for attnum = 0:natts-1
-        nc_inq_attname(ncid,varid,attnum,cname)
-        cname[end]=0
-        names[attnum+1] = unsafe_string(pointer(cname))
+        names[attnum+1] = nc_inq_attname(ncid,varid,attnum)
     end
 
     return names
@@ -109,12 +82,7 @@ end
 
 
 function getAtt(ncid,varid,name)
-    xtypep = zeros(nc_type,1)
-    lenp = zeros(Csize_t,1)
-
-    nc_inq_att(ncid,varid,name,xtypep,lenp)
-    xtype = xtypep[1]
-    len = lenp[1]
+    xtype,len = nc_inq_att(ncid,varid,name)
 
     if xtype == NC_CHAR
         val = Vector{UInt8}(len)
