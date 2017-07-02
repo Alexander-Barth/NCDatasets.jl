@@ -604,8 +604,12 @@ end
 #     check(ccall((:nc_inq_dim,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{Cint}),ncid,dimid,name,lenp))
 # end
 
-function nc_inq_dimname(ncid::Integer,dimid::Integer,name)
-    check(ccall((:nc_inq_dimname,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8}),ncid,dimid,name))
+function nc_inq_dimname(ncid::Integer,dimid::Integer)
+    cname = zeros(UInt8,NC_MAX_NAME+1)
+
+    check(ccall((:nc_inq_dimname,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8}),ncid,dimid,cname))
+
+    return unsafe_string(pointer(cname))
 end
 
 function nc_inq_dimlen(ncid::Integer,dimid::Integer,lenp)
@@ -752,8 +756,12 @@ end
 #     check(ccall((:nc_get_att_ulonglong,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{Culonglong}),ncid,varid,name,ip))
 # end
 
-function nc_def_var(ncid::Integer,name,xtype::Integer,ndims::Integer,dimidsp,varidp)
-    check(ccall((:nc_def_var,libnetcdf),Cint,(Cint,Ptr{UInt8},nc_type,Cint,Ptr{Cint},Ptr{Cint}),ncid,name,xtype,ndims,dimidsp,varidp))
+function nc_def_var(ncid::Integer,name,xtype::Integer,dimids::Vector{Cint})
+    varidp = Vector{Cint}(1)
+    
+    check(ccall((:nc_def_var,libnetcdf),Cint,(Cint,Ptr{UInt8},nc_type,Cint,Ptr{Cint},Ptr{Cint}),ncid,name,xtype,length(dimids),dimids,varidp))
+
+    return varidp[1]    
 end
 
 # function nc_inq_var(ncid::Integer,varid::Integer,name,xtypep,ndimsp,dimidsp,nattsp)

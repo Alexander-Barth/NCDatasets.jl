@@ -55,21 +55,6 @@ const jlType = Dict(
 const ncType = Dict(value => key for (key, value) in jlType)
 
 
-function inqDim(ncid,dimid)
-    cname = zeros(UInt8,NC_MAX_NAME+1)
-    nc_inq_dimname(ncid,dimid,cname)
-    name = unsafe_string(pointer(cname))
-    
-    return name
-end
-
-
-function defVar(ncid::Cint,name::String,vtype,dimids::Vector{Cint})
-    varidp = Vector{Cint}(1)
-    nc_def_var(ncid,name,ncType[vtype],length(dimids),dimids,varidp)
-    return varidp[1]    
-end
-
 function inqVarIDs(ncid)
     # first get number of variables
     nvarsp = zeros(Int,1)    
@@ -330,7 +315,7 @@ names of the dimension.  For scalar this parameter is the empty tuple ().  The v
 function defVar(ds::Dataset,name,vtype,dimnames)
     defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
     dimids = Cint[nc_inq_dimid(ds.ncid,dimname) for dimname in dimnames[end:-1:1]]
-    varid = defVar(ds.ncid,name,vtype,dimids)
+    varid = nc_def_var(ds.ncid,name,ncType[vtype],dimids)
     return ds[name]
 end
 
@@ -442,7 +427,7 @@ function Base.show(io::IO,v::Variable)
     if length(v.shape) > 0
         print(io,"  (",join(v.shape,delim),")\n")
         print(io,"  Datatype:    ",eltype(v),"\n")
-        dimnames = [inqDim(v.ncid,dimid) for dimid in dimids[end:-1:1]]
+        dimnames = [nc_inq_dimname(v.ncid,dimid) for dimid in dimids[end:-1:1]]
         print(io,"  Dimensions:  ",join(dimnames,delim),"\n")
     else
         print(io,"\n")
