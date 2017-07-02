@@ -15,7 +15,7 @@ type NetCDFError <: Exception
 end
 
 "Construct a NetCDFError from the error code"
-NetCDFError(code::Cint) = NetCDFError(code, unsafe_string(nc_strerror(code)))
+NetCDFError(code::Cint) = NetCDFError(code, nc_strerror(code))
 
 #function Base.showerror(io::IO, err::NetCDFError)
 #    print(io, "NetCDF error code $(err.code):\n\t$(err.msg)")
@@ -55,18 +55,6 @@ const jlType = Dict(
 const ncType = Dict(value => key for (key, value) in jlType)
 
 
-"""
-Define the dimension with the name NAME and the length LEN in the
-dataset NCID.  The id of the dimension is returned
-"""
-
-function defDim(ncid,name,len)
-    dimidp = Vector{Cint}(1)
-    nc_def_dim(ncid,name,len,dimidp)
-    return dimidp[1]
-end
-
-
 function inqDim(ncid,dimid)
     cname = zeros(UInt8,NC_MAX_NAME+1)
     nc_inq_dimname(ncid,dimid,cname)
@@ -74,14 +62,6 @@ function inqDim(ncid,dimid)
     
     return name
 end
-
-"""Return the id of a NetCDF dimension."""
-function inqDimID(ncid,dimname)
-    dimidp = Vector{Cint}(1)
-    nc_inq_dimid(ncid,dimname,dimidp)
-    return dimidp[1]
-end
-
 
 
 function defVar(ncid::Cint,name::String,vtype,dimids::Vector{Cint})
@@ -297,11 +277,11 @@ Create (mode = "c") or open in read-only (mode = "r") a NetCDF file (or an OPeND
 """
 
 function Dataset(filename::AbstractString,mode::AbstractString = "r", format::AbstractString = "netcdf4")
-    ncidp = Vector{Cint}(1)
+    ncid = -1
 
     if mode == "r"
         mode = NC_NOWRITE
-        status = nc_open(filename,mode,ncidp)
+        ncid = nc_open(filename,mode)
     elseif mode == "c"
         mode  = NC_CLOBBER
 
@@ -313,9 +293,8 @@ function Dataset(filename::AbstractString,mode::AbstractString = "r", format::Ab
             mode = mode | NC_NETCDF4
         end
 
-        nc_create(filename,mode,ncidp)       
+        ncid = nc_create(filename,mode)
     end
-    ncid = ncidp[1]
     isdefmode = [true]
 
     attrib = Attributes(ncid,NC_GLOBAL,isdefmode)
@@ -328,7 +307,7 @@ function Dataset(f::Function,args...)
     close(ds)
 end
 
-defDim(ds::Dataset,name,len) = defDim(ds.ncid,name,len)
+defDim(ds::Dataset,name,len) = nc_def_dim(ds.ncid,name,len)
 
 """
 Defines a variable with the name `name` in the dataset `ds`.  `vtype` can be 
@@ -350,7 +329,7 @@ names of the dimension.  For scalar this parameter is the empty tuple ().  The v
 
 function defVar(ds::Dataset,name,vtype,dimnames)
     defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
-    dimids = Cint[inqDimID(ds.ncid,dimname) for dimname in dimnames[end:-1:1]]
+    dimids = Cint[nc_inq_dimid(ds.ncid,dimname) for dimname in dimnames[end:-1:1]]
     varid = defVar(ds.ncid,name,vtype,dimids)
     return ds[name]
 end

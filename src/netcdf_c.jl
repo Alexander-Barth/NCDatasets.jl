@@ -203,23 +203,27 @@ function nc_inq_libvers()
 end
 
 function nc_strerror(ncerr::Integer)
-    ccall((:nc_strerror,libnetcdf),Ptr{UInt8},(Cint,),ncerr)
+    unsafe_string(ccall((:nc_strerror,libnetcdf),Ptr{UInt8},(Cint,),ncerr))
 end
 
 # function nc__create(path,cmode::Integer,initialsz::Integer,chunksizehintp,ncidp)
 #     check(ccall((:nc__create,libnetcdf),Cint,(Ptr{UInt8},Cint,Cint,Ptr{Cint},Ptr{Cint}),path,cmode,initialsz,chunksizehintp,ncidp))
 # end
 
-function nc_create(path,cmode::Integer,ncidp)
+function nc_create(path,cmode::Integer)
+    ncidp = Vector{Cint}(1)
     check(ccall((:nc_create,libnetcdf),Cint,(Ptr{UInt8},Cint,Ptr{Cint}),path,cmode,ncidp))
+    return ncidp[1]
 end
 
 # function nc__open(path,mode::Integer,chunksizehintp,ncidp)
 #     check(ccall((:nc__open,libnetcdf),Cint,(Ptr{UInt8},Cint,Ptr{Cint},Ptr{Cint}),path,mode,chunksizehintp,ncidp))
 # end
 
-function nc_open(path,mode::Integer,ncidp)
+function nc_open(path,mode::Integer)
+    ncidp = Vector{Cint}(1)
     check(ccall((:nc_open,libnetcdf),Cint,(Ptr{UInt8},Cint,Ptr{Cint}),path,mode,ncidp))
+    return ncidp[1]
 end
 
 # function nc_inq_path(ncid::Integer,pathlen,path)
@@ -578,12 +582,22 @@ end
 #     check(ccall((:nc_inq_format_extended,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,formatp,modep))
 # end
 
-function nc_def_dim(ncid::Integer,name,len::Integer,idp)
+"""
+Define the dimension with the name NAME and the length LEN in the
+dataset NCID.  The id of the dimension is returned
+"""
+
+function nc_def_dim(ncid::Integer,name,len::Integer)
+    idp = Vector{Cint}(1)    
     check(ccall((:nc_def_dim,libnetcdf),Cint,(Cint,Ptr{UInt8},Cint,Ptr{Cint}),ncid,name,len,idp))
+    return idp[1]
 end
 
-function nc_inq_dimid(ncid::Integer,name,idp)
-    check(ccall((:nc_inq_dimid,libnetcdf),Cint,(Cint,Ptr{UInt8},Ptr{Cint}),ncid,name,idp))
+"""Return the id of a NetCDF dimension."""
+function nc_inq_dimid(ncid::Integer,name)
+    dimidp = Vector{Cint}(1)
+    check(ccall((:nc_inq_dimid,libnetcdf),Cint,(Cint,Ptr{UInt8},Ptr{Cint}),ncid,name,dimidp))
+    return dimidp[1]
 end
 
 # function nc_inq_dim(ncid::Integer,dimid::Integer,name,lenp)
