@@ -80,26 +80,6 @@ function listAtt(ncid,varid)
     return names
 end
 
-
-function getAtt(ncid,varid,name)
-    xtype,len = nc_inq_att(ncid,varid,name)
-
-    if xtype == NC_CHAR
-        val = Vector{UInt8}(len)
-        nc_get_att(ncid,varid,name,val)
-        return unsafe_string(pointer(val))
-    else
-        val = Vector{jlType[xtype]}(len)
-        nc_get_att(ncid,varid,name,val)
-
-        if len == 1
-            return val[1]
-        else
-            return val
-        end
-    end
-end    
-
 function putAtt!(ncid,varid,name,data)
     # NetCDF does not support 64 bit attributes
     if eltype(data) == Int64
@@ -189,7 +169,7 @@ function Base.show(io::IO,a::Attributes; indent = "  ")
 end
 
 function Base.getindex(a::Attributes,name::AbstractString)
-    return getAtt(a.ncid,a.varid,name)
+    return nc_get_att(a.ncid,a.varid,name)
 end
 
 function Base.setindex!(a::Attributes,data,name::AbstractString)

@@ -393,8 +393,26 @@ function nc_put_att(ncid::Integer,varid::Integer,name,xtype::Integer,len::Intege
     check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},nc_type,Cint,Ptr{Void}),ncid,varid,name,xtype,len,op))
 end
 
-function nc_get_att(ncid::Integer,varid::Integer,name,ip)
-    check(ccall((:nc_get_att,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{Void}),ncid,varid,name,ip))
+function nc_get_att(ncid::Integer,varid::Integer,name)
+    xtype,len = nc_inq_att(ncid,varid,name)
+
+    if xtype == NC_CHAR
+        val = Vector{UInt8}(len)
+        check(ccall((:nc_get_att,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{Void}),ncid,varid,name,val))
+
+        return unsafe_string(pointer(val))
+    else
+        val = Vector{jlType[xtype]}(len)
+        #nc_get_att(ncid,varid,name,val)
+        check(ccall((:nc_get_att,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{Void}),ncid,varid,name,val))
+
+
+        if len == 1
+            return val[1]
+        else
+            return val
+        end
+    end   
 end
 
 # function nc_def_enum(ncid::Integer,base_typeid::Integer,name,typeidp)
