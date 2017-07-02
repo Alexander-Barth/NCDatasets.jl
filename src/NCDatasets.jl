@@ -54,21 +54,18 @@ const jlType = Dict(
 # Inverse mapping
 const ncType = Dict(value => key for (key, value) in jlType)
 
-function inqVar(ncid,varid)
-    name,xtype,dimids,nattr = nc_inq_var(ncid,varid)
-    return name,jlType[xtype],dimids,nattr
-end
-
+"Return all variable names"
 function listVar(ncid)
     varids = nc_inq_varids(ncid)
     names = Vector{String}(length(varids))
 
     for i = 1:length(varids)
-        names[i],nctype,dimids,nattr = inqVar(ncid,varids[i])
+        names[i],nctype,dimids,nattr = nc_inq_var(ncid,varids[i])
     end
     return names
 end
 
+"Return all attribute names"
 function listAtt(ncid,varid)
     natts = nc_inq_varnatts(ncid,varid)
     names = Vector{String}(natts)
@@ -80,6 +77,7 @@ function listAtt(ncid,varid)
     return names
 end
 
+"Make sure that a dataset is in data mode"
 function datamode(ncid,isdefmode::Vector{Bool})
     if isdefmode[1]
         nc_enddef(ncid)
@@ -87,6 +85,7 @@ function datamode(ncid,isdefmode::Vector{Bool})
     end
 end
 
+"Make sure that a dataset is in define mode"
 function defmode(ncid,isdefmode::Vector{Bool})
     if !isdefmode[1]
         nc_redef(ncid)
@@ -94,6 +93,7 @@ function defmode(ncid,isdefmode::Vector{Bool})
     end
 end
 
+"Parse time units and returns the start time and the scaling factor relative to milliseconds"
 function timeunits(units)
     tunit,starttime = strip.(split(units," since "))
     tunit = lowercase(tunit)
@@ -127,7 +127,6 @@ end
 # -----------------------------------------------------
 # List of attributes
 # all ids should be Cint
-
 
 type Attributes
     ncid::Cint
@@ -249,7 +248,7 @@ Base.close(ds::Dataset) = nc_close(ds.ncid)
 
 function variable(ds::Dataset,varname::String)
     varid = nc_inq_varid(ds.ncid,varname)    
-    name,nctype,dimids,nattr = inqVar(ds.ncid,varid)
+    name,nctype,dimids,nattr = nc_inq_var(ds.ncid,varid)
     ndims = length(dimids)
     #@show ndims
     shape = zeros(Int,ndims)
@@ -332,7 +331,7 @@ end
 Base.size(v::Variable) = v.shape
 
 function Base.show(io::IO,v::Variable)
-    name,nctype,dimids,nattr = inqVar(v.ncid,v.varid)
+    name,nctype,dimids,nattr = nc_inq_var(v.ncid,v.varid)
     delim = " × "
 
     print_with_color(:green, io, name)
@@ -571,9 +570,7 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
         if "scale_factor" in attnames
             x[.!mask] = x[.!mask] / v.attrib["scale_factor"]
         end
-
     end
-
 
     v.var[indexes...] = x
     return data

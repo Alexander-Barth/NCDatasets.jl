@@ -1,5 +1,4 @@
-# This file is based on automatically generated code from gen/wrap.jl
-# From NetCDF.jl
+# This file is originally based netcdf_c.jl from NetCDF.jl
 # Copyright (c) 2012-2013: Fabian Gans, Max-Planck-Institut fuer Biogeochemie, Jena, Germany
 # MIT
 
@@ -844,7 +843,7 @@ function nc_inq_var(ncid::Integer,varid::Integer)
     check(ccall((:nc_inq_var,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{nc_type},Ptr{Cint},Ptr{Cint},Ptr{Cint}),ncid,varid,cname,xtypep,ndimsp,dimids,nattsp))
 
     name = unsafe_string(pointer(cname))
-    return name,xtypep[1],dimids,nattsp[1]
+    return name,jlType[xtypep[1]],dimids,nattsp[1]
 end
 
 function nc_inq_varid(ncid::Integer,name)
