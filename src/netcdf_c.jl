@@ -262,8 +262,15 @@ end
 #     check(ccall((:nc_inq_grp_full_ncid,libnetcdf),Cint,(Cint,Ptr{UInt8},Ptr{Cint}),ncid,full_name,grp_ncid))
 # end
 
-function nc_inq_varids(ncid::Integer,nvars,varids)
-    check(ccall((:nc_inq_varids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,nvars,varids))
+function nc_inq_varids(ncid::Integer)
+    # first get number of variables
+    nvarsp = zeros(Int,1)    
+    check(ccall((:nc_inq_varids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,nvarsp,C_NULL))
+    nvars = nvarsp[1]
+    
+    varids = zeros(Cint,nvars)
+    check(ccall((:nc_inq_varids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,nvarsp,varids))
+    return varids    
 end
 
 # function nc_inq_dimids(ncid::Integer,ndims,dimids,include_parents::Integer)
@@ -612,8 +619,12 @@ function nc_inq_dimname(ncid::Integer,dimid::Integer)
     return unsafe_string(pointer(cname))
 end
 
-function nc_inq_dimlen(ncid::Integer,dimid::Integer,lenp)
-    check(ccall((:nc_inq_dimlen,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,dimid,lenp))
+function nc_inq_dimlen(ncid::Integer,dimid::Integer)
+    lengthp = zeros(Csize_t,1)
+       
+    check(ccall((:nc_inq_dimlen,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t}),ncid,dimid,lengthp))
+
+    return lengthp[1]
 end
 
 # function nc_rename_dim(ncid::Integer,dimid::Integer,name)
@@ -764,12 +775,28 @@ function nc_def_var(ncid::Integer,name,xtype::Integer,dimids::Vector{Cint})
     return varidp[1]    
 end
 
-# function nc_inq_var(ncid::Integer,varid::Integer,name,xtypep,ndimsp,dimidsp,nattsp)
-#     check(ccall((:nc_inq_var,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{nc_type},Ptr{Cint},Ptr{Cint},Ptr{Cint}),ncid,varid,name,xtypep,ndimsp,dimidsp,nattsp))
-# end
+function nc_inq_var(ncid::Integer,varid::Integer)
+    ndimsp = zeros(Int,1)
+    nc_inq_varndims(ncid,varid,ndimsp)
+    ndims = ndimsp[1]
 
-function nc_inq_varid(ncid::Integer,name,varidp)
+    cname = zeros(UInt8,NC_MAX_NAME+1)
+    dimids = zeros(Cint,ndims)
+    nattsp = Vector{Cint}(1)
+    xtypep = zeros(nc_type,1)
+    
+    check(ccall((:nc_inq_var,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{nc_type},Ptr{Cint},Ptr{Cint},Ptr{Cint}),ncid,varid,cname,xtypep,ndimsp,dimids,nattsp))
+
+    name = unsafe_string(pointer(cname))
+    return name,xtypep[1],dimids,nattsp[1]
+end
+
+function nc_inq_varid(ncid::Integer,name)
+    varidp = zeros(Cint,1)
+
     check(ccall((:nc_inq_varid,libnetcdf),Cint,(Cint,Ptr{UInt8},Ptr{Cint}),ncid,name,varidp))
+
+    return varidp[1]  
 end
 
 function nc_inq_varname(ncid::Integer,varid::Integer,name)

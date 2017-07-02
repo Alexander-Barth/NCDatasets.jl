@@ -54,43 +54,34 @@ const jlType = Dict(
 # Inverse mapping
 const ncType = Dict(value => key for (key, value) in jlType)
 
-
-function inqVarIDs(ncid)
-    # first get number of variables
-    nvarsp = zeros(Int,1)    
-    nc_inq_varids(ncid,nvarsp,C_NULL)
-    nvars = nvarsp[1]
-
-    varids = zeros(Cint,nvars)
-    nc_inq_varids(ncid,nvarsp,varids)
-    return varids    
-end
-
 function inqVar(ncid,varid)
-    cname = zeros(UInt8,NC_MAX_NAME+1)
-    nc_inq_varname(ncid,varid,cname)
-    name = unsafe_string(pointer(cname))
+    name,xtype,dimids,nattr = nc_inq_var(ncid,varid)
+    return name,jlType[xtype],dimids,nattr
 
-    ndimsp = zeros(Int,1)
-    nc_inq_varndims(ncid,varid,ndimsp)
-    ndims = ndimsp[1]
+    # cname = zeros(UInt8,NC_MAX_NAME+1)
+    # nc_inq_varname(ncid,varid,cname)
+    # name = unsafe_string(pointer(cname))
 
-    dimids = zeros(Cint,ndims)
-    nc_inq_vardimid(ncid,varid,dimids)
+    # ndimsp = zeros(Int,1)
+    # nc_inq_varndims(ncid,varid,ndimsp)
+    # ndims = ndimsp[1]
 
-    xtypep = zeros(nc_type,1)
-    nc_inq_vartype(ncid,varid,xtypep)
-    nctype = jlType[xtypep[1]]
+    # dimids = zeros(Cint,ndims)
+    # nc_inq_vardimid(ncid,varid,dimids)
 
-    nattsp = Vector{Cint}(1)
-    nc_inq_varnatts(ncid,varid,nattsp)
-    nattr = nattsp[1]
+    # xtypep = zeros(nc_type,1)
+    # nc_inq_vartype(ncid,varid,xtypep)
+    # nctype = jlType[xtypep[1]]
 
-    return name,nctype,dimids,nattr
+    # nattsp = Vector{Cint}(1)
+    # nc_inq_varnatts(ncid,varid,nattsp)
+    # nattr = nattsp[1]
+
+    # return name,nctype,dimids,nattr
 end
 
 function listVar(ncid)
-    varids = inqVarIDs(ncid)
+    varids = nc_inq_varids(ncid)
     names = Vector{String}(length(varids))
 
     for i = 1:length(varids)
@@ -332,20 +323,14 @@ sync(ds::Dataset) = nc_sync(ds.ncid)
 Base.close(ds::Dataset) = nc_close(ds.ncid)
 
 function variable(ds::Dataset,varname::String)
-    varidp = zeros(Cint,1)
-    nc_inq_varid(ds.ncid,varname,varidp)
-    varid = varidp[1]
-    
+    varid = nc_inq_varid(ds.ncid,varname)    
     name,nctype,dimids,nattr = inqVar(ds.ncid,varid)
-
     ndims = length(dimids)
     #@show ndims
-    lengthp = zeros(Csize_t,1)
     shape = zeros(Int,ndims)
     
     for i = 1:ndims
-        nc_inq_dimlen(ds.ncid,dimids[i],lengthp)
-        shape[ndims-i+1] = lengthp[1]
+        shape[ndims-i+1] = nc_inq_dimlen(ds.ncid,dimids[i])
     end
 
     attrib = Attributes(ds.ncid,varid,ds.isdefmode)
