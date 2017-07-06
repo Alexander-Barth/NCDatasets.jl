@@ -379,9 +379,32 @@ function Base.getindex{T,N}(v::Variable{T,N},indexes::Colon...)
     end
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data,indexes::Colon...)
-    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
+function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::Colon...)
+    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode    
+    tmp = fill(data,size(v))
+    #@show "here number",indexes,size(v),fill(data,size(v))
+    nc_put_var(v.ncid,v.varid,tmp)
+    return data
+end
+
+function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::Colon...)
+    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode    
+    tmp = fill(convert(T,data),size(v))
+    #@show "here number",indexes,size(v),tmp
+    nc_put_var(v.ncid,v.varid,tmp)
+    return data
+end
+
+function Base.setindex!{T,N}(v::Variable{T,N},data::Array{T,N},indexes::Colon...)
+    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode    
     nc_put_var(v.ncid,v.varid,data)
+    return data
+end
+
+function Base.setindex!{T,T2,N}(v::Variable{T,N},data::Array{T2,N},indexes::Colon...)
+    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode    
+    tmp = convert(Array{T,N},data)
+    nc_put_var(v.ncid,v.varid,tmp)
     return data
 end
 
@@ -453,8 +476,17 @@ end
 
 
 function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
-    #    @show "any",indexes
+    #@show "any",indexes
     ind,squeezedim = normalizeindexes(size(v),indexes)
+
+    # make arrays out of scalars
+    if ndims(data) == 0
+        data = fill(data,([length(i) for i in ind]...))
+    end
+
+    if ndims(data) == 1 && size(data,1) == 1
+        data = fill(data[1],([length(i) for i in ind]...))
+    end
 
     # return data
     return v[ind...] = data
@@ -533,12 +565,13 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
 
     attnames = keys(v.attrib)
 
+    #@show "here",ndims(x),ndims(data)
 
     if isa(data,DataArray)
-        x[.!isna.(data)] = data[.!isna.(data)]
         mask = isna.(data)
+        x[.!mask] = data[.!mask]
     else
-        if ndims(x) == 0
+        if ndims(data) == 0
             # for scalars
             x = [data]
             mask = [false]
@@ -572,7 +605,12 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
         end
     end
 
-    v.var[indexes...] = x
+    if ndims(data) == 0        
+        v.var[indexes...] = x[1]
+    else
+        v.var[indexes...] = x
+    end
+
     return data
 end
 

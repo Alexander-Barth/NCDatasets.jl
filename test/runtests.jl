@@ -1,5 +1,6 @@
 using NCDatasets
 using Base.Test
+using DataArrays
 
 sz = (123,145)
 data = randn(sz)
@@ -38,13 +39,15 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     # Create a NetCDF file
 
+    sz = (4,5)
     filename = tempname()
+    filename = "/tmp/test-2.nc"
     # The mode "c" stands for creating a new file (clobber)
     ds = Dataset(filename,"c")
 
-    # define the dimension "lon" and "lat" with the size 100 and 110 resp.
-    defDim(ds,"lon",100)
-    defDim(ds,"lat",110)
+    # define the dimension "lon" and "lat"
+    defDim(ds,"lon",sz[1])
+    defDim(ds,"lat",sz[2])
 
     # define a global attribute
     ds.attrib["title"] = "this is a test file"
@@ -53,7 +56,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     v = defVar(ds,"temperature",Float32,("lon","lat"))
     S = defVar(ds,"salinity",Float32,("lon","lat"))
 
-    data = [Float32(i+j) for i = 1:100, j = 1:110]
+    data = [Float32(i+j) for i = 1:sz[1], j = 1:sz[2]]
 
     # write a single value
     v[1,1] = data[1,1]
@@ -67,6 +70,9 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     # write attributes
     v.attrib["units"] = "degree Celsius"
     v.attrib["comment"] = "this is a string attribute with unicode Ω ∈ ∑ ∫ f(x) dx "
+
+    # check presence of attribute
+    @test "comment" in v.attrib
 
     for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
         # scalar attribute
@@ -102,7 +108,6 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     # test sync
     sync(ds)
-
     close(ds)
 
     # Load a file (with known structure)
@@ -173,8 +178,11 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     end
     rm(filename)
 
+    include("test_writevar.jl")
     include("test_timeunits.jl")
     include("test_scaling.jl")
+
+    include("test_fillvalue.jl")
 
     # error handling
     @test_throws NCDatasets.NetCDFError Dataset(":/does/not/exist")
