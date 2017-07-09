@@ -69,7 +69,7 @@ end
 function listAtt(ncid,varid)
     natts = nc_inq_varnatts(ncid,varid)
     names = Vector{String}(natts)
-    
+
     for attnum = 0:natts-1
         names[attnum+1] = nc_inq_attname(ncid,varid,attnum)
     end
@@ -98,7 +98,7 @@ function timeunits(units)
     tunit,starttime = strip.(split(units," since "))
     tunit = lowercase(tunit)
 
-    t0 = DateTime(starttime,"y-m-d H:M:S")            
+    t0 = DateTime(starttime,"y-m-d H:M:S")
 
     plength = if (tunit == "days") || (tunit == "day")
         24*60*60*1000
@@ -109,7 +109,7 @@ function timeunits(units)
     elseif (tunit == "seconds") || (tunit == "second")
         1000
     end
-    
+
     return t0,plength
 end
 
@@ -210,8 +210,8 @@ end
 defDim(ds::Dataset,name,len) = nc_def_dim(ds.ncid,name,len)
 
 """
-Defines a variable with the name `name` in the dataset `ds`.  `vtype` can be 
-Julia types in the table below (with the corresponding NetCDF type).  The parameter `dimnames` is a tuple with the 
+Defines a variable with the name `name` in the dataset `ds`.  `vtype` can be
+Julia types in the table below (with the corresponding NetCDF type).  The parameter `dimnames` is a tuple with the
 names of the dimension.  For scalar this parameter is the empty tuple ().  The variable is returned.
 
 | NetCDF Type | Julia Type |
@@ -247,18 +247,18 @@ sync(ds::Dataset) = nc_sync(ds.ncid)
 Base.close(ds::Dataset) = nc_close(ds.ncid)
 
 function variable(ds::Dataset,varname::String)
-    varid = nc_inq_varid(ds.ncid,varname)    
+    varid = nc_inq_varid(ds.ncid,varname)
     name,nctype,dimids,nattr = nc_inq_var(ds.ncid,varid)
     ndims = length(dimids)
     #@show ndims
     shape = zeros(Int,ndims)
-    
+
     for i = 1:ndims
         shape[ndims-i+1] = nc_inq_dimlen(ds.ncid,dimids[i])
     end
 
     attrib = Attributes(ds.ncid,varid,ds.isdefmode)
-    
+
     return Variable{nctype,ndims}(ds.ncid,varid,(shape...),attrib,ds.isdefmode)
 end
 
@@ -286,25 +286,25 @@ function Base.getindex(ds::Dataset,varname::String)
     # attnames = keys(attrib)
 
     # has_fillvalue = "_FillValue" in attnames
-    # if has_fillvalue        
+    # if has_fillvalue
     #     fillvalue = attrib["_FillValue"]
     # end
 
     # has_add_offset = "add_offset" in attnames
-    # if has_add_offset        
+    # if has_add_offset
     #     add_offset = attrib["add_offset"]
     # end
 
     # has_scale_factor = "scale_factor" in attnames
-    # if has_scale_factor        
+    # if has_scale_factor
     #     scale_factor = attrib["scale_factor"]
     # end
 
     # return element type of any index operation
-    
+
     if eltype(v) == Char
         rettype = Char
-    else        
+    else
         rettype = Float64
     end
 
@@ -322,7 +322,7 @@ end
 
 type Variable{NetCDFType,N}  <: AbstractArray{NetCDFType, N}
     ncid::Cint
-    varid::Cint    
+    varid::Cint
     shape::NTuple{N,Int64}
     attrib::Attributes
     isdefmode::Vector{Bool}
@@ -372,7 +372,7 @@ function Base.getindex{T,N}(v::Variable{T,N},indexes::Colon...)
         data = Vector{T}(1)
         nc_get_var(v.ncid,v.varid,data)
         return data[1]
-    else    
+    else
         data = Array{T,N}(v.shape)
         nc_get_var(v.ncid,v.varid,data)
         return data
@@ -380,7 +380,7 @@ function Base.getindex{T,N}(v::Variable{T,N},indexes::Colon...)
 end
 
 function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::Colon...)
-    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode    
+    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     tmp = fill(data,size(v))
     #@show "here number",indexes,size(v),fill(data,size(v))
     nc_put_var(v.ncid,v.varid,tmp)
@@ -388,7 +388,7 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::Colon...)
 end
 
 function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::Colon...)
-    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode    
+    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     tmp = fill(convert(T,data),size(v))
     #@show "here number",indexes,size(v),tmp
     nc_put_var(v.ncid,v.varid,tmp)
@@ -396,13 +396,13 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::Colon...)
 end
 
 function Base.setindex!{T,N}(v::Variable{T,N},data::Array{T,N},indexes::Colon...)
-    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode    
+    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     nc_put_var(v.ncid,v.varid,data)
     return data
 end
 
 function Base.setindex!{T,T2,N}(v::Variable{T,N},data::Array{T2,N},indexes::Colon...)
-    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode    
+    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     tmp = convert(Array{T,N},data)
     nc_put_var(v.ncid,v.varid,tmp)
     return data
@@ -418,17 +418,43 @@ end
 
 function Base.getindex{T,N}(v::Variable{T,N},indexes::StepRange{Int,Int}...)
     #    @show "sr",indexes
-    start,count,stride,jlshape = ncsub(indexes)    
+    start,count,stride,jlshape = ncsub(indexes)
     data = Array{T,N}(jlshape)
     nc_get_vars(v.ncid,v.varid,start,count,stride,data)
     return data
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data,indexes::StepRange{Int,Int}...)
+function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...)
     #    @show "sr",indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
-    start,count,stride,jlshape = ncsub(indexes)    
+    start,count,stride,jlshape = ncsub(indexes)
+    tmp = fill(data,jlshape)
+    nc_put_vars(v.ncid,v.varid,start,count,stride,tmp)
+    return data
+end
+
+function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::StepRange{Int,Int}...)
+    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
+    start,count,stride,jlshape = ncsub(indexes)
+    tmp = fill(convert(T,data),jlshape)
+    nc_put_vars(v.ncid,v.varid,start,count,stride,tmp)
+    return data
+end
+
+function Base.setindex!{T,N}(v::Variable{T,N},data::Array{T,N},indexes::StepRange{Int,Int}...)
+    #    @show "sr",indexes
+    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
+    start,count,stride,jlshape = ncsub(indexes)
     nc_put_vars(v.ncid,v.varid,start,count,stride,data)
+    return data
+end
+
+function Base.setindex!{T,N}(v::Variable{T,N},data::Array,indexes::StepRange{Int,Int}...)
+    #    @show "sr",indexes
+    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
+    start,count,stride,jlshape = ncsub(indexes)
+    tmp = convert(Array{T,ndims(data)},data)
+    nc_put_vars(v.ncid,v.varid,start,count,stride,tmp)
     return data
 end
 
@@ -459,7 +485,7 @@ function normalizeindexes(sz,indexes)
     end
 
     return ind,squeezedim
-end    
+end
 
 function Base.getindex(v::Variable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     #    @show "any",indexes
@@ -554,7 +580,7 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
     end
 end
 
-function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)    
+function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
 
     # update fillvalue, add_offset, scale_factor,...
 
@@ -590,7 +616,7 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
 
     if "_FillValue" in attnames
         x[mask] = v.attrib["_FillValue"]
-    else        
+    else
         # should we issue a warning?
     end
 
@@ -605,7 +631,7 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
         end
     end
 
-    if ndims(data) == 0        
+    if ndims(data) == 0
         v.var[indexes...] = x[1]
     else
         v.var[indexes...] = x

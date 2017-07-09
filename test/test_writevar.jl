@@ -14,6 +14,8 @@
     #for T in [UInt8]
         # write array
         v = NCDatasets.defVar(ds,"var-$T",T,("lon","lat"))
+
+        # write array
         v[:,:] = fill(T(123),size(v))
         @test all(v[:,:][:] .== 123)
 
@@ -29,6 +31,22 @@
         v[:,:] = 100
         @test all(v[:,:][:] .== 100)
 
+        # using StepRange as index
+        # write array
+        v[1:end,1:end] = fill(T(123),size(v))
+        @test all(v[:,:][:] .== 123)
+
+        # write scalar
+        v[1:end,1:end] = T(100)
+        @test all(v[:,:][:] .== 100)
+
+        # write array (different type)
+        v[1:end,1:end] = fill(123,size(v))
+        @test all(v[:,:][:] .== 123)
+
+        # write scalar (different type)
+        v[1:end,1:end] = 100
+        @test all(v[:,:][:] .== 100)
     end
 
     close(ds)
