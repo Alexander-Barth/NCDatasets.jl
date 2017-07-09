@@ -403,6 +403,7 @@ end
 
 function Base.setindex!{T,T2,N}(v::Variable{T,N},data::Array{T2,N},indexes::Colon...)
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
+
     tmp = convert(Array{T,N},data)
     nc_put_var(v.ncid,v.varid,tmp)
     return data
@@ -417,7 +418,7 @@ function ncsub(indexes)
 end
 
 function Base.getindex{T,N}(v::Variable{T,N},indexes::StepRange{Int,Int}...)
-    #    @show "sr",indexes
+    #@show "get sr",indexes
     start,count,stride,jlshape = ncsub(indexes)
     data = Array{T,N}(jlshape)
     nc_get_vars(v.ncid,v.varid,start,count,stride,data)
@@ -450,11 +451,13 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::Array{T,N},indexes::StepRang
 end
 
 function Base.setindex!{T,N}(v::Variable{T,N},data::Array,indexes::StepRange{Int,Int}...)
-    #    @show "sr",indexes
+    #@show "sr2",indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes)
+
     tmp = convert(Array{T,ndims(data)},data)
     nc_put_vars(v.ncid,v.varid,start,count,stride,tmp)
+
     return data
 end
 
@@ -582,10 +585,7 @@ end
 
 function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
 
-    # update fillvalue, add_offset, scale_factor,...
-
-    #x = Array{eltype(data),ndims(data)}(size(data))
-    x = zeros(eltype(v.var),size(data))
+    x = Array{eltype(data),ndims(data)}(size(data))
     #@show typeof(data)
     #@show eltype(v.var)
 

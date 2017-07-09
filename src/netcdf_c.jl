@@ -470,11 +470,21 @@ end
 # end
 
 function nc_put_var(ncid::Integer,varid::Integer,op)
+    if eltype(op) == Char
+        op = convert(Array{UInt8,ndims(op)},op)
+    end
+
     check(ccall((:nc_put_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,op))
 end
 
 function nc_get_var(ncid::Integer,varid::Integer,ip)
-    check(ccall((:nc_get_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,ip))
+    if eltype(ip) == Char
+        tmp = Array{UInt8,ndims(ip)}(size(ip))
+        check(ccall((:nc_get_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,tmp))
+        ip[:] = convert(Array{Char,1},tmp[:])
+    else        
+        check(ccall((:nc_get_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,ip))
+    end    
 end
 
 function nc_put_var1(ncid::Integer,varid::Integer,indexp,op)
@@ -494,11 +504,21 @@ end
 # end
 
 function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,op)
+    if eltype(op) == Char
+        op = convert(Array{UInt8,ndims(op)},op)
+    end
+
     check(ccall((:nc_put_vars,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint},Ptr{Void}),ncid,varid,startp,countp,stridep,op))
 end
 
 function nc_get_vars(ncid::Integer,varid::Integer,startp,countp,stridep,ip)
-    check(ccall((:nc_get_vars,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint},Ptr{Void}),ncid,varid,startp,countp,stridep,ip))
+    if eltype(ip) == Char
+        tmp = Array{UInt8,ndims(ip)}(size(ip))
+        check(ccall((:nc_get_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,tmp))
+        ip[:] = convert(Array{Char,1},tmp[:])
+    else        
+        check(ccall((:nc_get_vars,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint},Ptr{Void}),ncid,varid,startp,countp,stridep,ip))
+    end
 end
 
 # function nc_put_varm(ncid::Integer,varid::Integer,startp,countp,stridep,imapp,op)
@@ -858,8 +878,12 @@ function nc_inq_varname(ncid::Integer,varid::Integer,name)
     check(ccall((:nc_inq_varname,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8}),ncid,varid,name))
 end
 
-function nc_inq_vartype(ncid::Integer,varid::Integer,xtypep)
+function nc_inq_vartype(ncid::Integer,varid::Integer)
+    xtypep = zeros(nc_type,1)
+
     check(ccall((:nc_inq_vartype,libnetcdf),Cint,(Cint,Cint,Ptr{nc_type}),ncid,varid,xtypep))
+
+    return xtypep[1]
 end
 
 function nc_inq_varndims(ncid::Integer,varid::Integer,ndimsp)
