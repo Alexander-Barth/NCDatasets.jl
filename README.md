@@ -159,6 +159,23 @@ Dataset(filename,"r") do ds
 end
 ```
 
+# Issues
+
+## libnetcdf not properly installed
+
+If you see the following error,
+
+```
+ERROR: LoadError: LoadError: libnetcdf not properly installed. Please run Pkg.build("NCDatasets")
+```
+
+you can try to install netcdf explicitly with Conda:
+
+```julia
+using Conda
+Conda.add("libnetcdf")
+```
+
 # Credits
 
 `netcdf_c.jl`, `build.jl` and the error handling code of the NetCDF C API are from NetCDF.jl by Fabian Gans (Max-Planck-Institut für Biogeochemie, Jena, Germany) released under the MIT license.

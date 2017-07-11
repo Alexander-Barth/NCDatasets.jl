@@ -56,16 +56,26 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     v = defVar(ds,"temperature",Float32,("lon","lat"))
     S = defVar(ds,"salinity",Float32,("lon","lat"))
 
-    data = [Float32(i+j) for i = 1:sz[1], j = 1:sz[2]]
+    data = [Float32(i+2*j) for i = 1:sz[1], j = 1:sz[2]]
 
     # write a single value
-    v[1,1] = data[1,1]
+    for j = 1:sz[2]
+        for i = 1:sz[1]
+            v[i,j] = data[i,j]
+        end
+    end
+    @test v[:,:] == data
 
     # write a single column
-    v[:,1] = data[:,1]
+    for j = 1:sz[2]
+        v[:,j] = 2*data[:,j]
+    end
+    @test v[:,:] == 2*data
 
     # write a the complete data set
-    v[:,:] = data
+    v[:,:] = 3*data
+    @test v[:,:] == 3*data
+
 
     # write attributes
     v.attrib["units"] = "degree Celsius"
