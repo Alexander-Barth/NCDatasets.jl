@@ -86,6 +86,8 @@ v[1:end,1:end] = 'h'
 
 
 @test dimnames(v) == ("lon","lat")
+@test name(v) == "var-Char"
+
 close(ds)
 
 

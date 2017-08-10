@@ -851,10 +851,9 @@ function nc_def_var(ncid::Integer,name,xtype::Integer,dimids::Vector{Cint})
 end
 
 function nc_inq_var(ncid::Integer,varid::Integer)
-    ndimsp = zeros(Int,1)
-    nc_inq_varndims(ncid,varid,ndimsp)
-    ndims = ndimsp[1]
+    ndims = nc_inq_varndims(ncid,varid)
 
+    ndimsp = zeros(Int,1)
     cname = zeros(UInt8,NC_MAX_NAME+1)
     dimids = zeros(Cint,ndims)
     nattsp = Vector{Cint}(1)
@@ -874,24 +873,29 @@ function nc_inq_varid(ncid::Integer,name)
     return varidp[1]  
 end
 
-function nc_inq_varname(ncid::Integer,varid::Integer,name)
-    check(ccall((:nc_inq_varname,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8}),ncid,varid,name))
+function nc_inq_varname(ncid::Integer,varid::Integer)
+    cname = zeros(UInt8,NC_MAX_NAME+1)
+    check(ccall((:nc_inq_varname,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8}),ncid,varid,cname))
+    return unsafe_string(pointer(cname))
 end
 
 function nc_inq_vartype(ncid::Integer,varid::Integer)
     xtypep = zeros(nc_type,1)
-
     check(ccall((:nc_inq_vartype,libnetcdf),Cint,(Cint,Cint,Ptr{nc_type}),ncid,varid,xtypep))
-
     return xtypep[1]
 end
 
-function nc_inq_varndims(ncid::Integer,varid::Integer,ndimsp)
+function nc_inq_varndims(ncid::Integer,varid::Integer)
+    ndimsp = zeros(Int,1)
     check(ccall((:nc_inq_varndims,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,ndimsp))
+    return ndimsp[1]
 end
 
-function nc_inq_vardimid(ncid::Integer,varid::Integer,dimidsp)
-    check(ccall((:nc_inq_vardimid,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,dimidsp))
+function nc_inq_vardimid(ncid::Integer,varid::Integer)
+    ndims = nc_inq_varndims(ncid,varid)
+    dimids = zeros(Cint,ndims)
+    check(ccall((:nc_inq_vardimid,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,dimids))
+    return dimids
 end
 
 function nc_inq_varnatts(ncid::Integer,varid::Integer)

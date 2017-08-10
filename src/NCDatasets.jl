@@ -60,8 +60,9 @@ function listVar(ncid)
     names = Vector{String}(length(varids))
 
     for i = 1:length(varids)
-        names[i],nctype,dimids,nattr = nc_inq_var(ncid,varids[i])
+        names[i] = nc_inq_varname(ncid,varids[i])
     end
+
     return names
 end
 
@@ -125,16 +126,13 @@ function timeencode(data,units)
 end
 
 # -----------------------------------------------------
-# List of attributes
-# all ids should be Cint
+# base type of attribytes list
+# concrete types are Attributes (single NetCDF file) and MFAttributes (multiple NetCDF files)
 
-type Attributes
-    ncid::Cint
-    varid::Cint
-    isdefmode::Vector{Bool}
+abstract type BaseAttributes
 end
 
-function Base.show(io::IO,a::Attributes; indent = "  ")
+function Base.show(io::IO,a::BaseAttributes; indent = "  ")
     # use the same order of attributes than in the NetCDF file
 
     for (attname,attval) in a
@@ -142,6 +140,23 @@ function Base.show(io::IO,a::Attributes; indent = "  ")
         print_with_color(:blue, io, @sprintf("%s",attval))
         print(io,"\n")
     end
+end
+
+Base.in(name::AbstractString,a::BaseAttributes) = name in keys(a)
+# for iteration as a Dict
+Base.start(a::BaseAttributes) = keys(a)
+Base.done(a::BaseAttributes,state) = length(state) == 0
+Base.next(a::BaseAttributes,state) = (state[1] => a[shift!(state)], state)
+
+
+# -----------------------------------------------------
+# List of attributes (for a single NetCDF file)
+# all ids should be Cint
+
+type Attributes <: BaseAttributes
+    ncid::Cint
+    varid::Cint
+    isdefmode::Vector{Bool}
 end
 
 function Base.getindex(a::Attributes,name::AbstractString)
@@ -153,12 +168,26 @@ function Base.setindex!(a::Attributes,data,name::AbstractString)
     return nc_put_att(a.ncid,a.varid,name,data)
 end
 
-Base.in(name::AbstractString,a::Attributes) = name in listAtt(a.ncid,a.varid)
 Base.keys(a::Attributes) = listAtt(a.ncid,a.varid)
-# for iteration as a Dict
-Base.start(a::Attributes) = listAtt(a.ncid,a.varid)
-Base.done(a::Attributes,state) = length(state) == 0
-Base.next(a::Attributes,state) = (state[1] => a[shift!(state)], state)
+
+# -----------------------------------------------------
+
+type MFAttributes <: BaseAttributes
+    as::Vector{Attributes}
+end
+
+function Base.getindex(a::MFAttributes,name::AbstractString)
+    return a.as[1][name]
+end
+
+function Base.setindex!(a::MFAttributes,data,name::AbstractString)
+    for a in a.as
+        a[name] = data
+    end
+    return data
+end
+
+Base.keys(a::MFAttributes) = keys(a.as)
 
 # -----------------------------------------------------
 # Dataset
@@ -316,6 +345,9 @@ function Base.getindex(ds::Dataset,varname::String)
 end
 
 
+abstract type BaseVariable
+end
+
 
 # -----------------------------------------------------
 # Variable (as stored in NetCDF file)
@@ -335,20 +367,20 @@ dimnames(v::Variable)
 Return a tuple of the dimension names of the variable `v`.
 """
 function dimnames(v::Variable)
-    name,nctype,dimids,nattr = nc_inq_var(v.ncid,v.varid)
+    dimids = nc_inq_vardimid(v.ncid,v.varid)
     return ([nc_inq_dimname(v.ncid,dimid) for dimid in dimids[end:-1:1]]...)
 end
 
+name(v::Variable) = nc_inq_varname(v.ncid,v.varid)
+    
 function Base.show(io::IO,v::Variable)
-    name,nctype,dimids,nattr = nc_inq_var(v.ncid,v.varid)
     delim = " × "
 
-    print_with_color(:green, io, name)
+    print_with_color(:green, io, name(v))
     if length(v.shape) > 0
         print(io,"  (",join(v.shape,delim),")\n")
         print(io,"  Datatype:    ",eltype(v),"\n")
-        dimnames = [nc_inq_dimname(v.ncid,dimid) for dimid in dimids[end:-1:1]]
-        print(io,"  Dimensions:  ",join(dimnames,delim),"\n")
+        print(io,"  Dimensions:  ",join(dimnames(v),delim),"\n")
     else
         print(io,"\n")
     end
@@ -653,7 +685,8 @@ end
 Base.show(io::IO,v::CFVariable) = show(io,v.var)
 Base.display(v::Union{Variable,CFVariable}) = show(STDOUT,v)
 dimnames(v::CFVariable)  = dimnames(v.var)
+name(v::CFVariable)  = name(v.var)
 
-export defVar, defDim, Dataset, close, sync, variable, dimnames
+export defVar, defDim, Dataset, close, sync, variable, dimnames, name
 
 end # module
