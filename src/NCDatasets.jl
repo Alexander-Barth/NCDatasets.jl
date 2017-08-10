@@ -345,9 +345,6 @@ function Base.getindex(ds::Dataset,varname::String)
 end
 
 
-abstract type BaseVariable
-end
-
 
 # -----------------------------------------------------
 # Variable (as stored in NetCDF file)
