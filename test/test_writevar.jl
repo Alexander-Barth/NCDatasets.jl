@@ -85,6 +85,7 @@ v[1:end,1:end] = 'h'
 @test all(v[1:end,1:end][:] .== 'h')
 
 
+@test dimnames(v) == ("lon","lat")
 close(ds)
 
 

@@ -330,6 +330,15 @@ end
 
 Base.size(v::Variable) = v.shape
 
+"""
+dimnames(v::Variable)
+Return a tuple of the dimension names of the variable `v`.
+"""
+function dimnames(v::Variable)
+    name,nctype,dimids,nattr = nc_inq_var(v.ncid,v.varid)
+    return ([nc_inq_dimname(v.ncid,dimid) for dimid in dimids[end:-1:1]]...)
+end
+
 function Base.show(io::IO,v::Variable)
     name,nctype,dimids,nattr = nc_inq_var(v.ncid,v.varid)
     delim = " × "
@@ -641,12 +650,10 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
 end
 
 
-function Base.show(io::IO,v::CFVariable)
-    show(io,v.var)
-end
-
+Base.show(io::IO,v::CFVariable) = show(io,v.var)
 Base.display(v::Union{Variable,CFVariable}) = show(STDOUT,v)
+dimnames(v::CFVariable)  = dimnames(v.var)
 
-export defVar, defDim, Dataset, close, sync
+export defVar, defDim, Dataset, close, sync, variable, dimnames
 
 end # module
