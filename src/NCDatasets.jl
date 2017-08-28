@@ -370,22 +370,6 @@ end
 
 name(v::Variable) = nc_inq_varname(v.ncid,v.varid)
     
-function Base.show(io::IO,v::Variable)
-    delim = " × "
-
-    print_with_color(:green, io, name(v))
-    if length(v.shape) > 0
-        print(io,"  (",join(v.shape,delim),")\n")
-        print(io,"  Datatype:    ",eltype(v),"\n")
-        print(io,"  Dimensions:  ",join(dimnames(v),delim),"\n")
-    else
-        print(io,"\n")
-    end
-    print(io,"  Attributes:\n")
-
-    show(io,v.attrib; indent = "     ")
-end
-
 
 
 function Base.getindex(v::Variable,indexes::Int...)
@@ -577,6 +561,8 @@ type CFVariable{NetCDFType,T,N}  <: AbstractArray{Float64, N}
 end
 
 Base.size(v::CFVariable) = size(v.var)
+dimnames(v::CFVariable)  = dimnames(v.var)
+name(v::CFVariable)  = name(v.var)
 
 function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     attnames = keys(v.attrib)
@@ -679,10 +665,25 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
 end
 
 
-Base.show(io::IO,v::CFVariable) = show(io,v.var)
+
+function Base.show(io::IO,v::Union{Variable,CFVariable})
+    delim = " × "
+    sz = size(v)
+    
+    print_with_color(:green, io, name(v))
+    if length(sz) > 0
+        print(io,"  (",join(sz,delim),")\n")
+        print(io,"  Datatype:    ",eltype(v),"\n")
+        print(io,"  Dimensions:  ",join(dimnames(v),delim),"\n")
+    else
+        print(io,"\n")
+    end
+    print(io,"  Attributes:\n")
+
+    show(io,v.attrib; indent = "     ")
+end
+
 Base.display(v::Union{Variable,CFVariable}) = show(STDOUT,v)
-dimnames(v::CFVariable)  = dimnames(v.var)
-name(v::CFVariable)  = name(v.var)
 
 export defVar, defDim, Dataset, close, sync, variable, dimnames, name
 
