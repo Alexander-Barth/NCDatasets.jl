@@ -141,9 +141,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     ds = Dataset(filename,"r")
 
     # check if a file has a variable with a given name
-    if "temperature" in ds
-        println("The file has a variable 'temperature'")
-    end
+    @test "temperature" in ds
 
     # get an list of all variable names
     @test "temperature" in keys(ds)

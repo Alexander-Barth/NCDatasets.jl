@@ -266,6 +266,7 @@ end
 
 
 Base.keys(ds::Dataset) = listVar(ds.ncid)
+Base.in(name::AbstractString,ds::Dataset) = name in keys(ds)
 # for iteration as a Dict
 Base.start(ds::Dataset) = listVar(ds.ncid)
 Base.done(ds::Dataset,state) = length(state) == 0

@@ -25,6 +25,7 @@ Inside the Julia shell, you can download and install the package by issuing:
 
 ```julia
 Pkg.clone("https://github.com/Alexander-Barth/NCDatasets.jl")
+Pkg.build("NCDatasets")
 ```
 
 ## Exploring the content of a NetCDF file
