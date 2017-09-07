@@ -194,8 +194,13 @@ type nc_vlen_t
     p::Ptr{Void}
 end
 
-const nclong=Cint
+const nclong = Cint
 
+const NCSYMBOLS = Dict{Cint,Symbol}(NC_CONTIGUOUS => :contiguous,
+                                    NC_CHUNKED => :chunked)
+
+# Inverse mapping
+const NCIDS = Dict(value => key for (key, value) in NCSYMBOLS)
 
 function nc_inq_libvers()
     unsafe_string(ccall((:nc_inq_libvers,libnetcdf),Ptr{UInt8},()))
@@ -529,13 +534,20 @@ end
 #     check(ccall((:nc_get_varm,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint},Ptr{Cint},Ptr{Void}),ncid,varid,startp,countp,stridep,imapp,ip))
 # end
 
-# function nc_def_var_deflate(ncid::Integer,varid::Integer,shuffle::Integer,deflate::Integer,deflate_level::Integer)
-#     check(ccall((:nc_def_var_deflate,libnetcdf),Cint,(Cint,Cint,Cint,Cint,Cint),ncid,varid,shuffle,deflate,deflate_level))
-# end
+function nc_def_var_deflate(ncid::Integer,varid::Integer,shuffle::Bool,deflate::Integer,deflate_level::Integer)
+    ishuffle = (shuffle ? 1 : 0)
+    check(ccall((:nc_def_var_deflate,libnetcdf),Cint,(Cint,Cint,Cint,Cint,Cint),ncid,varid,shuffle,deflate,deflate_level))
+end
 
-# function nc_inq_var_deflate(ncid::Integer,varid::Integer,shufflep,deflatep,deflate_levelp)
-#     check(ccall((:nc_inq_var_deflate,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint}),ncid,varid,shufflep,deflatep,deflate_levelp))
-# end
+function nc_inq_var_deflate(ncid::Integer,varid::Integer)
+    shufflep = zeros(Cint,1)    
+    deflatep = zeros(Cint,1)
+    deflate_levelp = zeros(Cint,1)
+    
+    check(ccall((:nc_inq_var_deflate,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint}),ncid,varid,shufflep,deflatep,deflate_levelp))
+
+    return shufflep[1] == 1, deflatep[1] == 1, deflate_levelp[1]
+end
 
 # function nc_inq_var_szip(ncid::Integer,varid::Integer,options_maskp,pixels_per_blockp)
 #     check(ccall((:nc_inq_var_szip,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint}),ncid,varid,options_maskp,pixels_per_blockp))
@@ -549,13 +561,22 @@ end
 #     check(ccall((:nc_inq_var_fletcher32,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,fletcher32p))
 # end
 
-# function nc_def_var_chunking(ncid::Integer,varid::Integer,storage::Integer,chunksizesp)
-#     check(ccall((:nc_def_var_chunking,libnetcdf),Cint,(Cint,Cint,Cint,Ptr{Cint}),ncid,varid,storage,chunksizesp))
-# end
+function nc_def_var_chunking(ncid::Integer,varid::Integer,storage,chunksizes)
+    
+    check(ccall((:nc_def_var_chunking,libnetcdf),Cint,(Cint,Cint,Cint,Ptr{Cint}),ncid,varid,NCIDS[storage],chunksizes))
+end
 
-# function nc_inq_var_chunking(ncid::Integer,varid::Integer,storagep,chunksizesp)
-#     check(ccall((:nc_inq_var_chunking,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint}),ncid,varid,storagep,chunksizesp))
-# end
+function nc_inq_var_chunking(ncid::Integer,varid::Integer)
+    ndims = nc_inq_varndims(ncid,varid)
+    
+    storagep = zeros(Cint,1)
+    chunksizes = zeros(Cint,ndims)
+    
+    check(ccall((:nc_inq_var_chunking,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint}),ncid,varid,storagep,chunksizes))
+
+                 
+    return NCSYMBOLS[storagep[1]],chunksizes
+end
 
 # function nc_def_var_fill(ncid::Integer,varid::Integer,no_fill::Integer,fill_value)
 #     check(ccall((:nc_def_var_fill,libnetcdf),Cint,(Cint,Cint,Cint,Ptr{Void}),ncid,varid,no_fill,fill_value))

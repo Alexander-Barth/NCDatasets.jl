@@ -370,8 +370,11 @@ function dimnames(v::Variable)
 end
 
 name(v::Variable) = nc_inq_varname(v.ncid,v.varid)
-    
+chunking(v::Variable,storage,chunksizes) = nc_def_var_chunking(v.ncid,v.varid,storage,chunksizes)
+chunking(v::Variable) = nc_inq_var_chunking(v.ncid,v.varid)
 
+deflate(v::Variable,shuffle,deflate,deflate_level) = nc_def_var_deflate(v.ncid,v.varid,shuffle,deflate,deflate_level)
+deflate(v::Variable) = nc_inq_var_deflate(v.ncid,v.varid)
 
 function Base.getindex(v::Variable,indexes::Int...)
     #    @show "ind",indexes
@@ -564,6 +567,11 @@ end
 Base.size(v::CFVariable) = size(v.var)
 dimnames(v::CFVariable)  = dimnames(v.var)
 name(v::CFVariable)  = name(v.var)
+chunking(v::CFVariable,storage,chunksize) = chunking(v.var,storage,chunksize)
+chunking(v::CFVariable) = chunking(v.var)
+
+deflate(v::CFVariable,shuffle,dodeflate,deflate_level) = deflate(v.var,shuffle,dodeflate,deflate_level)
+deflate(v::CFVariable) = deflate(v.var)
 
 function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     attnames = keys(v.attrib)
@@ -686,6 +694,7 @@ end
 
 Base.display(v::Union{Variable,CFVariable}) = show(STDOUT,v)
 
-export defVar, defDim, Dataset, close, sync, variable, dimnames, name
+export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
+    deflate, chunking
 
 end # module

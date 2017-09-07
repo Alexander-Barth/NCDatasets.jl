@@ -192,6 +192,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     include("test_fillvalue.jl")
 
+    include("test_compression.jl")
+
     # error handling
     @test_throws NCDatasets.NetCDFError Dataset(":/does/not/exist")
 
