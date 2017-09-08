@@ -18,9 +18,18 @@ NCDatasets.Dataset(filename,"c") do ds
         v = NCDatasets.defVar(ds,"var-$T",T,("lon","lat");
                               shuffle = true,
                               chunksizes = [4,4],
-                              deflatelevel = 9
+                              deflatelevel = 9,
+                              checksum = :nochecksum
                               )
+        # check checksum method
+        checksummethod = NCDatasets.checksum(v)
+        @test checksummethod == :nochecksum
 
+        # change checksum method
+        NCDatasets.checksum(v,:fletcher32)
+        checksummethod = NCDatasets.checksum(v)
+        @test checksummethod == :fletcher32
+        
         # check chunking
         storage,chunksizes = NCDatasets.chunking(v)
         @test storage == :chunked

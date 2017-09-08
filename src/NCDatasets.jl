@@ -306,6 +306,11 @@ function defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
         nc_def_var_deflate(ds.ncid,varid,shuffle,deflate,deflate_level)
     end
 
+    if haskey(kw,:checksum)
+        checksum = kw[:checksum]
+        nc_def_var_fletcher32(ds.ncid,varid,checksum)
+    end
+    
     return ds[name]
 end
 
@@ -422,6 +427,10 @@ chunking(v::Variable) = nc_inq_var_chunking(v.ncid,v.varid)
 
 deflate(v::Variable,shuffle,deflate,deflate_level) = nc_def_var_deflate(v.ncid,v.varid,shuffle,deflate,deflate_level)
 deflate(v::Variable) = nc_inq_var_deflate(v.ncid,v.varid)
+
+checksum(v::Variable,checksummethod) = nc_def_var_fletcher32(v.ncid,v.varid,checksummethod)
+checksum(v::Variable) = nc_inq_var_fletcher32(v.ncid,v.varid)
+
 
 function Base.getindex(v::Variable,indexes::Int...)
     #    @show "ind",indexes
@@ -619,6 +628,9 @@ chunking(v::CFVariable) = chunking(v.var)
 
 deflate(v::CFVariable,shuffle,dodeflate,deflate_level) = deflate(v.var,shuffle,dodeflate,deflate_level)
 deflate(v::CFVariable) = deflate(v.var)
+
+checksum(v::CFVariable,checksummethod) = checksum(v.var,checksummethod)
+checksum(v::CFVariable) = checksum(v.var)
 
 function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     attnames = keys(v.attrib)

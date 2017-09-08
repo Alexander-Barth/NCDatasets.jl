@@ -196,11 +196,20 @@ end
 
 const nclong = Cint
 
-const NCSymbols = Dict{Cint,Symbol}(NC_CONTIGUOUS => :contiguous,
-                                    NC_CHUNKED => :chunked)
-
+const NCSymbols = Dict{Cint,Symbol}(
+    NC_CONTIGUOUS => :contiguous,
+    NC_CHUNKED => :chunked
+)
 # Inverse mapping
 const NCConstants = Dict(value => key for (key, value) in NCSymbols)
+
+const NCChecksumSymbols = Dict{Cint,Symbol}(
+    NC_FLETCHER32 => :fletcher32,
+    NC_NOCHECKSUM => :nochecksum
+)
+# Inverse mapping
+const NCChecksumConstants = Dict(value => key for (key, value) in NCChecksumSymbols)
+
 
 function nc_inq_libvers()
     unsafe_string(ccall((:nc_inq_libvers,libnetcdf),Ptr{UInt8},()))
@@ -553,13 +562,15 @@ end
 #     check(ccall((:nc_inq_var_szip,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint}),ncid,varid,options_maskp,pixels_per_blockp))
 # end
 
-# function nc_def_var_fletcher32(ncid::Integer,varid::Integer,fletcher32::Integer)
-#     check(ccall((:nc_def_var_fletcher32,libnetcdf),Cint,(Cint,Cint,Cint),ncid,varid,fletcher32))
-# end
+function nc_def_var_fletcher32(ncid::Integer,varid::Integer,fletcher32)
+    check(ccall((:nc_def_var_fletcher32,libnetcdf),Cint,(Cint,Cint,Cint),ncid,varid,NCChecksumConstants[fletcher32]))
+end
 
-# function nc_inq_var_fletcher32(ncid::Integer,varid::Integer,fletcher32p)
-#     check(ccall((:nc_inq_var_fletcher32,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,fletcher32p))
-# end
+function nc_inq_var_fletcher32(ncid::Integer,varid::Integer)
+    fletcher32p = zeros(Cint,1)
+    check(ccall((:nc_inq_var_fletcher32,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,fletcher32p))
+    return NCChecksumSymbols[fletcher32p[1]]
+end
 
 function nc_def_var_chunking(ncid::Integer,varid::Integer,storage,chunksizes)
     
