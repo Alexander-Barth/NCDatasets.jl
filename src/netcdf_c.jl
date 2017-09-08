@@ -196,11 +196,11 @@ end
 
 const nclong = Cint
 
-const NCSYMBOLS = Dict{Cint,Symbol}(NC_CONTIGUOUS => :contiguous,
+const NCSymbols = Dict{Cint,Symbol}(NC_CONTIGUOUS => :contiguous,
                                     NC_CHUNKED => :chunked)
 
 # Inverse mapping
-const NCIDS = Dict(value => key for (key, value) in NCSYMBOLS)
+const NCConstants = Dict(value => key for (key, value) in NCSymbols)
 
 function nc_inq_libvers()
     unsafe_string(ccall((:nc_inq_libvers,libnetcdf),Ptr{UInt8},()))
@@ -563,7 +563,7 @@ end
 
 function nc_def_var_chunking(ncid::Integer,varid::Integer,storage,chunksizes)
     
-    check(ccall((:nc_def_var_chunking,libnetcdf),Cint,(Cint,Cint,Cint,Ptr{Cint}),ncid,varid,NCIDS[storage],chunksizes))
+    check(ccall((:nc_def_var_chunking,libnetcdf),Cint,(Cint,Cint,Cint,Ptr{Cint}),ncid,varid,NCConstants[storage],chunksizes))
 end
 
 function nc_inq_var_chunking(ncid::Integer,varid::Integer)
@@ -575,7 +575,7 @@ function nc_inq_var_chunking(ncid::Integer,varid::Integer)
     check(ccall((:nc_inq_var_chunking,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint}),ncid,varid,storagep,chunksizes))
 
                  
-    return NCSYMBOLS[storagep[1]],chunksizes
+    return NCSymbols[storagep[1]],chunksizes
 end
 
 # function nc_def_var_fill(ncid::Integer,varid::Integer,no_fill::Integer,fill_value)

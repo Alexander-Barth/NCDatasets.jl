@@ -142,6 +142,7 @@ function Base.show(io::IO,a::BaseAttributes; indent = "  ")
     end
 end
 
+Base.haskey(a::BaseAttributes,name::AbstractString) = name in keys(a)
 Base.in(name::AbstractString,a::BaseAttributes) = name in keys(a)
 # for iteration as a Dict
 Base.start(a::BaseAttributes) = keys(a)
@@ -243,6 +244,17 @@ Defines a variable with the name `name` in the dataset `ds`.  `vtype` can be
 Julia types in the table below (with the corresponding NetCDF type).  The parameter `dimnames` is a tuple with the
 names of the dimension.  For scalar this parameter is the empty tuple ().  The variable is returned.
 
+## Keyword arguments
+
+* `chunksizes`: Vector integers setting the chunk size. 
+The total size of a chunk must be less than 4 GiB.
+* `deflatelevel`: Compression level: 0 (default) means no compression
+and 9 means maximum compression.
+* `shuffle`: If true, the shuffle filter is activated which can improve the 
+compression ratio.
+
+## NetCDF data types
+
 | NetCDF Type | Julia Type |
 |-------------|------------|
 | NC_BYTE     | Int8 |
@@ -256,16 +268,33 @@ names of the dimension.  For scalar this parameter is the empty tuple ().  The v
 | NC_STRING   | String |
 """
 
-function defVar(ds::Dataset,name,vtype,dimnames)
+function defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
     defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
     dimids = Cint[nc_inq_dimid(ds.ncid,dimname) for dimname in dimnames[end:-1:1]]
     varid = nc_def_var(ds.ncid,name,ncType[vtype],dimids)
+
+    # all keyword arguments as dictionary
+    kw = Dict(k => v for (k,v) in kwargs)
+
+    if haskey(kw,:chunksizes)
+        storage = :chunked
+        chunksizes = kw[:chunksizes]
+        nc_def_var_chunking(ds.ncid,varid,storage,chunksizes)
+    end
+
+    shuffle = get(kw,:shuffle,false)
+    deflate = haskey(kw,:deflatelevel)
+    deflate_level = get(kw,:deflatelevel,0)
+        
+    nc_def_var_deflate(ds.ncid,varid,shuffle,deflate,deflate_level)
+
     return ds[name]
 end
 
 
 
 Base.keys(ds::Dataset) = listVar(ds.ncid)
+Base.haskey(ds::Dataset,name::AbstractString) = name in keys(ds)
 Base.in(name::AbstractString,ds::Dataset) = name in keys(ds)
 # for iteration as a Dict
 Base.start(ds::Dataset) = listVar(ds.ncid)

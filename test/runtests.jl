@@ -82,6 +82,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     v.attrib["comment"] = "this is a string attribute with unicode Ω ∈ ∑ ∫ f(x) dx "
 
     # check presence of attribute
+    @test haskey(v.attrib,"comment")
     @test "comment" in v.attrib
 
     for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
@@ -141,6 +142,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     ds = Dataset(filename,"r")
 
     # check if a file has a variable with a given name
+    @test haskey(ds,"temperature")
     @test "temperature" in ds
 
     # get an list of all variable names

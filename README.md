@@ -119,7 +119,7 @@ It is also possible to iterate over all variables or attributes (global attribut
 ds = Dataset("/tmp/test.nc","r")
 
 # check if a file has a variable with a given name
-if "temperature" in ds
+if haskey(ds,"temperature")
     println("The file has a variable 'temperature'")
 end
 
@@ -137,7 +137,7 @@ v = ds["temperature"]
 
 # similar for global and variable attributes
 
-if "title" in ds.attrib
+if haskey(ds.attrib,"title")
     println("The file has the global attribute 'title'")
 end
 
