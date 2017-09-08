@@ -204,9 +204,16 @@ end
 
 """
 Create (mode = "c") or open in read-only (mode = "r") a NetCDF file (or an OPeNDAP URL).
+Supported formats:
+
+* :netcdf4 (default): HDF5-based NetCDF format
+* :netcdf4_classic: Only netCDF 3 compatible API features will be used
+* :netcdf3_classic: classic NetCDF format supporting only files smaller than 2GB.
+* :netcdf3_64bit_offset: improved NetCDF format supporting files larger than 2GB.
 """
 
-function Dataset(filename::AbstractString,mode::AbstractString = "r", format::AbstractString = "netcdf4")
+function Dataset(filename::AbstractString,mode::AbstractString = "r";
+                 format::Symbol = :netcdf4)
     ncid = -1
 
     if mode == "r"
@@ -215,12 +222,16 @@ function Dataset(filename::AbstractString,mode::AbstractString = "r", format::Ab
     elseif mode == "c"
         mode  = NC_CLOBBER
 
-        if format == "64bit"
+        if format == :netcdf3_64bit_offset
             mode = mode | NC_64BIT_OFFSET
-        elseif format == "netcdf4_classic"
+        elseif format == :netcdf4_classic
             mode = mode | NC_NETCDF4 | NC_CLASSIC_MODEL
-        elseif  format == "netcdf4"
+        elseif format == :netcdf4
             mode = mode | NC_NETCDF4
+        elseif format == :netcdf3_classic
+            # do nothing
+        else
+            error("Unkown format $(format)")
         end
 
         ncid = nc_create(filename,mode)
@@ -231,8 +242,8 @@ function Dataset(filename::AbstractString,mode::AbstractString = "r", format::Ab
     return Dataset(filename,ncid,isdefmode,attrib)
 end
 
-function Dataset(f::Function,args...)
-    ds = Dataset(args...)
+function Dataset(f::Function,args...; kwargs...)
+    ds = Dataset(args...; kwargs...)
     f(ds)
     close(ds)
 end
@@ -252,6 +263,8 @@ The total size of a chunk must be less than 4 GiB.
 and 9 means maximum compression.
 * `shuffle`: If true, the shuffle filter is activated which can improve the 
 compression ratio.
+
+`chunksizes`, `deflatelevel` and `shuffle` can only be set on NetCDF 4 files.
 
 ## NetCDF data types
 
@@ -279,14 +292,19 @@ function defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
     if haskey(kw,:chunksizes)
         storage = :chunked
         chunksizes = kw[:chunksizes]
+
+        # this will fail on NetCDF-3 files
         nc_def_var_chunking(ds.ncid,varid,storage,chunksizes)
     end
 
-    shuffle = get(kw,:shuffle,false)
-    deflate = haskey(kw,:deflatelevel)
-    deflate_level = get(kw,:deflatelevel,0)
-        
-    nc_def_var_deflate(ds.ncid,varid,shuffle,deflate,deflate_level)
+    if haskey(kw,:shuffle) || haskey(kw,:deflatelevel)
+        shuffle = get(kw,:shuffle,false)
+        deflate = haskey(kw,:deflatelevel)
+        deflate_level = get(kw,:deflatelevel,0)
+
+        # this will fail on NetCDF-3 files
+        nc_def_var_deflate(ds.ncid,varid,shuffle,deflate,deflate_level)
+    end
 
     return ds[name]
 end
