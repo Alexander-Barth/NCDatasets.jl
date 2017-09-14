@@ -338,7 +338,8 @@ function variable(ds::Dataset,varname::String)
     for i = 1:ndims
         shape[ndims-i+1] = nc_inq_dimlen(ds.ncid,dimids[i])
     end
-
+    @show shape
+    
     attrib = Attributes(ds.ncid,varid,ds.isdefmode)
 
     return Variable{nctype,ndims}(ds.ncid,varid,(shape...),attrib,ds.isdefmode)
@@ -455,6 +456,7 @@ function Base.getindex{T,N}(v::Variable{T,N},indexes::Colon...)
         nc_get_var(v.ncid,v.varid,data)
         return data[1]
     else
+        @show v.shape
         data = Array{T,N}(v.shape)
         nc_get_var(v.ncid,v.varid,data)
         return data
