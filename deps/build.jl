@@ -3,9 +3,24 @@ using Conda
 
 function validate_netcdf_version(name,handle)
     f = Libdl.dlsym_e(handle, "nc_inq_libvers")
-    verstr = unsafe_string(ccall(f,Ptr{UInt8},()))
+    #
+    # Example
+    # banner = "4.5.6.7 of Apr 1 2000 00:00:00"
+    banner = unsafe_string(ccall(f,Ptr{UInt8},()))
 
-    ver = VersionNumber(split(verstr)[1])
+    # remove the date
+    # verstr = "4.5.6.7"
+    verstr = split(banner)[1]
+
+    # vernumbers = ["4","5","6","7"]
+    vernumbers = split(verstr,r"[.-]")
+
+    # major_minor_patch = ["4","5","6"]
+    major_minor_patch = vernumbers[1:min(3,length(vernumbers))]
+
+    # ver = v"4.5.6"
+    ver = VersionNumber([parse(Int,s) for s in major_minor_patch]...)
+
     return ver > v"4.2"
 end
 
