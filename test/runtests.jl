@@ -41,7 +41,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     sz = (4,5)
     filename = tempname()
-    filename = "/tmp/test-2.nc"
+    #filename = "/tmp/test-2.nc"
     # The mode "c" stands for creating a new file (clobber)
     ds = Dataset(filename,"c")
 

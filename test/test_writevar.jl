@@ -1,6 +1,6 @@
 sz = (4,5)
 filename = tempname()
-filename = "/tmp/test-9.nc"
+#filename = "/tmp/test-9.nc"
 # The mode "c" stands for creating a new file (clobber)
 ds = Dataset(filename,"c")
 
