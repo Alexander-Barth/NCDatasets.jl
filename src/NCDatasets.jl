@@ -170,15 +170,47 @@ type Attributes <: BaseAttributes
     isdefmode::Vector{Bool}
 end
 
+"""
+    getindex(a::Attributes,name::AbstractString)
+
+Return the value of the attribute called `name` from the 
+attribute list `a`. Generally the attributes are loaded by 
+indexing, for example:
+
+```julia
+ds = Dataset("file.nc")
+title = ds.attrib["title"]
+```
+"""
+
 function Base.getindex(a::Attributes,name::AbstractString)
     return nc_get_att(a.ncid,a.varid,name)
 end
+
+
+"""
+    Base.setindex!(a::Attributes,data,name::AbstractString)
+
+Set the attribute called `name` to the value `data` in the 
+attribute list `a`. Generally the attributes are defined by 
+indexing, for example:
+
+```julia
+ds = Dataset("file.nc","c")
+ds.attrib["title"] = "my title"
+```
+"""
 
 function Base.setindex!(a::Attributes,data,name::AbstractString)
     defmode(a.ncid,a.isdefmode) # make sure that the file is in define mode
     return nc_put_att(a.ncid,a.varid,name,data)
 end
 
+"""
+   keys(a::Attributes)
+
+Return a list of the names of all attributes.
+"""
 Base.keys(a::Attributes) = listAtt(a.ncid,a.varid)
 
 # -----------------------------------------------------
@@ -223,6 +255,15 @@ Supported formats:
 * :netcdf4_classic: Only netCDF 3 compatible API features will be used
 * :netcdf3_classic: classic NetCDF format supporting only files smaller than 2GB.
 * :netcdf3_64bit_offset: improved NetCDF format supporting files larger than 2GB.
+
+Files can also be open and automatically closed with a `do` block.
+
+```julia
+Dataset("file.nc") do ds
+    data = ds["temperature"][:,:]
+end 
+```
+
 """
 
 function Dataset(filename::AbstractString,mode::AbstractString = "r";
@@ -262,7 +303,7 @@ function Dataset(f::Function,args...; kwargs...)
 end
 
 """
-   defDim(ds::Dataset,name,len)
+    defDim(ds::Dataset,name,len)
 
 Define a dimension in the data-set `ds` with the given `name` and length `len`.
 """
@@ -283,8 +324,11 @@ The total size of a chunk must be less than 4 GiB.
 and 9 means maximum compression.
 * `shuffle`: If true, the shuffle filter is activated which can improve the 
 compression ratio.
+* `checksum`: The checksum method can be `:fletcher32` 
+or `:nochecksum` (checksumming is disabled, which is the default)
 
-`chunksizes`, `deflatelevel` and `shuffle` can only be set on NetCDF 4 files.
+`chunksizes`, `deflatelevel`, `shuffle` and `checksum` can only be 
+set on NetCDF 4 files.
 
 ## NetCDF data types
 
@@ -335,8 +379,19 @@ function defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
 end
 
 
+"""
+    keys(ds::Dataset)
 
+Return a list of all variables names in Dataset `ds`.
+"""
 Base.keys(ds::Dataset) = listVar(ds.ncid)
+
+"""
+    haskey(ds::Dataset,varname)
+
+Return true of the Dataset `ds` has a variable with the name `varname`.
+"""
+
 Base.haskey(ds::Dataset,name::AbstractString) = name in keys(ds)
 Base.in(name::AbstractString,ds::Dataset) = name in keys(ds)
 # for iteration as a Dict
@@ -345,8 +400,30 @@ Base.done(ds::Dataset,state) = length(state) == 0
 Base.next(ds::Dataset,state) = (state[1] => ds[shift!(state)], state)
 
 
+"""
+    sync(ds::Dataset)
+
+Write all changes in Dataset `ds` to the disk.
+"""
+
 sync(ds::Dataset) = nc_sync(ds.ncid)
+
+"""
+    close(ds::Dataset)
+
+Close the Dataset `ds`. All pending changes will be written 
+to the disk.
+"""
+
 Base.close(ds::Dataset) = nc_close(ds.ncid)
+
+"""
+    variable(ds::Dataset,varname::String)
+
+Return the NetCDF variable `varname` in the dataset `ds` as a 
+`NCDataset.Variable`. No scaling is applied when this variable is 
+indexes.
+"""
 
 function variable(ds::Dataset,varname::String)
     varid = nc_inq_varid(ds.ncid,varname)
@@ -380,6 +457,18 @@ function Base.show(io::IO,ds::Dataset)
     print_with_color(:red, io, "Global attributes\n")
     show(io,ds.attrib; indent = "  ")
 end
+
+"""
+    getindex(ds::Dataset,varname::String)
+
+Return the NetCDF variable `varname` in the dataset `ds` as a 
+`NCDataset.CFVariable`. The CF convention are honored when the 
+variable is indexed:
+* `_FillValue` will be returned as NA (DataArrays)
+* `scale_factor` and `add_offset` are applied
+* time variables (recognized by the units attribute) are returned 
+as `DateTime` object.
+"""
 
 function Base.getindex(ds::Dataset,varname::String)
     v = variable(ds,varname)
@@ -436,7 +525,8 @@ end
 Base.size(v::Variable) = v.shape
 
 """
-dimnames(v::Variable)
+    dimnames(v::Variable)
+
 Return a tuple of the dimension names of the variable `v`.
 """
 function dimnames(v::Variable)
@@ -444,14 +534,47 @@ function dimnames(v::Variable)
     return ([nc_inq_dimname(v.ncid,dimid) for dimid in dimids[end:-1:1]]...)
 end
 
+"""
+    name(v::Variable)
+
+Return the name of the NetCDF variable `v`.
+"""
+
 name(v::Variable) = nc_inq_varname(v.ncid,v.varid)
+
+
 chunking(v::Variable,storage,chunksizes) = nc_def_var_chunking(v.ncid,v.varid,storage,chunksizes)
+
+"""
+    storage,chunksizes = chunking(v::Variable)
+
+Return the storage type (:contiguous or :chunked) and the chunk sizes 
+of the varable `v`.
+"""
 chunking(v::Variable) = nc_inq_var_chunking(v.ncid,v.varid)
+
+"""
+    shuffle,deflate,deflate_level = deflate(v::Variable)
+
+Return compression information of the variable `v`. If shuffle 
+is `true`, then shuffling (byte interlacing) is activaded. If 
+deflate is `true`, then the data chunks (see `chunking`) are 
+compressed using the compression level `deflate_level` 
+(0 means no compression and 9 means maximum compression).
+"""
 
 deflate(v::Variable,shuffle,deflate,deflate_level) = nc_def_var_deflate(v.ncid,v.varid,shuffle,deflate,deflate_level)
 deflate(v::Variable) = nc_inq_var_deflate(v.ncid,v.varid)
 
 checksum(v::Variable,checksummethod) = nc_def_var_fletcher32(v.ncid,v.varid,checksummethod)
+
+"""
+   checksummethod = checksum(v::Variable)
+
+Return the checksum method of the variable `v` which can be either 
+be `:fletcher32` or `:nochecksum`.
+"""
+
 checksum(v::Variable) = nc_inq_var_fletcher32(v.ncid,v.varid)
 
 
@@ -779,6 +902,6 @@ end
 Base.display(v::Union{Variable,CFVariable}) = show(STDOUT,v)
 
 export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
-    deflate, chunking
+    deflate, chunking, checksum
 
 end # module

@@ -6,6 +6,9 @@
 
 [![codecov.io](http://codecov.io/github/Alexander-Barth/NCDatasets.jl/coverage.svg?branch=master)](http://codecov.io/github/Alexander-Barth/NCDatasets.jl?branch=master)
 
+[![documentation stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/stable/)
+[![documentation latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/latest/)
+
 
 `NCDatasets` allows to read and create NetCDF files.
 NetCDF data set and attribute list behave like Julia dictionaries and variables like Julia arrays.
