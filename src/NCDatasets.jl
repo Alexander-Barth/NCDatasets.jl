@@ -306,7 +306,17 @@ end
     defDim(ds::Dataset,name,len)
 
 Define a dimension in the data-set `ds` with the given `name` and length `len`.
+
+For example:
+
+```julia
+ds = Dataset("/tmp/test.nc","c")
+defDim(ds,"lon",100)
+```
+
+This defines the dimension `lon` with the size 100.
 """
+
 defDim(ds::Dataset,name,len) = nc_def_dim(ds.ncid,name,len)
 
 """
@@ -382,19 +392,42 @@ end
 """
     keys(ds::Dataset)
 
-Return a list of all variables names in Dataset `ds`.
+Return a list of all variables names in Dataset `ds`. 
 """
+
 Base.keys(ds::Dataset) = listVar(ds.ncid)
 
 """
     haskey(ds::Dataset,varname)
 
 Return true of the Dataset `ds` has a variable with the name `varname`.
+For example:
+
+```julia
+ds = Dataset("/tmp/test.nc","r")
+if haskey(ds,"temperature")
+    println("The file has a variable 'temperature'")
+end
+```
+
+This example checks if the file `/tmp/test.nc` has a variable with the 
+name `temperature`.
 """
 
 Base.haskey(ds::Dataset,name::AbstractString) = name in keys(ds)
 Base.in(name::AbstractString,ds::Dataset) = name in keys(ds)
 # for iteration as a Dict
+
+"""
+    start(ds::Dataset)
+
+```julia
+for (varname,var) in ds
+    @show (varname,size(var))
+end
+```
+"""
+
 Base.start(ds::Dataset) = listVar(ds.ncid)
 Base.done(ds::Dataset,state) = length(state) == 0
 Base.next(ds::Dataset,state) = (state[1] => ds[shift!(state)], state)

@@ -23,6 +23,7 @@ name
 chunking
 deflate
 checksum
+Base.start(ds::Dataset)
 ```
 
 ## Attributes
