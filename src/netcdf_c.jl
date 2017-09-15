@@ -719,7 +719,7 @@ function nc_inq_dimlen(ncid::Integer,dimid::Integer)
     lengthp = zeros(Csize_t,1)
        
     check(ccall((:nc_inq_dimlen,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t}),ncid,dimid,lengthp))
-    @show lengthp[1]
+    #@show lengthp[1]
     return lengthp[1]
 end
 

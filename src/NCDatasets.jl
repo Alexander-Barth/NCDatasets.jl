@@ -8,13 +8,18 @@ using DataArrays
 # Copyright (c) 2012-2013: Fabian Gans, Max-Planck-Institut fuer Biogeochemie, Jena, Germany
 # MIT
 
-"Exception type for error thrown by the NetCDF library"
+# Exception type for error thrown by the NetCDF library
 type NetCDFError <: Exception
     code::Cint
     msg::String
 end
 
-"Construct a NetCDFError from the error code"
+"""
+    NetCDFError(code::Cint)
+
+Construct a NetCDFError from the error code.
+"""
+
 NetCDFError(code::Cint) = NetCDFError(code, nc_strerror(code))
 
 #function Base.showerror(io::IO, err::NetCDFError)
@@ -94,7 +99,12 @@ function defmode(ncid,isdefmode::Vector{Bool})
     end
 end
 
-"Parse time units and returns the start time and the scaling factor relative to milliseconds"
+"""
+    timeunits(units)
+
+Parse time units and returns the start time and the scaling factor in
+milliseconds.
+"""
 function timeunits(units)
     tunit,starttime = strip.(split(units," since "))
     tunit = lowercase(tunit)
@@ -203,6 +213,9 @@ type Dataset
 end
 
 """
+    Dataset(filename::AbstractString,mode::AbstractString = "r";
+                     format::Symbol = :netcdf4)
+
 Create (mode = "c") or open in read-only (mode = "r") a NetCDF file (or an OPeNDAP URL).
 Supported formats:
 
@@ -248,10 +261,17 @@ function Dataset(f::Function,args...; kwargs...)
     close(ds)
 end
 
+"""
+   defDim(ds::Dataset,name,len)
+
+Define a dimension in the data-set `ds` with the given `name` and length `len`.
+"""
 defDim(ds::Dataset,name,len) = nc_def_dim(ds.ncid,name,len)
 
 """
-Defines a variable with the name `name` in the dataset `ds`.  `vtype` can be
+    defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
+
+Define a variable with the name `name` in the dataset `ds`.  `vtype` can be
 Julia types in the table below (with the corresponding NetCDF type).  The parameter `dimnames` is a tuple with the
 names of the dimension.  For scalar this parameter is the empty tuple ().  The variable is returned.
 
@@ -334,13 +354,13 @@ function variable(ds::Dataset,varname::String)
     ndims = length(dimids)
     #@show ndims
     shape = zeros(Int,ndims)
-    @show typeof(shape),typeof(Int(1))
+    #@show typeof(shape),typeof(Int(1))
     
     for i = 1:ndims
         shape[ndims-i+1] = nc_inq_dimlen(ds.ncid,dimids[i])
     end
-    @show shape
-    @show typeof(shape)
+    #@show shape
+    #@show typeof(shape)
     
     attrib = Attributes(ds.ncid,varid,ds.isdefmode)
 
@@ -458,8 +478,8 @@ function Base.getindex{T,N}(v::Variable{T,N},indexes::Colon...)
         nc_get_var(v.ncid,v.varid,data)
         return data[1]
     else
-        @show v.shape,typeof(v.shape),T,N
-        @show v.ncid,v.varid
+        #@show v.shape,typeof(v.shape),T,N
+        #@show v.ncid,v.varid
         data = Array{T,N}(v.shape)
         nc_get_var(v.ncid,v.varid,data)
         return data
