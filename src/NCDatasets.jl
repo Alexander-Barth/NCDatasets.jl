@@ -408,7 +408,7 @@ end
 type Variable{NetCDFType,N}  <: AbstractArray{NetCDFType, N}
     ncid::Cint
     varid::Cint
-    shape::NTuple{N,Int64}
+    shape::NTuple{N,Int}
     attrib::Attributes
     isdefmode::Vector{Bool}
 end
