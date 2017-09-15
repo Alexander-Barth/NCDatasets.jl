@@ -334,11 +334,13 @@ function variable(ds::Dataset,varname::String)
     ndims = length(dimids)
     #@show ndims
     shape = zeros(Int,ndims)
-
+    @show typeof(shape),typeof(Int(1))
+    
     for i = 1:ndims
         shape[ndims-i+1] = nc_inq_dimlen(ds.ncid,dimids[i])
     end
     @show shape
+    @show typeof(shape)
     
     attrib = Attributes(ds.ncid,varid,ds.isdefmode)
 
