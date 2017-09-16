@@ -17,8 +17,9 @@ makedocs(
 )=#
 
 deploydocs(
-           repo = "github.com/Alexander-Barth/NCDatasets.jl.git",
-           target = "build",
-           deps = nothing,
-           make = nothing,    
+    repo = "github.com/Alexander-Barth/NCDatasets.jl.git",
+    target = "build",
+    julia  = "0.6",
+    deps = nothing,
+    make = nothing,
 )
