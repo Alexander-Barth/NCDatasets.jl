@@ -73,7 +73,6 @@ type Dimensions
 end
 
 type Dataset
-    filename::String
     ncid::Cint
     # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
     # need to be an array, so that it is copied by reference
@@ -300,17 +299,17 @@ Existing group
 
 function Base.getindex(g::Groups,groupname::AbstractString)
     grp_ncid = nc_inq_grp_ncid(g.ncid,groupname)
-    return Dataset("x",grp_ncid,g.isdefmode)
+    return Dataset(grp_ncid,g.isdefmode)
 end
 
 function defGroup(ds::Dataset,groupname)
     grp_ncid = nc_def_grp(ds.ncid,groupname)
-    return Dataset(ds.filename,grp_ncid,ds.isdefmode)
+    return Dataset(grp_ncid,ds.isdefmode)
 end
     
 function group(ds::Dataset,groupname)
     grp_ncid = nc_inq_grp_ncid(ds.ncid,groupname)
-    return Dataset(ds.filename,grp_ncid,ds.isdefmode)
+    return Dataset(grp_ncid,ds.isdefmode)
 end
 
 
@@ -366,16 +365,15 @@ function Dataset(filename::AbstractString,mode::AbstractString = "r";
     end
     isdefmode = [true]
 
-    return Dataset(filename,ncid,isdefmode)
+    return Dataset(ncid,isdefmode)
 end
 
-function Dataset(filename::AbstractString,
-                 ncid::Integer,
-                 isdefmode)
+function Dataset(ncid::Integer,
+                 isdefmode::Vector{Bool})
     attrib = Attributes(ncid,NC_GLOBAL,isdefmode)
     dim = Dimensions(ncid,isdefmode)
     group = Groups(ncid,isdefmode)
-    return Dataset(filename,ncid,isdefmode,attrib,dim,group)
+    return Dataset(ncid,isdefmode,attrib,dim,group)
 end
 
 function Dataset(f::Function,args...; kwargs...)
@@ -482,6 +480,11 @@ Return a list of all variables names in Dataset `ds`.
 
 Base.keys(ds::Dataset) = listVar(ds.ncid)
 
+"""
+    path(ds::Dataset)
+Return the file path (or the opendap URL) of the Dataset `ds`
+"""
+path(ds::Dataset) = nc_inq_path(ds.ncid)
 
 """
     sync(ds::Dataset)
@@ -528,9 +531,7 @@ function variable(ds::Dataset,varname::String)
 end
 
 function Base.show(io::IO,ds::Dataset; indent="")
-    filename = nc_inq_path(ds.ncid)
-    
-    print_with_color(:red, io, indent, "Dataset: ",filename)
+    print_with_color(:red, io, indent, "Dataset: ",path(ds))
     print(io, " group: ",nc_inq_grpname(ds.ncid),"\n")
     print(io,"\n")
     
