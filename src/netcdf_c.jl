@@ -247,13 +247,26 @@ end
 #     check(ccall((:nc_inq_ncid,libnetcdf),Cint,(Cint,Ptr{UInt8},Ptr{Cint}),ncid,name,grp_ncid))
 # end
 
-# function nc_inq_grps(ncid::Integer,numgrps,ncids)
-#     check(ccall((:nc_inq_grps,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,numgrps,ncids))
-# end
+function nc_inq_grps(ncid::Integer)
+    numgrpsp = Vector{Cint}(1)
+    
+    check(ccall((:nc_inq_grps,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,numgrpsp,C_NULL))
+    numgrps = numgrpsp[1]
 
-# function nc_inq_grpname(ncid::Integer,name)
-#     check(ccall((:nc_inq_grpname,libnetcdf),Cint,(Cint,Ptr{UInt8}),ncid,name))
-# end
+    ncids = Vector{Cint}(numgrps)
+
+    check(ccall((:nc_inq_grps,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,numgrpsp,ncids))
+
+    return ncids
+end
+
+function nc_inq_grpname(ncid::Integer)
+    name = zeros(UInt8,NC_MAX_NAME+1)
+    
+    check(ccall((:nc_inq_grpname,libnetcdf),Cint,(Cint,Ptr{UInt8}),ncid,name))
+
+    return unsafe_string(pointer(name))
+end
 
 # function nc_inq_grpname_full(ncid::Integer,lenp,full_name)
 #     check(ccall((:nc_inq_grpname_full,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{UInt8}),ncid,lenp,full_name))
@@ -267,9 +280,11 @@ end
 #     check(ccall((:nc_inq_grp_parent,libnetcdf),Cint,(Cint,Ptr{Cint}),ncid,parent_ncid))
 # end
 
-# function nc_inq_grp_ncid(ncid::Integer,grp_name,grp_ncid)
-#     check(ccall((:nc_inq_grp_ncid,libnetcdf),Cint,(Cint,Ptr{UInt8},Ptr{Cint}),ncid,grp_name,grp_ncid))
-# end
+function nc_inq_grp_ncid(ncid::Integer,grp_name)
+    grp_ncid = Vector{Cint}(1)
+    check(ccall((:nc_inq_grp_ncid,libnetcdf),Cint,(Cint,Ptr{UInt8},Ptr{Cint}),ncid,grp_name,grp_ncid))
+    return grp_ncid[1]
+end
 
 # function nc_inq_grp_full_ncid(ncid::Integer,full_name,grp_ncid)
 #     check(ccall((:nc_inq_grp_full_ncid,libnetcdf),Cint,(Cint,Ptr{UInt8},Ptr{Cint}),ncid,full_name,grp_ncid))
@@ -286,9 +301,14 @@ function nc_inq_varids(ncid::Integer)
     return varids    
 end
 
-# function nc_inq_dimids(ncid::Integer,ndims,dimids,include_parents::Integer)
-#     check(ccall((:nc_inq_dimids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint},Cint),ncid,ndims,dimids,include_parents))
-# end
+function nc_inq_dimids(ncid::Integer,include_parents::Bool)
+    ndimsp = Vector{Cint}(1)
+    ndims = nc_inq_ndims(ncid)
+    dimids = Vector{Cint}(ndims)
+    check(ccall((:nc_inq_dimids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint},Cint),ncid,ndimsp,dimids,include_parents))
+
+    return dimids
+end
 
 # function nc_inq_typeids(ncid::Integer,ntypes,typeids)
 #     check(ccall((:nc_inq_typeids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,ntypes,typeids))
@@ -298,9 +318,15 @@ end
 #     check(ccall((:nc_inq_type_equal,libnetcdf),Cint,(Cint,nc_type,Cint,nc_type,Ptr{Cint}),ncid1,typeid1,ncid2,typeid2,equal))
 # end
 
-# function nc_def_grp(parent_ncid::Integer,name,new_ncid)
-#     check(ccall((:nc_def_grp,libnetcdf),Cint,(Cint,Ptr{UInt8},Ptr{Cint}),parent_ncid,name,new_ncid))
-# end
+"""
+Create a group with the name `name` returnings its id.
+"""
+function nc_def_grp(parent_ncid::Integer,name)
+    new_ncid = Vector{Cint}(1)
+    check(ccall((:nc_def_grp,libnetcdf),Cint,(Cint,Ptr{UInt8},Ptr{Cint}),parent_ncid,name,new_ncid))
+
+    return new_ncid[1]
+end
 
 # function nc_rename_grp(grpid::Integer,name)
 #     check(ccall((:nc_rename_grp,libnetcdf),Cint,(Cint,Ptr{UInt8}),grpid,name))
@@ -657,9 +683,11 @@ end
 #     check(ccall((:nc_inq,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint},Ptr{Cint}),ncid,ndimsp,nvarsp,nattsp,unlimdimidp))
 # end
 
-# function nc_inq_ndims(ncid::Integer,ndimsp)
-#     check(ccall((:nc_inq_ndims,libnetcdf),Cint,(Cint,Ptr{Cint}),ncid,ndimsp))
-# end
+function nc_inq_ndims(ncid::Integer)
+    ndimsp = Vector{Cint}(1)
+    check(ccall((:nc_inq_ndims,libnetcdf),Cint,(Cint,Ptr{Cint}),ncid,ndimsp))
+    return ndimsp[1]
+end
 
 # function nc_inq_nvars(ncid::Integer,nvarsp)
 #     check(ccall((:nc_inq_nvars,libnetcdf),Cint,(Cint,Ptr{Cint}),ncid,nvarsp))

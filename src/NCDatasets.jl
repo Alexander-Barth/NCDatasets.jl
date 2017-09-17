@@ -144,14 +144,15 @@ end
 
 function Base.show(io::IO,a::BaseAttributes; indent = "  ")
     # use the same order of attributes than in the NetCDF file
-
-    for (attname,attval) in a
-        print(io,indent,@sprintf("%-20s = ",attname))
-        print_with_color(:blue, io, @sprintf("%s",attval))
-        print(io,"\n")
-    end
+    
+   for (attname,attval) in a
+       print(io,indent,@sprintf("%-20s = ",attname))
+       print_with_color(:blue, io, @sprintf("%s",attval))
+       print(io,"\n")
+   end
 end
 
+Base.length(a::BaseAttributes) = length(keys(a))
 Base.haskey(a::BaseAttributes,name::AbstractString) = name in keys(a)
 Base.in(name::AbstractString,a::BaseAttributes) = name in keys(a)
 # for iteration as a Dict
@@ -301,6 +302,26 @@ function Dataset(f::Function,args...; kwargs...)
     f(ds)
     close(ds)
 end
+
+### Groups
+
+function defGroup(ds::Dataset,groupname)
+    grp_ncid = nc_def_grp(ds.ncid,groupname)
+
+    attrib = Attributes(grp_ncid,NC_GLOBAL,ds.isdefmode)
+    return Dataset(ds.filename,grp_ncid,ds.isdefmode,attrib)
+end
+    
+"""
+Existing group
+"""
+function group(ds::Dataset,groupname)
+    grp_ncid = nc_inq_grp_ncid(ds.ncid,groupname)
+    attrib = Attributes(grp_ncid,NC_GLOBAL,ds.isdefmode)
+    return Dataset(ds.filename,grp_ncid,ds.isdefmode,attrib)    
+end
+
+
 
 """
     defDim(ds::Dataset,name,len)
@@ -477,18 +498,53 @@ function variable(ds::Dataset,varname::String)
     return Variable{nctype,ndims}(ds.ncid,varid,(shape...),attrib,ds.isdefmode)
 end
 
-function Base.show(io::IO,ds::Dataset)
-    print_with_color(:red, io, "Dataset: ",ds.filename,"\n")
-    print(io,"\n")
-    print_with_color(:red, io, "Variables\n")
+function Base.show(io::IO,ds::Dataset; indent="")
+    print_with_color(:red, io, indent, "Dataset: ",ds.filename,)
+    print(io, " group: ",nc_inq_grpname(ds.ncid),"\n")
 
-    for name in keys(ds)
-        show(io,variable(ds,name))
+    print(io,"\n")
+    dimids = nc_inq_dimids(ds.ncid,false)
+    
+    if length(dimids) > 0
+        print_with_color(:red, io, indent, "Dimensions\n")
+
+        for dimid in dimids
+            dimname = nc_inq_dimname(ds.ncid,dimid)
+            dimlen = nc_inq_dimlen(ds.ncid,dimid)
+            print(io,indent,"   $(dimname) = $(dimlen)\n")
+        end
         print(io,"\n")
     end
 
-    print_with_color(:red, io, "Global attributes\n")
-    show(io,ds.attrib; indent = "  ")
+    varnames = keys(ds)
+
+    if length(varnames) > 0
+    
+        print_with_color(:red, io, indent, "Variables\n")
+
+        for name in varnames
+            show(io,variable(ds,name); indent = "$(indent)  ")
+            print(io,"\n")
+        end
+    end
+
+    # global attribues
+    if length(ds.attrib) > 0
+        print_with_color(:red, io, indent, "Global attributes\n")
+        show(io,ds.attrib; indent = "$(indent)  ");
+    end
+
+    # groups
+    grpids = nc_inq_grps(ds.ncid)
+
+    if length(grpids) > 0
+        print_with_color(:red, io, indent, "Groups\n")
+        for grpid in grpids
+            grpname = nc_inq_grpname(grpid)
+            show(io,group(ds,grpname); indent = "  ")
+        end
+    end
+
 end
 
 """
@@ -915,21 +971,23 @@ end
 
 
 
-function Base.show(io::IO,v::Union{Variable,CFVariable})
+function Base.show(io::IO,v::Union{Variable,CFVariable}; indent="")
     delim = " × "
     sz = size(v)
     
-    print_with_color(:green, io, name(v))
+    print_with_color(:green, io, indent, name(v))
     if length(sz) > 0
-        print(io,"  (",join(sz,delim),")\n")
-        print(io,"  Datatype:    ",eltype(v),"\n")
-        print(io,"  Dimensions:  ",join(dimnames(v),delim),"\n")
+        print(io,indent,"(",join(sz,delim),")\n")
+        print(io,indent,"  Datatype:    ",eltype(v),"\n")
+        print(io,indent,"  Dimensions:  ",join(dimnames(v),delim),"\n")
     else
-        print(io,"\n")
+        print(io,indent,"\n")
     end
-    print(io,"  Attributes:\n")
-
-    show(io,v.attrib; indent = "     ")
+    
+    if length(v.attrib) > 0
+        print(io,indent,"  Attributes:\n")
+        show(io,v.attrib; indent = "$(indent)   ")
+    end
 end
 
 Base.display(v::Union{Variable,CFVariable}) = show(STDOUT,v)
