@@ -201,7 +201,11 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     # error handling
     @test_throws NCDatasets.NetCDFError Dataset(":/does/not/exist")
 
+    include("test_variable.jl")
+    
     include("test_group.jl")
+    include("test_group2.jl")
+
 
     # display
     s = IOBuffer()

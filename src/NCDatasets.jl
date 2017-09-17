@@ -41,6 +41,49 @@ include("netcdf_c.jl")
 
 # end of code from NetCDF.jl
 
+### type definition
+
+
+# -----------------------------------------------------
+# base type of attribytes list
+# concrete types are Attributes (single NetCDF file) and MFAttributes (multiple NetCDF files)
+
+abstract type BaseAttributes
+end
+
+
+# -----------------------------------------------------
+# List of attributes (for a single NetCDF file)
+# all ids should be Cint
+
+type Attributes <: BaseAttributes
+    ncid::Cint
+    varid::Cint
+    isdefmode::Vector{Bool}
+end
+
+type Groups
+    ncid::Cint
+    isdefmode::Vector{Bool}
+end
+
+type Dimensions
+    ncid::Cint
+    isdefmode::Vector{Bool}
+end
+
+type Dataset
+    filename::String
+    ncid::Cint
+    # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
+    # need to be an array, so that it is copied by reference
+    isdefmode::Vector{Bool}
+    attrib::Attributes
+    dim::Dimensions
+    group::Groups
+end
+
+
 # Mapping between NetCDF types and Julia types
 const jlType = Dict(
                     NC_BYTE   => Int8,
@@ -135,13 +178,6 @@ function timeencode(data,units)
     return [Dates.value(dt - t0) / plength for dt in data ]
 end
 
-# -----------------------------------------------------
-# base type of attribytes list
-# concrete types are Attributes (single NetCDF file) and MFAttributes (multiple NetCDF files)
-
-abstract type BaseAttributes
-end
-
 function Base.show(io::IO,a::BaseAttributes; indent = "  ")
     # use the same order of attributes than in the NetCDF file
     
@@ -152,24 +188,42 @@ function Base.show(io::IO,a::BaseAttributes; indent = "  ")
    end
 end
 
-Base.length(a::BaseAttributes) = length(keys(a))
-Base.haskey(a::BaseAttributes,name::AbstractString) = name in keys(a)
-Base.in(name::AbstractString,a::BaseAttributes) = name in keys(a)
-# for iteration as a Dict
-Base.start(a::BaseAttributes) = keys(a)
-Base.done(a::BaseAttributes,state) = length(state) == 0
-Base.next(a::BaseAttributes,state) = (state[1] => a[shift!(state)], state)
 
 
-# -----------------------------------------------------
-# List of attributes (for a single NetCDF file)
-# all ids should be Cint
+### Dimensions
 
-type Attributes <: BaseAttributes
-    ncid::Cint
-    varid::Cint
-    isdefmode::Vector{Bool}
+
+function Base.keys(d::Dimensions)
+    return [nc_inq_dimname(d.ncid,dimid)
+            for dimid in nc_inq_dimids(d.ncid,false)]
 end
+
+function Base.getindex(a::Dimensions,name::AbstractString)
+    dimid = nc_inq_dimid(a.ncid,name)
+    return nc_inq_dimlen(a.ncid,dimid)
+end
+
+"""
+    Base.setindex!(d::Dimensions,len,name::AbstractString)
+
+Defines the dimension called `name` to the length `len`. 
+Generally dimension are defined by indexing, for example:
+
+```julia
+ds = Dataset("file.nc","c")
+ds.dim["longitude"] = 100
+```
+"""
+
+function Base.setindex!(d::Dimensions,len,name::AbstractString)
+    defmode(d.ncid,d.isdefmode) # make sure that the file is in define mode
+    dimid = nc_def_dim(d.ncid,name,len)
+    return len
+end
+
+
+# Attributes
+
 
 """
     getindex(a::Attributes,name::AbstractString)
@@ -233,17 +287,36 @@ end
 
 Base.keys(a::MFAttributes) = keys(a.as)
 
+
+
+function Base.keys(g::Groups)
+    return [nc_inq_grpname(ncid)
+            for ncid in nc_inq_grps(g.ncid)]
+end
+
+"""
+Existing group
+"""
+
+function Base.getindex(g::Groups,groupname::AbstractString)
+    grp_ncid = nc_inq_grp_ncid(g.ncid,groupname)
+    return Dataset("x",grp_ncid,g.isdefmode)
+end
+
+function defGroup(ds::Dataset,groupname)
+    grp_ncid = nc_def_grp(ds.ncid,groupname)
+    return Dataset(ds.filename,grp_ncid,ds.isdefmode)
+end
+    
+function group(ds::Dataset,groupname)
+    grp_ncid = nc_inq_grp_ncid(ds.ncid,groupname)
+    return Dataset(ds.filename,grp_ncid,ds.isdefmode)
+end
+
+
 # -----------------------------------------------------
 # Dataset
 
-type Dataset
-    filename::String
-    ncid::Cint
-    # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
-    # need to be an array, so that it is copied by reference
-    isdefmode::Vector{Bool}
-    attrib::Attributes
-end
 
 """
     Dataset(filename::AbstractString,mode::AbstractString = "r";
@@ -293,32 +366,22 @@ function Dataset(filename::AbstractString,mode::AbstractString = "r";
     end
     isdefmode = [true]
 
+    return Dataset(filename,ncid,isdefmode)
+end
+
+function Dataset(filename::AbstractString,
+                 ncid::Integer,
+                 isdefmode)
     attrib = Attributes(ncid,NC_GLOBAL,isdefmode)
-    return Dataset(filename,ncid,isdefmode,attrib)
+    dim = Dimensions(ncid,isdefmode)
+    group = Groups(ncid,isdefmode)
+    return Dataset(filename,ncid,isdefmode,attrib,dim,group)
 end
 
 function Dataset(f::Function,args...; kwargs...)
     ds = Dataset(args...; kwargs...)
     f(ds)
     close(ds)
-end
-
-### Groups
-
-function defGroup(ds::Dataset,groupname)
-    grp_ncid = nc_def_grp(ds.ncid,groupname)
-
-    attrib = Attributes(grp_ncid,NC_GLOBAL,ds.isdefmode)
-    return Dataset(ds.filename,grp_ncid,ds.isdefmode,attrib)
-end
-    
-"""
-Existing group
-"""
-function group(ds::Dataset,groupname)
-    grp_ncid = nc_inq_grp_ncid(ds.ncid,groupname)
-    attrib = Attributes(grp_ncid,NC_GLOBAL,ds.isdefmode)
-    return Dataset(ds.filename,grp_ncid,ds.isdefmode,attrib)    
 end
 
 
@@ -345,7 +408,8 @@ defDim(ds::Dataset,name,len) = nc_def_dim(ds.ncid,name,len)
 
 Define a variable with the name `name` in the dataset `ds`.  `vtype` can be
 Julia types in the table below (with the corresponding NetCDF type).  The parameter `dimnames` is a tuple with the
-names of the dimension.  For scalar this parameter is the empty tuple ().  The variable is returned.
+names of the dimension.  For scalar this parameter is the empty tuple ().  
+The variable is returned (of the type CFVariable).
 
 ## Keyword arguments
 
@@ -418,41 +482,6 @@ Return a list of all variables names in Dataset `ds`.
 
 Base.keys(ds::Dataset) = listVar(ds.ncid)
 
-"""
-    haskey(ds::Dataset,varname)
-
-Return true of the Dataset `ds` has a variable with the name `varname`.
-For example:
-
-```julia
-ds = Dataset("/tmp/test.nc","r")
-if haskey(ds,"temperature")
-    println("The file has a variable 'temperature'")
-end
-```
-
-This example checks if the file `/tmp/test.nc` has a variable with the 
-name `temperature`.
-"""
-
-Base.haskey(ds::Dataset,name::AbstractString) = name in keys(ds)
-Base.in(name::AbstractString,ds::Dataset) = name in keys(ds)
-# for iteration as a Dict
-
-"""
-    start(ds::Dataset)
-
-```julia
-for (varname,var) in ds
-    @show (varname,size(var))
-end
-```
-"""
-
-Base.start(ds::Dataset) = listVar(ds.ncid)
-Base.done(ds::Dataset,state) = length(state) == 0
-Base.next(ds::Dataset,state) = (state[1] => ds[shift!(state)], state)
-
 
 """
     sync(ds::Dataset)
@@ -499,10 +528,12 @@ function variable(ds::Dataset,varname::String)
 end
 
 function Base.show(io::IO,ds::Dataset; indent="")
-    print_with_color(:red, io, indent, "Dataset: ",ds.filename,)
+    filename = nc_inq_path(ds.ncid)
+    
+    print_with_color(:red, io, indent, "Dataset: ",filename)
     print(io, " group: ",nc_inq_grpname(ds.ncid),"\n")
-
     print(io,"\n")
+    
     dimids = nc_inq_dimids(ds.ncid,false)
     
     if length(dimids) > 0
@@ -601,7 +632,8 @@ end
 
 
 # -----------------------------------------------------
-# Variable (as stored in NetCDF file)
+# Variable (as stored in NetCDF file, without using
+# add_offset, scale_factor and _FillValue)
 
 type Variable{NetCDFType,N}  <: AbstractArray{NetCDFType, N}
     ncid::Cint
@@ -630,7 +662,6 @@ Return the name of the NetCDF variable `v`.
 """
 
 name(v::Variable) = nc_inq_varname(v.ncid,v.varid)
-
 
 chunking(v::Variable,storage,chunksizes) = nc_def_var_chunking(v.ncid,v.varid,storage,chunksizes)
 
@@ -991,6 +1022,48 @@ function Base.show(io::IO,v::Union{Variable,CFVariable}; indent="")
 end
 
 Base.display(v::Union{Variable,CFVariable}) = show(STDOUT,v)
+
+
+# Common methods
+
+const NCIterable = Union{BaseAttributes,Dimensions,Dataset,Groups}
+
+Base.length(a::NCIterable) = length(keys(a))
+
+"""
+    haskey(ds::Dataset,varname)
+
+Return true of the Dataset `ds` has a variable with the name `varname`.
+For example:
+
+```julia
+ds = Dataset("/tmp/test.nc","r")
+if haskey(ds,"temperature")
+    println("The file has a variable 'temperature'")
+end
+```
+
+This example checks if the file `/tmp/test.nc` has a variable with the 
+name `temperature`.
+"""
+
+Base.haskey(a::NCIterable,name::AbstractString) = name in keys(a)
+Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
+# for iteration as a Dict
+
+"""
+    start(ds::Dataset)
+
+```julia
+for (varname,var) in ds
+    @show (varname,size(var))
+end
+```
+"""
+
+Base.start(a::NCIterable) = keys(a)
+Base.done(a::NCIterable,state) = length(state) == 0
+Base.next(a::NCIterable,state) = (state[1] => a[shift!(state)], state)
 
 export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
     deflate, chunking, checksum

@@ -239,9 +239,16 @@ function nc_open(path,mode::Integer)
     return ncidp[1]
 end
 
-# function nc_inq_path(ncid::Integer,pathlen,path)
-#     check(ccall((:nc_inq_path,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{UInt8}),ncid,pathlen,path))
-# end
+function nc_inq_path(ncid::Integer)
+    pathlenp = Vector{Csize_t}(1)
+    
+    check(ccall((:nc_inq_path,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{UInt8}),ncid,pathlenp,C_NULL))
+
+    path = zeros(UInt8,pathlenp[1]+1)
+    check(ccall((:nc_inq_path,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{UInt8}),ncid,pathlenp,path))
+    
+    return unsafe_string(pointer(path))
+end
 
 # function nc_inq_ncid(ncid::Integer,name,grp_ncid)
 #     check(ccall((:nc_inq_ncid,libnetcdf),Cint,(Cint,Ptr{UInt8},Ptr{Cint}),ncid,name,grp_ncid))
