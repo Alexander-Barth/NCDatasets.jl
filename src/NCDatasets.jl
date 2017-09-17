@@ -102,18 +102,12 @@ const jlType = Dict(
 const ncType = Dict(value => key for (key, value) in jlType)
 
 "Return all variable names"
-function listVar(ncid)
-    varids = nc_inq_varids(ncid)
-    names = Vector{String}(length(varids))
-
-    for i = 1:length(varids)
-        names[i] = nc_inq_varname(ncid,varids[i])
-    end
-
-    return names
-end
+listVar(ncid) = String[nc_inq_varname(ncid,varid)
+                       for varid in nc_inq_varids(ncid)]
 
 "Return all attribute names"
+#listAtt2(ncid,varid) = String[nc_inq_attname(ncid,varid,attnum-1)
+#                 for attnum in 1:nc_inq_varnatts(ncid,varid)]
 function listAtt(ncid,varid)
     natts = nc_inq_varnatts(ncid,varid)
     names = Vector{String}(natts)
@@ -193,8 +187,8 @@ end
 
 
 function Base.keys(d::Dimensions)
-    return [nc_inq_dimname(d.ncid,dimid)
-            for dimid in nc_inq_dimids(d.ncid,false)]
+    return String[nc_inq_dimname(d.ncid,dimid)
+                  for dimid in nc_inq_dimids(d.ncid,false)]
 end
 
 function Base.getindex(a::Dimensions,name::AbstractString)
@@ -289,8 +283,8 @@ Base.keys(a::MFAttributes) = keys(a.as)
 
 
 function Base.keys(g::Groups)
-    return [nc_inq_grpname(ncid)
-            for ncid in nc_inq_grps(g.ncid)]
+    return String[nc_inq_grpname(ncid)
+                  for ncid in nc_inq_grps(g.ncid)]
 end
 
 """
@@ -653,7 +647,7 @@ Return a tuple of the dimension names of the variable `v`.
 """
 function dimnames(v::Variable)
     dimids = nc_inq_vardimid(v.ncid,v.varid)
-    return ([nc_inq_dimname(v.ncid,dimid) for dimid in dimids[end:-1:1]]...)
+    return (String[nc_inq_dimname(v.ncid,dimid) for dimid in dimids[end:-1:1]]...)
 end
 
 """

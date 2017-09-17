@@ -297,7 +297,7 @@ end
 #     check(ccall((:nc_inq_grp_full_ncid,libnetcdf),Cint,(Cint,Ptr{UInt8},Ptr{Cint}),ncid,full_name,grp_ncid))
 # end
 
-function nc_inq_varids(ncid::Integer)
+function nc_inq_varids(ncid::Integer)::Vector{Cint}
     # first get number of variables
     nvarsp = zeros(Int,1)    
     check(ccall((:nc_inq_varids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,nvarsp,C_NULL))
