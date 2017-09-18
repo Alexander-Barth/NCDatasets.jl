@@ -189,9 +189,12 @@ const NC_FATAL = 1
 
 const nc_type=Cint
 
-type nc_vlen_t
-    len::Integer
-    p::Ptr{Void}
+# type is immutable to ensure that it has the memory same layout
+# as the C struct nc_vlen_t
+
+immutable nc_vlen_t{T}
+    len::Csize_t
+    p::Ptr{T}
 end
 
 const nclong = Cint
@@ -317,9 +320,15 @@ function nc_inq_dimids(ncid::Integer,include_parents::Bool)
     return dimids
 end
 
-# function nc_inq_typeids(ncid::Integer,ntypes,typeids)
-#     check(ccall((:nc_inq_typeids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,ntypes,typeids))
-# end
+function nc_inq_typeids(ncid::Integer)
+    ntypesp = Vector{Cint}(1)
+    check(ccall((:nc_inq_typeids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,ntypesp,C_NULL))
+
+    typeids = Vector{Cint}(ntypesp[1])
+    check(ccall((:nc_inq_typeids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,C_NULL,typeids))
+
+    return typeids
+end
 
 # function nc_inq_type_equal(ncid1::Integer,typeid1::Integer,ncid2::Integer,typeid2::Integer,equal)
 #     check(ccall((:nc_inq_type_equal,libnetcdf),Cint,(Cint,nc_type,Cint,nc_type,Ptr{Cint}),ncid1,typeid1,ncid2,typeid2,equal))
@@ -403,13 +412,26 @@ end
 #     check(ccall((:nc_inq_compound_fielddim_sizes,libnetcdf),Cint,(Cint,nc_type,Cint,Ptr{Cint}),ncid,xtype,fieldid,dim_sizes))
 # end
 
-# function nc_def_vlen(ncid::Integer,name,base_typeid::Integer,xtypep)
-#     check(ccall((:nc_def_vlen,libnetcdf),Cint,(Cint,Ptr{UInt8},nc_type,Ptr{nc_type}),ncid,name,base_typeid,xtypep))
-# end
+function nc_def_vlen(ncid::Integer,name,base_typeid::Integer)
+    xtypep = Vector{nc_type}(1)
+    
+    check(ccall((:nc_def_vlen,libnetcdf),Cint,(Cint,Ptr{UInt8},nc_type,Ptr{nc_type}),ncid,name,base_typeid,xtypep))
 
-# function nc_inq_vlen(ncid::Integer,xtype::Integer,name,datum_sizep,base_nc_typep)
-#     check(ccall((:nc_inq_vlen,libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{Cint},Ptr{nc_type}),ncid,xtype,name,datum_sizep,base_nc_typep))
-# end
+    return xtypep[1]
+end
+
+"""
+datum_size is sizeof(nc_vlen_t)
+"""
+function nc_inq_vlen(ncid::Integer,xtype::Integer)
+    datum_sizep = Vector{Csize_t}(1)
+    base_nc_typep = Vector{nc_type}(1)
+    name = zeros(UInt8,NC_MAX_NAME+1)
+        
+    check(ccall((:nc_inq_vlen,libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{Cint},Ptr{nc_type}),ncid,xtype,name,datum_sizep,base_nc_typep))
+
+    return unsafe_string(pointer(name)),datum_sizep[1],base_nc_typep[1]
+end
 
 # function nc_free_vlen(vl)
 #     check(ccall((:nc_free_vlen,libnetcdf),Cint,(Ptr{nc_vlen_t},),vl))
@@ -431,9 +453,17 @@ end
 #     check(ccall((:nc_free_string,libnetcdf),Cint,(Cint,Ptr{Ptr{UInt8}}),len,data))
 # end
 
-# function nc_inq_user_type(ncid::Integer,xtype::Integer,name,size,base_nc_typep,nfieldsp,classp)
-#     check(ccall((:nc_inq_user_type,libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{Cint},Ptr{nc_type},Ptr{Cint},Ptr{Cint}),ncid,xtype,name,size,base_nc_typep,nfieldsp,classp))
-# end
+function nc_inq_user_type(ncid::Integer,xtype::Integer)
+    name = Vector{UInt8}(NC_MAX_NAME+1)
+    sizep = Vector{Csize_t}(1)
+    base_nc_typep = Vector{nc_type}(1)
+    nfieldsp = Vector{Csize_t}(1)
+    classp = Vector{Cint}(1)
+    
+    check(ccall((:nc_inq_user_type,libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{Cint},Ptr{nc_type},Ptr{Csize_t},Ptr{Cint}),ncid,xtype,name,sizep,base_nc_typep,nfieldsp,classp))
+
+    return unsafe_string(pointer(name)),sizep[1],base_nc_typep[1],nfieldsp[1],classp[1]
+end
 
 function nc_put_att(ncid::Integer,varid::Integer,name,data)
 #    check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},nc_type,Cint,Ptr{Void}),ncid,varid,name,xtype,len,op))
@@ -524,7 +554,7 @@ function nc_put_var(ncid::Integer,varid::Integer,op)
     check(ccall((:nc_put_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,op))
 end
 
-function nc_get_var(ncid::Integer,varid::Integer,ip)
+function nc_get_var!(ncid::Integer,varid::Integer,ip)
     if eltype(ip) == Char
         tmp = Array{UInt8,ndims(ip)}(size(ip))
         check(ccall((:nc_get_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,tmp))

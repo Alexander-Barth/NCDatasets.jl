@@ -713,13 +713,13 @@ function Base.getindex{T,N}(v::Variable{T,N},indexes::Colon...)
     # special case for scalar NetCDF variable
     if N == 0
         data = Vector{T}(1)
-        nc_get_var(v.ncid,v.varid,data)
+        nc_get_var!(v.ncid,v.varid,data)
         return data[1]
     else
         #@show v.shape,typeof(v.shape),T,N
         #@show v.ncid,v.varid
         data = Array{T,N}(v.shape)
-        nc_get_var(v.ncid,v.varid,data)
+        nc_get_var!(v.ncid,v.varid,data)
         return data
     end
 end
