@@ -205,7 +205,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     
     include("test_group.jl")
     include("test_group2.jl")
-
+    include("test_variable_unlim.jl")
+    
     include("test_vlen.jl")
     
 
