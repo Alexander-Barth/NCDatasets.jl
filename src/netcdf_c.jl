@@ -959,7 +959,19 @@ function nc_inq_var(ncid::Integer,varid::Integer)
     check(ccall((:nc_inq_var,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{nc_type},Ptr{Cint},Ptr{Cint},Ptr{Cint}),ncid,varid,cname,xtypep,ndimsp,dimids,nattsp))
 
     name = unsafe_string(pointer(cname))
-    return name,jlType[xtypep[1]],dimids,nattsp[1]
+
+    xtype = xtypep[1]
+    jltype = 
+        if xtype >= NCDatasets.NC_FIRSTUSERTYPEID 
+            name,size,base_nc_type,nfields,class = nc_inq_user_type(ncid,xtype)
+            # assume here variable-length type
+            assert(class == NC_VLEN)
+            Vector{jlType[base_nc_type]}
+        else
+            jlType[xtype]
+        end
+        
+    return name,jltype,dimids,nattsp[1]
 end
 
 function nc_inq_varid(ncid::Integer,name)

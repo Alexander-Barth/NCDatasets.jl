@@ -439,12 +439,23 @@ set on NetCDF 4 files.
 """
 
 function defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
-    defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
-    dimids = Cint[nc_inq_dimid(ds.ncid,dimname) for dimname in dimnames[end:-1:1]]
-    varid = nc_def_var(ds.ncid,name,ncType[vtype],dimids)
-
     # all keyword arguments as dictionary
     kw = Dict(k => v for (k,v) in kwargs)
+
+    defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
+    dimids = Cint[nc_inq_dimid(ds.ncid,dimname) for dimname in dimnames[end:-1:1]]
+
+    typeid =
+        if vtype <: Vector
+            # variable-length type
+            typeid = nc_def_vlen(ds.ncid, kw[:typename], ncType[eltype(vtype)])
+        else
+            # base-type
+            ncType[vtype]
+        end
+
+    varid = nc_def_var(ds.ncid,name,typeid,dimids)
+    
 
     if haskey(kw,:chunksizes)
         storage = :chunked

@@ -18,24 +18,33 @@ for i = 1:length(data)
     ncdata[i] = NCDatasets.nc_vlen_t{T}(length(data[i]), pointer(data[i]))
 end
 
-ds = NCDatasets.Dataset(filename,"c",format=:netcdf4)
-ncid = ds.ncid
-
-
 varname = "varname"
 vlentypename = "name-vlen"
 
-typeid = NCDatasets.nc_def_vlen(ncid, vlentypename, NCDatasets.NC_INT)
-dimid = NCDatasets.nc_def_dim(ncid, "casts", dimlen)
-varid = NCDatasets.nc_def_var(ncid, varname, typeid, [dimid])
+ds = NCDatasets.Dataset(filename,"c",format=:netcdf4)
+ncid = ds.ncid
+
+ds.dim["casts"] = dimlen
+#dimid = NCDatasets.nc_def_dim(ncid, "casts", dimlen)
+
+v = NCDatasets.defVar(ds,varname,Vector{T},("casts",); typename = vlentypename)
+#typeid = NCDatasets.nc_def_vlen(ncid, vlentypename, NCDatasets.ncType[T])
+#varid = NCDatasets.nc_def_var(ncid, varname, typeid, [dimid])
+
+varid = v.var.varid
+
+
+
 
 NCDatasets.nc_put_var(ncid, varid, ncdata)
-
-
+#v[:] = data
+    
+typeids = NCDatasets.nc_inq_typeids(ncid)
+typeid = typeids[1]
 name2,datum_size2,base_nc_type2 = NCDatasets.nc_inq_vlen(ncid,typeid)
 
 @test name2 == vlentypename
-@test base_nc_type2 == NCDatasets.NC_INT
+@test NCDatasets.jlType[base_nc_type2] == T
 
 close(ds)
 
