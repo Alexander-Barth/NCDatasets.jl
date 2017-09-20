@@ -525,8 +525,8 @@ function variable(ds::Dataset,varname::String)
 end
 
 function Base.show(io::IO,ds::Dataset; indent="")
-    print_with_color(:red, io, indent, "Dataset: ",path(ds))
-    print(io, " group: ",nc_inq_grpname(ds.ncid),"\n")
+    print_with_color(:red, io, indent, "Dataset: ",path(ds),"\n")
+    print(io,indent,"Group: ",nc_inq_grpname(ds.ncid),"\n")
     print(io,"\n")
     
     dimids = nc_inq_dimids(ds.ncid,false)
