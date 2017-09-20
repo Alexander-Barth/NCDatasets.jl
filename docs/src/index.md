@@ -6,7 +6,6 @@ Documentation for NCDatasets.jl
 
 ```@docs
 Dataset
-defDim
 keys
 haskey
 variable
@@ -35,4 +34,12 @@ The NetCDF dataset (as return by `Dataset`) and the NetCDF variables (as returne
 getindex(a::NCDatasets.Attributes,name::AbstractString)
 setindex!(a::NCDatasets.Attributes,data,name::AbstractString)
 keys(a::NCDatasets.Attributes)
+```
+
+
+## Dimensions
+
+```@docs
+defDim
+setindex!(d::NCDatasets.Dimensions,len,name::AbstractString)
 ```

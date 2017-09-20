@@ -206,11 +206,14 @@ Generally dimension are defined by indexing, for example:
 ds = Dataset("file.nc","c")
 ds.dim["longitude"] = 100
 ```
+
+If `len` is the special value `Inf`, then the dimension is considered as 
+`unlimited`, i.e. it will grow as data is added to the NetCDF file.
 """
 
 function Base.setindex!(d::Dimensions,len,name::AbstractString)
     defmode(d.ncid,d.isdefmode) # make sure that the file is in define mode
-    dimid = nc_def_dim(d.ncid,name,len)
+    dimid = nc_def_dim(d.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
     return len
 end
 
@@ -382,6 +385,8 @@ end
     defDim(ds::Dataset,name,len)
 
 Define a dimension in the data-set `ds` with the given `name` and length `len`.
+If `len` is the special value `Inf`, then the dimension is considered as 
+`unlimited`, i.e. it will grow as data is added to the NetCDF file.
 
 For example:
 
@@ -393,7 +398,8 @@ defDim(ds,"lon",100)
 This defines the dimension `lon` with the size 100.
 """
 
-defDim(ds::Dataset,name,len) = nc_def_dim(ds.ncid,name,len)
+defDim(ds::Dataset,name,len) = nc_def_dim(ds.ncid,name,
+                                          (isinf(len) ? NC_UNLIMITED : len))
 
 """
     defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
@@ -521,7 +527,11 @@ function variable(ds::Dataset,varname::String)
     
     attrib = Attributes(ds.ncid,varid,ds.isdefmode)
 
-    return Variable{nctype,ndims}(ds.ncid,varid,(shape...),attrib,ds.isdefmode)
+    # reverse dimids to have the dimension order in Fortran style
+    return Variable{nctype,ndims}(ds.ncid,varid,
+                                  #(shape...),
+                                  (reverse(dimids)...),
+                                  attrib,ds.isdefmode)
 end
 
 function Base.show(io::IO,ds::Dataset; indent="")
@@ -633,12 +643,14 @@ end
 type Variable{NetCDFType,N}  <: AbstractArray{NetCDFType, N}
     ncid::Cint
     varid::Cint
-    shape::NTuple{N,Int}
+    dimids::NTuple{N,Cint}
     attrib::Attributes
     isdefmode::Vector{Bool}
 end
 
-Base.size(v::Variable) = v.shape
+# the size of a variable can change, i.e. for a variable with an unlimited
+# dimension
+Base.size(v::Variable) = (Int[nc_inq_dimlen(v.ncid,dimid) for dimid in v.dimids]...)
 
 """
     dimnames(v::Variable)
@@ -646,8 +658,7 @@ Base.size(v::Variable) = v.shape
 Return a tuple of the dimension names of the variable `v`.
 """
 function dimnames(v::Variable)
-    dimids = nc_inq_vardimid(v.ncid,v.varid)
-    return (String[nc_inq_dimname(v.ncid,dimid) for dimid in dimids[end:-1:1]]...)
+    return (String[nc_inq_dimname(v.ncid,dimid) for dimid in v.dimids]...)
 end
 
 """
@@ -718,7 +729,7 @@ function Base.getindex{T,N}(v::Variable{T,N},indexes::Colon...)
     else
         #@show v.shape,typeof(v.shape),T,N
         #@show v.ncid,v.varid
-        data = Array{T,N}(v.shape)
+        data = Array{T,N}(size(v))
         nc_get_var!(v.ncid,v.varid,data)
         return data
     end
@@ -788,7 +799,7 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::StepRange{In
 end
 
 function Base.setindex!{T,N}(v::Variable{T,N},data::Array{T,N},indexes::StepRange{Int,Int}...)
-    #    @show "sr",indexes
+    #@show "sr",indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes)
     nc_put_vars(v.ncid,v.varid,start,count,stride,data)
