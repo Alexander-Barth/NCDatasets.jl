@@ -46,8 +46,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     ds = Dataset(filename,"c")
 
     # define the dimension "lon" and "lat"
-    defDim(ds,"lon",sz[1])
-    defDim(ds,"lat",sz[2])
+    ds.dim["lon"] = sz[1]
+    ds.dim["lat"] = sz[2]
 
     # define a global attribute
     ds.attrib["title"] = "this is a test file"
@@ -76,47 +76,6 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     v[:,:] = 3*data
     @test v[:,:] == 3*data
 
-
-    # write attributes
-    v.attrib["units"] = "degree Celsius"
-    v.attrib["comment"] = "this is a string attribute with unicode Ω ∈ ∑ ∫ f(x) dx "
-
-    # check presence of attribute
-    @test haskey(v.attrib,"comment")
-    @test "comment" in v.attrib
-
-    for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
-        # scalar attribute
-        name = "scalar-attrib-$T"
-        #@show name
-        v.attrib[name] = T(123)
-
-        if T == Int64
-            # not supported in NetCDF, converted as Int32
-            @test typeof(v.attrib[name]) == Int32
-        else
-            @test typeof(v.attrib[name]) == T
-        end
-
-        @test v.attrib[name] == 123
-
-
-        # vector attribute
-        name = "vector-attrib-$T"
-        #@show name
-        v.attrib[name] = T[1,2,3,4]
-
-        if T == Int64
-            # not supported in NetCDF, converted as Int32
-            @test eltype(v.attrib[name]) == Int32
-        else
-            @test eltype(v.attrib[name]) == T
-        end
-
-        @test v.attrib[name] == [1,2,3,4]
-    end
-
-
     # test sync
     sync(ds)
     close(ds)
@@ -133,8 +92,6 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     # load all data
     data = v[:,:]
 
-    # load an attribute
-    unit = v.attrib["units"]
     close(ds)
 
     # Load a file (with unknown structure)
@@ -164,7 +121,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     close(ds)
 
-    # when opening a Dataset with a do block, it will be closed automatically when leaving the do block.
+    # when opening a Dataset with a do block, it will be closed automatically
+    # when leaving the do block.
 
     Dataset(filename,"r") do ds
         data = ds["temperature"][:,:]    
@@ -187,6 +145,9 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
         @test v2 == 123.f0
     end
     rm(filename)
+
+
+    include("test_attrib.jl")
 
     include("test_writevar.jl")
     include("test_timeunits.jl")

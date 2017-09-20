@@ -988,12 +988,12 @@ function nc_inq_varndims(ncid::Integer,varid::Integer)
     return ndimsp[1]
 end
 
-function nc_inq_vardimid(ncid::Integer,varid::Integer)
-    ndims = nc_inq_varndims(ncid,varid)
-    dimids = zeros(Cint,ndims)
-    check(ccall((:nc_inq_vardimid,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,dimids))
-    return dimids
-end
+# function nc_inq_vardimid(ncid::Integer,varid::Integer)
+#     ndims = nc_inq_varndims(ncid,varid)
+#     dimids = zeros(Cint,ndims)
+#     check(ccall((:nc_inq_vardimid,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,dimids))
+#     return dimids
+# end
 
 function nc_inq_varnatts(ncid::Integer,varid::Integer)
     nattsp = Vector{Cint}(1)
