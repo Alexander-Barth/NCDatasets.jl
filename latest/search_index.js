@@ -25,14 +25,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#NCDatasets.defDim",
-    "page": "NCDatasets.jl",
-    "title": "NCDatasets.defDim",
-    "category": "Function",
-    "text": "defDim(ds::Dataset,name,len)\n\nDefine a dimension in the data-set ds with the given name and length len.\n\nFor example:\n\nds = Dataset(\"/tmp/test.nc\",\"c\")\ndefDim(ds,\"lon\",100)\n\nThis defines the dimension lon with the size 100.\n\n\n\n"
-},
-
-{
     "location": "index.html#Base.keys",
     "page": "NCDatasets.jl",
     "title": "Base.keys",
@@ -77,7 +69,7 @@ var documenterSearchIndex = {"docs": [
     "page": "NCDatasets.jl",
     "title": "Datasets",
     "category": "section",
-    "text": "Dataset\ndefDim\nkeys\nhaskey\nvariable\nsync\nclose"
+    "text": "Dataset\nkeys\nhaskey\nvariable\nsync\nclose"
 },
 
 {
@@ -174,6 +166,30 @@ var documenterSearchIndex = {"docs": [
     "title": "Attributes",
     "category": "section",
     "text": "The NetCDF dataset (as return by Dataset) and the NetCDF variables (as returned by getindex, variable or defVar) have the field attrib which has the type NCDatasets.Attributes and behaves like a julia dictionary.getindex(a::NCDatasets.Attributes,name::AbstractString)\nsetindex!(a::NCDatasets.Attributes,data,name::AbstractString)\nkeys(a::NCDatasets.Attributes)"
+},
+
+{
+    "location": "index.html#NCDatasets.defDim",
+    "page": "NCDatasets.jl",
+    "title": "NCDatasets.defDim",
+    "category": "Function",
+    "text": "defDim(ds::Dataset,name,len)\n\nDefine a dimension in the data-set ds with the given name and length len. If len is the special value Inf, then the dimension is considered as  unlimited, i.e. it will grow as data is added to the NetCDF file.\n\nFor example:\n\nds = Dataset(\"/tmp/test.nc\",\"c\")\ndefDim(ds,\"lon\",100)\n\nThis defines the dimension lon with the size 100.\n\n\n\n"
+},
+
+{
+    "location": "index.html#Base.setindex!-Tuple{NCDatasets.Dimensions,Any,AbstractString}",
+    "page": "NCDatasets.jl",
+    "title": "Base.setindex!",
+    "category": "Method",
+    "text": "Base.setindex!(d::Dimensions,len,name::AbstractString)\n\nDefines the dimension called name to the length len.  Generally dimension are defined by indexing, for example:\n\nds = Dataset(\"file.nc\",\"c\")\nds.dim[\"longitude\"] = 100\n\nIf len is the special value Inf, then the dimension is considered as  unlimited, i.e. it will grow as data is added to the NetCDF file.\n\n\n\n"
+},
+
+{
+    "location": "index.html#Dimensions-1",
+    "page": "NCDatasets.jl",
+    "title": "Dimensions",
+    "category": "section",
+    "text": "defDim\nsetindex!(d::NCDatasets.Dimensions,len,name::AbstractString)"
 },
 
 ]}
