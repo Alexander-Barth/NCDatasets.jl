@@ -187,7 +187,23 @@ const NC_EXDR = -32
 const NC_SYSERR = -31
 const NC_FATAL = 1
 
-const nc_type=Cint
+# default fill values
+
+const NC_FILL_BYTE   = Int8(-127)
+const NC_FILL_CHAR   = '\0'
+const NC_FILL_SHORT  = Int16(-32767)
+const NC_FILL_INT    = Int32(-2147483647)
+const NC_FILL_FLOAT  = 9.9692099683868690f+36
+const NC_FILL_DOUBLE = 9.9692099683868690e+36
+const NC_FILL_UBYTE  = UInt8(255)
+const NC_FILL_USHORT = UInt16(65535)
+const NC_FILL_UINT   = UInt32(4294967295)
+const NC_FILL_INT64  = Int64(-9223372036854775806)
+const NC_FILL_UINT64 = UInt64(18446744073709551614)
+const NC_FILL_STRING = ""
+
+
+const nc_type = Cint
 
 # type is immutable to ensure that it has the memory same layout
 # as the C struct nc_vlen_t
@@ -652,13 +668,31 @@ function nc_inq_var_chunking(ncid::Integer,varid::Integer)
     return NCSymbols[storagep[1]],chunksizes
 end
 
-# function nc_def_var_fill(ncid::Integer,varid::Integer,no_fill::Integer,fill_value)
-#     check(ccall((:nc_def_var_fill,libnetcdf),Cint,(Cint,Cint,Cint,Ptr{Void}),ncid,varid,no_fill,fill_value))
-# end
 
-# function nc_inq_var_fill(ncid::Integer,varid::Integer,no_fill,fill_valuep)
-#     check(ccall((:nc_inq_var_fill,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Void}),ncid,varid,no_fill,fill_valuep))
-# end
+"""
+no_fill is a boolean and fill_value the value
+"""
+function nc_def_var_fill(ncid::Integer,varid::Integer,no_fill::Bool,fill_value)
+    check(ccall((:nc_def_var_fill,libnetcdf),Cint,(Cint,Cint,Cint,Ptr{Void}),
+                ncid,
+                varid,
+                Cint(no_fill),
+                [fill_value]))
+end
+
+"""
+no_fill,fill_value = nc_inq_var_fill(ncid::Integer,varid::Integer)
+no_fill is a boolean and fill_value the fill value (in the appropriate type)
+"""
+function nc_inq_var_fill(ncid::Integer,varid::Integer)
+    T = jlType[nc_inq_vartype(ncid,varid)]
+    fill_valuep = Vector{T}(1)
+    no_fillp = Vector{Cint}(1)
+    check(ccall((:nc_inq_var_fill,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Void}),
+                ncid,varid,no_fillp,fill_valuep))
+
+    return Bool(no_fillp[1]),fill_valuep[1]
+end
 
 # function nc_def_var_endian(ncid::Integer,varid::Integer,endian::Integer)
 #     check(ccall((:nc_def_var_endian,libnetcdf),Cint,(Cint,Cint,Cint),ncid,varid,endian))

@@ -6,9 +6,8 @@ filename = tempname()
 NCDatasets.Dataset(filename,"c") do ds
 
     # define the dimension "lon" and "lat" 
-    NCDatasets.defDim(ds,"lon",sz[1])
-    NCDatasets.defDim(ds,"lat",sz[2])
-
+    ds.dim["lon"] = sz[1]
+    ds.dim["lat"] = sz[2]
 
     # variables
     for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]

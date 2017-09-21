@@ -411,6 +411,8 @@ The variable is returned (of the type CFVariable).
 
 ## Keyword arguments
 
+* `fillvalue`: A value filled in the NetCDF file to indicate missing data. 
+   It will be stored in the _FillValue attribute.
 * `chunksizes`: Vector integers setting the chunk size. 
 The total size of a chunk must be less than 4 GiB.
 * `deflatelevel`: Compression level: 0 (default) means no compression
@@ -477,6 +479,12 @@ function defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
     if haskey(kw,:checksum)
         checksum = kw[:checksum]
         nc_def_var_fletcher32(ds.ncid,varid,checksum)
+    end
+
+    if haskey(kw,:fillvalue)
+        fillvalue = kw[:fillvalue]
+        nofill = get(kw,:nofill,false)
+        nc_def_var_fill(ds.ncid, varid, nofill, vtype(fillvalue))
     end
     
     return ds[name]
@@ -715,6 +723,17 @@ be `:fletcher32` or `:nochecksum`.
 checksum(v::Variable) = nc_inq_var_fletcher32(v.ncid,v.varid)
 
 
+function fillmode(v::Variable)
+    no_fill,fv = nc_inq_var_fill(v.ncid, v.varid)
+    return no_fill,fv
+end
+
+function fillvalue(v::Variable)
+    no_fill,fv = nc_inq_var_fill(v.ncid, v.varid)
+    return fv
+end
+
+
 function Base.getindex(v::Variable,indexes::Int...)
     #    @show "ind",indexes
 
@@ -917,6 +936,9 @@ deflate(v::CFVariable) = deflate(v.var)
 checksum(v::CFVariable,checksummethod) = checksum(v.var,checksummethod)
 checksum(v::CFVariable) = checksum(v.var)
 
+fillmode(v::CFVariable) = fillmode(v.var)
+fillvalue(v::CFVariable) = fillvalue(v.var)
+
 function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     attnames = keys(v.attrib)
 
@@ -1083,6 +1105,11 @@ Base.done(a::NCIterable,state) = length(state) == 0
 Base.next(a::NCIterable,state) = (state[1] => a[shift!(state)], state)
 
 export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
-    deflate, chunking, checksum
+    deflate, chunking, checksum, fillvalue, fillmode
+
+# it is good practise to use the default fill-values, thus we export them
+export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,
+    NC_FILL_DOUBLE, NC_FILL_UBYTE, NC_FILL_USHORT, NC_FILL_UINT, NC_FILL_INT64,
+    NC_FILL_UINT64, NC_FILL_STRING
 
 end # module
