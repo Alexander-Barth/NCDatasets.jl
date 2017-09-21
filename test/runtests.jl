@@ -171,6 +171,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_variable_unlim.jl")
     
     include("test_vlen.jl")
+
+    include("test_lowlevel.jl")
     
 
     # display

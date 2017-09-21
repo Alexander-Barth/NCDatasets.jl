@@ -565,6 +565,8 @@ end
 function nc_put_var(ncid::Integer,varid::Integer,op)
     if eltype(op) == Char
         op = convert(Array{UInt8,ndims(op)},op)
+    elseif eltype(op) == String
+        op = pointer.(op)
     end
 
     check(ccall((:nc_put_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,op))
@@ -575,10 +577,16 @@ function nc_get_var!(ncid::Integer,varid::Integer,ip)
         tmp = Array{UInt8,ndims(ip)}(size(ip))
         check(ccall((:nc_get_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,tmp))
         ip[:] = convert(Array{Char,1},tmp[:])
+    elseif eltype(ip) == String
+        tmp = Array{Ptr{UInt8},ndims(ip)}(size(ip))
+        check(ccall((:nc_get_var_string,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,tmp))
+        ip[:] = (unsafe_string.(tmp))
     else        
         check(ccall((:nc_get_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,ip))
     end    
 end
+
+
 
 function nc_put_var1(ncid::Integer,varid::Integer,indexp,op)
     check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Void}),ncid,varid,indexp,op))

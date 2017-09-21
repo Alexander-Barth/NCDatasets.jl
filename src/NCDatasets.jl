@@ -414,9 +414,9 @@ The variable is returned (of the type CFVariable).
 * `fillvalue`: A value filled in the NetCDF file to indicate missing data. 
    It will be stored in the _FillValue attribute.
 * `chunksizes`: Vector integers setting the chunk size. 
-The total size of a chunk must be less than 4 GiB.
+The total size of a chunk must be less than 4 GiB. 
 * `deflatelevel`: Compression level: 0 (default) means no compression
-and 9 means maximum compression.
+and 9 means maximum compression. Each chunk will be compressed individually.
 * `shuffle`: If true, the shuffle filter is activated which can improve the 
 compression ratio.
 * `checksum`: The checksum method can be `:fletcher32` 
