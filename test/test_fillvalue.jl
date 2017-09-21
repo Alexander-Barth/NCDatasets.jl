@@ -1,15 +1,17 @@
+using DataArrays
+
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
-ds = Dataset(filename,"c")
+ds = NCDatasets.Dataset(filename,"c")
 
 # define the dimension "lon" and "lat" with the size 10 and 11 resp.
-defDim(ds,"lon",10)
-defDim(ds,"lat",11)
+NCDatasets.defDim(ds,"lon",10)
+NCDatasets.defDim(ds,"lat",11)
 
-v = defVar(ds,"var_with_missing_data",Float32,("lon","lat"))
+v = NCDatasets.defVar(ds,"var_with_missing_data",Float32,("lon","lat"))
 
 data = [Float32(i+j) for i = 1:10, j = 1:11]
-fv = Float32(-9999.)
+fv = NCDatasets.NC_FILL_FLOAT
 v.attrib["_FillValue"] = fv
 # mask the frist element
 dataa = DataArray(data,data .== 2)
@@ -26,7 +28,7 @@ v[:,:] = dataa
 v.var[:,:] = data
 @test v.var[:,:] ≈ data
 
-close(ds)
+NCDatasets.close(ds)
 
 
 sz = (4,5)
