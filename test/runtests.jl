@@ -159,6 +159,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     include("test_formats.jl")
 
+    include("test_bitarray.jl")
+    
     # error handling
     @test_throws NCDatasets.NetCDFError Dataset(":/does/not/exist")
 

@@ -5,8 +5,8 @@ filename = tempname()
 ds = NCDatasets.Dataset(filename,"c")
 
 # define the dimension "lon" and "lat" with the size 10 and 11 resp.
-NCDatasets.defDim(ds,"lon",10)
-NCDatasets.defDim(ds,"lat",11)
+ds.dim["lon"] = 10
+ds.dim["lat"] = 11
 
 v = NCDatasets.defVar(ds,"var_with_missing_data",Float32,("lon","lat"))
 

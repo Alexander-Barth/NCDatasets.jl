@@ -836,7 +836,8 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::Array{T,N},indexes::StepRang
     return data
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data::Array,indexes::StepRange{Int,Int}...)
+# data can be Array{T2,N} or BitArray{N}
+function Base.setindex!{T,N}(v::Variable{T,N},data::AbstractArray,indexes::StepRange{Int,Int}...)
     #@show "sr2",indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes)
