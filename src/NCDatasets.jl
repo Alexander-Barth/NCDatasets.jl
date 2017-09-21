@@ -640,10 +640,10 @@ function Base.getindex(ds::Dataset,varname::String)
 
     # return element type of any index operation
 
-    if eltype(v) == Char
-        rettype = Char
-    else
+    if eltype(v) <: Number
         rettype = Float64
+    else
+        rettype = eltype(v)
     end
 
     # return CFVariable{eltype(v),rettype,ndims(v)}(v,attrib,has_fillvalue,has_add_offset,
@@ -1042,7 +1042,7 @@ end
 
 
 
-function Base.show(io::IO,v::Union{Variable,CFVariable}; indent="")
+function Base.show(io::IO,v::Variable; indent="")
     delim = " × "
     sz = size(v)
     
@@ -1061,6 +1061,7 @@ function Base.show(io::IO,v::Union{Variable,CFVariable}; indent="")
     end
 end
 
+Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=indent)
 Base.display(v::Union{Variable,CFVariable}) = show(STDOUT,v)
 
 
