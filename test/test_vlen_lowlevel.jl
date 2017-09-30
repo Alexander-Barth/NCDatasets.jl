@@ -78,6 +78,11 @@ if xtype >= NCDatasets.NC_FIRSTUSERTYPEID
         data2 = [unsafe_wrap(Vector{T},ncdata2[i].p,(ncdata2[i].len,)) for i = 1:dimlen]
         
         @test data == data2
+
+        i = 1
+        tmp = Vector{NCDatasets.nc_vlen_t{T}}(1)
+        NCDatasets.nc_get_var1(ncid,varid,[i-1],tmp)
+        @test data[1] ==  unsafe_wrap(Vector{T},tmp[1].p,(tmp[1].len,))
     end
 end
 
