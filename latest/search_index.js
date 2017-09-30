@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "NCDatasets.jl",
     "title": "NCDatasets.Dataset",
     "category": "Type",
-    "text": "Dataset(filename::AbstractString,mode::AbstractString = \"r\";\n                 format::Symbol = :netcdf4)\n\nCreate (mode = \"c\") or open in read-only (mode = \"r\") a NetCDF file (or an OPeNDAP URL). Supported formats:\n\n:netcdf4 (default): HDF5-based NetCDF format\n:netcdf4_classic: Only netCDF 3 compatible API features will be used\n:netcdf3_classic: classic NetCDF format supporting only files smaller than 2GB.\n:netcdf3_64bit_offset: improved NetCDF format supporting files larger than 2GB.\n\nFiles can also be open and automatically closed with a do block.\n\nDataset(\"file.nc\") do ds\n    data = ds[\"temperature\"][:,:]\nend \n\n\n\n"
+    "text": "Dataset(filename::AbstractString,mode::AbstractString = \"r\";\n                 format::Symbol = :netcdf4)\n\nCreate a new NetCDF file if the mode is \"c\". An existing file with the same  name will be overwritten. If mode is \"a\", then an existing file is open into  append mode (i.e. existing data in the NetCDF file is not overwritten and  a variabale can be added). With the mode equal to \"r\", an existing NetCDF file or OPeNDAP URL can be open in read-only mode.  The default mode is \"r\".\n\nSupported formats:\n\n:netcdf4 (default): HDF5-based NetCDF format\n:netcdf4_classic: Only netCDF 3 compatible API features will be used\n:netcdf3_classic: classic NetCDF format supporting only files smaller than 2GB.\n:netcdf3_64bit_offset: improved NetCDF format supporting files larger than 2GB.\n\nFiles can also be open and automatically closed with a do block.\n\nDataset(\"file.nc\") do ds\n    data = ds[\"temperature\"][:,:]\nend \n\n\n\n"
 },
 
 {
