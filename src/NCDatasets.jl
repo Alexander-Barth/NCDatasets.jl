@@ -322,9 +322,9 @@ Create a new NetCDF file if the `mode` is "c". An existing file with the same
 name will be overwritten. If `mode` is "a", then an existing file is open into 
 append mode (i.e. existing data in the NetCDF file is not overwritten and 
 a variabale can be added). With the mode equal to "r", an existing NetCDF file or
-OPeNDAP URL can be open in read-only.  The default mode is "r".
+OPeNDAP URL can be open in read-only mode.  The default mode is "r".
 
-Supported formats:
+# Supported formats:
 
 * :netcdf4 (default): HDF5-based NetCDF format
 * :netcdf4_classic: Only netCDF 3 compatible API features will be used
