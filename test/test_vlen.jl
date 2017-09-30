@@ -69,9 +69,9 @@ xtype = NCDatasets.nc_inq_vartype(ncid,varid)
 if xtype >= NCDatasets.NC_FIRSTUSERTYPEID 
     #@show xtype,NCDatasets.NC_VLEN
 
-    name,shape,base_nc_type,nfields,class = NCDatasets.nc_inq_user_type(ncid,xtype)
+    typename,shape,base_nc_type,nfields,class = NCDatasets.nc_inq_user_type(ncid,xtype)
 
-    #@show name,shape,base_nc_type,nfields,class
+    #@show typename,shape,base_nc_type,nfields,class
     @test base_nc_type == NCDatasets.NC_INT
 
     T2 = NCDatasets.jlType[base_nc_type]
