@@ -27,6 +27,14 @@ The raw data can also be accessed (without the transformations above).
 Inside the Julia shell, you can download and install the package by issuing:
 
 ```julia
+Pkg.add("NCDatasets")
+```
+
+### Latest developpement version
+
+If you want to try the lastest developpement version, you can do this with the following commands:
+
+```julia
 Pkg.clone("https://github.com/Alexander-Barth/NCDatasets.jl")
 Pkg.build("NCDatasets")
 ```
