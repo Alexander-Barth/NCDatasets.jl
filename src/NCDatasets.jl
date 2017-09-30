@@ -318,7 +318,12 @@ end
     Dataset(filename::AbstractString,mode::AbstractString = "r";
                      format::Symbol = :netcdf4)
 
-Create (mode = "c") or open in read-only (mode = "r") a NetCDF file (or an OPeNDAP URL).
+Create a new NetCDF file if the `mode` is "c". An existing file with the same 
+name will be overwritten. If `mode` is "a", then an existing file is open into 
+append mode (i.e. existing data in the NetCDF file is not overwritten and 
+a variabale can be added). With the mode equal to "r", an existing NetCDF file or
+OPeNDAP URL can be open in read-only.  The default mode is "r".
+
 Supported formats:
 
 * :netcdf4 (default): HDF5-based NetCDF format
@@ -341,8 +346,9 @@ function Dataset(filename::AbstractString,mode::AbstractString = "r";
     ncid = -1
 
     if mode == "r"
-        mode = NC_NOWRITE
-        ncid = nc_open(filename,mode)
+        ncid = nc_open(filename,NC_NOWRITE)
+    elseif mode == "a"
+        ncid = nc_open(filename,NC_WRITE)
     elseif mode == "c"
         mode  = NC_CLOBBER
 
