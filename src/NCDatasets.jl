@@ -851,7 +851,7 @@ function Base.getindex{T,N}(v::Variable{T,N},indexes::StepRange{Int,Int}...)
 end
 
 function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...)
-    #    @show "sr",indexes
+    #@show @__FILE__,@__LINE__,indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes)
     tmp = fill(data,jlshape)
@@ -860,6 +860,7 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::StepRange{Int,Int
 end
 
 function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::StepRange{Int,Int}...)
+    #@show @__FILE__,@__LINE__,indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes)
     tmp = fill(convert(T,data),jlshape)
@@ -1087,7 +1088,7 @@ function Base.show(io::IO,v::Variable; indent="")
     
     print_with_color(:green, io, indent, name(v))
     if length(sz) > 0
-        print(io,indent,"(",join(sz,delim),")\n")
+        print(io,indent," (",join(sz,delim),")\n")
         print(io,indent,"  Datatype:    ",eltype(v),"\n")
         print(io,indent,"  Dimensions:  ",join(dimnames(v),delim),"\n")
     else

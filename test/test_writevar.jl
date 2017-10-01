@@ -2,7 +2,7 @@ sz = (4,5)
 filename = tempname()
 #filename = "/tmp/test-9.nc"
 # The mode "c" stands for creating a new file (clobber)
-ds = Dataset(filename,"c")
+ds = NCDatasets.Dataset(filename,"c")
 
 # define the dimension "lon" and "lat"
 NCDatasets.defDim(ds,"lon",sz[1])
@@ -47,6 +47,20 @@ for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
     # write scalar (different type)
     v[1:end,1:end] = 100
     @test all(v[:,:][:] .== 100)
+
+
+    # step range
+    ref = zeros(sz)
+    v[:,:] = 0
+    
+    ref[1:2:end,2:2:end] = 1
+    v[1:2:end,2:2:end] = 1
+    @test v[:,:] == ref
+    
+    # write scalar (different type)
+    ref[1:2:end,2:2:end] = UInt8(2)
+    v[1:2:end,2:2:end] = UInt8(2)
+    @test v[:,:] == ref
 end
 
 v = NCDatasets.defVar(ds,"var-Char",Char,("lon","lat"))
@@ -84,10 +98,18 @@ v[1:end,1:end] = fill('g',size(v))
 v[1:end,1:end] = 'h'
 @test all(v[1:end,1:end][:] .== 'h')
 
+# write with StepRange
+v[:,:] = 'h'
+ref = fill('h',sz)
 
-@test dimnames(v) == ("lon","lat")
-@test name(v) == "var-Char"
+ref[1:2:end,1:2:end] = 'i'
+v[1:2:end,1:2:end] = 'i'
+@test v[:,:] == ref
 
-close(ds)
+
+@test NCDatasets.dimnames(v) == ("lon","lat")
+@test NCDatasets.name(v) == "var-Char"
+
+NCDatasets.close(ds)
 
 
