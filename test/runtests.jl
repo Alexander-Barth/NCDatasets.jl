@@ -148,7 +148,9 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
 
     include("test_append.jl")
-    
+
+    include("test_append2.jl")
+
     include("test_attrib.jl")
 
     include("test_writevar.jl")

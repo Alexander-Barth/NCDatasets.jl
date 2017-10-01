@@ -344,6 +344,7 @@ end
 function Dataset(filename::AbstractString,mode::AbstractString = "r";
                  format::Symbol = :netcdf4)
     ncid = -1
+    isdefmode = [false]
 
     if mode == "r"
         ncid = nc_open(filename,NC_NOWRITE)
@@ -365,8 +366,8 @@ function Dataset(filename::AbstractString,mode::AbstractString = "r";
         end
 
         ncid = nc_create(filename,mode)
+        isdefmode[1] = true
     end
-    isdefmode = [true]
 
     return Dataset(ncid,isdefmode)
 end
