@@ -161,15 +161,19 @@ function timeunits(units)
 end
 
 function timedecode(data,units)
-    t0,plength = timeunits(units)
-    return [t0 + Dates.Millisecond(round(Int,plength * data[n])) for n = 1:length(data)]
+    const t0,plength = timeunits(units)
+    convert(x) = t0 + Dates.Millisecond(round(Int,plength * x))    
+    return convert.(data)
 end
 
-function timeencode(data,units)
-    t0,plength = timeunits(units)
-    #@show data
-    return [Dates.value(dt - t0) / plength for dt in data ]
+function timeencode(data::Array{DateTime,N},units) where N
+    const t0,plength = timeunits(units)
+    convert(dt) = Dates.value(dt - t0) / plength    
+    return convert.(data)
 end
+
+# do not transform data is not a vector of DateTime
+timeencode(data,units) = data
 
 function Base.show(io::IO,a::BaseAttributes; indent = "  ")
     # use the same order of attributes than in the NetCDF file
@@ -750,10 +754,10 @@ function Base.getindex(v::Variable,indexes::Int...)
     return data[1]
 end
 
-function Base.setindex!(v::Variable,data,indexes::Int...)
+function Base.setindex!(v::Variable{T,N},data,indexes::Int...) where N where T
     datamode(v.ncid,v.isdefmode)
     # use zero-based indexes and reversed order
-    nc_put_var1(v.ncid,v.varid,[i-1 for i in indexes[end:-1:1]],[data])
+    nc_put_var1(v.ncid,v.varid,[i-1 for i in indexes[end:-1:1]],[T(data)])
     return data
 end
 
@@ -1024,8 +1028,13 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
 end
 
 function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
-
-    x = Array{eltype(data),ndims(data)}(size(data))
+    x =
+        if typeof(data) <: AbstractArray
+            Array{eltype(data),ndims(data)}(size(data))
+        else
+            Array{typeof(data),1}(1)
+        end
+            
     #@show typeof(data)
     #@show eltype(v.var)
 
@@ -1037,7 +1046,7 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
         mask = isna.(data)
         x[.!mask] = data[.!mask]
     else
-        if ndims(data) == 0
+        if !(typeof(data) <: AbstractArray)
             # for scalars
             x = [data]
             mask = [false]
@@ -1071,8 +1080,9 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
         end
     end
 
-    if ndims(data) == 0
-        v.var[indexes...] = x[1]
+    if !(typeof(data) <: AbstractArray)
+        #@show indexes,x[1]
+        v.var[indexes...] = x[1]        
     else
         v.var[indexes...] = x
     end

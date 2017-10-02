@@ -11,7 +11,7 @@ NCDatasets.defDim(ds,"lat",sz[2])
 
 # variables
 for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
-    #for T in [UInt8]
+#for T in [Float32,Float64]
     # write array
     v = NCDatasets.defVar(ds,"var-$T",T,("lon","lat"))
 
@@ -61,6 +61,11 @@ for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
     ref[1:2:end,2:2:end] = UInt8(2)
     v[1:2:end,2:2:end] = UInt8(2)
     @test v[:,:] == ref
+
+    ref[1,1] = 3
+    v[1,1] = 3
+    
+    @test v[:,:] == ref    
 end
 
 v = NCDatasets.defVar(ds,"var-Char",Char,("lon","lat"))
