@@ -30,9 +30,9 @@ Inside the Julia shell, you can download and install the package by issuing:
 Pkg.add("NCDatasets")
 ```
 
-### Latest developpement version
+### Latest development version
 
-If you want to try the lastest developpement version, you can do this with the following commands:
+If you want to try the latest development version, you can do this with the following commands:
 
 ```julia
 Pkg.clone("https://github.com/Alexander-Barth/NCDatasets.jl")
@@ -183,5 +183,5 @@ end
  -->
 <!--  LocalWords:  attval filename netcdf API Gans Institut für Jena
  -->
-<!--  LocalWords:  Biogeochemie
+<!--  LocalWords:  Biogeochemie macOS haskey
  -->
