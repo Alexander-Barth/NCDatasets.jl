@@ -54,3 +54,34 @@ NCDatasets.Dataset(filename,"c") do ds
 
     end
 end
+
+
+# NaN as fillvalue
+
+
+filename = tempname()
+# The mode "c" stands for creating a new file (clobber)
+ds = NCDatasets.Dataset(filename,"c")
+
+# define the dimension "lon" and "lat" with the size 10 and 11 resp.
+ds.dim["lon"] = 10
+ds.dim["lat"] = 11
+
+v = NCDatasets.defVar(ds,"var_with_missing_data",Float32,("lon","lat"))
+
+data = [Float32(i+j) for i = 1:10, j = 1:11]
+fv = NaN32
+v.attrib["_FillValue"] = fv
+# mask the frist element
+dataa = DataArray(data,data .== 2)
+
+v[:,:] = dataa
+@test isna(v[1,1])
+@test isequal(v[:,:],dataa)
+
+# load without transformation
+@test isnan(v.var[1,1])
+
+
+NCDatasets.close(ds)
+

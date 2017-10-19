@@ -994,7 +994,12 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
     end
 
     if "_FillValue" in attnames
-        mask = data .== v.attrib["_FillValue"]
+        fillvalue = v.attrib["_FillValue"]
+        if isnan(fillvalue)
+            mask = isnan.(data)
+        else
+            mask = data .== v.attrib["_FillValue"]
+        end
     else
         mask = falses(data)
     end
