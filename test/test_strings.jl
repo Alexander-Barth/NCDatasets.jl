@@ -18,8 +18,22 @@ NCDatasets.close(ds)
 
 
 ds = NCDatasets.Dataset(filename)
-data2 = ds["var_string"][:]
+vs = ds["var_string"].var
+
+@test vs[:] == data
+
+@test vs[2:3] == data[2:3]
+
+@test vs[2] == data[2]
+
+# ignore additional indices
+@test vs[2,1,1] == data[2,1,1]
+
+# ignore additional indices
+@test vs[2:3,1,1] == data[2:3,1,1]
+
+
+
 NCDatasets.close(ds)
 
-@test data2 == data
 

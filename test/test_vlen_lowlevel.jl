@@ -81,7 +81,7 @@ if xtype >= NCDatasets.NC_FIRSTUSERTYPEID
 
         i = 1
         tmp = Vector{NCDatasets.nc_vlen_t{T}}(1)
-        NCDatasets.nc_get_var1(ncid,varid,[i-1],tmp)
+        NCDatasets.nc_get_var1!(ncid,varid,[i-1],tmp)
         @test data[1] ==  unsafe_wrap(Vector{T},tmp[1].p,(tmp[1].len,))
     end
 end

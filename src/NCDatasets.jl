@@ -746,14 +746,14 @@ function Base.getindex(v::Variable,indexes::Int...)
 
     data = Vector{eltype(v)}(1)
     # use zero-based indexes
-    nc_get_var1(v.ncid,v.varid,[i-1 for i in indexes[end:-1:1]],data)
+    nc_get_var1!(v.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],data)
     return data[1]
 end
 
 function Base.setindex!(v::Variable{T,N},data,indexes::Int...) where N where T
     datamode(v.ncid,v.isdefmode)
     # use zero-based indexes and reversed order
-    nc_put_var1(v.ncid,v.varid,[i-1 for i in indexes[end:-1:1]],[T(data)])
+    nc_put_var1(v.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],[T(data)])
     return data
 end
 
@@ -844,7 +844,7 @@ end
 
 function Base.getindex{T,N}(v::Variable{T,N},indexes::StepRange{Int,Int}...)
     #@show "get sr",indexes
-    start,count,stride,jlshape = ncsub(indexes)
+    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
     data = Array{T,N}(jlshape)
     nc_get_vars(v.ncid,v.varid,start,count,stride,data)
     return data
@@ -853,7 +853,7 @@ end
 function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...)
     #@show @__FILE__,@__LINE__,indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
-    start,count,stride,jlshape = ncsub(indexes)
+    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
     tmp = fill(data,jlshape)
     nc_put_vars(v.ncid,v.varid,start,count,stride,tmp)
     return data
@@ -862,7 +862,7 @@ end
 function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::StepRange{Int,Int}...)
     #@show @__FILE__,@__LINE__,indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
-    start,count,stride,jlshape = ncsub(indexes)
+    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
     tmp = fill(convert(T,data),jlshape)
     nc_put_vars(v.ncid,v.varid,start,count,stride,tmp)
     return data
@@ -871,7 +871,7 @@ end
 function Base.setindex!{T,N}(v::Variable{T,N},data::Array{T,N},indexes::StepRange{Int,Int}...)
     #@show "sr",indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
-    start,count,stride,jlshape = ncsub(indexes)
+    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
     nc_put_vars(v.ncid,v.varid,start,count,stride,data)
     return data
 end
@@ -880,7 +880,7 @@ end
 function Base.setindex!{T,N}(v::Variable{T,N},data::AbstractArray,indexes::StepRange{Int,Int}...)
     #@show "sr2",indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
-    start,count,stride,jlshape = ncsub(indexes)
+    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
 
     tmp = convert(Array{T,ndims(data)},data)
     nc_put_vars(v.ncid,v.varid,start,count,stride,tmp)
@@ -984,7 +984,13 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
     attnames = keys(v.attrib)
 
     data = v.var[indexes...]
-    isscalar = ndims(data) == 0
+    isscalar =
+        if typeof(data) == String || typeof(data) == DateTime
+            true
+        else
+            ndims(data) == 0
+        end
+
     if isscalar
         data = [data]
     end
@@ -1113,6 +1119,7 @@ function Base.show(io::IO,v::Variable; indent="")
 end
 
 Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=indent)
+
 Base.display(v::Union{Variable,CFVariable}) = show(STDOUT,v)
 
 
