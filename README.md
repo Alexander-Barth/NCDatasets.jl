@@ -15,7 +15,7 @@ NetCDF data set and attribute list behave like Julia dictionaries and variables 
 
 
 The module `NCDatasets` has support for the following NetCDF CF conventions:
-* _FillValue will be returned as NA (DataArrays)
+* `_FillValue` will be returned as NA (DataArrays)
 * `scale_factor` and `add_offset` are applied
 * time variables (recognized by the `units` attribute) are returned as `DateTime` object.
 
@@ -43,8 +43,7 @@ Pkg.build("NCDatasets")
 
 Before reading the data from a NetCDF file, it is often useful to explore the list of variables and attributes defined in a NetCDF file.
 
-For interactive use, the following (without ending semicolon) 
-displays the content of the file similar to `ncdump -h file.nc"
+For interactive use, the following (without ending semicolon) displays the content of the file similar to `ncdump -h file.nc`
 
 ```julia
 using NCDatasets
@@ -118,6 +117,15 @@ unit = v.attrib["units"]
 close(ds)
 ```
 
+In the example above, the subset can also be loaded with:
+
+```julia
+subdata = Dataset("/tmp/test.nc")["temperature"][10:30,30:5:end]
+```
+
+This might be useful in an interactive session. However, the file `test.nc` is not closed which can be problem if you open many files. On Linux the number of open files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
+
+
 ## Load a file (with unknown structure)
 
 
@@ -171,6 +179,25 @@ Dataset(filename,"r") do ds
 end
 ```
 
+# Filing an issue
+
+When you file an issue, please include sufficient information that would _allow somebody else to reproduce the issue_, in particular
+1. Provide the code that reproduces the issue
+2. If necessary to run your code, provide the used NetCDF files
+3. Make your code and NetCDF file as simple as possible (while still showing the error and being runnable). A big thank you for the 5-star-premium-gold users who do not forget this point! 👍🏅🏆
+4. The full error message that you are seeing (in particular file names and line numbers of the stack-trace)
+5. Which version of Julia and NCDatasets are you using?  Please include the output of:
+```
+versioninfo()
+Pkg.installed()["NCDatasets"]
+```
+6. Does `NCDatasets` pass its test suite? Please include the output of:
+
+```julia
+Pkg.test("NCDatasets")
+```
+
+
 # Credits
 
 `netcdf_c.jl`, `build.jl` and the error handling code of the NetCDF C API are from NetCDF.jl by Fabian Gans (Max-Planck-Institut für Biogeochemie, Jena, Germany) released under the MIT license.
@@ -183,5 +210,5 @@ end
  -->
 <!--  LocalWords:  attval filename netcdf API Gans Institut für Jena
  -->
-<!--  LocalWords:  Biogeochemie macOS haskey
+<!--  LocalWords:  Biogeochemie macOS haskey runnable versioninfo
  -->
