@@ -133,7 +133,7 @@ var documenterSearchIndex = {"docs": [
     "page": "NCDatasets.jl",
     "title": "Variables",
     "category": "section",
-    "text": "defVar\ndimnames\nname\nchunking\ndeflate\nchecksum\nBase.start(ds::Dataset)"
+    "text": "defVar\ndimnames\nname\nchunking\ndeflate\nchecksum\nBase.start(ds::Dataset)Different type of arrays are involved when working with NCDatasets. For instance assume that test.nc is a file with a Float32 variable called var. Assume that we open this data set in append mode (\"a\"):using NCDatasets\nds = Dataset(\"test.nc\",\"a\")\nv_cf = ds[\"var\"]The variable v_cf has the type CFVariable. No data is actually loaded from disk, but you can query its size, number of dimensions, number elements, ... by the functions size, ndims, length as ordinary Julia arrays. Once you index, the variable v_cf, then the data is loaded and stored into a DataArray:v_da = v_cf[:,:]"
 },
 
 {
@@ -166,6 +166,22 @@ var documenterSearchIndex = {"docs": [
     "title": "Attributes",
     "category": "section",
     "text": "The NetCDF dataset (as return by Dataset) and the NetCDF variables (as returned by getindex, variable or defVar) have the field attrib which has the type NCDatasets.Attributes and behaves like a julia dictionary.getindex(a::NCDatasets.Attributes,name::AbstractString)\nsetindex!(a::NCDatasets.Attributes,data,name::AbstractString)\nkeys(a::NCDatasets.Attributes)"
+},
+
+{
+    "location": "index.html#NCDatasets.ncgen-Tuple{Any}",
+    "page": "NCDatasets.jl",
+    "title": "NCDatasets.ncgen",
+    "category": "Method",
+    "text": "ncgen(fname; ...)\nncgen(fname,jlname; ...)\n\nGenerate the Julia code that would produce a NetCDF file with the same metadata as the NetCDF file fname. The code is placed in the file jlname or printed  to the standard output. Per default the new NetCDF file is called filename.nc. This can be changed with the optional parameter newfname.\n\n\n\n"
+},
+
+{
+    "location": "index.html#Utility-functions-1",
+    "page": "NCDatasets.jl",
+    "title": "Utility functions",
+    "category": "section",
+    "text": "ncgen(fname)"
 },
 
 {
