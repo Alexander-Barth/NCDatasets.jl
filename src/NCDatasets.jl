@@ -164,13 +164,13 @@ end
 
 function timedecode(data,units)
     const t0,plength = timeunits(units)
-    convert(x) = t0 + Dates.Millisecond(round(Int,plength * x))    
+    convert(x) = t0 + Dates.Millisecond(round(Int,plength * x))
     return convert.(data)
 end
 
 function timeencode(data::Array{DateTime,N},units) where N
     const t0,plength = timeunits(units)
-    convert(dt) = Dates.value(dt - t0) / plength    
+    convert(dt) = Dates.value(dt - t0) / plength
     return convert.(data)
 end
 
@@ -179,7 +179,7 @@ timeencode(data,units) = data
 
 function Base.show(io::IO,a::BaseAttributes; indent = "  ")
     # use the same order of attributes than in the NetCDF file
-    
+
    for (attname,attval) in a
        print(io,indent,@sprintf("%-20s = ",attname))
        print_with_color(:blue, io, @sprintf("%s",attval))
@@ -205,7 +205,7 @@ end
 """
     Base.setindex!(d::Dimensions,len,name::AbstractString)
 
-Defines the dimension called `name` to the length `len`. 
+Defines the dimension called `name` to the length `len`.
 Generally dimension are defined by indexing, for example:
 
 ```julia
@@ -213,7 +213,7 @@ ds = Dataset("file.nc","c")
 ds.dim["longitude"] = 100
 ```
 
-If `len` is the special value `Inf`, then the dimension is considered as 
+If `len` is the special value `Inf`, then the dimension is considered as
 `unlimited`, i.e. it will grow as data is added to the NetCDF file.
 """
 
@@ -230,8 +230,8 @@ end
 """
     getindex(a::Attributes,name::AbstractString)
 
-Return the value of the attribute called `name` from the 
-attribute list `a`. Generally the attributes are loaded by 
+Return the value of the attribute called `name` from the
+attribute list `a`. Generally the attributes are loaded by
 indexing, for example:
 
 ```julia
@@ -248,8 +248,8 @@ end
 """
     Base.setindex!(a::Attributes,data,name::AbstractString)
 
-Set the attribute called `name` to the value `data` in the 
-attribute list `a`. Generally the attributes are defined by 
+Set the attribute called `name` to the value `data` in the
+attribute list `a`. Generally the attributes are defined by
 indexing, for example:
 
 ```julia
@@ -309,7 +309,7 @@ function defGroup(ds::Dataset,groupname)
     grp_ncid = nc_def_grp(ds.ncid,groupname)
     return Dataset(grp_ncid,ds.isdefmode)
 end
-    
+
 function group(ds::Dataset,groupname)
     grp_ncid = nc_inq_grp_ncid(ds.ncid,groupname)
     return Dataset(grp_ncid,ds.isdefmode)
@@ -324,9 +324,9 @@ end
     Dataset(filename::AbstractString,mode::AbstractString = "r";
                      format::Symbol = :netcdf4)
 
-Create a new NetCDF file if the `mode` is "c". An existing file with the same 
-name will be overwritten. If `mode` is "a", then an existing file is open into 
-append mode (i.e. existing data in the NetCDF file is not overwritten and 
+Create a new NetCDF file if the `mode` is "c". An existing file with the same
+name will be overwritten. If `mode` is "a", then an existing file is open into
+append mode (i.e. existing data in the NetCDF file is not overwritten and
 a variabale can be added). With the mode equal to "r", an existing NetCDF file or
 OPeNDAP URL can be open in read-only mode.  The default mode is "r".
 
@@ -342,7 +342,7 @@ Files can also be open and automatically closed with a `do` block.
 ```julia
 Dataset("file.nc") do ds
     data = ds["temperature"][:,:]
-end 
+end
 ```
 
 """
@@ -398,7 +398,7 @@ end
     defDim(ds::Dataset,name,len)
 
 Define a dimension in the data-set `ds` with the given `name` and length `len`.
-If `len` is the special value `Inf`, then the dimension is considered as 
+If `len` is the special value `Inf`, then the dimension is considered as
 `unlimited`, i.e. it will grow as data is added to the NetCDF file.
 
 For example:
@@ -419,19 +419,19 @@ defDim(ds::Dataset,name,len) = nc_def_dim(ds.ncid,name,
 
 Define a variable with the name `name` in the dataset `ds`.  `vtype` can be
 Julia types in the table below (with the corresponding NetCDF type).  The parameter `dimnames` is a tuple with the
-names of the dimension.  For scalar this parameter is the empty tuple ().  
+names of the dimension.  For scalar this parameter is the empty tuple ().
 The variable is returned (of the type CFVariable).
 
 ## Keyword arguments
 
-* `fillvalue`: A value filled in the NetCDF file to indicate missing data. 
+* `fillvalue`: A value filled in the NetCDF file to indicate missing data.
    It will be stored in the _FillValue attribute.
-* `chunksizes`: Vector integers setting the chunk size. The total size of a chunk must be less than 4 GiB. 
+* `chunksizes`: Vector integers setting the chunk size. The total size of a chunk must be less than 4 GiB.
 * `deflatelevel`: Compression level: 0 (default) means no compression and 9 means maximum compression. Each chunk will be compressed individually.
 * `shuffle`: If true, the shuffle filter is activated which can improve the compression ratio.
 * `checksum`: The checksum method can be `:fletcher32` or `:nochecksum` (checksumming is disabled, which is the default)
 
-`chunksizes`, `deflatelevel`, `shuffle` and `checksum` can only be 
+`chunksizes`, `deflatelevel`, `shuffle` and `checksum` can only be
 set on NetCDF 4 files.
 
 ## NetCDF data types
@@ -466,7 +466,7 @@ function defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
         end
 
     varid = nc_def_var(ds.ncid,name,typeid,dimids)
-    
+
 
     if haskey(kw,:chunksizes)
         storage = :chunked
@@ -495,7 +495,7 @@ function defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
         nofill = get(kw,:nofill,false)
         nc_def_var_fill(ds.ncid, varid, nofill, vtype(fillvalue))
     end
-    
+
     return ds[name]
 end
 
@@ -503,7 +503,7 @@ end
 """
     keys(ds::Dataset)
 
-Return a list of all variables names in Dataset `ds`. 
+Return a list of all variables names in Dataset `ds`.
 """
 
 Base.keys(ds::Dataset) = listVar(ds.ncid)
@@ -525,7 +525,7 @@ sync(ds::Dataset) = nc_sync(ds.ncid)
 """
     close(ds::Dataset)
 
-Close the Dataset `ds`. All pending changes will be written 
+Close the Dataset `ds`. All pending changes will be written
 to the disk.
 """
 
@@ -534,8 +534,8 @@ Base.close(ds::Dataset) = nc_close(ds.ncid)
 """
     variable(ds::Dataset,varname::String)
 
-Return the NetCDF variable `varname` in the dataset `ds` as a 
-`NCDataset.Variable`. No scaling is applied when this variable is 
+Return the NetCDF variable `varname` in the dataset `ds` as a
+`NCDataset.Variable`. No scaling is applied when this variable is
 indexes.
 """
 
@@ -546,13 +546,13 @@ function variable(ds::Dataset,varname::String)
     #@show ndims
     shape = zeros(Int,ndims)
     #@show typeof(shape),typeof(Int(1))
-    
+
     for i = 1:ndims
         shape[ndims-i+1] = nc_inq_dimlen(ds.ncid,dimids[i])
     end
     #@show shape
     #@show typeof(shape)
-    
+
     attrib = Attributes(ds.ncid,varid,ds.isdefmode)
 
     # reverse dimids to have the dimension order in Fortran style
@@ -566,9 +566,9 @@ function Base.show(io::IO,ds::Dataset; indent="")
     print_with_color(:red, io, indent, "Dataset: ",path(ds),"\n")
     print(io,indent,"Group: ",nc_inq_grpname(ds.ncid),"\n")
     print(io,"\n")
-    
+
     dimids = nc_inq_dimids(ds.ncid,false)
-    
+
     if length(dimids) > 0
         print_with_color(:red, io, indent, "Dimensions\n")
 
@@ -583,7 +583,7 @@ function Base.show(io::IO,ds::Dataset; indent="")
     varnames = keys(ds)
 
     if length(varnames) > 0
-    
+
         print_with_color(:red, io, indent, "Variables\n")
 
         for name in varnames
@@ -614,12 +614,12 @@ end
 """
     getindex(ds::Dataset,varname::String)
 
-Return the NetCDF variable `varname` in the dataset `ds` as a 
-`NCDataset.CFVariable`. The CF convention are honored when the 
+Return the NetCDF variable `varname` in the dataset `ds` as a
+`NCDataset.CFVariable`. The CF convention are honored when the
 variable is indexed:
 * `_FillValue` will be returned as NA (DataArrays)
 * `scale_factor` and `add_offset` are applied
-* time variables (recognized by the units attribute) are returned 
+* time variables (recognized by the units attribute) are returned
 as `DateTime` object.
 """
 
@@ -702,7 +702,7 @@ chunking(v::Variable,storage,chunksizes) = nc_def_var_chunking(v.ncid,v.varid,st
 """
     storage,chunksizes = chunking(v::Variable)
 
-Return the storage type (:contiguous or :chunked) and the chunk sizes 
+Return the storage type (:contiguous or :chunked) and the chunk sizes
 of the varable `v`.
 """
 chunking(v::Variable) = nc_inq_var_chunking(v.ncid,v.varid)
@@ -710,10 +710,10 @@ chunking(v::Variable) = nc_inq_var_chunking(v.ncid,v.varid)
 """
     shuffle,deflate,deflate_level = deflate(v::Variable)
 
-Return compression information of the variable `v`. If shuffle 
-is `true`, then shuffling (byte interlacing) is activaded. If 
-deflate is `true`, then the data chunks (see `chunking`) are 
-compressed using the compression level `deflate_level` 
+Return compression information of the variable `v`. If shuffle
+is `true`, then shuffling (byte interlacing) is activaded. If
+deflate is `true`, then the data chunks (see `chunking`) are
+compressed using the compression level `deflate_level`
 (0 means no compression and 9 means maximum compression).
 """
 
@@ -725,7 +725,7 @@ checksum(v::Variable,checksummethod) = nc_def_var_fletcher32(v.ncid,v.varid,chec
 """
    checksummethod = checksum(v::Variable)
 
-Return the checksum method of the variable `v` which can be either 
+Return the checksum method of the variable `v` which can be either
 be `:fletcher32` or `:nochecksum`.
 """
 
@@ -1043,7 +1043,7 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
         else
             Array{typeof(data),1}(1)
         end
-            
+
     #@show typeof(data)
     #@show eltype(v.var)
 
@@ -1090,7 +1090,7 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
     end
 
     if !(typeof(data) <: AbstractArray)
-        v.var[indexes...] = x[1]        
+        v.var[indexes...] = x[1]
     else
         v.var[indexes...] = x
     end
@@ -1103,7 +1103,7 @@ end
 function Base.show(io::IO,v::Variable; indent="")
     delim = " × "
     sz = size(v)
-    
+
     print_with_color(:green, io, indent, name(v))
     if length(sz) > 0
         print(io,indent," (",join(sz,delim),")\n")
@@ -1112,7 +1112,7 @@ function Base.show(io::IO,v::Variable; indent="")
     else
         print(io,indent,"\n")
     end
-    
+
     if length(v.attrib) > 0
         print(io,indent,"  Attributes:\n")
         show(io,v.attrib; indent = "$(indent)   ")
@@ -1143,7 +1143,7 @@ if haskey(ds,"temperature")
 end
 ```
 
-This example checks if the file `/tmp/test.nc` has a variable with the 
+This example checks if the file `/tmp/test.nc` has a variable with the
 name `temperature`.
 """
 
@@ -1182,31 +1182,31 @@ end
 
 function ncgen(io::IO,fname; newfname = "filename.nc")
     ds = Dataset(fname)
-    
+
     print(io,"ds = Dataset(\"$(escape(newfname))\",\"c\")\n")
-    
+
     print(io,"# Dimensions\n\n")
     for (d,v) in ds.dim
-        print(io,"ds.dim[\"$d\"] = $v; \n")
+        print(io,"ds.dim[\"$d\"] = $v\n")
     end
-    
+
     print(io,"\n# Declare variables\n\n")
-    
+
     for (d,v) in ds
         print(io,"nc$d = defVar(ds,\"$d\", $(eltype(v.var)), $(dimnames(v))) \n")
         ncgen_setattrib(io,"nc$d",v.attrib)
         print(io,"\n")
     end
-    
+
     print(io,"# Global attributes\n\n")
-    
+
     ncgen_setattrib(io,"ds",ds.attrib)
 
     print(io,"\n# Define variables\n\n")
 
     for d in keys(ds)
         print(io,"# nc$d[:] = ...\n")
-    end    
+    end
 
     print(io,"\nclose(ds)\n")
     close(ds)
@@ -1218,7 +1218,7 @@ end
     ncgen(fname,jlname; ...)
 
 Generate the Julia code that would produce a NetCDF file with the same metadata
-as the NetCDF file `fname`. The code is placed in the file `jlname` or printed 
+as the NetCDF file `fname`. The code is placed in the file `jlname` or printed
 to the standard output. Per default the new NetCDF file is called `filename.nc`.
 This can be changed with the optional parameter `newfname`.
 """
@@ -1237,14 +1237,14 @@ function ncgen_setattrib(io,v,attrib)
         litval = if typeof(val) == String
             "\"$(escape(val))\""
         elseif typeof(val) == Float64
-            val                
+            val
         elseif typeof(val) == Float32
-            "$(eltype(val))($(val))"            
+            "$(eltype(val))($(val))"
         else
-            val                
+            val
         end
-            
-        print(io,"$(v).attrib[\"$d\"] = $litval; \n"); 
+
+        print(io,"$(v).attrib[\"$d\"] = $litval\n");
     end
 end
 

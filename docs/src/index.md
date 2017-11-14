@@ -52,17 +52,17 @@ setindex!(a::NCDatasets.Attributes,data,name::AbstractString)
 keys(a::NCDatasets.Attributes)
 ```
 
-# Utility functions
-
-```@docs
-ncgen(fname)
-```
-
 ## Dimensions
 
 ```@docs
 defDim
 setindex!(d::NCDatasets.Dimensions,len,name::AbstractString)
+```
+
+# Utility functions
+
+```@docs
+ncgen(fname)
 ```
 
 
