@@ -1090,7 +1090,6 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
     end
 
     if !(typeof(data) <: AbstractArray)
-        #@show indexes,x[1]
         v.var[indexes...] = x[1]        
     else
         v.var[indexes...] = x
