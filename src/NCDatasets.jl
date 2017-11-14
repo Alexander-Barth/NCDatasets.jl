@@ -1,3 +1,5 @@
+__precompile__()
+
 module NCDatasets
 using Base
 using Base.Test
@@ -1164,8 +1166,83 @@ Base.start(a::NCIterable) = keys(a)
 Base.done(a::NCIterable,state) = length(state) == 0
 Base.next(a::NCIterable,state) = (state[1] => a[shift!(state)], state)
 
+
+function ncgen(io::IO,fname; newfname = "filename.nc")
+    ds = Dataset(fname)
+    
+    print(io,"ds = Dataset(\"$newfname\",\"c\")\n")
+    
+    print(io,"# Dimensions\n\n")
+    for (d,v) in ds.dim
+        print(io,"ds.dim[\"$d\"] = $v; \n")
+    end
+    
+    print(io,"\n# Declare variables\n\n")
+    
+    for (d,v) in ds
+        print(io,"nc$d = defVar(ds,\"$d\", $(eltype(v.var)), $(dimnames(v))) \n")
+        ncgen_setattrib(io,"nc$d",v.attrib)
+        print(io,"\n")
+    end
+    
+    print(io,"# Global attributes\n\n")
+    
+    ncgen_setattrib(io,"ds",ds.attrib)
+
+    print(io,"\n# Define variables\n\n")
+
+    for d in keys(ds)
+        print(io,"# nc$d[:] = ...\n")
+    end    
+
+    print(io,"\nclose(ds)\n")
+end
+
+
+"""
+    ncgen(fname; ...)
+    ncgen(fname,jlname; ...)
+
+Generate the Julia code that would produce a NetCDF file with the same metadata
+as the NetCDF file `fname`. The code is placed in the file `jlname` or printed 
+to the standard output. Per default the new NetCDF file is called `filename.nc`.
+This can be changed with the optional parameter `newfname`.
+"""
+
+ncgen(fname; kwargs...)  = ncgen(STDOUT,fname; kwargs...)
+
+function ncgen(fname,jlname; kwargs...)
+    open(jlname,"w") do io
+        ncgen(io, fname; kwargs...)
+    end
+end
+
+
+function ncgen_setattrib(io,v,attrib)
+    for (d,val) in attrib
+        litval = if typeof(val) == String
+            valescaped = val
+            # escape backslash, dollar and quote
+            # backslash must come first
+            for c in ['\\','$','"']
+                valescaped = replace(valescaped,"$c",'\\' * c)
+            end 
+
+            "\"$(valescaped)\""
+        elseif typeof(val) == Float64
+            val                
+        elseif typeof(val) == Float32
+            "$(eltype(val))($(val))"            
+        else
+            val                
+        end
+            
+        print(io,"$(v).attrib[\"$d\"] = $litval; \n"); 
+    end
+end
+
 export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
-    deflate, chunking, checksum, fillvalue, fillmode
+    deflate, chunking, checksum, fillvalue, fillmode, ncgen
 
 # it is good practise to use the default fill-values, thus we export them
 export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,

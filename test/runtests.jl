@@ -180,8 +180,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_vlen_lowlevel.jl")
     include("test_vlen.jl")
 
-    
-
+    include("test_ncgen.jl")
+       
     # display
     s = IOBuffer()
     filename = tempname()

@@ -841,7 +841,7 @@ end
 function nc_inq_dimlen(ncid::Integer,dimid::Integer)
     lengthp = zeros(Csize_t,1)       
     check(ccall((:nc_inq_dimlen,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t}),ncid,dimid,lengthp))
-    return lengthp[1]
+    return Int(lengthp[1])
 end
 
 # function nc_rename_dim(ncid::Integer,dimid::Integer,name)

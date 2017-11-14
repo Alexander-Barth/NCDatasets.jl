@@ -21,6 +21,7 @@ The module `NCDatasets` has support for the following NetCDF CF conventions:
 
 The raw data can also be accessed (without the transformations above).
 
+The module also includes an utility function `ncgen` which generates the Julia code that would produce a NetCDF file with the same metadata as an template NetCDF file.
 
 ## Installation
 
@@ -92,6 +93,38 @@ v.attrib["units_string"] = "this is a string attribute with Unicode Ω ∈ ∑ �
 
 close(ds)
 ```
+
+## Create a NetCDF file from a template
+
+
+
+```julia
+# download example file
+ncfile = download("https://www.unidata.ucar.edu/software/netcdf/examples/sresa1b_ncar_ccsm3-example.nc")
+# generate Julia code
+ncgen(ncfile)
+```
+
+The produces the Julia code (only the beginning of the code is shown):
+
+```julia
+ds = Dataset("filename.nc","c")
+# Dimensions
+
+ds.dim["lat"] = 128; 
+ds.dim["lon"] = 256; 
+ds.dim["bnds"] = 2; 
+ds.dim["plev"] = 17; 
+ds.dim["time"] = 1; 
+
+# Declare variables
+
+ncarea = defVar(ds,"area", Float32, ("lon", "lat")) 
+ncarea.attrib["long_name"] = "Surface area"; 
+ncarea.attrib["units"] = "meter2"; 
+# ...
+```
+
 
 ## Load a file (with known structure)
 

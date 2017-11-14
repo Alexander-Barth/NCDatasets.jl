@@ -25,6 +25,22 @@ checksum
 Base.start(ds::Dataset)
 ```
 
+Different type of arrays are involved when working with NCDatasets. For instance assume that `test.nc` is a file with a `Float32` variable called `var`. Assume that we open this data set in append mode (`"a"`):
+
+```julia
+using NCDatasets
+ds = Dataset("test.nc","a")
+v_cf = ds["var"]
+```
+
+The variable `v_cf` has the type `CFVariable`. No data is actually loaded from disk, but you can query its size, number of dimensions, number elements, ... by the functions `size`, `ndims`, `length` as ordinary Julia arrays. Once you index, the variable `v_cf`, then the data is loaded and stored into a `DataArray`:
+
+```julia
+v_da = v_cf[:,:]
+```
+
+
+
 ## Attributes
 
 The NetCDF dataset (as return by `Dataset`) and the NetCDF variables (as returned by `getindex`, `variable` or `defVar`) have the field `attrib` which has the type `NCDatasets.Attributes` and behaves like a julia dictionary.
@@ -36,6 +52,11 @@ setindex!(a::NCDatasets.Attributes,data,name::AbstractString)
 keys(a::NCDatasets.Attributes)
 ```
 
+# Utility functions
+
+```@docs
+ncgen(fname)
+```
 
 ## Dimensions
 
