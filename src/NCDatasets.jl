@@ -1166,10 +1166,24 @@ Base.done(a::NCIterable,state) = length(state) == 0
 Base.next(a::NCIterable,state) = (state[1] => a[shift!(state)], state)
 
 
+"""
+    escape(val)
+escape backslash, dollar and quote
+"""
+function escape(val)
+     valescaped = val
+     # backslash must come first
+     for c in ['\\','$','"']
+        valescaped = replace(valescaped,c,'\\' * c)
+    end
+	return valescaped
+end
+
+
 function ncgen(io::IO,fname; newfname = "filename.nc")
     ds = Dataset(fname)
     
-    print(io,"ds = Dataset(\"$newfname\",\"c\")\n")
+    print(io,"ds = Dataset(\"$(escape(newfname))\",\"c\")\n")
     
     print(io,"# Dimensions\n\n")
     for (d,v) in ds.dim
@@ -1195,6 +1209,7 @@ function ncgen(io::IO,fname; newfname = "filename.nc")
     end    
 
     print(io,"\nclose(ds)\n")
+    close(ds)
 end
 
 
@@ -1220,14 +1235,7 @@ end
 function ncgen_setattrib(io,v,attrib)
     for (d,val) in attrib
         litval = if typeof(val) == String
-            valescaped = val
-            # escape backslash, dollar and quote
-            # backslash must come first
-            for c in ['\\','$','"']
-                valescaped = replace(valescaped,"$c",'\\' * c)
-            end 
-
-            "\"$(valescaped)\""
+            "\"$(escape(val))\""
         elseif typeof(val) == Float64
             val                
         elseif typeof(val) == Float32
