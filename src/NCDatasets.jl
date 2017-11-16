@@ -388,7 +388,12 @@ end
 
 function Dataset(f::Function,args...; kwargs...)
     ds = Dataset(args...; kwargs...)
-    f(ds)
+    try
+        f(ds)
+    catch
+        close(ds)
+        rethrow()
+    end
     close(ds)
 end
 
