@@ -444,7 +444,7 @@ function nc_inq_vlen(ncid::Integer,xtype::Integer)
     base_nc_typep = Vector{nc_type}(1)
     name = zeros(UInt8,NC_MAX_NAME+1)
         
-    check(ccall((:nc_inq_vlen,libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{Cint},Ptr{nc_type}),ncid,xtype,name,datum_sizep,base_nc_typep))
+    check(ccall((:nc_inq_vlen,libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{Csize_t},Ptr{nc_type}),ncid,xtype,name,datum_sizep,base_nc_typep))
 
     return unsafe_string(pointer(name)),datum_sizep[1],base_nc_typep[1]
 end
