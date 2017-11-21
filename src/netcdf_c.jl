@@ -676,20 +676,18 @@ function nc_inq_var_fletcher32(ncid::Integer,varid::Integer)
 end
 
 function nc_def_var_chunking(ncid::Integer,varid::Integer,storage,chunksizes)
-    
-    check(ccall((:nc_def_var_chunking,libnetcdf),Cint,(Cint,Cint,Cint,Ptr{Cint}),ncid,varid,NCConstants[storage],chunksizes))
+
+    check(ccall((:nc_def_var_chunking,libnetcdf),Cint,(Cint,Cint,Cint,Ptr{Csize_t}),ncid,varid,NCConstants[storage],chunksizes))
 end
 
 function nc_inq_var_chunking(ncid::Integer,varid::Integer)
     ndims = nc_inq_varndims(ncid,varid)
-    
     storagep = zeros(Cint,1)
-    chunksizes = zeros(Cint,ndims)
+    chunksizes = zeros(Csize_t,ndims)
     
-    check(ccall((:nc_inq_var_chunking,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint}),ncid,varid,storagep,chunksizes))
+    check(ccall((:nc_inq_var_chunking,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Csize_t}),ncid,varid,storagep,chunksizes))
 
-                 
-    return NCSymbols[storagep[1]],chunksizes
+    return NCSymbols[storagep[1]],Int.(chunksizes)
 end
 
 

@@ -1,4 +1,4 @@
-sz = (40,40)
+sz = (40,10)
 filename = tempname()
 #filename = "/tmp/test-7.nc"
 # The mode "c" stands for creating a new file (clobber)
@@ -17,7 +17,7 @@ NCDatasets.Dataset(filename,"c") do ds
 
         v = NCDatasets.defVar(ds,"var-$T",T,("lon","lat");
                               shuffle = true,
-                              chunksizes = [4,4],
+                              chunksizes = [20,5],
                               deflatelevel = 9,
                               checksum = :nochecksum
                               )
@@ -33,7 +33,7 @@ NCDatasets.Dataset(filename,"c") do ds
         # check chunking
         storage,chunksizes = NCDatasets.chunking(v)
         @test storage == :chunked
-        @test chunksizes[1] == 4
+        @test chunksizes[1] == 20
 
         # change chunking
         NCDatasets.chunking(v,:chunked,[3,3])

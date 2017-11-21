@@ -478,7 +478,7 @@ function defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
         chunksizes = kw[:chunksizes]
 
         # this will fail on NetCDF-3 files
-        nc_def_var_chunking(ds.ncid,varid,storage,chunksizes)
+        nc_def_var_chunking(ds.ncid,varid,storage,reverse(chunksizes))
     end
 
     if haskey(kw,:shuffle) || haskey(kw,:deflatelevel)
@@ -702,7 +702,7 @@ Return the name of the NetCDF variable `v`.
 
 name(v::Variable) = nc_inq_varname(v.ncid,v.varid)
 
-chunking(v::Variable,storage,chunksizes) = nc_def_var_chunking(v.ncid,v.varid,storage,chunksizes)
+chunking(v::Variable,storage,chunksizes) = nc_def_var_chunking(v.ncid,v.varid,storage,reverse(chunksizes))
 
 """
     storage,chunksizes = chunking(v::Variable)
@@ -710,7 +710,10 @@ chunking(v::Variable,storage,chunksizes) = nc_def_var_chunking(v.ncid,v.varid,st
 Return the storage type (:contiguous or :chunked) and the chunk sizes
 of the varable `v`.
 """
-chunking(v::Variable) = nc_inq_var_chunking(v.ncid,v.varid)
+function chunking(v::Variable)
+    storage,chunksizes = nc_inq_var_chunking(v.ncid,v.varid)
+    return storage,reverse(chunksizes)
+end
 
 """
     shuffle,deflate,deflate_level = deflate(v::Variable)
