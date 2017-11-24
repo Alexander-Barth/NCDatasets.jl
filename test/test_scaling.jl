@@ -6,22 +6,28 @@ ds = Dataset(filename,"c")
 defDim(ds,"lon",10)
 defDim(ds,"lat",11)
 
-v = defVar(ds,"scaled_var",Float32,("lon","lat"))
+for T in [Int32,Float32]
+    v = defVar(ds,"scaled_var_$(T)",T,("lon","lat"))
 
-data = [Float32(i+j) for i = 1:10, j = 1:11]
-offset = 1
-factor = 2
-v.attrib["add_offset"] = offset
-v.attrib["scale_factor"] = factor
-
-v[:,:] = data
-@test v[:,:] ≈ data
-
-# load without transformation (offset/scaling)
-@test v.var[:,:] ≈ (data-offset)/factor
-
-# write/read without transformation (offset/scaling)
-v.var[:,:] = data
-@test v.var[:,:] ≈ data
+    data = [-12.3*i + 23.4*j for i = 1:10, j = 1:11]
+    offset = 20.
+    factor = 0.1
+    v.attrib["add_offset"] = offset
+    v.attrib["scale_factor"] = factor
+    
+    v[:,:] = data
+    @test v[:,:] ≈ data atol=1e-4
+    
+    # load without transformation (offset/scaling)
+    @test v.var[:,:] ≈ (data-offset)/factor atol=1e-4
+    
+    # write/read without transformation (offset/scaling)
+    v.var[:,:] = data
+    if eltype(v.var) <: Integer
+        @test v.var[:,:] == round.(Int,data)
+    else
+        @test v.var[:,:] ≈ data
+    end
+end
 
 close(ds)

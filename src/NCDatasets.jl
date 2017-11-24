@@ -807,8 +807,13 @@ end
 
 function Base.setindex!{T,T2,N}(v::Variable{T,N},data::Array{T2,N},indexes::Colon...)
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
-
-    tmp = convert(Array{T,N},data)
+    tmp = 
+        if T <: Integer
+            round.(T,data)
+        else
+            convert(Array{T,N},data)
+        end
+            
     nc_put_var(v.ncid,v.varid,tmp)
     return data
 end
