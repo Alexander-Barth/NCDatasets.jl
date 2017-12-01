@@ -80,20 +80,6 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     sync(ds)
     close(ds)
 
-    # Load a file (with known structure)
-
-    # The mode "c" stands for creating a new file (clobber)
-    ds = Dataset(filename,"r")
-    v = ds["temperature"]
-
-    # load a subset
-    subdata = v[10:30,30:5:end]
-
-    # load all data
-    data = v[:,:]
-
-    close(ds)
-
     # Load a file (with unknown structure)
 
     ds = Dataset(filename,"r")
