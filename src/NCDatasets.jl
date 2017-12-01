@@ -1187,7 +1187,7 @@ function escape(val)
      valescaped = val
      # backslash must come first
      for c in ['\\','$','"']
-        valescaped = replace(valescaped,c,'\\' * c)
+        valescaped = replace(valescaped,c,"\\$c")
     end
 	return valescaped
 end
