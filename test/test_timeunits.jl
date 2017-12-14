@@ -30,3 +30,9 @@ for (timeunit,factor) in [("days",1),("hours",24),("minutes",24*60),("seconds",2
     rm(filename)
 
 end
+
+
+t0,plength = NCDatasets.timeunits("days since 1950-01-02T03:04:05Z")
+
+@test t0 == DateTime(1950,1,2, 3,4,5)
+@test plength == 86400000
