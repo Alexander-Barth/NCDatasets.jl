@@ -254,8 +254,16 @@ end
 
 function nc_open(path,mode::Integer)
     ncidp = Vector{Cint}(1)
-    check(ccall((:nc_open,libnetcdf),Cint,(Ptr{UInt8},Cint,Ptr{Cint}),path,mode,ncidp))
-    return ncidp[1]
+
+    code = ccall((:nc_open,libnetcdf),Cint,(Ptr{UInt8},Cint,Ptr{Cint}),path,mode,ncidp)
+
+    if code == Cint(0)
+        return ncidp[1]
+        # otherwise throw an error message
+    else
+        # return a more helpful error message (i.e. with the path)
+        throw(NetCDFError(code, "Opening path $(path): $(nc_strerror(code))"))
+    end
 end
 
 function nc_inq_path(ncid::Integer)

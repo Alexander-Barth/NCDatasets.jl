@@ -138,15 +138,23 @@ function defmode(ncid,isdefmode::Vector{Bool})
 end
 
 """
-    timeunits(units)
+    t0,plength = timeunits(units)
 
-Parse time units and returns the start time and the scaling factor in
-milliseconds.
+Parse time units and returns the start time `t0` and the scaling factor 
+`plength` in milliseconds.
 """
 function timeunits(units)
     tunit,starttime = strip.(split(units," since "))
     tunit = lowercase(tunit)
 
+    starttime = replace(starttime,"T"," ")
+
+    # remove Z time zone indicator
+    # all times are assumed UTC anyway
+    if endswith(starttime,"Z")
+        starttime = starttime[1:end-1]
+    end
+    
     t0 = DateTime(starttime,"y-m-d H:M:S")
 
     plength = if (tunit == "days") || (tunit == "day")

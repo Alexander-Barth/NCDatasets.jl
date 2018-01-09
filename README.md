@@ -230,6 +230,9 @@ Pkg.installed()["NCDatasets"]
 Pkg.test("NCDatasets")
 ```
 
+# Alternative
+
+The package [NetCDF.jl](https://github.com/JuliaGeo/NetCDF.jl) from Fabian Gans and contributors is an alternative to this package which supports a more Matlab/Octave-like interface for reading and writing NetCDF files.
 
 # Credits
 
