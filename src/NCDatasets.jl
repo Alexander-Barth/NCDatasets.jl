@@ -1065,7 +1065,7 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
     #@show "here",ndims(x),ndims(data)
 
     if isa(data,DataArray)
-        mask = isna.(data)
+        mask = ismissing.(data)
         x[.!mask] = data[.!mask]
     else
         if !(typeof(data) <: AbstractArray)

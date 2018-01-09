@@ -18,7 +18,7 @@ dataa = DataArray(data,data .== 2)
 
 
 v[:,:] = dataa
-@test isna(v[1,1])
+@test ismissing(v[1,1])
 @test isequal(v[:,:],dataa)
 
 # load without transformation
@@ -76,7 +76,7 @@ v.attrib["_FillValue"] = fv
 dataa = DataArray(data,data .== 2)
 
 v[:,:] = dataa
-@test isna(v[1,1])
+@test ismissing(v[1,1])
 @test isequal(v[:,:],dataa)
 
 # load without transformation
