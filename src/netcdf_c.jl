@@ -231,15 +231,15 @@ const NCChecksumConstants = Dict(value => key for (key, value) in NCChecksumSymb
 
 
 function nc_inq_libvers()
-    unsafe_string(ccall((:nc_inq_libvers,libnetcdf),Ptr{UInt8},()))
+    unsafe_string(ccall((:nc_inq_libvers,libnetcdf),Cstring,()))
 end
 
 function nc_strerror(ncerr::Integer)
-    unsafe_string(ccall((:nc_strerror,libnetcdf),Ptr{UInt8},(Cint,),ncerr))
+    unsafe_string(ccall((:nc_strerror,libnetcdf),Cstring,(Cint,),ncerr))
 end
 
 # function nc__create(path,cmode::Integer,initialsz::Integer,chunksizehintp,ncidp)
-#     check(ccall((:nc__create,libnetcdf),Cint,(Ptr{UInt8},Cint,Cint,Ptr{Cint},Ptr{Cint}),path,cmode,initialsz,chunksizehintp,ncidp))
+#     check(ccall((:nc__create,libnetcdf),Cint,(Cstring,Cint,Cint,Ptr{Cint},Ptr{Cint}),path,cmode,initialsz,chunksizehintp,ncidp))
 # end
 
 function nc_create(path,cmode::Integer)
@@ -1039,7 +1039,7 @@ end
 function nc_inq_varid(ncid::Integer,name)
     varidp = zeros(Cint,1)
 
-    check(ccall((:nc_inq_varid,libnetcdf),Cint,(Cint,Ptr{UInt8},Ptr{Cint}),ncid,name,varidp))
+    check(ccall((:nc_inq_varid,libnetcdf),Cint,(Cint,Cstring,Ptr{Cint}),ncid,name,varidp))
 
     return varidp[1]  
 end
@@ -1078,7 +1078,7 @@ function nc_inq_varnatts(ncid::Integer,varid::Integer)
 end
 
 # function nc_rename_var(ncid::Integer,varid::Integer,name)
-#     check(ccall((:nc_rename_var,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8}),ncid,varid,name))
+#     check(ccall((:nc_rename_var,libnetcdf),Cint,(Cint,Cint,Cstring),ncid,varid,name))
 # end
 
 # function nc_copy_var(ncid_in::Integer,varid::Integer,ncid_out::Integer)
@@ -1658,19 +1658,19 @@ end
 # end
 
 # function nc__create_mp(path,cmode::Integer,initialsz::Integer,basepe::Integer,chunksizehintp,ncidp)
-#     check(ccall((:nc__create_mp,libnetcdf),Cint,(Ptr{UInt8},Cint,Cint,Cint,Ptr{Cint},Ptr{Cint}),path,cmode,initialsz,basepe,chunksizehintp,ncidp))
+#     check(ccall((:nc__create_mp,libnetcdf),Cint,(Cstring,Cint,Cint,Cint,Ptr{Cint},Ptr{Cint}),path,cmode,initialsz,basepe,chunksizehintp,ncidp))
 # end
 
 # function nc__open_mp(path,mode::Integer,basepe::Integer,chunksizehintp,ncidp)
-#     check(ccall((:nc__open_mp,libnetcdf),Cint,(Ptr{UInt8},Cint,Cint,Ptr{Cint},Ptr{Cint}),path,mode,basepe,chunksizehintp,ncidp))
+#     check(ccall((:nc__open_mp,libnetcdf),Cint,(Cstring,Cint,Cint,Ptr{Cint},Ptr{Cint}),path,mode,basepe,chunksizehintp,ncidp))
 # end
 
 # function nc_delete(path)
-#     check(ccall((:nc_delete,libnetcdf),Cint,(Ptr{UInt8},),path))
+#     check(ccall((:nc_delete,libnetcdf),Cint,(Cstring,),path))
 # end
 
 # function nc_delete_mp(path,basepe::Integer)
-#     check(ccall((:nc_delete_mp,libnetcdf),Cint,(Ptr{UInt8},Cint),path,basepe))
+#     check(ccall((:nc_delete_mp,libnetcdf),Cint,(Cstring,Cint),path,basepe))
 # end
 
 # function nc_set_base_pe(ncid::Integer,pe::Integer)
