@@ -625,7 +625,7 @@ function Base.show(io::IO,ds::Dataset; indent="")
 end
 
 """
-    getindex(ds::Dataset,varname::String)
+    getindex(ds::Dataset,varname::AbstractString)
 
 Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The CF convention are honored when the
@@ -636,7 +636,7 @@ variable is indexed:
 as `DateTime` object.
 """
 
-function Base.getindex(ds::Dataset,varname::String)
+function Base.getindex(ds::Dataset,varname::AbstractString)
     v = variable(ds,varname)
     # fillvalue = zero(eltype(v))
     # add_offset = 0
