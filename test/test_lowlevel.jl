@@ -53,3 +53,13 @@ for data in samples
 
     NCDatasets.nc_close(ncid)
 end
+
+
+
+# accept SubString as file name argument
+
+ncid = NCDatasets.nc_create(filename,NCDatasets.NC_CLOBBER | NCDatasets.NC_NETCDF4)
+NCDatasets.nc_close(ncid)
+
+ncid = NCDatasets.nc_open(split("$(filename)#foo",'#')[1],NCDatasets.NC_NOWRITE)
+NCDatasets.nc_close(ncid)
