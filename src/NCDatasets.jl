@@ -172,7 +172,7 @@ end
 
 function timedecode(data,units)
     const t0,plength = timeunits(units)
-    convert(x) = t0 + Dates.Millisecond(round(Int,plength * x))
+    convert(x) = t0 + Dates.Millisecond(round(Int64,plength * x))
     return convert.(data)
 end
 
