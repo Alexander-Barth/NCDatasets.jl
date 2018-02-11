@@ -154,18 +154,35 @@ function timeunits(units)
     if endswith(starttime,"Z")
         starttime = starttime[1:end-1]
     end
-    
-    t0 = DateTime(starttime,"y-m-d H:M:S")
 
-    plength = if (tunit == "days") || (tunit == "day")
-        24*60*60*1000
-    elseif (tunit == "hours") || (tunit == "hour")
-        60*60*1000
-    elseif (tunit == "minutes") || (tunit == "minute")
-        60*1000
-    elseif (tunit == "seconds") || (tunit == "second")
-        1000
+    negativeyear = starttime[1] == '-'
+    if negativeyear
+        starttime = starttime[2:end]
     end
+    
+    t0 = 
+        if contains(starttime,":")
+            DateTime(starttime,"y-m-d H:M:S")
+        else
+            DateTime(starttime,"y-m-d")
+        end
+
+    if negativeyear
+        # year is negative
+        t0 = DateTime(-Dates.year(t0),Dates.month(t0),Dates.day(t0),
+                      Dates.hour(t0),Dates.minute(t0),Dates.second(t0))
+    end
+
+    plength =
+        if (tunit == "days") || (tunit == "day")
+            24*60*60*1000
+        elseif (tunit == "hours") || (tunit == "hour")
+            60*60*1000
+        elseif (tunit == "minutes") || (tunit == "minute")
+            60*1000
+        elseif (tunit == "seconds") || (tunit == "second")
+            1000
+        end
 
     return t0,plength
 end

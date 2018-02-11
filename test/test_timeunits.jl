@@ -33,6 +33,24 @@ end
 
 
 t0,plength = NCDatasets.timeunits("days since 1950-01-02T03:04:05Z")
-
 @test t0 == DateTime(1950,1,2, 3,4,5)
+@test plength == 86400000
+
+
+t0,plength = NCDatasets.timeunits("days since -4713-01-01T00:00:00Z")
+@test t0 == DateTime(-4713,1,1)
+@test plength == 86400000
+
+
+t0,plength = NCDatasets.timeunits("days since -4713-01-01")
+@test t0 == DateTime(-4713,1,1)
+@test plength == 86400000
+
+
+t0,plength = NCDatasets.timeunits("days since 2000-01-01 0:0:0")
+@test t0 == DateTime(2000,1,1)
+@test plength == 86400000
+
+t0,plength = NCDatasets.timeunits("days since 2000-1-1 0:0:0")
+@test t0 == DateTime(2000,1,1)
 @test plength == 86400000
