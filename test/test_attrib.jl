@@ -16,6 +16,10 @@ Dataset(filename,"c") do ds
     @test haskey(v.attrib,"comment")
     @test "comment" in v.attrib
 
+    @test get(v.attrib,"does-not-exist","default") == "default"
+    @test get(v.attrib,"units","default") == "degree Celsius"
+
+    
     for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
         # scalar attribute
         name = "scalar-attrib-$T"
@@ -45,6 +49,7 @@ Dataset(filename,"c") do ds
         end
 
         @test v.attrib[name] == [1,2,3,4]        
+
     end
 
     # arrays cannot be attributes

@@ -53,6 +53,14 @@ include("netcdf_c.jl")
 abstract type BaseAttributes
 end
 
+function Base.get(a::BaseAttributes,name::AbstractString,default)
+    if haskey(a,name)
+        return a[name]
+    else
+        return default
+    end
+end
+
 
 # -----------------------------------------------------
 # List of attributes (for a single NetCDF file)
@@ -108,8 +116,7 @@ listVar(ncid) = String[nc_inq_varname(ncid,varid)
                        for varid in nc_inq_varids(ncid)]
 
 "Return all attribute names"
-#listAtt2(ncid,varid) = String[nc_inq_attname(ncid,varid,attnum-1)
-#                 for attnum in 1:nc_inq_varnatts(ncid,varid)]
+
 function listAtt(ncid,varid)
     natts = nc_inq_varnatts(ncid,varid)
     names = Vector{String}(natts)
@@ -138,12 +145,12 @@ function defmode(ncid,isdefmode::Vector{Bool})
 end
 
 """
-    t0,plength = timeunits(units)
+    t0,plength = timeunits(units,calendar = "standard")
 
-Parse time units and returns the start time `t0` and the scaling factor 
+Parse time units and returns the start time `t0` and the scaling factor
 `plength` in milliseconds.
 """
-function timeunits(units)
+function timeunits(units, calendar = "standard")
     tunit,starttime = strip.(split(units," since "))
     tunit = lowercase(tunit)
 
@@ -155,52 +162,70 @@ function timeunits(units)
         starttime = starttime[1:end-1]
     end
 
-    negativeyear = starttime[1] == '-'
-    if negativeyear
-        starttime = starttime[2:end]
-    end
-    
-    t0 = 
-        if contains(starttime,":")
-            DateTime(starttime,"y-m-d H:M:S")
-        else
-            DateTime(starttime,"y-m-d")
+
+        negativeyear = starttime[1] == '-'
+        if negativeyear
+            starttime = starttime[2:end]
         end
 
-    if negativeyear
-        # year is negative
-        t0 = DateTime(-Dates.year(t0),Dates.month(t0),Dates.day(t0),
-                      Dates.hour(t0),Dates.minute(t0),Dates.second(t0))
-    end
+        t0 =
+            if contains(starttime,":")
+                DateTime(starttime,"y-m-d H:M:S")
+            else
+                DateTime(starttime,"y-m-d")
+            end
 
-    plength =
-        if (tunit == "days") || (tunit == "day")
-            24*60*60*1000
-        elseif (tunit == "hours") || (tunit == "hour")
-            60*60*1000
-        elseif (tunit == "minutes") || (tunit == "minute")
-            60*1000
-        elseif (tunit == "seconds") || (tunit == "second")
-            1000
+        if negativeyear
+            # year is negative
+            t0 = DateTime(-Dates.year(t0),Dates.month(t0),Dates.day(t0),
+                          Dates.hour(t0),Dates.minute(t0),Dates.second(t0))
         end
 
-    return t0,plength
+        plength =
+            if (tunit == "days") || (tunit == "day")
+                24*60*60*1000
+            elseif (tunit == "hours") || (tunit == "hour")
+                60*60*1000
+            elseif (tunit == "minutes") || (tunit == "minute")
+                60*1000
+            elseif (tunit == "seconds") || (tunit == "second")
+                1000
+            end
+
+    if (calendar == "standard") || (calendar == "gregorian")
+        return t0,plength
+    elseif calendar == "julian"
+        # only supported time origin
+        # (Chronological Julian Date)
+        @assert t0 == DateTime(-4713,1,1)
+
+        # 327 is the result from
+        # Dates.value(DateTime(2007,2,10) - DateTime(-4713,1,1)) / (24*60*60*1000) - 2454142
+        #
+        # The values DateTime(2007,2,10) and 2454142 are taken from
+        # https://web.archive.org/web/20171129142108/https://www.hermetic.ch/cal_stud/chron_jdate.htm
+        # and confirmed by http://www.julian-date.com/ (setting GMT offset to zero)
+        # https://web.archive.org/web/20180212213256/http://www.julian-date.com/
+
+        return t0 + Dates.Day(327),plength
+
+    end
 end
 
-function timedecode(data,units)
-    const t0,plength = timeunits(units)
+function timedecode(data,units,calendar = "standard")
+    const t0,plength = timeunits(units,calendar)
     convert(x) = t0 + Dates.Millisecond(round(Int64,plength * x))
     return convert.(data)
 end
 
-function timeencode(data::Array{DateTime,N},units) where N
-    const t0,plength = timeunits(units)
+function timeencode(data::Array{DateTime,N},units,calendar = "standard") where N
+    const t0,plength = timeunits(units,calendar)
     convert(dt) = Dates.value(dt - t0) / plength
     return convert.(data)
 end
 
 # do not transform data is not a vector of DateTime
-timeencode(data,units) = data
+timeencode(data,units,calendar = "standard") = data
 
 function Base.show(io::IO,a::BaseAttributes; indent = "  ")
     # use the same order of attributes than in the NetCDF file
@@ -832,13 +857,13 @@ end
 
 function Base.setindex!{T,T2,N}(v::Variable{T,N},data::Array{T2,N},indexes::Colon...)
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
-    tmp = 
+    tmp =
         if T <: Integer
             round.(T,data)
         else
             convert(Array{T,N},data)
         end
-            
+
     nc_put_var(v.ncid,v.varid,tmp)
     return data
 end
@@ -1061,7 +1086,8 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
         units = v.attrib["units"]
         if contains(units," since ")
             # type of data changes
-            data = timedecode(data,units)
+            calendar = get(v.attrib,"calendar","standard")
+            data = timedecode(data,units,calendar)
         end
     end
 
@@ -1106,7 +1132,8 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
     if "units" in attnames
         units = v.attrib["units"]
         if contains(units," since ")
-            x = timeencode(x,units)
+            calendar = get(v.attrib,"calendar","standard")
+            x = timeencode(x,units,calendar)
         end
     end
 
