@@ -57,6 +57,7 @@ keys(a::NCDatasets.Attributes)
 ```@docs
 defDim
 setindex!(d::NCDatasets.Dimensions,len,name::AbstractString)
+dimnames(v::Variable)
 ```
 
 # Utility functions
