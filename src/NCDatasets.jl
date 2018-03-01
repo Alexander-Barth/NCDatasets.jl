@@ -181,15 +181,16 @@ function timeunits(units, calendar = "standard")
                           Dates.hour(t0),Dates.minute(t0),Dates.second(t0))
         end
 
+        # make sure that plength is 64-bit on 32-bit platforms
         plength =
             if (tunit == "days") || (tunit == "day")
-                24*60*60*1000
+                24*60*60*Int64(1000)
             elseif (tunit == "hours") || (tunit == "hour")
-                60*60*1000
+                60*60*Int64(1000)
             elseif (tunit == "minutes") || (tunit == "minute")
-                60*1000
+                60*Int64(1000)
             elseif (tunit == "seconds") || (tunit == "second")
-                1000
+                Int64(1000)
             end
 
     if (calendar == "standard") || (calendar == "gregorian")
