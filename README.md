@@ -10,7 +10,7 @@
 [![documentation latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/latest/)
 
 
-`NCDatasets` allows to read and create NetCDF files.
+`NCDatasets` allows one to read and create NetCDF files.
 NetCDF data set and attribute list behave like Julia dictionaries and variables like Julia arrays.
 
 
