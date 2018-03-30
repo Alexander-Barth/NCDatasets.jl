@@ -1220,6 +1220,8 @@ Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
 """
     start(ds::Dataset)
 
+Allow to iterate over a dataset.
+
 ```julia
 for (varname,var) in ds
     @show (varname,size(var))
@@ -1234,7 +1236,8 @@ Base.next(a::NCIterable,state) = (state[1] => a[shift!(state)], state)
 
 """
     escape(val)
-escape backslash, dollar and quote
+
+Escape backslash, dollar and quote from string `val`.
 """
 function escape(val)
      valescaped = val
