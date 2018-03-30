@@ -489,7 +489,14 @@ function nc_inq_user_type(ncid::Integer,xtype::Integer)
     return unsafe_string(pointer(name)),sizep[1],base_nc_typep[1],nfieldsp[1],classp[1]
 end
 
-function nc_put_att(ncid::Integer,varid::Integer,name,data)
+
+function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::AbstractString)
+    check(ccall((:nc_put_att_text,libnetcdf),Cint,(Cint,Cint,Cstring,Csize_t,Cstring),
+                ncid,varid,name,sizeof(data),data))
+end
+
+
+function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data)
 #    check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},nc_type,Cint,Ptr{Void}),ncid,varid,name,xtype,len,op))
 
     # NetCDF does not support 64 bit attributes
@@ -501,17 +508,19 @@ function nc_put_att(ncid::Integer,varid::Integer,name,data)
         end
     end
 
-    if isa(data,String)
+    if isa(data,AbstractString)
+        # can be removed if nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::AbstractString)
+        # works
         cstr = Vector{UInt8}(data)
-        check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Cint,Ptr{Void}),
+        check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Void}),
                     ncid,varid,name,ncType[eltype(data)],length(cstr),cstr))
     elseif ndims(data) == 0
         nctype = ncType[typeof(data)]
-        check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Cint,Ptr{Void}),
+        check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Void}),
                     ncid,varid,name,ncType[typeof(data)],1,[data]))
 
     elseif ndims(data) == 1
-        check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Cint,Ptr{Void}),
+        check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Void}),
                     ncid,varid,name,ncType[eltype(data)],length(data),data))
     else
         error("attributes can only be scalars or vectors")
