@@ -1096,7 +1096,7 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
     end
 
     if isscalar
-        if mask
+        if mask[1]
             missing
         else
             data[1]

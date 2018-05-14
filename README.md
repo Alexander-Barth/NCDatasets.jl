@@ -15,7 +15,7 @@ NetCDF data set and attribute list behave like Julia dictionaries and variables 
 
 
 The module `NCDatasets` provides support for the following [netCDF CF conventions](http://cfconventions.org/):
-* `_FillValue` will be returned as `missing` (DataArrays)
+* `_FillValue` will be returned as `missing` ([more information](https://docs.julialang.org/en/latest/manual/missing/))
 * `scale_factor` and `add_offset` are applied
 * time variables (recognized by the `units` attribute) are returned as `DateTime` objects.
 
