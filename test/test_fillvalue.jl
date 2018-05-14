@@ -1,4 +1,4 @@
-using DataArrays
+using Missings
 
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
@@ -14,12 +14,12 @@ data = [Float32(i+j) for i = 1:10, j = 1:11]
 fv = NCDatasets.NC_FILL_FLOAT
 v.attrib["_FillValue"] = fv
 # mask the frist element
-dataa = DataArray(data,data .== 2)
+datam = Array{Union{Float32,Missing}}(data)
+datam[1] = missing
 
-
-v[:,:] = dataa
+v[:,:] = datam
 @test ismissing(v[1,1])
-@test isequal(v[:,:],dataa)
+@test isequal(v[:,:],datam)
 
 # load without transformation
 @test v.var[1,1] == fv
@@ -73,11 +73,12 @@ data = [Float32(i+j) for i = 1:10, j = 1:11]
 fv = NaN32
 v.attrib["_FillValue"] = fv
 # mask the frist element
-dataa = DataArray(data,data .== 2)
+datam = Array{Union{Float32,Missing}}(data)
+datam[1] = missing
 
-v[:,:] = dataa
+v[:,:] = datam
 @test ismissing(v[1,1])
-@test isequal(v[:,:],dataa)
+@test isequal(v[:,:],datam)
 
 # load without transformation
 @test isnan(v.var[1,1])
