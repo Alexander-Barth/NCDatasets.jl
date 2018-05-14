@@ -486,6 +486,7 @@ The variable is returned (of the type CFVariable).
 * `deflatelevel`: Compression level: 0 (default) means no compression and 9 means maximum compression. Each chunk will be compressed individually.
 * `shuffle`: If true, the shuffle filter is activated which can improve the compression ratio.
 * `checksum`: The checksum method can be `:fletcher32` or `:nochecksum` (checksumming is disabled, which is the default)
+* `typename` (string): The name of the NetCDF type required for vlen arrays [1]
 
 `chunksizes`, `deflatelevel`, `shuffle` and `checksum` can only be
 set on NetCDF 4 files.
@@ -503,6 +504,8 @@ set on NetCDF 4 files.
 | NC_DOUBLE   | Float64 |
 | NC_CHAR     | Char |
 | NC_STRING   | String |
+
+[1] https://web.archive.org/save/https://www.unidata.ucar.edu/software/netcdf/netcdf-4/newdocs/netcdf-c/nc_005fdef_005fvlen.html
 """
 
 function defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
