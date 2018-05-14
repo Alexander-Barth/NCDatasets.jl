@@ -4,7 +4,6 @@ module NCDatasets
 using Base
 using Base.Test
 using Missings
-using DataArrays
 
 # NetCDFError, error check and netcdf_c.jl from NetCDF.jl (https://github.com/JuliaGeo/NetCDF.jl)
 # Copyright (c) 2012-2013: Fabian Gans, Max-Planck-Institut fuer Biogeochemie, Jena, Germany
@@ -1123,18 +1122,13 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
 
     #@show "here",ndims(x),ndims(data)
 
-    if isa(data,DataArray)
+    if !(typeof(data) <: AbstractArray)
+        # for scalars
+        x = [data]
+        mask = [false]
+    else
         mask = ismissing.(data)
         x[.!mask] = data[.!mask]
-    else
-        if !(typeof(data) <: AbstractArray)
-            # for scalars
-            x = [data]
-            mask = [false]
-        else
-            x = copy(data)
-            mask = ismissing.(data)
-        end
     end
 
     if "units" in attnames
