@@ -3,7 +3,7 @@ __precompile__()
 module NCDatasets
 using Base
 using Base.Test
-#using NullableArrays
+using Missings
 using DataArrays
 
 # NetCDFError, error check and netcdf_c.jl from NetCDF.jl (https://github.com/JuliaGeo/NetCDF.jl)
@@ -676,7 +676,7 @@ end
 Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The CF convention are honored when the
 variable is indexed:
-* `_FillValue` will be returned as NA (DataArrays)
+* `_FillValue` will be returned as `missing`
 * `scale_factor` and `add_offset` are applied
 * time variables (recognized by the units attribute) are returned
 as `DateTime` object.
@@ -1096,11 +1096,15 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
     end
 
     if isscalar
-        #return NullableArray(data,mask)[1]
-        return DataArray(data,mask)[1]
+        if mask
+            missing
+        else
+            data[1]
+        end
     else
-        #return NullableArray(data,mask)
-        return DataArray(data,mask)
+        datam = Array{Union{eltype(data),Missing}}(data)
+        datam[mask] = missing
+        return datam
     end
 end
 
@@ -1129,7 +1133,7 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
             mask = [false]
         else
             x = copy(data)
-            mask = falses(data)
+            mask = ismissing.(data)
         end
     end
 
