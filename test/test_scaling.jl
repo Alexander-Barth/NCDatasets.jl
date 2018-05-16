@@ -19,7 +19,7 @@ for T in [Int32,Float32]
     @test v[:,:] ≈ data atol=1e-4
     
     # load without transformation (offset/scaling)
-    @test v.var[:,:] ≈ (data-offset)/factor atol=1e-4
+    @test v.var[:,:] ≈ (data .- offset)/factor atol=1e-4
     
     # write/read without transformation (offset/scaling)
     v.var[:,:] = data

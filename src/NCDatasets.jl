@@ -1066,7 +1066,7 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
         end
 
         if "add_offset" in attnames
-            data = data + v.attrib["add_offset"]
+            data = data .+ v.attrib["add_offset"]
         end
     end
 
@@ -1125,7 +1125,7 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
     end
 
     if "_FillValue" in attnames
-        x[mask] = v.attrib["_FillValue"]
+        x[mask] .= v.attrib["_FillValue"]
     else
         # should we issue a warning?
     end
@@ -1133,7 +1133,7 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
     # do not scale characters and strings
     if eltype(v.var) != Char
         if "add_offset" in attnames
-            x[.!mask] = x[.!mask] - v.attrib["add_offset"]
+            x[.!mask] = x[.!mask] .- v.attrib["add_offset"]
         end
 
         if "scale_factor" in attnames

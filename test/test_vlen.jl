@@ -8,7 +8,7 @@ filename = tempname()
 dimlen = 10
 
 T = Int32
-data = Vector{Vector{T}}(dimlen)
+data = Vector{Vector{T}}(undef,dimlen)
 for i = 1:length(data)
     data[i] = T.(collect(1:i) .+ 100 * i) 
 end

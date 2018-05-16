@@ -1,24 +1,24 @@
 using NCDatasets
 using Test
 
-sz = (123,145)
-data = randn(sz)
-
-filename = tempname()
-ds = Dataset(filename,"c") do ds
-    defDim(ds,"lon",sz[1])
-    defDim(ds,"lat",sz[2])
-    v = defVar(ds,"var",Float64,("lon","lat"))
-    v[:,:] = data
-end
-
-ds = Dataset(filename)
-v = ds["var"]
-
 println("NetCDF library: ",NCDatasets.libnetcdf)
 println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
 @testset "NCDatasets" begin
+    sz = (123,145)
+    data = randn(sz)
+
+    filename = tempname()
+    ds = Dataset(filename,"c") do ds
+        defDim(ds,"lon",sz[1])
+        defDim(ds,"lat",sz[2])
+        v = defVar(ds,"var",Float64,("lon","lat"))
+        v[:,:] = data
+    end
+
+    ds = Dataset(filename)
+    v = ds["var"]
+    
 
     A = v[:,:]
     @test A == data
