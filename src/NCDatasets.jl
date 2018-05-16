@@ -10,7 +10,7 @@ using Missings
 # MIT
 
 # Exception type for error thrown by the NetCDF library
-type NetCDFError <: Exception
+mutable struct NetCDFError <: Exception
     code::Cint
     msg::String
 end
@@ -20,7 +20,6 @@ end
 
 Construct a NetCDFError from the error code.
 """
-
 NetCDFError(code::Cint) = NetCDFError(code, nc_strerror(code))
 
 #function Base.showerror(io::IO, err::NetCDFError)
@@ -65,23 +64,23 @@ end
 # List of attributes (for a single NetCDF file)
 # all ids should be Cint
 
-type Attributes <: BaseAttributes
+mutable struct Attributes <: BaseAttributes
     ncid::Cint
     varid::Cint
     isdefmode::Vector{Bool}
 end
 
-type Groups
+mutable struct Groups
     ncid::Cint
     isdefmode::Vector{Bool}
 end
 
-type Dimensions
+mutable struct Dimensions
     ncid::Cint
     isdefmode::Vector{Bool}
 end
 
-type Dataset
+mutable struct Dataset
     ncid::Cint
     # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
     # need to be an array, so that it is copied by reference
@@ -115,7 +114,6 @@ listVar(ncid) = String[nc_inq_varname(ncid,varid)
                        for varid in nc_inq_varids(ncid)]
 
 "Return all attribute names"
-
 function listAtt(ncid,varid)
     natts = nc_inq_varnatts(ncid,varid)
     names = Vector{String}(natts)
@@ -266,7 +264,6 @@ ds.dim["longitude"] = 100
 If `len` is the special value `Inf`, then the dimension is considered as
 `unlimited`, i.e. it will grow as data is added to the NetCDF file.
 """
-
 function Base.setindex!(d::Dimensions,len,name::AbstractString)
     defmode(d.ncid,d.isdefmode) # make sure that the file is in define mode
     dimid = nc_def_dim(d.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
@@ -289,7 +286,6 @@ ds = Dataset("file.nc")
 title = ds.attrib["title"]
 ```
 """
-
 function Base.getindex(a::Attributes,name::AbstractString)
     return nc_get_att(a.ncid,a.varid,name)
 end
@@ -307,7 +303,6 @@ ds = Dataset("file.nc","c")
 ds.attrib["title"] = "my title"
 ```
 """
-
 function Base.setindex!(a::Attributes,data,name::AbstractString)
     defmode(a.ncid,a.isdefmode) # make sure that the file is in define mode
     return nc_put_att(a.ncid,a.varid,name,data)
@@ -322,7 +317,7 @@ Base.keys(a::Attributes) = listAtt(a.ncid,a.varid)
 
 # -----------------------------------------------------
 
-type MFAttributes <: BaseAttributes
+mutable struct MFAttributes <: BaseAttributes
     as::Vector{Attributes}
 end
 
@@ -349,7 +344,6 @@ end
 """
 Existing group
 """
-
 function Base.getindex(g::Groups,groupname::AbstractString)
     grp_ncid = nc_inq_grp_ncid(g.ncid,groupname)
     return Dataset(grp_ncid,g.isdefmode)
@@ -396,7 +390,6 @@ end
 ```
 
 """
-
 function Dataset(filename::AbstractString,mode::AbstractString = "r";
                  format::Symbol = :netcdf4)
     ncid = -1
@@ -465,7 +458,6 @@ defDim(ds,"lon",100)
 
 This defines the dimension `lon` with the size 100.
 """
-
 defDim(ds::Dataset,name,len) = nc_def_dim(ds.ncid,name,
                                           (isinf(len) ? NC_UNLIMITED : len))
 
@@ -506,7 +498,6 @@ set on NetCDF 4 files.
 
 [1] https://web.archive.org/save/https://www.unidata.ucar.edu/software/netcdf/netcdf-4/newdocs/netcdf-c/nc_005fdef_005fvlen.html
 """
-
 function defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
     # all keyword arguments as dictionary
     kw = Dict(k => v for (k,v) in kwargs)
@@ -563,7 +554,6 @@ end
 
 Return a list of all variables names in Dataset `ds`.
 """
-
 Base.keys(ds::Dataset) = listVar(ds.ncid)
 
 """
@@ -577,7 +567,6 @@ path(ds::Dataset) = nc_inq_path(ds.ncid)
 
 Write all changes in Dataset `ds` to the disk.
 """
-
 sync(ds::Dataset) = nc_sync(ds.ncid)
 
 """
@@ -586,7 +575,6 @@ sync(ds::Dataset) = nc_sync(ds.ncid)
 Close the Dataset `ds`. All pending changes will be written
 to the disk.
 """
-
 Base.close(ds::Dataset) = nc_close(ds.ncid)
 
 """
@@ -680,7 +668,6 @@ variable is indexed:
 * time variables (recognized by the units attribute) are returned
 as `DateTime` object.
 """
-
 function Base.getindex(ds::Dataset,varname::AbstractString)
     v = variable(ds,varname)
     # fillvalue = zero(eltype(v))
@@ -726,7 +713,7 @@ end
 # Variable (as stored in NetCDF file, without using
 # add_offset, scale_factor and _FillValue)
 
-type Variable{NetCDFType,N}  <: AbstractArray{NetCDFType, N}
+mutable struct Variable{NetCDFType,N}  <: AbstractArray{NetCDFType, N}
     ncid::Cint
     varid::Cint
     dimids::NTuple{N,Cint}
@@ -752,7 +739,6 @@ end
 
 Return the name of the NetCDF variable `v`.
 """
-
 name(v::Variable) = nc_inq_varname(v.ncid,v.varid)
 
 chunking(v::Variable,storage,chunksizes) = nc_def_var_chunking(v.ncid,v.varid,storage,reverse(chunksizes))
@@ -1021,7 +1007,7 @@ end
 # Variable (with applied transformation following the CF convention)
 
 
-type CFVariable{NetCDFType,T,N}  <: AbstractArray{Float64, N}
+mutable struct CFVariable{NetCDFType,T,N}  <: AbstractArray{Float64, N}
     var::Variable{NetCDFType,N}
     attrib::Attributes
     #has_fillvalue::Bool
@@ -1213,7 +1199,6 @@ end
 This example checks if the file `/tmp/test.nc` has a variable with the
 name `temperature`.
 """
-
 Base.haskey(a::NCIterable,name::AbstractString) = name in keys(a)
 Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
 # for iteration as a Dict
@@ -1229,7 +1214,6 @@ for (varname,var) in ds
 end
 ```
 """
-
 Base.start(a::NCIterable) = keys(a)
 Base.done(a::NCIterable,state) = length(state) == 0
 Base.next(a::NCIterable,state) = (state[1] => a[shift!(state)], state)
@@ -1292,7 +1276,6 @@ as the NetCDF file `fname`. The code is placed in the file `jlname` or printed
 to the standard output. Per default the new NetCDF file is called `filename.nc`.
 This can be changed with the optional parameter `newfname`.
 """
-
 ncgen(fname; kwargs...)  = ncgen(STDOUT,fname; kwargs...)
 
 function ncgen(fname,jlname; kwargs...)
