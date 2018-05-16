@@ -32,7 +32,7 @@ varid = NCDatasets.nc_def_var(ncid, varname, typeid, [dimid])
 #NCDatasets.nc_put_var(ncid, varid, ncdata)
 for i = 1:dimlen
     tmp = NCDatasets.nc_vlen_t{T}(length(data[i]), pointer(data[i]))
-    NCDatasets.nc_put_var1(ncid, varid, [i-1], pointer_from_objref(tmp))
+    NCDatasets.nc_put_var1(ncid, varid, [i-1], Ref(tmp))
 end
 
 typeids = NCDatasets.nc_inq_typeids(ncid)
@@ -61,9 +61,9 @@ xtype = NCDatasets.nc_inq_vartype(ncid,varid)
 if xtype >= NCDatasets.NC_FIRSTUSERTYPEID 
     #@show xtype,NCDatasets.NC_VLEN
 
-    typename,shape,base_nc_type,nfields,class = NCDatasets.nc_inq_user_type(ncid,xtype)
+    typename,shape,base_nc_type,numfields,class = NCDatasets.nc_inq_user_type(ncid,xtype)
 
-    #@show typename,shape,base_nc_type,nfields,class
+    #@show typename,shape,base_nc_type,numfields,class
     @test base_nc_type == NCDatasets.NC_INT
 
     T2 = NCDatasets.jlType[base_nc_type]
