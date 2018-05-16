@@ -19,7 +19,7 @@ NCDatasets.Dataset(filename) do ds
 
     s = IOBuffer()
     show(s,ds)
-    @test contains(String(take!(s)),"Groups")
+    @test occursin("Groups",String(take!(s)))
 
 end
 

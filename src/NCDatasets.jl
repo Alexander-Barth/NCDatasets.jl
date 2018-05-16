@@ -792,7 +792,7 @@ end
 function Base.getindex(v::Variable,indexes::Int...)
     #    @show "ind",indexes
 
-    data = Vector{eltype(v)}(1)
+    data = Vector{eltype(v)}(undef,1)
     # use zero-based indexes
     nc_get_var1!(v.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],data)
     return data[1]
@@ -808,7 +808,7 @@ end
 function Base.getindex(v::Variable{T,N},indexes::Colon...) where {T,N}
     # special case for scalar NetCDF variable
     if N == 0
-        data = Vector{T}(1)
+        data = Vector{T}(undef,1)
         nc_get_var!(v.ncid,v.varid,data)
         return data[1]
     else
@@ -898,7 +898,7 @@ end
 function Base.getindex(v::Variable{T,N},indexes::StepRange{Int,Int}...) where {T,N}
     #@show "get sr",indexes
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
-    data = Array{T,N}(jlshape)
+    data = Array{T,N}(undef,jlshape)
     nc_get_vars(v.ncid,v.varid,start,count,stride,data)
     return data
 end
@@ -977,7 +977,7 @@ function Base.getindex(v::Variable,indexes::Union{Int,Colon,UnitRange{Int},StepR
     data = v[ind...]
     # squeeze any dimension which was indexed with a scalar
     if any(squeezedim)
-        return squeeze(data,(find(squeezedim)...,))
+        return squeeze(data,dims=(findall(squeezedim)...,))
     else
         return data
     end

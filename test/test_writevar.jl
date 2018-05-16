@@ -53,12 +53,12 @@ for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
     ref = zeros(sz)
     v[:,:] = 0
     
-    ref[1:2:end,2:2:end] = 1
+    ref[1:2:end,2:2:end] .= 1
     v[1:2:end,2:2:end] = 1
     @test v[:,:] == ref
     
     # write scalar (different type)
-    ref[1:2:end,2:2:end] = UInt8(2)
+    ref[1:2:end,2:2:end] .= UInt8(2)
     v[1:2:end,2:2:end] = UInt8(2)
     @test v[:,:] == ref
 

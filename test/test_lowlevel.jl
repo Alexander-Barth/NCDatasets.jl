@@ -1,4 +1,5 @@
 using Test
+using Random
 import NCDatasets
 
 varname = "varname"
@@ -47,7 +48,7 @@ for data in samples
 
     @test xtype == xtype
 
-    data2 = Array{T,ndims(data)}(size(data))
+    data2 = Array{T,ndims(data)}(undef,size(data))
     NCDatasets.nc_get_var!(ncid,varid,data2)
     @test data == data2
 

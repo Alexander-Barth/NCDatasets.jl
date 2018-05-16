@@ -20,7 +20,7 @@ NCDatasets.Dataset(filename,"c") do ds
         v = NCDatasets.defVar(ds,"var-$T",T,("lon","lat"))
 
         for j = 1:sz[2]
-            data[:,j] = T(j)
+            data[:,j] .= T(j)
             v[:,j] = T(j)
         end
 

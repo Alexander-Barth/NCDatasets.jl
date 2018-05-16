@@ -10,7 +10,7 @@ dimlen = 10
 T = Int32
 data = Vector{Vector{T}}(dimlen)
 for i = 1:length(data)
-    data[i] = T.(collect(1:i) + 100 * i) 
+    data[i] = T.(collect(1:i) .+ 100 * i) 
 end
 
 

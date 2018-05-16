@@ -267,7 +267,7 @@ function nc_open(path,mode::Integer)
 end
 
 function nc_inq_path(ncid::Integer)
-    pathlenp = Vector{Csize_t}(1)
+    pathlenp = Vector{Csize_t}(undef,1)
     
     check(ccall((:nc_inq_path,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{UInt8}),ncid,pathlenp,C_NULL))
 
@@ -287,7 +287,7 @@ function nc_inq_grps(ncid::Integer)
     check(ccall((:nc_inq_grps,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,numgrpsp,C_NULL))
     numgrps = numgrpsp[1]
 
-    ncids = Vector{Cint}(numgrps)
+    ncids = Vector{Cint}(undef,numgrps)
 
     check(ccall((:nc_inq_grps,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,numgrpsp,ncids))
 
@@ -338,7 +338,7 @@ end
 function nc_inq_dimids(ncid::Integer,include_parents::Bool)
     ndimsp = Vector{Cint}(undef,1)
     ndims = nc_inq_ndims(ncid)
-    dimids = Vector{Cint}(ndims)
+    dimids = Vector{Cint}(undef,ndims)
     check(ccall((:nc_inq_dimids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint},Cint),ncid,ndimsp,dimids,include_parents))
 
     return dimids
@@ -348,7 +348,7 @@ function nc_inq_typeids(ncid::Integer)
     ntypesp = Vector{Cint}(undef,1)
     check(ccall((:nc_inq_typeids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,ntypesp,C_NULL))
 
-    typeids = Vector{Cint}(ntypesp[1])
+    typeids = Vector{Cint}(undef,ntypesp[1])
     check(ccall((:nc_inq_typeids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,C_NULL,typeids))
 
     return typeids
@@ -511,7 +511,7 @@ function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data)
     if isa(data,AbstractString)
         # can be removed if nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::AbstractString)
         # works
-        cstr = Vector{UInt8}(data)
+        cstr = Vector{UInt8}(undef,data)
         check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Nothing}),
                     ncid,varid,name,ncType[eltype(data)],length(cstr),cstr))
     elseif ndims(data) == 0
@@ -538,7 +538,7 @@ function nc_get_att(ncid::Integer,varid::Integer,name)
 
         return unsafe_string(pointer(val))
     else
-        val = Vector{jlType[xtype]}(len)
+        val = Vector{jlType[xtype]}(undef,len)
         #nc_get_att(ncid,varid,name,val)
         check(ccall((:nc_get_att,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{Nothing}),ncid,varid,name,val))
 
@@ -611,11 +611,11 @@ end
 
 function nc_get_var1!(ncid::Integer,varid::Integer,indexp,ip)
     if eltype(ip) == Char
-        tmp = Vector{UInt8}(1)
+        tmp = Vector{UInt8}(undef,1)
         check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),ncid,varid,indexp,tmp))
         ip[:] = convert(Array{Char,1},tmp)
     elseif eltype(ip) == String
-        tmp = Vector{Ptr{UInt8}}(1)
+        tmp = Vector{Ptr{UInt8}}(undef,1)
         check(ccall((:nc_get_var1_string,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Ptr{UInt8}}),ncid,varid,indexp,tmp))
         ip[1] = unsafe_string(tmp[1])
     else    
@@ -643,11 +643,11 @@ end
 
 function nc_get_vars(ncid::Integer,varid::Integer,startp,countp,stridep,ip)    
     if eltype(ip) == Char
-        tmp = Array{UInt8,ndims(ip)}(size(ip))
+        tmp = Array{UInt8,ndims(ip)}(undef,size(ip))
         check(ccall((:nc_get_vars,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,stridep,tmp))
         ip[:] = convert(Array{Char,1},tmp[:])
     elseif eltype(ip) == String
-        tmp = Array{Ptr{UInt8},ndims(ip)}(size(ip))
+        tmp = Array{Ptr{UInt8},ndims(ip)}(undef,size(ip))
         check(ccall((:nc_get_vars_string,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint},Ptr{Ptr{UInt8}}),ncid,varid,startp,countp,stridep,tmp))
         ip[:] = unsafe_string.(tmp)        
     else        
@@ -725,7 +725,7 @@ no_fill is a boolean and fill_value the fill value (in the appropriate type)
 """
 function nc_inq_var_fill(ncid::Integer,varid::Integer)
     T = jlType[nc_inq_vartype(ncid,varid)]
-    fill_valuep = Vector{T}(1)
+    fill_valuep = Vector{T}(undef,1)
     no_fillp = Vector{Cint}(undef,1)
     check(ccall((:nc_inq_var_fill,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),
                 ncid,varid,no_fillp,fill_valuep))
@@ -1035,7 +1035,7 @@ function nc_inq_var(ncid::Integer,varid::Integer)
         if xtype >= NCDatasets.NC_FIRSTUSERTYPEID 
             name,size,base_nc_type,nfields,class = nc_inq_user_type(ncid,xtype)
             # assume here variable-length type
-            assert(class == NC_VLEN)
+            @assert(class == NC_VLEN)
             Vector{jlType[base_nc_type]}
         else
             jlType[xtype]

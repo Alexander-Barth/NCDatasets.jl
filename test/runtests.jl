@@ -181,16 +181,16 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
         v.attrib["units"] = "degree Celsius"
         
         show(s,ds)
-        @test contains(String(take!(s)),"temperature")
+        @test occursin("temperature",String(take!(s)))
 
         show(s,ds.attrib)
-        @test contains(String(take!(s)),"title")
+        @test occursin("title",String(take!(s)))
 
         show(s,ds["temperature"])
-        @test contains(String(take!(s)),"temperature")
+        @test occursin("temperature",String(take!(s)))
 
         show(s,ds["temperature"].attrib)
-        @test contains(String(take!(s)),"Celsius")
+        @test occursin("Celsius",String(take!(s)))
     end
 
 end
