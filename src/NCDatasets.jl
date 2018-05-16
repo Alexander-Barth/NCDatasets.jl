@@ -5,6 +5,7 @@ using Base
 using Test
 using Dates
 using Missings
+using Printf
 
 # NetCDFError, error check and netcdf_c.jl from NetCDF.jl (https://github.com/JuliaGeo/NetCDF.jl)
 # Copyright (c) 2012-2013: Fabian Gans, Max-Planck-Institut fuer Biogeochemie, Jena, Germany
@@ -152,7 +153,7 @@ function timeunits(units, calendar = "standard")
     tunit,starttime = strip.(split(units," since "))
     tunit = lowercase(tunit)
 
-    starttime = replace(starttime,"T"," ")
+    starttime = replace(starttime,"T" => " ")
 
     # remove Z time zone indicator
     # all times are assumed UTC anyway
@@ -167,7 +168,7 @@ function timeunits(units, calendar = "standard")
         end
 
         t0 =
-            if contains(starttime,":")
+            if occursin(":",starttime)
                 DateTime(starttime,"y-m-d H:M:S")
             else
                 DateTime(starttime,"y-m-d")
@@ -723,7 +724,7 @@ end
 
 # the size of a variable can change, i.e. for a variable with an unlimited
 # dimension
-Base.size(v::Variable) = (Int[nc_inq_dimlen(v.ncid,dimid) for dimid in v.dimids]...)
+Base.size(v::Variable) = (Int[nc_inq_dimlen(v.ncid,dimid) for dimid in v.dimids]...,)
 
 """
     dimnames(v::Variable)
@@ -731,7 +732,7 @@ Base.size(v::Variable) = (Int[nc_inq_dimlen(v.ncid,dimid) for dimid in v.dimids]
 Return a tuple of the dimension names of the variable `v`.
 """
 function dimnames(v::Variable)
-    return (String[nc_inq_dimname(v.ncid,dimid) for dimid in v.dimids]...)
+    return (String[nc_inq_dimname(v.ncid,dimid) for dimid in v.dimids]...,)
 end
 
 """
@@ -763,7 +764,6 @@ deflate is `true`, then the data chunks (see `chunking`) are
 compressed using the compression level `deflate_level`
 (0 means no compression and 9 means maximum compression).
 """
-
 deflate(v::Variable,shuffle,deflate,deflate_level) = nc_def_var_deflate(v.ncid,v.varid,shuffle,deflate,deflate_level)
 deflate(v::Variable) = nc_inq_var_deflate(v.ncid,v.varid)
 
@@ -775,7 +775,6 @@ checksum(v::Variable,checksummethod) = nc_def_var_fletcher32(v.ncid,v.varid,chec
 Return the checksum method of the variable `v` which can be either
 be `:fletcher32` or `:nochecksum`.
 """
-
 checksum(v::Variable) = nc_inq_var_fletcher32(v.ncid,v.varid)
 
 
@@ -806,7 +805,7 @@ function Base.setindex!(v::Variable{T,N},data,indexes::Int...) where N where T
     return data
 end
 
-function Base.getindex{T,N}(v::Variable{T,N},indexes::Colon...)
+function Base.getindex(v::Variable{T,N},indexes::Colon...) where {T,N}
     # special case for scalar NetCDF variable
     if N == 0
         data = Vector{T}(1)
@@ -815,13 +814,13 @@ function Base.getindex{T,N}(v::Variable{T,N},indexes::Colon...)
     else
         #@show v.shape,typeof(v.shape),T,N
         #@show v.ncid,v.varid
-        data = Array{T,N}(size(v))
+        data = Array{T,N}(undef,size(v))
         nc_get_var!(v.ncid,v.varid,data)
         return data
     end
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::Colon...)
+function Base.setindex!(v::Variable{T,N},data::T,indexes::Colon...) where {T,N}
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     tmp = fill(data,size(v))
     #@show "here number",indexes,size(v),fill(data,size(v))
@@ -829,7 +828,7 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::Colon...)
     return data
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::Colon...)
+function Base.setindex!(v::Variable{T,N},data::Number,indexes::Colon...) where {T,N}
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     tmp = fill(convert(T,data),size(v))
     #@show "here number",indexes,size(v),tmp
@@ -837,14 +836,14 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::Colon...)
     return data
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data::Array{T,N},indexes::Colon...)
+function Base.setindex!(v::Variable{T,N},data::Array{T,N},indexes::Colon...) where {T,N}
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     #@show @__LINE__,@__FILE__
     nc_put_var(v.ncid,v.varid,data)
     return data
 end
 
-function Base.setindex!{T,T2,N}(v::Variable{T,N},data::Array{T2,N},indexes::Colon...)
+function Base.setindex!(v::Variable{T,N},data::Array{T2,N},indexes::Colon...) where {T,T2,N}
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     tmp =
         if T <: Integer
@@ -892,11 +891,11 @@ function ncsub(indexes)
     count = [length(i) for i in indexes[end:-1:1]]
     start = [first(i)-1 for i in indexes[end:-1:1]]     # use zero-based indexes
     stride = [step(i) for i in indexes[end:-1:1]]
-    jlshape = (count[end:-1:1]...)
+    jlshape = (count[end:-1:1]...,)
     return start,count,stride,jlshape
 end
 
-function Base.getindex{T,N}(v::Variable{T,N},indexes::StepRange{Int,Int}...)
+function Base.getindex(v::Variable{T,N},indexes::StepRange{Int,Int}...) where {T,N}
     #@show "get sr",indexes
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
     data = Array{T,N}(jlshape)
@@ -904,7 +903,7 @@ function Base.getindex{T,N}(v::Variable{T,N},indexes::StepRange{Int,Int}...)
     return data
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...)
+function Base.setindex!(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...) where {T,N}
     #@show @__FILE__,@__LINE__,indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
@@ -913,7 +912,7 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::StepRange{Int,Int
     return data
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::StepRange{Int,Int}...)
+function Base.setindex!(v::Variable{T,N},data::Number,indexes::StepRange{Int,Int}...) where {T,N}
     #@show @__FILE__,@__LINE__,indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
@@ -922,7 +921,7 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::StepRange{In
     return data
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data::Array{T,N},indexes::StepRange{Int,Int}...)
+function Base.setindex!(v::Variable{T,N},data::Array{T,N},indexes::StepRange{Int,Int}...) where {T,N}
     #@show "sr",indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
@@ -931,7 +930,7 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::Array{T,N},indexes::StepRang
 end
 
 # data can be Array{T2,N} or BitArray{N}
-function Base.setindex!{T,N}(v::Variable{T,N},data::AbstractArray,indexes::StepRange{Int,Int}...)
+function Base.setindex!(v::Variable{T,N},data::AbstractArray,indexes::StepRange{Int,Int}...) where {T,N}
     #@show "sr2",indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
@@ -978,7 +977,7 @@ function Base.getindex(v::Variable,indexes::Union{Int,Colon,UnitRange{Int},StepR
     data = v[ind...]
     # squeeze any dimension which was indexed with a scalar
     if any(squeezedim)
-        return squeeze(data,(find(squeezedim)...))
+        return squeeze(data,(find(squeezedim)...,))
     else
         return data
     end
@@ -991,11 +990,11 @@ function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int}
 
     # make arrays out of scalars
     if ndims(data) == 0
-        data = fill(data,([length(i) for i in ind]...))
+        data = fill(data,([length(i) for i in ind]...,))
     end
 
     if ndims(data) == 1 && size(data,1) == 1
-        data = fill(data[1],([length(i) for i in ind]...))
+        data = fill(data[1],([length(i) for i in ind]...,))
     end
 
     # return data
@@ -1057,7 +1056,7 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
             mask = data .== v.attrib["_FillValue"]
         end
     else
-        mask = falses(data)
+        mask = falses(size(data))
     end
 
     # do not scale characters and strings
@@ -1073,7 +1072,7 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
 
     if "units" in attnames
         units = v.attrib["units"]
-        if contains(units," since ")
+        if occursin(" since ",units)
             # type of data changes
             calendar = get(v.attrib,"calendar","standard")
             data = timedecode(data,units,calendar)
@@ -1096,9 +1095,9 @@ end
 function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     x =
         if typeof(data) <: AbstractArray
-            Array{eltype(data),ndims(data)}(size(data))
+            Array{eltype(data),ndims(data)}(undef,size(data))
         else
-            Array{typeof(data),1}(1)
+            Array{typeof(data),1}(undef,1)
         end
 
     #@show typeof(data)
@@ -1119,7 +1118,7 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
 
     if "units" in attnames
         units = v.attrib["units"]
-        if contains(units," since ")
+        if occursin(" since ",units)
             calendar = get(v.attrib,"calendar","standard")
             x = timeencode(x,units,calendar)
         end
@@ -1228,7 +1227,7 @@ function escape(val)
      valescaped = val
      # backslash must come first
      for c in ['\\','$','"']
-        valescaped = replace(valescaped,c,"\\$c")
+        valescaped = replace(valescaped,c => "\\$c")
     end
 	return valescaped
 end

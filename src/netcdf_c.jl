@@ -208,7 +208,7 @@ const nc_type = Cint
 # type is immutable to ensure that it has the memory same layout
 # as the C struct nc_vlen_t
 
-immutable nc_vlen_t{T}
+struct nc_vlen_t{T}
     len::Csize_t
     p::Ptr{T}
 end
