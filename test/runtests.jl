@@ -1,5 +1,5 @@
 using NCDatasets
-using Base.Test
+using Test
 
 sz = (123,145)
 data = randn(sz)

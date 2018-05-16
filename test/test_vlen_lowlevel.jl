@@ -1,18 +1,18 @@
-using Base.Test
+using Test
 import NCDatasets
-using NCDatasets
 
 filename = tempname()
 
 dimlen = 10
 
+
 T = Int32
-data = Vector{Vector{T}}(dimlen)
+data = Vector{Vector{T}}(undef,dimlen)
 for i = 1:length(data)
-    data[i] = T.(collect(1:i) + 100 * i) 
+    data[i] = T.(collect(1:i) .+ 100 * i) 
 end
 
-ncdata = Vector{NCDatasets.nc_vlen_t{T}}(dimlen)
+ncdata = Vector{NCDatasets.nc_vlen_t{T}}(undef,dimlen)
 
 for i = 1:length(data)
     ncdata[i] = NCDatasets.nc_vlen_t{T}(length(data[i]), pointer(data[i]))
@@ -31,8 +31,8 @@ varid = NCDatasets.nc_def_var(ncid, varname, typeid, [dimid])
 
 #NCDatasets.nc_put_var(ncid, varid, ncdata)
 for i = 1:dimlen
-    tmp = NCDatasets.nc_vlen_t{T}(length(data[i]), pointer(data[i]))
-    NCDatasets.nc_put_var1(ncid, varid, [i-1], Ref(tmp))
+    tmp_vlen = NCDatasets.nc_vlen_t{T}(length(data[i]), pointer(data[i]))
+    NCDatasets.nc_put_var1(ncid, varid, [i-1], Ref(tmp_vlen))
 end
 
 typeids = NCDatasets.nc_inq_typeids(ncid)
@@ -70,7 +70,7 @@ if xtype >= NCDatasets.NC_FIRSTUSERTYPEID
 
     @test T == T2
     if class == NCDatasets.NC_VLEN
-        ncdata2 = Vector{NCDatasets.nc_vlen_t{T}}(dimlen)
+        ncdata2 = Vector{NCDatasets.nc_vlen_t{T}}(undef,dimlen)
         
 
         NCDatasets.nc_get_var!(ncid,varid,ncdata2)
@@ -79,10 +79,10 @@ if xtype >= NCDatasets.NC_FIRSTUSERTYPEID
         
         @test data == data2
 
-        i = 1
-        tmp = Vector{NCDatasets.nc_vlen_t{T}}(1)
-        NCDatasets.nc_get_var1!(ncid,varid,[i-1],tmp)
-        @test data[1] ==  unsafe_wrap(Vector{T},tmp[1].p,(tmp[1].len,))
+        index = 1
+        tmp = Vector{NCDatasets.nc_vlen_t{T}}(undef,1)
+        NCDatasets.nc_get_var1!(ncid,varid,[index-1],tmp)
+        @test data[index] ==  unsafe_wrap(Vector{T},tmp[index].p,(tmp[index].len,))
     end
 end
 
