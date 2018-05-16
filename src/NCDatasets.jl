@@ -2,7 +2,8 @@ __precompile__()
 
 module NCDatasets
 using Base
-using Base.Test
+using Test
+using Dates
 using Missings
 
 # NetCDFError, error check and netcdf_c.jl from NetCDF.jl (https://github.com/JuliaGeo/NetCDF.jl)
@@ -116,7 +117,7 @@ listVar(ncid) = String[nc_inq_varname(ncid,varid)
 "Return all attribute names"
 function listAtt(ncid,varid)
     natts = nc_inq_varnatts(ncid,varid)
-    names = Vector{String}(natts)
+    names = Vector{String}(undef,natts)
 
     for attnum = 0:natts-1
         names[attnum+1] = nc_inq_attname(ncid,varid,attnum)
@@ -230,7 +231,7 @@ function Base.show(io::IO,a::BaseAttributes; indent = "  ")
 
    for (attname,attval) in a
        print(io,indent,@sprintf("%-20s = ",attname))
-       print_with_color(:blue, io, @sprintf("%s",attval))
+       printstyled(io, @sprintf("%s",attval),color=:blue)
        print(io,"\n")
    end
 end
@@ -584,7 +585,6 @@ Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.Variable`. No scaling is applied when this variable is
 indexes.
 """
-
 function variable(ds::Dataset,varname::String)
     varid = nc_inq_varid(ds.ncid,varname)
     name,nctype,dimids,nattr = nc_inq_var(ds.ncid,varid)
@@ -604,19 +604,19 @@ function variable(ds::Dataset,varname::String)
     # reverse dimids to have the dimension order in Fortran style
     return Variable{nctype,ndims}(ds.ncid,varid,
                                   #(shape...),
-                                  (reverse(dimids)...),
+                                  (reverse(dimids)...,),
                                   attrib,ds.isdefmode)
 end
 
 function Base.show(io::IO,ds::Dataset; indent="")
-    print_with_color(:red, io, indent, "Dataset: ",path(ds),"\n")
+    printstyled(io, indent, "Dataset: ",path(ds),"\n", color=:red)
     print(io,indent,"Group: ",nc_inq_grpname(ds.ncid),"\n")
     print(io,"\n")
 
     dimids = nc_inq_dimids(ds.ncid,false)
 
     if length(dimids) > 0
-        print_with_color(:red, io, indent, "Dimensions\n")
+        printstyled(io, indent, "Dimensions\n",color=:red)
 
         for dimid in dimids
             dimname = nc_inq_dimname(ds.ncid,dimid)
@@ -630,7 +630,7 @@ function Base.show(io::IO,ds::Dataset; indent="")
 
     if length(varnames) > 0
 
-        print_with_color(:red, io, indent, "Variables\n")
+        printstyled(io, indent, "Variables\n",color=:red)
 
         for name in varnames
             show(io,variable(ds,name); indent = "$(indent)  ")
@@ -640,7 +640,7 @@ function Base.show(io::IO,ds::Dataset; indent="")
 
     # global attribues
     if length(ds.attrib) > 0
-        print_with_color(:red, io, indent, "Global attributes\n")
+        printstyled(io, indent, "Global attributes\n",color=:red)
         show(io,ds.attrib; indent = "$(indent)  ");
     end
 
@@ -648,7 +648,7 @@ function Base.show(io::IO,ds::Dataset; indent="")
     grpids = nc_inq_grps(ds.ncid)
 
     if length(grpids) > 0
-        print_with_color(:red, io, indent, "Groups\n")
+        printstyled(io, indent, "Groups\n",color = :red)
         for grpid in grpids
             grpname = nc_inq_grpname(grpid)
             show(io,group(ds,grpname); indent = "  ")
@@ -863,7 +863,7 @@ function Base.setindex!(v::Variable{Vector{T},N},data::Array{Vector{T},N},indexe
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
 
     #@show T
-    ncdata = Array{nc_vlen_t{T},N}(size(data))
+    ncdata = Array{nc_vlen_t{T},N}(undef,size(data))
 
     for i = 1:length(data)
         ncdata[i] = nc_vlen_t{T}(length(data[i]), pointer(data[i]))
@@ -876,10 +876,10 @@ end
 # vlen types
 function Base.getindex(v::Variable{Vector{T},N},indexes::Colon...) where N where T
     #@show T
-    ncdata = Array{nc_vlen_t{T},N}(size(v))
+    ncdata = Array{nc_vlen_t{T},N}(undef,size(v))
     nc_get_var!(v.ncid,v.varid,ncdata)
 
-    data = Array{Vector{T},N}(size(v))
+    data = Array{Vector{T},N}(undef,size(v))
     for i = 1:length(data)
         data[i] = unsafe_wrap(Vector{T},ncdata[i].p,(ncdata[i].len,))
     end
@@ -1157,7 +1157,7 @@ function Base.show(io::IO,v::Variable; indent="")
     delim = " × "
     sz = size(v)
 
-    print_with_color(:green, io, indent, name(v))
+    printstyled(io, indent, name(v),color=:green)
     if length(sz) > 0
         print(io,indent," (",join(sz,delim),")\n")
         print(io,indent,"  Datatype:    ",eltype(v),"\n")
@@ -1216,7 +1216,7 @@ end
 """
 Base.start(a::NCIterable) = keys(a)
 Base.done(a::NCIterable,state) = length(state) == 0
-Base.next(a::NCIterable,state) = (state[1] => a[shift!(state)], state)
+Base.next(a::NCIterable,state) = (state[1] => a[popfirst!(state)], state)
 
 
 """
