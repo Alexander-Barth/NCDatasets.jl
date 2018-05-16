@@ -213,13 +213,13 @@ function timeunits(units, calendar = "standard")
 end
 
 function timedecode(data,units,calendar = "standard")
-    const t0,plength = timeunits(units,calendar)
+    t0,plength = timeunits(units,calendar)
     convert(x) = t0 + Dates.Millisecond(round(Int64,plength * x))
     return convert.(data)
 end
 
 function timeencode(data::Array{DateTime,N},units,calendar = "standard") where N
-    const t0,plength = timeunits(units,calendar)
+    t0,plength = timeunits(units,calendar)
     convert(dt) = Dates.value(dt - t0) / plength
     return convert.(data)
 end
@@ -943,7 +943,7 @@ end
 
 function normalizeindexes(sz,indexes)
     ndims = length(sz)
-    ind = Vector{StepRange}(ndims)
+    ind = Vector{StepRange}(undef,ndims)
     squeezedim = falses(ndims)
 
     # normalize indexes
@@ -1087,7 +1087,7 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
         end
     else
         datam = Array{Union{eltype(data),Missing}}(data)
-        datam[mask] = missing
+        datam[mask] .= missing
         return datam
     end
 end
