@@ -435,11 +435,9 @@ function Dataset(f::Function,args...; kwargs...)
     ds = Dataset(args...; kwargs...)
     try
         f(ds)
-    catch
+    finally
         close(ds)
-        rethrow()
     end
-    close(ds)
 end
 
 
