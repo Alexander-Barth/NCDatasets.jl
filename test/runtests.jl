@@ -110,20 +110,20 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     # when leaving the do block.
 
     Dataset(filename,"r") do ds
-        data = ds["temperature"][:,:]    
+        data = ds["temperature"][:,:]
     end
 
 
 
     # define scalar
-    
+
     filename = tempname()
-    
+
     Dataset(filename,"c") do ds
         v = defVar(ds,"scalar",Float32,())
         v[:] = 123.f0
     end
-    
+
     Dataset(filename,"r") do ds
         v2 = ds["scalar"][:]
         @test typeof(v2) == Float32
@@ -149,24 +149,25 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_formats.jl")
 
     include("test_bitarray.jl")
-    
+
     # error handling
     @test_throws NCDatasets.NetCDFError Dataset(":/does/not/exist")
 
     include("test_variable.jl")
-    
+
     include("test_group.jl")
     include("test_group2.jl")
     include("test_variable_unlim.jl")
 
     include("test_strings.jl")
     include("test_lowlevel.jl")
-    
+
     include("test_vlen_lowlevel.jl")
     include("test_vlen.jl")
 
     include("test_ncgen.jl")
-       
+    include("test_varbyatt.jl")  
+
     # display
     s = IOBuffer()
     filename = tempname()
@@ -174,12 +175,12 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
         # define the dimension "lon" and "lat" with the size 100 and 110 resp.
         defDim(ds,"lon",100)
         defDim(ds,"lat",110)
-        
+
         # define a global attribute
-        ds.attrib["title"] = "this is a test file"       
+        ds.attrib["title"] = "this is a test file"
         v = defVar(ds,"temperature",Float32,("lon","lat"))
         v.attrib["units"] = "degree Celsius"
-        
+
         show(s,ds)
         @test occursin("temperature",String(take!(s)))
 

@@ -1298,8 +1298,81 @@ function ncgen_setattrib(io,v,attrib)
     end
 end
 
+"""
+    var_by_att(fname, attname, attval)
+
+Returns a list of variable(s) which has the attribute `attname` matching the value `attval`.
+The list is empty if the none of the variables has the match.
+
+# Examples
+```julia-repl
+julia> var_by_att("results.nc", "standard_name", "longitude")
+1-element Array{Any,1}:
+ "longitude"
+```
+"""
+function var_by_att(fname::String, attname::String, attval::String)
+
+    ds = Dataset(fname, "r");
+    # Start with an empty list of variables
+    varlist = [];
+
+    # Loop on the variables
+    for v in keys(ds)
+
+        var = ds[v]
+
+        # Check if the variable has the desired attribute
+        if haskey(var.attrib, attname)
+            #info("Variable $(v) has the attribute $(attname)")
+            # Check if the attribute value is the selected one
+            if var.attrib[attname] == attval
+                #info("Attribute $(attname) has the selected value $(attval)")
+                push!(varlist, v)
+            end
+        #else
+            #info("Variable $(v) doesn't have the attribute $(attname)")
+        end
+
+    end
+    close(ds);
+
+    return varlist
+end
+
+
+"""
+    a = nomissing(da::DataArray)
+
+Retun the values of the DataArray `da` as a regular Julia array `a` of the same 
+element type and checks that no missing values are present.
+"""
+function nomissing(da::DataArray)
+    if any(ismissing.(da))
+        error("arrays contains missing values (values equal to the fill values attribute in the NetCDF file)")
+    end
+
+    return da.data    
+end
+
+"""
+    a = nomissing(da::DataArray,value)
+
+Retun the values of the DataArray `da` as a regular Julia array `a`
+by replacing all missing value by `value`.
+"""
+function nomissing(da::DataArray,value)
+    d = copy(da.data)
+    d[ismissing.(da)] = value
+
+    return d
+end
+
 export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
     deflate, chunking, checksum, fillvalue, fillmode, ncgen
+export nomissing
+export var_by_att
+
 
 # it is good practise to use the default fill-values, thus we export them
 export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,
