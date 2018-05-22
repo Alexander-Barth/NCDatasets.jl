@@ -1299,43 +1299,55 @@ function ncgen_setattrib(io,v,attrib)
 end
 
 """
-    var_by_att(fname, attname, attval)
+    varbyattrib(ds, attname = attval)
 
-Returns a list of variable(s) which has the attribute `attname` matching the value `attval`.
+Returns a list of variable(s) which has the attribute `attname` matching the value `attval`
+in the dataset `ds`.
 The list is empty if the none of the variables has the match.
+The output is a list of `CFVariable`s.
 
 # Examples
-```julia-repl
-julia> var_by_att("results.nc", "standard_name", "longitude")
-1-element Array{Any,1}:
- "longitude"
-```
-"""
-function var_by_att(fname::String, attname::String, attval::String)
 
-    ds = Dataset(fname, "r");
+Load all the data of the first variable with standard name "longitude" from the
+NetCDF file `results.nc`.
+
+```julia-repl
+julia> ds = Dataset("results.nc", "r");
+julia> data = varbyattrib(ds, standard_name = "longitude")[1][:]
+```
+
+"""
+
+function varbyattrib(ds::Dataset; kwargs...)
     # Start with an empty list of variables
-    varlist = [];
+    varlist = []
 
     # Loop on the variables
     for v in keys(ds)
-
         var = ds[v]
 
-        # Check if the variable has the desired attribute
-        if haskey(var.attrib, attname)
-            #info("Variable $(v) has the attribute $(attname)")
-            # Check if the attribute value is the selected one
-            if var.attrib[attname] == attval
-                #info("Attribute $(attname) has the selected value $(attval)")
-                push!(varlist, v)
+        matchall = true
+
+        for (attsym,attval) in kwargs
+            attname = String(attsym)
+
+            # Check if the variable has the desired attribute
+            if haskey(var.attrib, attname)
+                # Check if the attribute value is the selected one
+                if var.attrib[attname] != attval
+                    matchall = false
+                    break
+                end
+            else
+                matchall = false
+                break
             end
-        #else
-            #info("Variable $(v) doesn't have the attribute $(attname)")
         end
 
+        if matchall
+            push!(varlist, var)
+        end
     end
-    close(ds);
 
     return varlist
 end
@@ -1344,7 +1356,7 @@ end
 """
     a = nomissing(da::DataArray)
 
-Retun the values of the DataArray `da` as a regular Julia array `a` of the same 
+Retun the values of the DataArray `da` as a regular Julia array `a` of the same
 element type and checks that no missing values are present.
 """
 function nomissing(da::DataArray)
@@ -1352,7 +1364,7 @@ function nomissing(da::DataArray)
         error("arrays contains missing values (values equal to the fill values attribute in the NetCDF file)")
     end
 
-    return da.data    
+    return da.data
 end
 
 """
@@ -1371,7 +1383,7 @@ end
 export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
     deflate, chunking, checksum, fillvalue, fillmode, ncgen
 export nomissing
-export var_by_att
+export varbyattrib
 
 
 # it is good practise to use the default fill-values, thus we export them
