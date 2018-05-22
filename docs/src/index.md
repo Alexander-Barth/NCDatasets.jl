@@ -64,6 +64,8 @@ dimnames(v::Variable)
 
 ```@docs
 ncgen(fname)
+nomissing(da::DataArray)
+nomissing(da::DataArray,value)
 ```
 
 

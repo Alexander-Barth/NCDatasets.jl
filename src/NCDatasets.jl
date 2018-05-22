@@ -1360,8 +1360,38 @@ function var_by_att(fname::String, attname::String, attval::String)
     return varlist
 end
 
+
+"""
+    a = nomissing(da::DataArray)
+
+Retun the values of the DataArray `da` as a regular Julia array `a` of the same 
+element type and checks that no missing values are present.
+"""
+function nomissing(da::DataArray)
+    if any(ismissing.(da))
+        error("arrays contains missing values (values equal to the fill values attribute in the NetCDF file)")
+    end
+
+    return da.data    
+end
+
+"""
+    a = nomissing(da::DataArray,value)
+
+Retun the values of the DataArray `da` as a regular Julia array `a`
+by replacing all missing value by `value`.
+"""
+function nomissing(da::DataArray,value)
+    d = copy(da.data)
+    d[ismissing.(da)] = value
+
+    return d
+end
+
 export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
-    deflate, chunking, checksum, fillvalue, fillmode, ncgen, var_by_att
+    deflate, chunking, checksum, fillvalue, fillmode, ncgen
+export nomissing
+export var_by_att
 
 
 # it is good practise to use the default fill-values, thus we export them
