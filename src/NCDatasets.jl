@@ -1353,30 +1353,29 @@ end
 
 
 """
-    a = nomissing(da::DataArray)
+    a = nomissing(da)
 
-Retun the values of the DataArray `da` as a regular Julia array `a` of the same
+Retun the values of the array `da` of type `Array{Union{T,Missing},N}` 
+(potentially containing missing values) as a regular Julia array `a` of the same
 element type and checks that no missing values are present.
+
 """
-function nomissing(da::DataArray)
+function nomissing(da::Array{Union{T,Missing},N}) where {T,N}
     if any(ismissing.(da))
         error("arrays contains missing values (values equal to the fill values attribute in the NetCDF file)")
     end
 
-    return da.data
+    return replace(da, missing => da[1])
 end
 
 """
-    a = nomissing(da::DataArray,value)
+    a = nomissing(da,value)
 
-Retun the values of the DataArray `da` as a regular Julia array `a`
-by replacing all missing value by `value`.
+Retun the values of the array `da` of type `Array{Union{T,Missing},N}` 
+as a regular Julia array `a` by replacing all missing value by `value`.
 """
-function nomissing(da::DataArray,value)
-    d = copy(da.data)
-    d[ismissing.(da)] = value
-
-    return d
+function nomissing(da::Array{Union{T,Missing},N},value) where {T,N}
+    return replace(da, missing => T(value))
 end
 
 export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
