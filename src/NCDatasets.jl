@@ -1332,7 +1332,7 @@ julia> var_by_att("results.nc", "standard_name", "longitude")
 """
 function var_by_att(fname::String, attname::String, attval::String)
 
-    ds = Dataset(datafile, "r");
+    ds = Dataset(fname, "r");
     # Start with an empty list of variables
     varlist = [];
 
