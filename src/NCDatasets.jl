@@ -5,6 +5,7 @@ using Base
 using Base.Test
 #using NullableArrays
 using DataArrays
+import Base.convert
 
 # NetCDFError, error check and netcdf_c.jl from NetCDF.jl (https://github.com/JuliaGeo/NetCDF.jl)
 # Copyright (c) 2012-2013: Fabian Gans, Max-Planck-Institut fuer Biogeochemie, Jena, Germany

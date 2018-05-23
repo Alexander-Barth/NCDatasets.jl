@@ -230,6 +230,16 @@ const NCChecksumSymbols = Dict{Cint,Symbol}(
 const NCChecksumConstants = Dict(value => key for (key, value) in NCChecksumSymbols)
 
 
+function convert(::Type{Array{nc_vlen_t{T},N}},data::Array{Vector{T},N}) where {T,N}
+    tmp = Array{nc_vlen_t{T},N}(size(data))
+
+    for i = 1:length(data)
+        tmp[i] = nc_vlen_t{T}(length(data[i]), pointer(data[i]))
+    end
+    return tmp
+end
+
+
 function nc_inq_libvers()
     unsafe_string(ccall((:nc_inq_libvers,libnetcdf),Cstring,()))
 end
@@ -590,14 +600,7 @@ function nc_put_var(ncid::Integer,varid::Integer,op)
 end
 
 function nc_put_var(ncid::Integer,varid::Integer,data::Array{Vector{T},N}) where {T,N}
-    ncdata = Array{nc_vlen_t{T},N}(size(data))
-
-    for i = 1:length(data)
-        ncdata[i] = nc_vlen_t{T}(length(data[i]), pointer(data[i]))
-    end
-
-    nc_put_var(ncid,varid,ncdata)
-    check(ccall((:nc_put_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,ncdata))
+    nc_put_var(ncid,varid,convert(Array{nc_vlen_t{T},N},data))
 end
 
 
@@ -614,12 +617,12 @@ function nc_get_var!(ncid::Integer,varid::Integer,ip::Array{String,N}) where N
 end
 
 function nc_get_var!(ncid::Integer,varid::Integer,ip::Array{Vector{T},N}) where {T,N}
-    ncdata2 = Array{NCDatasets.nc_vlen_t{T},N}(size(ip))
+    tmp = Array{NCDatasets.nc_vlen_t{T},N}(size(ip))
     check(ccall((:nc_get_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),
-                ncid,varid,ncdata2))
+                ncid,varid,tmp))
 
-    for i in eachindex(ncdata2)
-        ip[i] = unsafe_wrap(Vector{T},ncdata2[i].p,(ncdata2[i].len,))
+    for i in eachindex(tmp)
+        ip[i] = unsafe_wrap(Vector{T},tmp[i].p,(tmp[i].len,))
     end
 end
 
@@ -681,9 +684,16 @@ end
 
 function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,
                      op::Array{String,N}) where N
-    
     nc_put_vars(ncid,varid,startp,countp,stridep,pointer.(op))
 end
+
+function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,
+                     op::Array{Vector{T},N}) where {T,N}
+
+    nc_put_vars(ncid,varid,startp,countp,stridep,
+                convert(Array{nc_vlen_t{T},N},op))
+end
+
 
 function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,op)
     check(ccall((:nc_put_vars,libnetcdf),Cint,

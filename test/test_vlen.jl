@@ -27,6 +27,9 @@ v = NCDatasets.defVar(ds,varname,Vector{T},("casts",); typename = vlentypename)
 #    v.var[i] = data[i]
 #end
 v.var[:] = data
+v.var[1] = data[1]
+v.var[1:dimlen] = data[1:dimlen]
+
 close(ds)
 
 
