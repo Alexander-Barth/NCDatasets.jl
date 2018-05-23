@@ -1303,7 +1303,6 @@ julia> data = varbyattrib(ds, standard_name = "longitude")[1][:]
 ```
 
 """
-
 function varbyattrib(ds::Dataset; kwargs...)
     # Start with an empty list of variables
     varlist = []
