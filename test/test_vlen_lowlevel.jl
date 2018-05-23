@@ -68,14 +68,8 @@ if xtype >= NCDatasets.NC_FIRSTUSERTYPEID
 
     @test T == T2
     if class == NCDatasets.NC_VLEN
-        ncdata2 = Vector{NCDatasets.nc_vlen_t{T}}(dimlen)
-        
-
-        NCDatasets.nc_get_var!(ncid,varid,ncdata2)
-        
-        data2 = [unsafe_wrap(Vector{T},ncdata2[i].p,(ncdata2[i].len,)) for i = 1:dimlen]
-
-        
+        data2 = Vector{Vector{T}}(dimlen)
+        NCDatasets.nc_get_var!(ncid,varid,data2)
         @test data == data2
 
         for i = 1:dimlen

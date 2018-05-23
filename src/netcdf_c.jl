@@ -603,6 +603,15 @@ function nc_get_var!(ncid::Integer,varid::Integer,ip)
     end    
 end
 
+function nc_get_var!(ncid::Integer,varid::Integer,ip::Array{Vector{T},N}) where {T,N}
+    ncdata2 = Array{NCDatasets.nc_vlen_t{T},N}(size(ip))
+    NCDatasets.nc_get_var!(ncid,varid,ncdata2)
+
+    for i in eachindex(ncdata2)
+        ip[i] = unsafe_wrap(Vector{T},ncdata2[i].p,(ncdata2[i].len,))
+    end
+end
+
 function nc_put_var1(ncid::Integer,varid::Integer,indexp,op::T) where T
     check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Void}),ncid,varid,indexp,T[op]))
 end
