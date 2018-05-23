@@ -6,6 +6,7 @@ using Test
 using Dates
 using Missings
 using Printf
+import Base.convert
 
 # NetCDFError, error check and netcdf_c.jl from NetCDF.jl (https://github.com/JuliaGeo/NetCDF.jl)
 # Copyright (c) 2012-2013: Fabian Gans, Max-Planck-Institut fuer Biogeochemie, Jena, Germany
@@ -849,37 +850,6 @@ function Base.setindex!(v::Variable{T,N},data::Array{T2,N},indexes::Colon...) wh
     nc_put_var(v.ncid,v.varid,tmp)
     return data
 end
-
-
-# vlen types
-function Base.setindex!(v::Variable{Vector{T},N},data::Array{Vector{T},N},indexes::Colon...) where N where T
-    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
-
-    #@show T
-    ncdata = Array{nc_vlen_t{T},N}(undef,size(data))
-
-    for i = 1:length(data)
-        ncdata[i] = nc_vlen_t{T}(length(data[i]), pointer(data[i]))
-    end
-
-    nc_put_var(v.ncid,v.varid,ncdata)
-    return data
-end
-
-# vlen types
-function Base.getindex(v::Variable{Vector{T},N},indexes::Colon...) where N where T
-    #@show T
-    ncdata = Array{nc_vlen_t{T},N}(undef,size(v))
-    nc_get_var!(v.ncid,v.varid,ncdata)
-
-    data = Array{Vector{T},N}(undef,size(v))
-    for i = 1:length(data)
-        data[i] = unsafe_wrap(Vector{T},ncdata[i].p,(ncdata[i].len,))
-    end
-
-    return data
-end
-
 
 function ncsub(indexes)
     count = [length(i) for i in indexes[end:-1:1]]

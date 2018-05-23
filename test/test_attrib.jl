@@ -1,5 +1,6 @@
 sz = (4,5)
 filename = tempname()
+#filename = "/tmp/mytest.nc"
 
 NCDatasets.Dataset(filename,"c") do ds
 
@@ -19,41 +20,76 @@ NCDatasets.Dataset(filename,"c") do ds
     @test NCDatasets.get(v.attrib,"does-not-exist","default") == "default"
     @test NCDatasets.get(v.attrib,"units","default") == "degree Celsius"
 
-    
-    for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
+
+    for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64,
+              String,Char]
+    #for T in [Char]
         # scalar attribute
         name = "scalar-attrib-$T"
-        #@show name
-        v.attrib[name] = T(123)
 
-        if T == Int64
-            # not supported in NetCDF, converted as Int32
-            @test typeof(v.attrib[name]) == Int32
+        refdata =
+            if T == Char
+                'a'
+            elseif T == String
+                "abc"
+            else
+                123
+            end
+
+        v.attrib[name] = T(refdata)
+        attval = v.attrib[name]
+
+        if T == Char
+            # a single Char is returned as strings
+            @test typeof(attval) == String
+            @test attval[1] == refdata
         else
-            @test typeof(v.attrib[name]) == T
+            if T == Int64
+                # not supported in NetCDF, converted as Int32
+                @test typeof(attval) in [Int32,Int64]
+            else
+                @test typeof(attval) == T
+            end
+
+            @test attval == refdata
         end
-
-        @test v.attrib[name] == 123
-
 
         # vector attribute
         name = "vector-attrib-$T"
-        #@show name
-        v.attrib[name] = T[1,2,3,4]
 
-        if T == Int64
-            # not supported in NetCDF, converted as Int32
-            @test eltype(v.attrib[name]) == Int32
+        refvecdata =
+            if T == Char
+                ['a','b']
+            elseif T == String
+                ["abc","xyz"]
+            else
+                [1,2,3,4]
+            end
+
+
+        attval = T.(refvecdata)
+        attval = attval
+
+        if T == Char
+            # vector of Char are returned as strings
+            @test eltype(attval) == T
+            @test Vector{Char}(attval) == refvecdata
         else
-            @test eltype(v.attrib[name]) == T
-        end
+            if T == Int64
+                # not supported in NetCDF, converted as Int32
+                @test eltype(attval) in [Int32,Int64]
+            else
+                @test eltype(attval) == T
+            end
 
-        @test v.attrib[name] == [1,2,3,4]        
+            @test attval == refvecdata
+        end
 
     end
 
     # arrays cannot be attributes
     @test_throws ErrorException v.attrib["error_attrib"] = zeros(2,2)
-    
+
 end
 
+rm(filename)
