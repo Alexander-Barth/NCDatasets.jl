@@ -811,7 +811,7 @@ end
 function Base.setindex!(v::Variable{T,N},data,indexes::Int...) where N where T
     datamode(v.ncid,v.isdefmode)
     # use zero-based indexes and reversed order
-    nc_put_var1(v.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],[T(data)])
+    nc_put_var1(v.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],T(data))
     return data
 end
 

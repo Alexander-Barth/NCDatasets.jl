@@ -603,11 +603,15 @@ function nc_get_var!(ncid::Integer,varid::Integer,ip)
     end    
 end
 
-
-
-function nc_put_var1(ncid::Integer,varid::Integer,indexp,op)
-    check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Void}),ncid,varid,indexp,op))
+function nc_put_var1(ncid::Integer,varid::Integer,indexp,op::T) where T
+    check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Void}),ncid,varid,indexp,T[op]))
 end
+
+function nc_put_var1(ncid::Integer,varid::Integer,indexp,op::Vector{T}) where T
+    tmp = nc_vlen_t{T}(length(op), pointer(op))
+    check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Void}),ncid,varid,indexp,Ref(tmp)))
+end
+
 
 function nc_get_var1(::Type{Char},ncid::Integer,varid::Integer,indexp)
     tmp = Vector{UInt8}(1)

@@ -29,10 +29,8 @@ typeid = NCDatasets.nc_def_vlen(ncid, vlentypename, NCDatasets.ncType[T])
 varid = NCDatasets.nc_def_var(ncid, varname, typeid, [dimid])
 
 
-#NCDatasets.nc_put_var(ncid, varid, ncdata)
 for i = 1:dimlen
-    tmp = NCDatasets.nc_vlen_t{T}(length(data[i]), pointer(data[i]))
-    NCDatasets.nc_put_var1(ncid, varid, [i-1], pointer_from_objref(tmp))
+    NCDatasets.nc_put_var1(ncid, varid, [i-1], data[i])
 end
 
 typeids = NCDatasets.nc_inq_typeids(ncid)
