@@ -549,9 +549,7 @@ function nc_get_att(ncid::Integer,varid::Integer,name)
         return unsafe_string(pointer(val))
     else
         val = Vector{jlType[xtype]}(len)
-        #nc_get_att(ncid,varid,name,val)
         check(ccall((:nc_get_att,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{Void}),ncid,varid,name,val))
-
 
         if len == 1
             return val[1]
@@ -589,37 +587,37 @@ end
 #     check(ccall((:nc_inq_opaque,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{Cint}),ncid,xtype,name,sizep))
 # end
 
-function nc_put_var(ncid::Integer,varid::Integer,op)
-    if eltype(op) == Char
-        op = convert(Array{UInt8,ndims(op)},op)
-    elseif eltype(op) == String
-        op = pointer.(op)
-    end
+function nc_put_var(ncid::Integer,varid::Integer,data::Array{Char,N}) where N
+    nc_put_var(ncid,varid,convert(Array{UInt8,N},data))
+end
 
-    check(ccall((:nc_put_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,op))
+function nc_put_var(ncid::Integer,varid::Integer,data::Array{String,N}) where N
+    nc_put_var(ncid,varid,pointer.(data))
 end
 
 function nc_put_var(ncid::Integer,varid::Integer,data::Array{Vector{T},N}) where {T,N}
     nc_put_var(ncid,varid,convert(Array{nc_vlen_t{T},N},data))
 end
 
+function nc_put_var(ncid::Integer,varid::Integer,data)
+    check(ccall((:nc_put_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,data))
+end
 
 function nc_get_var!(ncid::Integer,varid::Integer,ip::Array{Char,N}) where N
     tmp = Array{UInt8,N}(size(ip))
-    check(ccall((:nc_get_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,tmp))
+    nc_get_var!(ncid,varid,tmp)
     ip[:] = convert(Array{Char,1},tmp[:])
 end
 
 function nc_get_var!(ncid::Integer,varid::Integer,ip::Array{String,N}) where N
     tmp = Array{Ptr{UInt8},N}(size(ip))
-    check(ccall((:nc_get_var_string,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,tmp))
+    nc_get_var!(ncid,varid,tmp)
     ip[:] = unsafe_string.(tmp)
 end
 
 function nc_get_var!(ncid::Integer,varid::Integer,ip::Array{Vector{T},N}) where {T,N}
     tmp = Array{NCDatasets.nc_vlen_t{T},N}(size(ip))
-    check(ccall((:nc_get_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),
-                ncid,varid,tmp))
+    nc_get_var!(ncid,varid,tmp)
 
     for i in eachindex(tmp)
         ip[i] = unsafe_wrap(Vector{T},tmp[i].p,(tmp[i].len,))
@@ -630,16 +628,14 @@ function nc_get_var!(ncid::Integer,varid::Integer,ip)
     check(ccall((:nc_get_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,ip))
 end
 
-
-function nc_put_var1(ncid::Integer,varid::Integer,indexp,op::T) where T
-    check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Void}),ncid,varid,indexp,T[op]))
-end
-
 function nc_put_var1(ncid::Integer,varid::Integer,indexp,op::Vector{T}) where T
     tmp = nc_vlen_t{T}(length(op), pointer(op))
     check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Void}),ncid,varid,indexp,Ref(tmp)))
 end
 
+function nc_put_var1(ncid::Integer,varid::Integer,indexp,op::T) where T
+    check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Void}),ncid,varid,indexp,T[op]))
+end
 
 function nc_get_var1(::Type{Char},ncid::Integer,varid::Integer,indexp)
     tmp = Vector{UInt8}(1)
