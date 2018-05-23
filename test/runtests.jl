@@ -42,7 +42,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     filename = tempname()
     #filename = "/tmp/test-2.nc"
     # The mode "c" stands for creating a new file (clobber)
-    ds = Dataset(filename,"c")
+    ds = NCDatasets.Dataset(filename,"c")
 
     # define the dimension "lon" and "lat"
     ds.dim["lon"] = sz[1]
@@ -52,8 +52,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     ds.attrib["title"] = "this is a test file"
 
 
-    v = defVar(ds,"temperature",Float32,("lon","lat"))
-    S = defVar(ds,"salinity",Float32,("lon","lat"))
+    v = NCDatasets.defVar(ds,"temperature",Float32,("lon","lat"))
+    S = NCDatasets.defVar(ds,"salinity",Float32,("lon","lat"))
 
     data = [Float32(i+2*j) for i = 1:sz[1], j = 1:sz[2]]
 
@@ -76,19 +76,19 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     @test v[:,:] == 3*data
 
     # test sync
-    sync(ds)
-    close(ds)
+    NCDatasets.sync(ds)
+    NCDatasets.close(ds)
 
     # Load a file (with unknown structure)
 
-    ds = Dataset(filename,"r")
+    ds = NCDatasets.Dataset(filename,"r")
 
     # check if a file has a variable with a given name
-    @test haskey(ds,"temperature")
+    @test NCDatasets.haskey(ds,"temperature")
     @test "temperature" in ds
 
     # get an list of all variable names
-    @test "temperature" in keys(ds)
+    @test "temperature" in NCDatasets.keys(ds)
 
     # iterate over all variables
     for (varname,var) in ds
@@ -109,7 +109,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     # when opening a Dataset with a do block, it will be closed automatically
     # when leaving the do block.
 
-    Dataset(filename,"r") do ds
+    NCDatasets.Dataset(filename,"r") do ds
         data = ds["temperature"][:,:]
     end
 
@@ -119,12 +119,12 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     filename = tempname()
 
-    Dataset(filename,"c") do ds
-        v = defVar(ds,"scalar",Float32,())
+    NCDatasets.Dataset(filename,"c") do ds
+        v = NCDatasets.defVar(ds,"scalar",Float32,())
         v[:] = 123.f0
     end
 
-    Dataset(filename,"r") do ds
+    NCDatasets.Dataset(filename,"r") do ds
         v2 = ds["scalar"][:]
         @test typeof(v2) == Float32
         @test v2 == 123.f0
@@ -171,14 +171,14 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     # display
     s = IOBuffer()
     filename = tempname()
-    Dataset(filename,"c") do ds
+    NCDatasets.Dataset(filename,"c") do ds
         # define the dimension "lon" and "lat" with the size 100 and 110 resp.
-        defDim(ds,"lon",100)
-        defDim(ds,"lat",110)
+        NCDatasets.defDim(ds,"lon",100)
+        NCDatasets.defDim(ds,"lat",110)
 
         # define a global attribute
         ds.attrib["title"] = "this is a test file"
-        v = defVar(ds,"temperature",Float32,("lon","lat"))
+        v = NCDatasets.defVar(ds,"temperature",Float32,("lon","lat"))
         v.attrib["units"] = "degree Celsius"
 
         show(s,ds)

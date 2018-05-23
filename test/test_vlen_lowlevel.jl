@@ -68,20 +68,13 @@ if xtype >= NCDatasets.NC_FIRSTUSERTYPEID
 
     @test T == T2
     if class == NCDatasets.NC_VLEN
-        ncdata2 = Vector{NCDatasets.nc_vlen_t{T}}(undef,dimlen)
-        
-
-        NCDatasets.nc_get_var!(ncid,varid,ncdata2)
-        
-        data2 = [unsafe_wrap(Vector{T},ncdata2[i].p,(ncdata2[i].len,)) for i = 1:dimlen]
-        
+        data2 = Vector{Vector{T}}(undef,dimlen)
+        NCDatasets.nc_get_var!(ncid,varid,data2)
         @test data == data2
 
-        for index = 1:dimlen
-            leni = length(data[index])
-            tmp = Vector{NCDatasets.nc_vlen_t{T}}(undef,1)
-            NCDatasets.nc_get_var1!(ncid,varid,[index-1],tmp)
-            @test data[index] ==  unsafe_wrap(Vector{T},tmp[1].p,(tmp[1].len,))
+        for i = 1:dimlen
+            tmp2 = NCDatasets.nc_get_var1(Vector{T},ncid,varid,[i-1])
+            @test data[i] == tmp2
         end
     end
 end

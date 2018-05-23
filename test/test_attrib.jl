@@ -1,23 +1,23 @@
 sz = (4,5)
 filename = tempname()
 
-Dataset(filename,"c") do ds
+NCDatasets.Dataset(filename,"c") do ds
 
     ds.dim["lon"] = sz[1]
     ds.dim["lat"] = sz[2]
 
-    v = defVar(ds,"temperature",Float32,("lon","lat"))
+    v = NCDatasets.defVar(ds,"temperature",Float32,("lon","lat"))
 
     # write attributes
     v.attrib["units"] = "degree Celsius"
     v.attrib["comment"] = "this is a string attribute with unicode Ω ∈ ∑ ∫ f(x) dx "
 
     # check presence of attribute
-    @test haskey(v.attrib,"comment")
+    @test NCDatasets.haskey(v.attrib,"comment")
     @test "comment" in v.attrib
 
-    @test get(v.attrib,"does-not-exist","default") == "default"
-    @test get(v.attrib,"units","default") == "degree Celsius"
+    @test NCDatasets.get(v.attrib,"does-not-exist","default") == "default"
+    @test NCDatasets.get(v.attrib,"units","default") == "degree Celsius"
 
     
     for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]

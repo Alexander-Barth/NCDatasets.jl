@@ -153,14 +153,14 @@ In the example above, the subset can also be loaded with:
 subdata = Dataset("/tmp/test.nc")["temperature"][10:30,30:5:end]
 ```
 
-This might be useful in an interactive session. However, the file `test.nc` is not closed, which can be problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
+This might be useful in an interactive session. However, the file `test.nc` is not closed, which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
 
 An alternative way to ensure the file has been closed is to use a `do` block: the file will be closed automatically when leaving the block.
 
 ```julia
 Dataset(filename,"r") do ds
     data = ds["temperature"][:,:]
-end
+end # ds is closed
 ```
 
 
@@ -205,6 +205,11 @@ for (attname,attval) in ds.attrib
     @show (attname,attval)
 end
 
+# get the attribute "units" of the variable v
+# but return the default value (here "adimensional")
+# if the attribute does not exists
+
+units = get(v,"units","adimensional")
 close(ds)
 ```
 
