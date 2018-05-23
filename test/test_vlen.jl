@@ -38,7 +38,12 @@ vv = NCDatasets.variable(ds,"varname")
 data2 = vv[:]
 
 @test data == data2
-close(ds)
+@test data[1] == vv[1]
+@test data[2] == vv[2]
+@test data[1:2] == vv[1:2]
+
+
+NCDatasets.close(ds)
 
 #@show data
 #@show data2
