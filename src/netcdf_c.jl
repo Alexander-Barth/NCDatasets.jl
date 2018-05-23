@@ -589,6 +589,18 @@ function nc_put_var(ncid::Integer,varid::Integer,op)
     check(ccall((:nc_put_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,op))
 end
 
+function nc_put_var(ncid::Integer,varid::Integer,data::Array{Vector{T},N}) where {T,N}
+    ncdata = Array{nc_vlen_t{T},N}(size(data))
+
+    for i = 1:length(data)
+        ncdata[i] = nc_vlen_t{T}(length(data[i]), pointer(data[i]))
+    end
+
+    nc_put_var(ncid,varid,ncdata)
+    check(ccall((:nc_put_var,libnetcdf),Cint,(Cint,Cint,Ptr{Void}),ncid,varid,ncdata))
+end
+
+
 function nc_get_var!(ncid::Integer,varid::Integer,ip)
     if eltype(ip) == Char
         tmp = Array{UInt8,ndims(ip)}(size(ip))
@@ -668,7 +680,7 @@ function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,op)
     check(ccall((:nc_put_vars,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint},Ptr{Void}),ncid,varid,startp,countp,stridep,op))
 end
 
-function nc_get_vars(ncid::Integer,varid::Integer,startp,countp,stridep,ip)    
+function nc_get_vars(ncid::Integer,varid::Integer,startp,countp,stridep,ip)
     if eltype(ip) == Char
         tmp = Array{UInt8,ndims(ip)}(size(ip))
         check(ccall((:nc_get_vars,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint},Ptr{Void}),ncid,varid,startp,countp,stridep,tmp))
