@@ -29,10 +29,8 @@ typeid = NCDatasets.nc_def_vlen(ncid, vlentypename, NCDatasets.ncType[T])
 varid = NCDatasets.nc_def_var(ncid, varname, typeid, [dimid])
 
 
-#NCDatasets.nc_put_var(ncid, varid, ncdata)
 for i = 1:dimlen
-    tmp_vlen = NCDatasets.nc_vlen_t{T}(length(data[i]), pointer(data[i]))
-    NCDatasets.nc_put_var1(ncid, varid, [i-1], Ref(tmp_vlen))
+    NCDatasets.nc_put_var1(ncid, varid, [i-1], data[i])
 end
 
 typeids = NCDatasets.nc_inq_typeids(ncid)
@@ -79,10 +77,12 @@ if xtype >= NCDatasets.NC_FIRSTUSERTYPEID
         
         @test data == data2
 
-        index = 1
-        tmp = Vector{NCDatasets.nc_vlen_t{T}}(undef,1)
-        NCDatasets.nc_get_var1!(ncid,varid,[index-1],tmp)
-        @test data[index] ==  unsafe_wrap(Vector{T},tmp[index].p,(tmp[index].len,))
+        for index = 1:dimlen
+            leni = length(data[index])
+            tmp = Vector{NCDatasets.nc_vlen_t{T}}(undef,1)
+            NCDatasets.nc_get_var1!(ncid,varid,[index-1],tmp)
+            @test data[index] ==  unsafe_wrap(Vector{T},tmp[1].p,(tmp[1].len,))
+        end
     end
 end
 

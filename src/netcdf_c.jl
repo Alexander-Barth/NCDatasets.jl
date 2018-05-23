@@ -609,6 +609,12 @@ function nc_put_var1(ncid::Integer,varid::Integer,indexp,op)
     check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),ncid,varid,indexp,op))
 end
 
+# vlen data
+function nc_put_var1(ncid::Integer,varid::Integer,indexp,data::Vector{T}) where T
+    tmp_vlen = nc_vlen_t{T}(length(data), pointer(data))
+    nc_put_var1(ncid, varid, indexp, Ref(tmp_vlen))
+end
+
 function nc_get_var1!(ncid::Integer,varid::Integer,indexp,ip)
     if eltype(ip) == Char
         tmp = Vector{UInt8}(undef,1)
