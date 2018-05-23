@@ -805,11 +805,7 @@ end
 
 function Base.getindex(v::Variable,indexes::Int...)
     #    @show "ind",indexes
-
-    data = Vector{eltype(v)}(1)
-    # use zero-based indexes
-    nc_get_var1!(v.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],data)
-    return data[1]
+    return nc_get_var1(eltype(v),v.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
 end
 
 function Base.setindex!(v::Variable{T,N},data,indexes::Int...) where N where T

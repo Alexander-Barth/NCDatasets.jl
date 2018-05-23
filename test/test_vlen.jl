@@ -1,6 +1,5 @@
 using Base.Test
 import NCDatasets
-using NCDatasets
 
 filename = tempname()
 #@show filename
@@ -34,7 +33,7 @@ close(ds)
 # load data
 
 ds = NCDatasets.Dataset(filename)
-vv = variable(ds,"varname")
+vv = NCDatasets.variable(ds,"varname")
 @test eltype(vv) == Vector{T}
 data2 = vv[:]
 
