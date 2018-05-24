@@ -316,7 +316,7 @@ function Base.setindex!(a::Attributes,data,name::AbstractString)
 end
 
 """
-   keys(a::Attributes)
+   Base.keys(a::Attributes)
 
 Return a list of the names of all attributes.
 """
@@ -341,22 +341,39 @@ end
 
 Base.keys(a::MFAttributes) = keys(a.as)
 
+"""
+    Base.keys(g::NCDatasets.Groups)
 
-
+Return the names of all subgroubs of the group `g`.
+"""
 function Base.keys(g::Groups)
     return String[nc_inq_grpname(ncid)
                   for ncid in nc_inq_grps(g.ncid)]
 end
 
 """
-Existing group
-"""
+    group = getindex(g::NCDatasets.Groups,groupname::AbstractString)
 
+Return the NetCDF `group` with the name `groupname`.
+For example:
+
+```julia-repl
+julia> ds = Dataset("results.nc", "r");
+julia> forecast_group = ds.group["forecast"]
+julia> forecast_temp = forecast_group["temperature"]
+```
+
+"""
 function Base.getindex(g::Groups,groupname::AbstractString)
     grp_ncid = nc_inq_grp_ncid(g.ncid,groupname)
     return Dataset(grp_ncid,g.isdefmode)
 end
 
+"""
+    defGroup(ds::Dataset,groupname)
+
+Create the group with the name `groupname` in the dataset `ds`.
+"""
 function defGroup(ds::Dataset,groupname)
     grp_ncid = nc_def_grp(ds.ncid,groupname)
     return Dataset(grp_ncid,ds.isdefmode)
@@ -675,10 +692,12 @@ end
 Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The CF convention are honored when the
 variable is indexed:
-* `_FillValue` will be returned as NA (DataArrays)
+* `_FillValue` will be returned as `missing` (DataArrays)
 * `scale_factor` and `add_offset` are applied
 * time variables (recognized by the units attribute) are returned
 as `DateTime` object.
+
+A call `getindex(ds,varname)` is usually written as `ds[varname]`.
 """
 
 function Base.getindex(ds::Dataset,varname::AbstractString)
@@ -1186,13 +1205,32 @@ Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
 # for iteration as a Dict
 
 """
-    start(ds::Dataset)
+    start(ds::NCDatasets.Dataset)
+    start(a::NCDatasets.Attributes)
+    start(d::NCDatasets.Dimensions)
+    start(g::NCDatasets.Groups)
 
-Allow to iterate over a dataset.
+Allow to iterate over a dataset, attribute list, dimensions and NetCDF groups.
 
 ```julia
 for (varname,var) in ds
+    # all variables
     @show (varname,size(var))
+end
+
+for (dimname,dim) in ds.dims
+    # all dimensions
+    @show (dimname,dim)
+end
+
+for (attribname,attrib) in ds.attrib
+    # all attributes
+    @show (attribname,attrib)
+end
+
+for (groupname,group) in ds.groups
+    # all groups
+    @show (groupname,group)
 end
 ```
 """
@@ -1370,7 +1408,8 @@ export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
     deflate, chunking, checksum, fillvalue, fillmode, ncgen
 export nomissing
 export varbyattrib
-
+export path
+export defGroup
 
 # it is good practise to use the default fill-values, thus we export them
 export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,

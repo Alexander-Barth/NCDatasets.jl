@@ -6,11 +6,13 @@ Documentation for NCDatasets.jl
 
 ```@docs
 Dataset
-keys
+keys(ds::Dataset)
 haskey
+getindex(ds::Dataset,varname::AbstractString)
 variable
 sync
 close
+path
 ```
 
 ## Variables
@@ -22,7 +24,6 @@ name
 chunking
 deflate
 checksum
-Base.start(ds::Dataset)
 ```
 
 Different type of arrays are involved when working with NCDatasets. For instance assume that `test.nc` is a file with a `Float32` variable called `var`. Assume that we open this data set in append mode (`"a"`):
@@ -43,7 +44,7 @@ v_da = v_cf[:,:]
 
 ## Attributes
 
-The NetCDF dataset (as return by `Dataset`) and the NetCDF variables (as returned by `getindex`, `variable` or `defVar`) have the field `attrib` which has the type `NCDatasets.Attributes` and behaves like a julia dictionary.
+The NetCDF dataset (as return by `Dataset` or NetCDF groups) and the NetCDF variables (as returned by `getindex`, `variable` or `defVar`) have the field `attrib` which has the type `NCDatasets.Attributes` and behaves like a julia dictionary.
 
 
 ```@docs
@@ -57,15 +58,33 @@ keys(a::NCDatasets.Attributes)
 ```@docs
 defDim
 setindex!(d::NCDatasets.Dimensions,len,name::AbstractString)
-dimnames(v::Variable)
+dimnames(v::NCDatasets.Variable)
+```
+
+
+## Groups
+
+```@docs
+defGroup(ds::Dataset,groupname)
+getindex(g::NCDatasets.Groups,groupname::AbstractString)
+Base.keys(g::NCDatasets.Groups)
+```
+
+## Common methods
+
+Explore a NetCDF dataset
+
+```@docs
+Base.start(a::NCDatasets.NCIterable)
 ```
 
 # Utility functions
 
 ```@docs
 ncgen(fname)
-nomissing(da::DataArray)
-nomissing(da::DataArray,value)
+nomissing(da::DataArrays.DataArray)
+nomissing(da::DataArrays.DataArray,value)
+varbyattrib
 ```
 
 
