@@ -395,16 +395,16 @@ end
 
 Create a new NetCDF file if the `mode` is "c". An existing file with the same
 name will be overwritten. If `mode` is "a", then an existing file is open into
-append mode (i.e. existing data in the NetCDF file is not overwritten and
-a variabale can be added). With the mode equal to "r", an existing NetCDF file or
+append mode (i.e. existing data in the netCDF file is not overwritten and
+a variable can be added). With the mode set to "r", an existing netCDF file or
 OPeNDAP URL can be open in read-only mode.  The default mode is "r".
 
 # Supported formats:
 
-* :netcdf4 (default): HDF5-based NetCDF format
-* :netcdf4_classic: Only netCDF 3 compatible API features will be used
-* :netcdf3_classic: classic NetCDF format supporting only files smaller than 2GB.
-* :netcdf3_64bit_offset: improved NetCDF format supporting files larger than 2GB.
+* :netcdf4 (default): HDF5-based NetCDF format.
+* :netcdf4_classic: Only netCDF 3 compatible API features will be used.
+* :netcdf3_classic: classic netCDF format supporting only files smaller than 2GB.
+* :netcdf3_64bit_offset: improved netCDF format supporting files larger than 2GB.
 
 Files can also be open and automatically closed with a `do` block.
 
@@ -469,7 +469,7 @@ end
 """
     defDim(ds::Dataset,name,len)
 
-Define a dimension in the data-set `ds` with the given `name` and length `len`.
+Define a dimension in the data set `ds` with the given `name` and length `len`.
 If `len` is the special value `Inf`, then the dimension is considered as
 `unlimited`, i.e. it will grow as data is added to the NetCDF file.
 
@@ -1210,7 +1210,7 @@ Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
     start(d::NCDatasets.Dimensions)
     start(g::NCDatasets.Groups)
 
-Allow to iterate over a dataset, attribute list, dimensions and NetCDF groups.
+Allow one to iterate over a dataset, attribute list, dimensions and NetCDF groups.
 
 ```julia
 for (varname,var) in ds
@@ -1294,7 +1294,7 @@ end
 
 Generate the Julia code that would produce a NetCDF file with the same metadata
 as the NetCDF file `fname`. The code is placed in the file `jlname` or printed
-to the standard output. Per default the new NetCDF file is called `filename.nc`.
+to the standard output. By default the new NetCDF file is called `filename.nc`.
 This can be changed with the optional parameter `newfname`.
 """
 
