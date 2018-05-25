@@ -542,7 +542,16 @@ function nc_get_att(ncid::Integer,varid::Integer,name)
     if xtype == NC_CHAR
         val = Vector{UInt8}(len)
         check(ccall((:nc_get_att,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{Void}),ncid,varid,name,val))
-        return join(Char.(val))
+
+        # remove everything following a null terminating character if present
+        # see issue #12
+        inull = findfirst(val .== 0)
+
+        if inull == 0
+            return join(Char.(val))
+        else
+            return join(Char.(view(val,1:inull-1)))
+        end
     elseif xtype == NC_STRING
         val = Vector{Ptr{UInt8}}(len)
         check(ccall((:nc_get_att,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{Void}),ncid,varid,name,val))

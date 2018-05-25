@@ -128,3 +128,17 @@ In fact, `_FillValue` must have the same data type as the corresponding variable
 tempvar.attrib["_FillValue"] = Float32(-9999.)
 ```
 
+
+## Corner cases
+
+
+* An attribute representing a vector with a single value (e.g. `[1]`) will be read back as a scalar (`1`) (same behavior in python netCDF4 1.3.1).
+
+* NetCDF and Julia distinguishes between a vector of chars and a string, but both are returned as string for ease of use, in particular 
+an attribute representing a vector of chars `['u','n','i','t','s']` will be read back as the string `"units"`.
+
+* An attribute representing a vector of chars `['u','n','i','t','s','\0']` will also be read back as the string `"units"` (issue #12).
+
+
+<!--  LocalWords:  NCDatasets jl Datasets Dataset netCDF
+ -->
