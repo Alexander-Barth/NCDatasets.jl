@@ -10,13 +10,13 @@
 [![documentation latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/latest/)
 
 
-`NCDatasets` allows one to read and create NetCDF files.
+`NCDatasets` allows one to read and create netCDF files.
 NetCDF data set and attribute list behave like Julia dictionaries and variables like Julia arrays.
 
 
 The module `NCDatasets` provides support for the following [netCDF CF conventions](http://cfconventions.org/):
-* `_FillValue` will be returned as `missing` (DataArrays)
-* `scale_factor` and `add_offset` are applied
+* `_FillValue` will be returned as `missing` (DataArrays),
+* `scale_factor` and `add_offset` are applied,
 * time variables (recognized by the `units` attribute) are returned as `DateTime` objects.
 
 The raw data can also be accessed (without the transformations above).
@@ -51,7 +51,7 @@ using NCDatasets
 ds = Dataset("file.nc")
 ```
 
-The following displays the information just for the variable `varname` and the global attributes:
+The following displays the information just for the variable `varname` and for the global attributes:
 
 ```julia
 ds["varname"]
@@ -213,6 +213,19 @@ units = get(v,"units","adimensional")
 close(ds)
 ```
 
+## Get one or several variables by specifying the value of an attribute
+
+The variable name are not always standardized, for example the longitude we can
+find: `lon`, `LON`, `longitude`, ...
+
+The solution implemented in the function `varbyattrib` consists in searching for the
+variables that have specified value for a given attribute.
+
+```julia
+T = varbyattrib(ds, standard_name="sea_water_temperature");
+```
+will return the list of variables of the dataset `ds` that have sea_water_temperature
+as standard name.
 
 # Filing an issue
 
