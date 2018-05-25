@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "NCDatasets.jl",
     "title": "NCDatasets.Dataset",
     "category": "type",
-    "text": "Dataset(filename::AbstractString,mode::AbstractString = \"r\";\n                 format::Symbol = :netcdf4)\n\nCreate a new NetCDF file if the mode is \"c\". An existing file with the same name will be overwritten. If mode is \"a\", then an existing file is open into append mode (i.e. existing data in the NetCDF file is not overwritten and a variabale can be added). With the mode equal to \"r\", an existing NetCDF file or OPeNDAP URL can be open in read-only mode.  The default mode is \"r\".\n\nSupported formats:\n\n:netcdf4 (default): HDF5-based NetCDF format\n:netcdf4_classic: Only netCDF 3 compatible API features will be used\n:netcdf3_classic: classic NetCDF format supporting only files smaller than 2GB.\n:netcdf3_64bit_offset: improved NetCDF format supporting files larger than 2GB.\n\nFiles can also be open and automatically closed with a do block.\n\nDataset(\"file.nc\") do ds\n    data = ds[\"temperature\"][:,:]\nend\n\n\n\n"
+    "text": "Dataset(filename::AbstractString,mode::AbstractString = \"r\";\n                 format::Symbol = :netcdf4)\n\nCreate a new NetCDF file if the mode is \"c\". An existing file with the same name will be overwritten. If mode is \"a\", then an existing file is open into append mode (i.e. existing data in the netCDF file is not overwritten and a variable can be added). With the mode set to \"r\", an existing netCDF file or OPeNDAP URL can be open in read-only mode.  The default mode is \"r\".\n\nSupported formats:\n\n:netcdf4 (default): HDF5-based NetCDF format.\n:netcdf4_classic: Only netCDF 3 compatible API features will be used.\n:netcdf3_classic: classic netCDF format supporting only files smaller than 2GB.\n:netcdf3_64bit_offset: improved netCDF format supporting files larger than 2GB.\n\nFiles can also be open and automatically closed with a do block.\n\nDataset(\"file.nc\") do ds\n    data = ds[\"temperature\"][:,:]\nend\n\n\n\n"
 },
 
 {
@@ -181,7 +181,7 @@ var documenterSearchIndex = {"docs": [
     "page": "NCDatasets.jl",
     "title": "NCDatasets.defDim",
     "category": "function",
-    "text": "defDim(ds::Dataset,name,len)\n\nDefine a dimension in the data-set ds with the given name and length len. If len is the special value Inf, then the dimension is considered as unlimited, i.e. it will grow as data is added to the NetCDF file.\n\nFor example:\n\nds = Dataset(\"/tmp/test.nc\",\"c\")\ndefDim(ds,\"lon\",100)\n\nThis defines the dimension lon with the size 100.\n\n\n\n"
+    "text": "defDim(ds::Dataset,name,len)\n\nDefine a dimension in the data set ds with the given name and length len. If len is the special value Inf, then the dimension is considered as unlimited, i.e. it will grow as data is added to the NetCDF file.\n\nFor example:\n\nds = Dataset(\"/tmp/test.nc\",\"c\")\ndefDim(ds,\"lon\",100)\n\nThis defines the dimension lon with the size 100.\n\n\n\n"
 },
 
 {
@@ -245,7 +245,7 @@ var documenterSearchIndex = {"docs": [
     "page": "NCDatasets.jl",
     "title": "Base.start",
     "category": "method",
-    "text": "start(ds::NCDatasets.Dataset)\nstart(a::NCDatasets.Attributes)\nstart(d::NCDatasets.Dimensions)\nstart(g::NCDatasets.Groups)\n\nAllow to iterate over a dataset, attribute list, dimensions and NetCDF groups.\n\nfor (varname,var) in ds\n    # all variables\n    @show (varname,size(var))\nend\n\nfor (dimname,dim) in ds.dims\n    # all dimensions\n    @show (dimname,dim)\nend\n\nfor (attribname,attrib) in ds.attrib\n    # all attributes\n    @show (attribname,attrib)\nend\n\nfor (groupname,group) in ds.groups\n    # all groups\n    @show (groupname,group)\nend\n\n\n\n"
+    "text": "start(ds::NCDatasets.Dataset)\nstart(a::NCDatasets.Attributes)\nstart(d::NCDatasets.Dimensions)\nstart(g::NCDatasets.Groups)\n\nAllow one to iterate over a dataset, attribute list, dimensions and NetCDF groups.\n\nfor (varname,var) in ds\n    # all variables\n    @show (varname,size(var))\nend\n\nfor (dimname,dim) in ds.dims\n    # all dimensions\n    @show (dimname,dim)\nend\n\nfor (attribname,attrib) in ds.attrib\n    # all attributes\n    @show (attribname,attrib)\nend\n\nfor (groupname,group) in ds.groups\n    # all groups\n    @show (groupname,group)\nend\n\n\n\n"
 },
 
 {
@@ -261,7 +261,7 @@ var documenterSearchIndex = {"docs": [
     "page": "NCDatasets.jl",
     "title": "NCDatasets.ncgen",
     "category": "method",
-    "text": "ncgen(fname; ...)\nncgen(fname,jlname; ...)\n\nGenerate the Julia code that would produce a NetCDF file with the same metadata as the NetCDF file fname. The code is placed in the file jlname or printed to the standard output. Per default the new NetCDF file is called filename.nc. This can be changed with the optional parameter newfname.\n\n\n\n"
+    "text": "ncgen(fname; ...)\nncgen(fname,jlname; ...)\n\nGenerate the Julia code that would produce a NetCDF file with the same metadata as the NetCDF file fname. The code is placed in the file jlname or printed to the standard output. By default the new NetCDF file is called filename.nc. This can be changed with the optional parameter newfname.\n\n\n\n"
 },
 
 {
