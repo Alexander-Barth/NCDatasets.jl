@@ -164,35 +164,35 @@ function timeunits(units, calendar = "standard")
     end
 
 
-        negativeyear = starttime[1] == '-'
-        if negativeyear
-            starttime = starttime[2:end]
+    negativeyear = starttime[1] == '-'
+    if negativeyear
+        starttime = starttime[2:end]
+    end
+
+    t0 =
+        if contains(starttime,":")
+            DateTime(starttime,"y-m-d H:M:S")
+        else
+            DateTime(starttime,"y-m-d")
         end
 
-        t0 =
-            if contains(starttime,":")
-                DateTime(starttime,"y-m-d H:M:S")
-            else
-                DateTime(starttime,"y-m-d")
-            end
+    if negativeyear
+        # year is negative
+        t0 = DateTime(-Dates.year(t0),Dates.month(t0),Dates.day(t0),
+                      Dates.hour(t0),Dates.minute(t0),Dates.second(t0))
+    end
 
-        if negativeyear
-            # year is negative
-            t0 = DateTime(-Dates.year(t0),Dates.month(t0),Dates.day(t0),
-                          Dates.hour(t0),Dates.minute(t0),Dates.second(t0))
+    # make sure that plength is 64-bit on 32-bit platforms
+    plength =
+        if (tunit == "days") || (tunit == "day")
+            24*60*60*Int64(1000)
+        elseif (tunit == "hours") || (tunit == "hour")
+            60*60*Int64(1000)
+        elseif (tunit == "minutes") || (tunit == "minute")
+            60*Int64(1000)
+        elseif (tunit == "seconds") || (tunit == "second")
+            Int64(1000)
         end
-
-        # make sure that plength is 64-bit on 32-bit platforms
-        plength =
-            if (tunit == "days") || (tunit == "day")
-                24*60*60*Int64(1000)
-            elseif (tunit == "hours") || (tunit == "hour")
-                60*60*Int64(1000)
-            elseif (tunit == "minutes") || (tunit == "minute")
-                60*Int64(1000)
-            elseif (tunit == "seconds") || (tunit == "second")
-                Int64(1000)
-            end
 
     if (calendar == "standard") || (calendar == "gregorian")
         return t0,plength
@@ -210,7 +210,8 @@ function timeunits(units, calendar = "standard")
         # https://web.archive.org/web/20180212213256/http://www.julian-date.com/
 
         return t0 + Dates.Day(327),plength
-
+    else
+        error("Unsupported calendar: $(calendar). NCDatasets supports only the standard (gregorian) calendar or Chronological Julian Date")
     end
 end
 
