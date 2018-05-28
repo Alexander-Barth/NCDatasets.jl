@@ -3,12 +3,6 @@ import Base.Dates: UTInstant, Millisecond
 import Base:+, -, string, show
 using Base.Test
 
-# adapted from
-# https://github.com/JuliaLang/julia/blob/aa301aa60bb7097182c55248572c861361a40b53/stdlib/Dates/src/types.jl
-# Licence MIT
-
-#struct DateTimeNoLeap #<: Base.Dates.AbstractDateTime
-#struct DateTimeNoLeap <: DateTime
 
 function datenum_cal(cm,y, m, d, h, mi, s, ms = 0)
     return 24*60*60*1000 * (cm[end] * (y-1) + cm[m] + (d-1)) +   60*60*1000 * h +  60*1000 * mi + 1000*s + ms
@@ -48,21 +42,24 @@ abstract type AbstractCFDateTime end
 
 const RegTime = Union{Dates.Millisecond,Dates.Second,Dates.Minute,Dates.Hour,Dates.Day}
 
-for (CFDateTime,scm,cmm) in [
-    (:DateTimeAllLeap,:cm_allleap,(0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)),
-    (:DateTimeNoLeap,:cm_noleap,(0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365))     
+for (CFDateTime,cmm) in [
+    (:DateTimeAllLeap, (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)),
+    (:DateTimeNoLeap,  (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)),
+    (:DateTime360,     (0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360)),
 ]
     @eval begin
-        const $scm = $cmm
-        
+        # adapted from
+        # https://github.com/JuliaLang/julia/blob/aa301aa60bb7097182c55248572c861361a40b53/stdlib/Dates/src/types.jl
+        # Licence MIT
+
         struct $CFDateTime <: AbstractCFDateTime
             instant::UTInstant{Millisecond}
-            DateTimeNoLeap(instant::UTInstant{Millisecond}) = new(instant)
+            $CFDateTime(instant::UTInstant{Millisecond}) = new(instant)
         end
         
 
 """
-     CFDateTime(y, [m, d, h, mi, s, ms]) -> DateTimeNoLeap
+     CFDateTime(y, [m, d, h, mi, s, ms])
 Construct a `DateTime` type by parts. Arguments must be convertible to [`Int64`](@ref).
 """
 function $CFDateTime(y::Int64, m::Int64=1, d::Int64=1,
@@ -84,12 +81,12 @@ function string(dt::$CFDateTime)
 end
 
 function show(io::IO,dt::$CFDateTime)
-    write(io, "$CFDateTime(",string(dt),")")
+    write(io, string(typeof(dt)), "(",string(dt),")")
 end
 
 
 +(dt::$CFDateTime,Δ::RegTime) = $CFDateTime(UTInstant(dt.instant.periods + Dates.Millisecond(Δ)))
-+(dt::$CFDateTime,Δ::Dates.Year) = $CFDateTime(UTInstant(dt.instant.periods + Dates.Millisecond(Dates.value(Δ) * cm_noleap[end]*24*60*60*1000)))
++(dt::$CFDateTime,Δ::Dates.Year) = $CFDateTime(UTInstant(dt.instant.periods + Dates.Millisecond(Dates.value(Δ) * $cmm[end]*24*60*60*1000)))
 
 function +(dt::$CFDateTime,Δ::Dates.Month)
     y,mo,d,h,mi,s,ms = datevec(dt)
@@ -133,7 +130,7 @@ second(dt::AbstractCFDateTime) = datevec(dt)[6]
 millisecond(dt::AbstractCFDateTime) = datevec(dt)[7]
 
 
--(dt::DateTimeNoLeap,Δ) = dt + (-Δ)
+-(dt::AbstractCFDateTime,Δ) = dt + (-Δ)
 
 # dvec = [1959,12,31, 23,39,59,123];
 # t =  datenum_cal(cm_noleap,dvec...)
@@ -151,6 +148,8 @@ dt = DateTimeNoLeap(1959,12,31, 23,39,59,123)
 @test second(dt) == 59
 @test millisecond(dt) == 123
 
+@test datevec(DateTimeNoLeap(1959,12,31, 23,39,59,123)) == (1959,12,31, 23,39,59,123)
+
 
 dt = DateTimeNoLeap(1959,12,31,23,39,59,123)
 @test dt + Dates.Millisecond(7) == DateTimeNoLeap(1959,12,31,23,39,59,130)
@@ -166,28 +165,17 @@ dt = DateTimeNoLeap(1959,12,31,23,39,59,123)
 @test dt - Dates.Month(24)      == DateTimeNoLeap(1957,12,31,23,39,59,123)
 @test dt - Dates.Year(7)        == DateTimeNoLeap(1952,12,31,23,39,59,123)
 
+
+dt = DateTimeNoLeap(2004,2,28)
+@test dt + Dates.Day(1)         == DateTimeNoLeap(2004,3,1)
+
 @test string(DateTimeNoLeap(2001,2,20)) == "2001-02-20T00:00:00"
 
 
+dt = DateTimeAllLeap(2001,2,28)
+@test dt + Dates.Day(1)         == DateTimeAllLeap(2001,2,29)
+@test datevec(DateTimeAllLeap(1959,12,31, 23,39,59,123)) == (1959,12,31, 23,39,59,123)
 
 
+@test datevec(DateTime360(1959,12,30,23,39,59,123)) == (1959,12,30,23,39,59,123)
 
-# dvec = [1959,1,1, 0,0,0];
-# t =  datenum_cal(dvec,'noleap');
-# dvec2 = datevec_cal(t,'noleap');
-# maxdiff(dvec,dvec2)
-
-
-# dvec = [1959,1,31, 0,0,0];
-# t =  datenum_cal(dvec,'noleap');
-# dvec2 = datevec_cal(t,'noleap');
-# maxdiff(dvec,dvec2)
-
-
-# dvec = [1959,2,1, 0,0,0];
-# t =  datenum_cal(dvec,'noleap');
-# dvec2 = datevec_cal(t,'noleap');
-# maxdiff(dvec,dvec2)
-
-
-#end
