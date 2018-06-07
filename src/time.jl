@@ -14,11 +14,10 @@ function datenum_julian(y, m, d, h, mi, s, ms = 0)
 
     # number of leap years prior to current year
     nleap = (y-1) ÷ 4
-    if y % 4 == 0
-        # after Feb., count current leap day
-        if m > 2
-            nleap += 1
-        end
+
+    # after Feb., count current leap day
+    if (y % 4 == 0) && (m > 2)
+        nleap += 1
     end
 
     return 24*60*60*1000 * (cm[end] * (y-1) + cm[m] + (d-1) + nleap) + 60*60*1000 * h +  60*1000 * mi + 1000*s + ms
@@ -30,21 +29,20 @@ time is in milliseconds
 function datevec_julian(time::Number)
     days = time ÷ (24*60*60*1000)
 
-    ym = (0, 365, 2*365, 3*365, 3*365+366)
+    # years of complete 4-year cycles
+    y = 4 * (days ÷ (3*365+366))
 
-    y4 = days ÷ (3*365+366)
-    #@show y4
+    # days outside of a 4-year cycle
+    remaing_days = days % (3*365+366)
 
-    y = 4*y4 + findlast(ym .<=  (days % (3*365+366)))-1
+    # number of years in remaing_days
+    y = y + (remaing_days ÷ 365)
 
-    #y = (days*4) ÷ (3*365+366)
-    #@show y, days
-    days = days - (365*y + (y)÷4)
-
-    #@show days
+    # days in current year
+    days = days - (365*(y-1) + (y-1)÷4)
 
     cm =
-        if (y+1) % 4 == 0
+        if y % 4 == 0
             # leap year
             (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)
         else
@@ -66,7 +64,6 @@ function datevec_julian(time::Number)
 
     # day start at 1 (not zero)
     d = d+1
-    y = y+1
 
     #@show y,mo,d,h,mi,s,ms
     return (y,mo,d,h,mi,s,ms)
@@ -108,9 +105,6 @@ abstract type AbstractCFDateTime end
 const RegTime = Union{Dates.Millisecond,Dates.Second,Dates.Minute,Dates.Hour,Dates.Day}
 
 
-
-
-
 for (CFDateTime,cmm) in [
     (:DateTimeAllLeap, (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)),
     (:DateTimeNoLeap,  (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)),
@@ -125,7 +119,16 @@ for (CFDateTime,cmm) in [
             instant::UTInstant{Millisecond}
             $CFDateTime(instant::UTInstant{Millisecond}) = new(instant)
         end
+    end
+end
 
+
+for (CFDateTime,cmm) in [
+    (:DateTimeAllLeap, (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)),
+    (:DateTimeNoLeap,  (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)),
+    (:DateTime360,     (0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360)),
+]
+    @eval begin
 
 """
      CFDateTime(y, [m, d, h, mi, s, ms])
