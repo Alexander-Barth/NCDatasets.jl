@@ -105,10 +105,10 @@ abstract type AbstractCFDateTime end
 const RegTime = Union{Dates.Millisecond,Dates.Second,Dates.Minute,Dates.Hour,Dates.Day}
 
 
-for (CFDateTime,cmm) in [
-    (:DateTimeAllLeap, (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)),
-    (:DateTimeNoLeap,  (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)),
-    (:DateTime360,     (0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360)),
+for CFDateTime in [
+    :DateTimeAllLeap,
+    :DateTimeNoLeap,
+    :DateTime360,   
 ]
     @eval begin
         # adapted from
