@@ -4,31 +4,96 @@ import Base:+, -, string, show
 using Base.Test
 
 
-function datenum_cal(cm,y, m, d, h, mi, s, ms = 0)
-    return 24*60*60*1000 * (cm[end] * (y-1) + cm[m] + (d-1)) +   60*60*1000 * h +  60*1000 * mi + 1000*s + ms
+function datenum_cal(cm, y, m, d, h, mi, s, ms = 0)
+    return 24*60*60*1000 * (cm[end] * (y-1) + cm[m] + (d-1)) + 60*60*1000 * h +  60*1000 * mi + 1000*s + ms
 end
 
-function datevec_cal(cm,time_::Number)
-    timed_ = time_ ÷ (24*60*60*1000)
+function datenum_julian(y, m, d, h, mi, s, ms = 0)
+    # days elapsed since beginning of the year for every month
+    cm = (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)
 
-    y = timed_ ÷ cm[end]
-    
-    t2 = timed_ - cm[end]*y
+    # number of leap years prior to current year
+    nleap = (y-1) ÷ 4
+    if y % 4 == 0
+        # after Feb., count current leap day
+        if m > 2
+            nleap += 1
+        end
+    end
 
-    mo = findlast(cm .<= t2)
-  
-    d = t2  - cm[mo]    
-    
-    ms = time_ % (24*60*60*1000)
+    return 24*60*60*1000 * (cm[end] * (y-1) + cm[m] + (d-1) + nleap) + 60*60*1000 * h +  60*1000 * mi + 1000*s + ms
+end
+
+"""
+time is in milliseconds
+"""
+function datevec_julian(time::Number)
+    days = time ÷ (24*60*60*1000)
+
+    ym = (0, 365, 2*365, 3*365, 3*365+366)
+
+    y4 = days ÷ (3*365+366)
+    #@show y4
+
+    y = 4*y4 + findlast(ym .<=  (days % (3*365+366)))-1
+
+    #y = (days*4) ÷ (3*365+366)
+    #@show y, days
+    days = days - (365*y + (y)÷4)
+
+    #@show days
+
+    cm =
+        if (y+1) % 4 == 0
+            # leap year
+            (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)
+        else
+            (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)
+        end
+
+    mo = findlast(cm .<= days)
+    d = days  - cm[mo]
+
+    ms = time % (24*60*60*1000)
     h = ms ÷ (60*60*1000)
     ms = ms % (60*60*1000)
-    
+
     mi = ms ÷ (60*1000)
     ms = ms % (60*1000)
 
     s = ms ÷ (1000)
     ms = ms % (1000)
-    
+
+    # day start at 1 (not zero)
+    d = d+1
+    y = y+1
+
+    #@show y,mo,d,h,mi,s,ms
+    return (y,mo,d,h,mi,s,ms)
+end
+
+
+function datevec_cal(cm,time_::Number)
+    timed_ = time_ ÷ (24*60*60*1000)
+
+    y = timed_ ÷ cm[end]
+
+    t2 = timed_ - cm[end]*y
+
+    mo = findlast(cm .<= t2)
+
+    d = t2  - cm[mo]
+
+    ms = time_ % (24*60*60*1000)
+    h = ms ÷ (60*60*1000)
+    ms = ms % (60*60*1000)
+
+    mi = ms ÷ (60*1000)
+    ms = ms % (60*1000)
+
+    s = ms ÷ (1000)
+    ms = ms % (1000)
+
     # day and year start at 1 (not zero)
     d = d+1;
     y = y+1;
@@ -41,6 +106,10 @@ datevec_cal(cm,dt) = datevec_cal(cm,Dates.value(dt.instant.periods))
 abstract type AbstractCFDateTime end
 
 const RegTime = Union{Dates.Millisecond,Dates.Second,Dates.Minute,Dates.Hour,Dates.Day}
+
+
+
+
 
 for (CFDateTime,cmm) in [
     (:DateTimeAllLeap, (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)),
@@ -56,7 +125,7 @@ for (CFDateTime,cmm) in [
             instant::UTInstant{Millisecond}
             $CFDateTime(instant::UTInstant{Millisecond}) = new(instant)
         end
-        
+
 
 """
      CFDateTime(y, [m, d, h, mi, s, ms])
@@ -68,7 +137,7 @@ function $CFDateTime(y::Int64, m::Int64=1, d::Int64=1,
     if m < 1 || m > 12
         error("invalid month $(m)")
     end
-    
+
     return $CFDateTime(UTInstant(Millisecond(datenum_cal($cmm,y, m, d, h, mi, s, ms))))
 end
 
@@ -96,10 +165,10 @@ function +(dt::$CFDateTime,Δ::Dates.Month)
     y = y + (mo-mo2) ÷ 12
     return $CFDateTime(y, mo2, d,h, mi, s, ms)
 end
-        
+
 end
     end
-    
+
 # struct DateTimeNoLeap
 #     instant::UTInstant{Millisecond}
 #     DateTimeNoLeap(instant::UTInstant{Millisecond}) = new(instant)
@@ -107,7 +176,7 @@ end
 
 
 # cm_noleap = (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)
-  # if strcmp(calendar,'noleap') || strcmp(calendar,'365_day') || strcmp(calendar,'bogus_calendar') 
+  # if strcmp(calendar,'noleap') || strcmp(calendar,'365_day') || strcmp(calendar,'bogus_calendar')
   #   %cm = [0 cumsum([31 28 31 30 31 30 31 31 30 31 30 31])];
   #   cm = [0    31    59    90   120   151   181   212   243   273   304   334   365];
   # elseif strcmp(calendar,'360_day')
@@ -179,3 +248,7 @@ dt = DateTimeAllLeap(2001,2,28)
 
 @test datevec(DateTime360(1959,12,30,23,39,59,123)) == (1959,12,30,23,39,59,123)
 
+
+for n = 1:800000
+    @test datenum_julian(datevec_julian(n*24*60*60*1000)...) ÷ (24*60*60*1000) == n
+end
