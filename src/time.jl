@@ -8,9 +8,20 @@ function datenum_cal(cm, y, m, d, h, mi, s, ms = 0)
     return 24*60*60*1000 * (cm[end] * (y-1) + cm[m] + (d-1)) + 60*60*1000 * h +  60*1000 * mi + 1000*s + ms
 end
 
+isleapyear_julian(y) = y % 4 == 0
+
+
 function datenum_julian(y, m, d, h, mi, s, ms = 0)
     # days elapsed since beginning of the year for every month
     cm = (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)
+
+    if m < 1 || m > 12
+        error("invalid month $(m)")
+    end
+
+    if d < 1 || d > (cm[m+1] - cm[m]) + isleapyear_julian(y)
+        error("invalid day $(d) in $(@sprintf("%04d-%02d-%02dT%02d:%02d:%02d",y,m,d,h,mi,s))")
+    end
 
     # number of leap years prior to current year
     nleap = (y-1) ÷ 4
@@ -27,22 +38,35 @@ end
 time is in milliseconds
 """
 function datevec_julian(time::Number)
+
     days = time ÷ (24*60*60*1000)
+    # (y+1) is year
 
-    # years of complete 4-year cycles
-    y = 4 * (days ÷ (3*365+366))
+    yearlength(y) = 365 + ((y+1) % 4 == 0)
 
-    # days outside of a 4-year cycle
-    remaing_days = days % (3*365+366)
+    y = 0
+    while days >= yearlength(y)
+        days = days - yearlength(y)
+        y = y+1
+    end
 
-    # number of years in remaing_days
-    y = y + (remaing_days ÷ 365)
+    #@show y,days
+    # # years of complete 4-year cycles
+    # y = 4 * (days ÷ (3*365+366))
 
-    # days in current year
-    days = days - (365*(y-1) + (y-1)÷4)
+    # y = y+1
+    # # days outside of a 4-year cycle
+    # remaing_days = days % (3*365+366)
 
+    # # number of years in remaing_days
+    # y = y + (remaing_days ÷ 365)
+
+    # # days in current year
+    # days = days - (365*(y-1) + (y-1)÷4)
+
+    #@show days
     cm =
-        if y % 4 == 0
+        if (y+1) % 4 == 0
             # leap year
             (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)
         else
@@ -64,6 +88,7 @@ function datevec_julian(time::Number)
 
     # day start at 1 (not zero)
     d = d+1
+    y = y+1
 
     #@show y,mo,d,h,mi,s,ms
     return (y,mo,d,h,mi,s,ms)
@@ -108,7 +133,8 @@ const RegTime = Union{Dates.Millisecond,Dates.Second,Dates.Minute,Dates.Hour,Dat
 for CFDateTime in [
     :DateTimeAllLeap,
     :DateTimeNoLeap,
-    :DateTime360,   
+    :DateTime360,
+    :DateTimeJulian,
 ]
     @eval begin
         # adapted from
@@ -121,6 +147,26 @@ for CFDateTime in [
         end
     end
 end
+
+"""
+     DateTimeJulian(y, [m, d, h, mi, s, ms])
+Construct a `DateTime` type by parts. Arguments must be convertible to [`Int64`](@ref).
+"""
+function DateTimeJulian(y::Int64, m::Int64=1, d::Int64=1,
+                  h::Int64=0, mi::Int64=0, s::Int64=0, ms::Int64=0)
+
+
+    return DateTimeJulian(UTInstant(Millisecond(datenum_julian(y, m, d, h, mi, s, ms))))
+end
+
+datevec(dt::DateTimeJulian) = datevec_julian(Dates.value(dt.instant.periods))
+
+
+function +(dt::DateTimeJulian,Δ::Dates.Year)
+    y,mo,d,h,mi,s,ms = datevec(dt)
+    return DateTimeJulian(y+Δ, mo, d, h, mi, s, ms)
+end
+
 
 
 for (CFDateTime,cmm) in [
@@ -145,7 +191,18 @@ function $CFDateTime(y::Int64, m::Int64=1, d::Int64=1,
 end
 
 datevec(dt::$CFDateTime) = datevec_cal($cmm,dt)
++(dt::$CFDateTime,Δ::Dates.Year) = $CFDateTime(UTInstant(dt.instant.periods + Dates.Millisecond(Dates.value(Δ) * $cmm[end]*24*60*60*1000)))
+    end
+end
 
+
+for CFDateTime in [
+    :DateTimeAllLeap,
+    :DateTimeNoLeap,
+    :DateTime360,
+    :DateTimeJulian,
+]
+    @eval begin
 
 function string(dt::$CFDateTime)
     y,mo,d,h,mi,s,ms = datevec(dt)
@@ -158,7 +215,6 @@ end
 
 
 +(dt::$CFDateTime,Δ::RegTime) = $CFDateTime(UTInstant(dt.instant.periods + Dates.Millisecond(Δ)))
-+(dt::$CFDateTime,Δ::Dates.Year) = $CFDateTime(UTInstant(dt.instant.periods + Dates.Millisecond(Dates.value(Δ) * $cmm[end]*24*60*60*1000)))
 
 function +(dt::$CFDateTime,Δ::Dates.Month)
     y,mo,d,h,mi,s,ms = datevec(dt)
@@ -168,6 +224,7 @@ function +(dt::$CFDateTime,Δ::Dates.Month)
     y = y + (mo-mo2) ÷ 12
     return $CFDateTime(y, mo2, d,h, mi, s, ms)
 end
+
 
 end
     end
@@ -251,7 +308,13 @@ dt = DateTimeAllLeap(2001,2,28)
 
 @test datevec(DateTime360(1959,12,30,23,39,59,123)) == (1959,12,30,23,39,59,123)
 
+@test datevec_julian(0*24*60*60*1000) == (1,1,1,0,0,0,0)
+@test datevec_julian(1*24*60*60*1000) == (1,1,2,0,0,0,0)
+@test datevec_julian(58*24*60*60*1000) == (1,2,28,0,0,0,0)
+@test datevec_julian(800000*24*60*60*1000) == (2191, 4, 14, 0, 0, 0, 0)
 
 for n = 1:800000
-    @test datenum_julian(datevec_julian(n*24*60*60*1000)...) ÷ (24*60*60*1000) == n
+    #@show n
+    dv = datevec_julian(n*24*60*60*1000)
+    @test datenum_julian(dv...) ÷ (24*60*60*1000) == n
 end
