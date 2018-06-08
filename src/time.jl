@@ -27,27 +27,30 @@ function datenum_julian(y, m, d, h = 0, mi = 0, s = 0, ms = 0)
 
     ms = 60*60*1000 * h +  60*1000 * mi + 1000*s + ms
 
-    if y > 0
-        # number of leap years prior to current year
-        nleap = (y-1) ÷ 4
+    dd =
+        if y > 0
+            # number of leap years prior to current year
+            nleap = (y-1) ÷ 4
 
-        # after Feb., count current leap day
-        if isleapyear_julian(y) && (m > 2)
-            nleap += 1
+            # after Feb., count current leap day
+            if isleapyear_julian(y) && (m > 2)
+                nleap += 1
+            end
+
+            cm[end] * (y-1) + cm[m] + (d-1) + nleap
+        else
+            # 1 BC, 5 BC, 9 BC,...
+            nleap = (y-3) ÷ 4
+
+            # after Feb., count current leap day
+            if isleapyear_julian(y) && (m > 2)
+                nleap += 1
+            end
+
+            cm[end] * y + cm[m] + (d-1) + nleap
         end
 
-        return (24*60*60*1000) * (cm[end] * (y-1) + cm[m] + (d-1) + nleap) + ms
-    else
-        # 1 BC, 5 BC, 9 BC,...
-        nleap = (y-3) ÷ 4
-
-        # after Feb., count current leap day
-        if isleapyear_julian(y) && (m > 2)
-            nleap += 1
-        end
-        dd = cm[end] * y + cm[m] + (d-1) + nleap
-        return (24*60*60*1000) * (dd) + ms
-    end
+    return (24*60*60*1000) * (dd) + ms
 end
 
 """
