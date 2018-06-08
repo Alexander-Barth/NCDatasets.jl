@@ -313,8 +313,18 @@ dt = DateTimeAllLeap(2001,2,28)
 @test datevec_julian(58*24*60*60*1000) == (1,2,28,0,0,0,0)
 @test datevec_julian(800000*24*60*60*1000) == (2191, 4, 14, 0, 0, 0, 0)
 
+
 for n = 1:800000
     #@show n
     dv = datevec_julian(n*24*60*60*1000)
     @test datenum_julian(dv...) ÷ (24*60*60*1000) == n
 end
+
+# reference values from python's cftime
+@test DateTimeJulian(2000,1,1) + Dates.Day(1) == DateTimeJulian(2000,01,02)
+@test DateTimeJulian(2000,1,1) + Dates.Day(12) == DateTimeJulian(2000,01,13)
+@test DateTimeJulian(2000,1,1) + Dates.Day(123) == DateTimeJulian(2000,05,03)
+@test DateTimeJulian(2000,1,1) + Dates.Day(1234) == DateTimeJulian(2003,05,19)
+@test DateTimeJulian(2000,1,1) + Dates.Day(12345) == DateTimeJulian(2033,10,19)
+@test DateTimeJulian(2000,1,1) + Dates.Day(12346) == DateTimeJulian(2033,10,20)
+@test DateTimeJulian(1,1,1) + Dates.Day(1234678) == DateTimeJulian(3381,05,14)
