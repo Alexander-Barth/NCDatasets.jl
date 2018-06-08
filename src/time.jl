@@ -57,7 +57,7 @@ function datetuple_julian(time::Number)
     days = time ÷ (24*60*60*1000)
     y = 0
 
-    if days > 0
+    if days >= 0
         # initially year y and days are zero-based
         y = 4 * (days ÷ (3*365+366))
         d2 = days - (y ÷ 4) * (3*365+366)
@@ -70,11 +70,25 @@ function datetuple_julian(time::Number)
 
         days = days - (365*y + y÷4)
     else
+        y = 4 * (days ÷ (3*365+366))
+        y = y-4
+        #@show y,days
+        d2 = days - (y ÷ 4) * (3*365+366)
+        if d2 == 4*365
+            # the 4th year is not yet over
+            y += 3
+        else
+            y += (d2 ÷ 365)
+        end
+        y = y-1
+        #@show y
 
+        days = days - (365*(y+1) + (y-2)÷4)
+        #@show days
 
     end
     cm =
-        if (y+1) % 4 == 0
+        if isleapyear_julian(y+1)
             # leap year
             (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)
         else
@@ -389,7 +403,16 @@ timeencode(data,units,calendar = "standard") = data
 @test datenum_julian(-123,4,5)  ÷ (24*60*60*1000) == -44832
 
 
-#@test datetuple_julian(-1*24*60*60*1000) == (1,1,2,0,0,0,0)
+
+
+@test datetuple_julian(-1*24*60*60*1000) == (-1,12,31,0,0,0,0)
+@test datetuple_julian(-366*24*60*60*1000) == (-1,1,1,0,0,0,0)
+@test datetuple_julian(-731*24*60*60*1000) == (-2,1,1,0,0,0,0)
+@test datetuple_julian(-3653*24*60*60*1000) == (-10,1,1,0,0,0,0)
+@test datetuple_julian(-36525*24*60*60*1000) == (-100,1,1,0,0,0,0)
+@test datetuple_julian(-367*24*60*60*1000) == (-2,12,31,0,0,0,0)
+@test datetuple_julian(-44832*24*60*60*1000) == (-123,4,5,0,0,0,0)
+
 
 @test datetuple_julian(0*24*60*60*1000) == (1,1,1,0,0,0,0)
 @test datetuple_julian(1*24*60*60*1000) == (1,1,2,0,0,0,0)
@@ -397,7 +420,7 @@ timeencode(data,units,calendar = "standard") = data
 @test datetuple_julian(800000*24*60*60*1000) == (2191, 4, 14, 0, 0, 0, 0)
 
 
-for n = 1:800000
+for n = -1000:800000
     #@show n
     y, m, d, h, mi, s, ms = datetuple_julian(n*24*60*60*1000)
     @test datenum_julian(y, m, d, h, mi, s, ms) ÷ (24*60*60*1000) == n
