@@ -387,8 +387,10 @@ timedecode(data,units,calendar = "standard") =
     timedecode(timetype(calendar),data,units)
 
 
-function timeencode(data::Array{DateTime,N},units,calendar = "standard") where N
-    const t0,plength = timeunits(units,calendar)
+function timeencode(data::Array{DT,N},units,calendar = "standard") where N where DT <: Union{DateTime,AbstractCFDateTime}
+    @assert timetype(calendar) == DT
+
+    const t0,plength = timeunits(DT,units)
     convert(dt) = Dates.value(dt - t0) / plength
     return convert.(data)
 end
