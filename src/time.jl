@@ -288,7 +288,7 @@ millisecond(dt::AbstractCFDateTime) = datetuple(dt)[7]
 -(dt::AbstractCFDateTime,Δ) = dt + (-Δ)
 
 
-function parseDT(::Type{T},str) where T
+function parseDT(::Type{DT},str) where DT <: Union{DateTime,AbstractCFDateTime}
     str = replace(str,"T"," ")
 
     # remove Z time zone indicator
@@ -303,20 +303,22 @@ function parseDT(::Type{T},str) where T
         str = str[2:end]
     end
 
-    t0 =
-        if contains(str,":")
-            DateTime(str,"y-m-d H:M:S")
+    y,m,d,h,mi,s,ms =
+        if contains(str," ")
+            datestr,timestr = split(str,' ')
+            y,m,d = parse.(Int,split(datestr,'-'))
+            h,mi,s = parse.(Int,split(timestr,':'))
+            (y,m,d,h,mi,s,0)
         else
-            DateTime(str,"y-m-d")
+            y,m,d = parse.(Int,split(str,'-'))
+            (y,m,d,0,0,0,0)
         end
 
     if negativeyear
-        # year is negative
-        t0 = DateTime(-Dates.year(t0),Dates.month(t0),Dates.day(t0),
-                      Dates.hour(t0),Dates.minute(t0),Dates.second(t0))
+        y = -y
     end
 
-    return t0
+    return DT(y,m,d,h,mi,s,ms)
 end
 
 
@@ -327,8 +329,8 @@ Parse time units and returns the start time `t0` and the scaling factor
 `plength` in milliseconds.
 """
 function timeunits(::Type{DT},units) where DT
-    tunit,starttime = strip.(split(units," since "))
-    tunit = lowercase(tunit)
+    tunit_mixedcase,starttime = strip.(split(units," since "))
+    tunit = lowercase(tunit_mixedcase)
 
     t0 = parseDT(DT,starttime)
 
@@ -342,20 +344,15 @@ function timeunits(::Type{DT},units) where DT
             60*Int64(1000)
         elseif (tunit == "seconds") || (tunit == "second")
             Int64(1000)
+        else
+            error("unknown units $(tunit)")
         end
 
     return t0,plength
 end
 
 
-
-"""
-    t0,plength = timeunits(units,calendar = "standard")
-
-Parse time units and returns the start time `t0` and the scaling factor
-`plength` in milliseconds.
-"""
-function timeunits(units, calendar = "standard")
+function timetype(calendar = "standard")
     DT =
         if (calendar == "standard") || (calendar == "gregorian")
             DateTime
@@ -365,15 +362,30 @@ function timeunits(units, calendar = "standard")
             error("Unsupported calendar: $(calendar). NCDatasets supports only the standard (gregorian) calendar or Chronological Julian Date")
         end
 
+    return DT
+end
+
+"""
+    t0,plength = timeunits(units,calendar = "standard")
+
+Parse time units and returns the start time `t0` and the scaling factor
+`plength` in milliseconds.
+"""
+function timeunits(units, calendar = "standard")
+    DT = timetype(calendar)
     return timeunits(DT,units)
 end
 
-
-function timedecode(data,units,calendar = "standard")
-    const t0,plength = timeunits(units,calendar)
+function timedecode(::Type{DT},data,units) where DT
+    const t0,plength = timeunits(DT,units)
     convert(x) = t0 + Dates.Millisecond(round(Int64,plength * x))
     return convert.(data)
 end
+
+
+timedecode(data,units,calendar = "standard") =
+    timedecode(timetype(calendar),data,units)
+
 
 function timeencode(data::Array{DateTime,N},units,calendar = "standard") where N
     const t0,plength = timeunits(units,calendar)
@@ -415,6 +427,13 @@ timeencode(data,units,calendar = "standard") = data
 @test datetuple_julian(-36525*24*60*60*1000) == (-100,1,1,0,0,0,0)
 @test datetuple_julian(-367*24*60*60*1000) == (-2,12,31,0,0,0,0)
 @test datetuple_julian(-44832*24*60*60*1000) == (-123,4,5,0,0,0,0)
+
+#cftime.DatetimeJulian(01,01,01) - cftime.DatetimeJulian(-4713,1,1)
+#datetime.timedelta(1721424, 0, 31)
+
+
+@test datetuple_julian(-1721424*24*60*60*1000) == (-4713,1,1,0,0,0,0)
+@test datenum_julian(-4713,1,1)  ÷ (24*60*60*1000) == -1721424
 
 
 @test datetuple_julian(0*24*60*60*1000) == (1,1,1,0,0,0,0)
@@ -536,9 +555,15 @@ t0,plength = timeunits("days since 2000-1-1 0:0:0")
 # values from
 # http://www.julian-date.com/ (setting GMT offset to zero)
 # https://web.archive.org/web/20180212213256/http://www.julian-date.com/
-
 @test_broken timedecode([2455512.375],"days since -4713-01-01T00:00:00","julian") ==
     [DateTime(2010,11,11,9,0,0)]
+
+# value from python's cftime
+# print(cftime.DatetimeJulian(-4713,1,1) + datetime.timedelta(2455512,.375 * 24*60*60))
+# 2010-10-29 09:00:00
+
+@test timedecode([2455512.375],"days since -4713-01-01T00:00:00","julian") ==
+    [DateTimeJulian(2010,10,29,9,0,0)]
 
 # values from
 # https://web.archive.org/web/20180212214229/https://en.wikipedia.org/wiki/Julian_day
