@@ -35,7 +35,7 @@ end
 """
 time is in milliseconds
 """
-function datevec_julian(time::Number)
+function datetuple_julian(time::Number)
     days = time ÷ (24*60*60*1000)
 
     # initially year y and days are zero-based
@@ -102,7 +102,7 @@ function findmonth(cm,t2)
     return mo
 end
 
-function datevec_cal(cm,time_::Number)
+function datetuple_cal(cm,time_::Number)
     timed_ = time_ ÷ (24*60*60*1000)
 
     y = timed_ ÷ cm[end]
@@ -131,7 +131,7 @@ function datevec_cal(cm,time_::Number)
     return (y,mo,d,h,mi,s,ms)
 end
 
-datevec_cal(cm,dt) = datevec_cal(cm,Dates.value(dt.instant.periods))
+datetuple_cal(cm,dt) = datetuple_cal(cm,Dates.value(dt.instant.periods))
 
 
 
@@ -170,11 +170,11 @@ function DateTimeJulian(y::Int64, m::Int64=1, d::Int64=1,
     return DateTimeJulian(UTInstant(Millisecond(datenum_julian(y, m, d, h, mi, s, ms))))
 end
 
-datevec(dt::DateTimeJulian) = datevec_julian(Dates.value(dt.instant.periods))
+datetuple(dt::DateTimeJulian) = datetuple_julian(Dates.value(dt.instant.periods))
 
 
 function +(dt::DateTimeJulian,Δ::Dates.Year)
-    y,mo,d,h,mi,s,ms = datevec(dt)
+    y,mo,d,h,mi,s,ms = datetuple(dt)
     return DateTimeJulian(y+Δ, mo, d, h, mi, s, ms)
 end
 
@@ -196,7 +196,7 @@ function $CFDateTime(y::Int64, m::Int64=1, d::Int64=1,
     return $CFDateTime(UTInstant(Millisecond(datenum_cal($cmm,y, m, d, h, mi, s, ms))))
 end
 
-datevec(dt::$CFDateTime) = datevec_cal($cmm,dt)
+datetuple(dt::$CFDateTime) = datetuple_cal($cmm,dt)
 +(dt::$CFDateTime,Δ::Dates.Year) = $CFDateTime(UTInstant(dt.instant.periods + Dates.Millisecond(Dates.value(Δ) * $cmm[end]*24*60*60*1000)))
     end
 end
@@ -211,7 +211,7 @@ for CFDateTime in [
     @eval begin
 
 function string(dt::$CFDateTime)
-    y,mo,d,h,mi,s,ms = datevec(dt)
+    y,mo,d,h,mi,s,ms = datetuple(dt)
     return @sprintf("%04d-%02d-%02dT%02d:%02d:%02d",y,mo,d,h,mi,s)
 end
 
@@ -223,7 +223,7 @@ end
 +(dt::$CFDateTime,Δ::RegTime) = $CFDateTime(UTInstant(dt.instant.periods + Dates.Millisecond(Δ)))
 
 function +(dt::$CFDateTime,Δ::Dates.Month)
-    y,mo,d,h,mi,s,ms = datevec(dt)
+    y,mo,d,h,mi,s,ms = datetuple(dt)
     mo = mo + Dates.value(Δ)
     mo2 = mod(mo - 1, 12) + 1
 
@@ -236,35 +236,42 @@ end
     end
 
 
-year(dt::AbstractCFDateTime) = datevec(dt)[1]
-month(dt::AbstractCFDateTime) = datevec(dt)[2]
-day(dt::AbstractCFDateTime) = datevec(dt)[3]
-hour(t::AbstractCFDateTime)   = datevec(dt)[4]
-minute(dt::AbstractCFDateTime) = datevec(dt)[5]
-second(dt::AbstractCFDateTime) = datevec(dt)[6]
-millisecond(dt::AbstractCFDateTime) = datevec(dt)[7]
+year(dt::AbstractCFDateTime) = datetuple(dt)[1]
+month(dt::AbstractCFDateTime) = datetuple(dt)[2]
+day(dt::AbstractCFDateTime) = datetuple(dt)[3]
+hour(t::AbstractCFDateTime)   = datetuple(dt)[4]
+minute(dt::AbstractCFDateTime) = datetuple(dt)[5]
+second(dt::AbstractCFDateTime) = datetuple(dt)[6]
+millisecond(dt::AbstractCFDateTime) = datetuple(dt)[7]
 
 
 -(dt::AbstractCFDateTime,Δ) = dt + (-Δ)
 
+
+
+# test of low-level functions
+
 # dvec = [1959,12,31, 23,39,59,123];
 # t =  datenum_cal(cm_noleap,dvec...)
-# dvec2 = datevec_cal(cm_noleap,t)
+# dvec2 = datetuple_cal(cm_noleap,t)
 # @show dvec
 # @show dvec2
 # @test maximum(abs.(dvec-[dvec2...])) ≈ 0 atol=1e-3
 
-dt = DateTimeNoLeap(1959,12,31, 23,39,59,123)
-@test year(dt) == 1959
-@test month(dt) == 12
-@test day(dt) == 31
-@test hour(dt) == 23
-@test minute(dt) == 39
-@test second(dt) == 59
-@test millisecond(dt) == 123
 
-@test datevec(DateTimeNoLeap(1959,12,31, 23,39,59,123)) == (1959,12,31, 23,39,59,123)
+@test datetuple_julian(0*24*60*60*1000) == (1,1,1,0,0,0,0)
+@test datetuple_julian(1*24*60*60*1000) == (1,1,2,0,0,0,0)
+@test datetuple_julian(58*24*60*60*1000) == (1,2,28,0,0,0,0)
+@test datetuple_julian(800000*24*60*60*1000) == (2191, 4, 14, 0, 0, 0, 0)
 
+
+@time for n = 1:800000
+    #@show n
+    y, m, d, h, mi, s, ms = datetuple_julian(n*24*60*60*1000)
+    @test datenum_julian(y, m, d, h, mi, s, ms) ÷ (24*60*60*1000) == n
+end
+
+# test of DateTime structures
 
 dt = DateTimeNoLeap(1959,12,31,23,39,59,123)
 @test dt + Dates.Millisecond(7) == DateTimeNoLeap(1959,12,31,23,39,59,130)
@@ -281,37 +288,13 @@ dt = DateTimeNoLeap(1959,12,31,23,39,59,123)
 @test dt - Dates.Year(7)        == DateTimeNoLeap(1952,12,31,23,39,59,123)
 
 
-dt = DateTimeNoLeap(2004,2,28)
-@test dt + Dates.Day(1)         == DateTimeNoLeap(2004,3,1)
-
-@test string(DateTimeNoLeap(2001,2,20)) == "2001-02-20T00:00:00"
-
-
-dt = DateTimeAllLeap(2001,2,28)
-@test dt + Dates.Day(1)         == DateTimeAllLeap(2001,2,29)
-@test datevec(DateTimeAllLeap(1959,12,31, 23,39,59,123)) == (1959,12,31, 23,39,59,123)
-
-
-@test datevec(DateTime360(1959,12,30,23,39,59,123)) == (1959,12,30,23,39,59,123)
-
-@test datevec_julian(0*24*60*60*1000) == (1,1,1,0,0,0,0)
-@test datevec_julian(1*24*60*60*1000) == (1,1,2,0,0,0,0)
-@test datevec_julian(58*24*60*60*1000) == (1,2,28,0,0,0,0)
-@test datevec_julian(800000*24*60*60*1000) == (2191, 4, 14, 0, 0, 0, 0)
-
-@time for n = 1:800000
-    #@show n
-    y, m, d, h, mi, s, ms = datevec_julian(n*24*60*60*1000)
-    @test datenum_julian(y, m, d, h, mi, s, ms) ÷ (24*60*60*1000) == n
-end
-
 
 function stresstest(::Type{DT}) where DT
     t0 = DT(1,1,1)
     @time for n = 1:800000
         #@show n
         t = t0 + Dates.Day(n)
-        y, m, d, h, mi, s, ms = datevec(t)
+        y, m, d, h, mi, s, ms = datetuple(t)
         @test DT(y, m, d, h, mi, s, ms) == t
     end
 end
@@ -323,14 +306,31 @@ for DT in [
     DateTimeJulian]
 
     stresstest(DT)
-    # t0 = DT(1,1,1)
-    # @time for n = 1:800000
-    #     #@show n
-    #     t = t0 + Dates.Day(n)
-    #     y, m, d, h, mi, s, ms = datevec(t)
-    #     @test DT(y, m, d, h, mi, s, ms) == t
-    # end
+
+    dt = DT(1959,12,30, 23,39,59,123)
+    @test year(dt) == 1959
+    @test month(dt) == 12
+    @test day(dt) == 30
+    @test hour(dt) == 23
+    @test minute(dt) == 39
+    @test second(dt) == 59
+    @test millisecond(dt) == 123
+
+    dt = DateTimeNoLeap(2004,2,28)
+    @test dt + Dates.Day(1)         == DateTimeNoLeap(2004,3,1)
+
+    @test string(DT(2001,2,20)) == "2001-02-20T00:00:00"
+
+    @test datetuple(DT(1959,12,30,23,39,59,123)) == (1959,12,30,23,39,59,123)
 end
+
+# leap day
+@test DateTimeAllLeap(2001,2,28) + Dates.Day(1) == DateTimeAllLeap(2001,2,29)
+@test DateTimeNoLeap(2001,2,28) + Dates.Day(1) == DateTimeNoLeap(2001,3,1)
+@test DateTimeJulian(2001,2,28) + Dates.Day(1) == DateTimeJulian(2001,3,1)
+@test DateTimeJulian(1900,2,28) + Dates.Day(1) == DateTimeJulian(1900,2,29)
+@test DateTime360(2001,2,28) + Dates.Day(1) == DateTime360(2001,2,29)
+@test DateTime360(2001,2,29) + Dates.Day(1) == DateTime360(2001,2,30)
 
 # reference values from python's cftime
 @test DateTimeJulian(2000,1,1) + Dates.Day(1) == DateTimeJulian(2000,01,02)
@@ -340,13 +340,3 @@ end
 @test DateTimeJulian(2000,1,1) + Dates.Day(12345) == DateTimeJulian(2033,10,19)
 @test DateTimeJulian(2000,1,1) + Dates.Day(12346) == DateTimeJulian(2033,10,20)
 @test DateTimeJulian(1,1,1) + Dates.Day(1234678) == DateTimeJulian(3381,05,14)
-
-
-dt = DateTimeJulian(1959,12,31, 23,39,59,123)
-@test year(dt) == 1959
-@test month(dt) == 12
-@test day(dt) == 31
-@test hour(dt) == 23
-@test minute(dt) == 39
-@test second(dt) == 59
-@test millisecond(dt) == 123
