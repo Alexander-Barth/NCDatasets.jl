@@ -31,7 +31,7 @@ function datenum_julian(y, m, d, h, mi, s, ms = 0)
         nleap += 1
     end
 
-    return 24*60*60*1000 * (cm[end] * (y-1) + cm[m] + (d-1) + nleap) + 60*60*1000 * h +  60*1000 * mi + 1000*s + ms
+    return (24*60*60*1000) * (cm[end] * (y-1) + cm[m] + (d-1) + nleap) + 60*60*1000 * h +  60*1000 * mi + 1000*s + ms
 end
 
 """
@@ -39,48 +39,19 @@ time is in milliseconds
 """
 function datevec_julian(time::Number)
     days = time ÷ (24*60*60*1000)
-    d = days
-    # initially year y and day d is zero-based
 
-    # # (y+1) is year
-    # yearlength(y) = 365 + ((y+1) % 4 == 0)
-
-    # # years of complete 4-year cycles
-    # y = 4 * (days ÷ (3*365+366))
-    # # days outside of a 4-year cycle
-    # days = days % (3*365+366)
-
-    # while days >= yearlength(y)
-    #     days = days - yearlength(y)
-    #     y = y+1
-    # end
-
-    # # number of years in remaing_days
-    # y = y + (remaing_days ÷ 365)
-
-    # # days in current year
-
-    y2 = 4 * (d ÷ (3*365+366))
-    d2 = d - (y2 ÷ 4) * (3*365+366)
+    # initially year y and days are zero-based
+    y = 4 * (days ÷ (3*365+366))
+    d2 = days - (y ÷ 4) * (3*365+366)
     if d2 == 4*365
         # the 4th year is not yet over
-        y2 += 3
+        y += 3
     else
-        y2 += (d2 ÷ 365)
+        y += (d2 ÷ 365)
     end
-    y = y2
 
-    days2 = d - (365*y + y÷4)
-    days = days2
-    # if y != y2
-    #     @show days,days2,d,y,y2
-    #     error("ll")
-    # end
+    days = days - (365*y + y÷4)
 
-    # if days != days2
-    #     @show days,days2,d,y
-    #     error("ll")
-    # end
     cm =
         if (y+1) % 4 == 0
             # leap year
@@ -99,8 +70,8 @@ function datevec_julian(time::Number)
     mi = ms ÷ (60*1000)
     ms = ms % (60*1000)
 
-    s = ms ÷ (1000)
-    ms = ms % (1000)
+    s = ms ÷ 1000
+    ms = ms % 1000
 
     # day start at 1 (not zero)
     d = d+1
