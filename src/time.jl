@@ -4,9 +4,7 @@ import Base:+, -, string, show
 using Base.Test
 
 
-function datenum_cal(cm, y, m, d, h, mi, s, ms = 0)
-    return 24*60*60*1000 * (cm[end] * (y-1) + cm[m] + (d-1)) + 60*60*1000 * h +  60*1000 * mi + 1000*s + ms
-end
+# Julian calendar
 
 isleapyear_julian(y) = y % 4 == 0
 
@@ -60,7 +58,7 @@ function datevec_julian(time::Number)
             (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)
         end
 
-    mo = findlast(cm .<= days)
+    mo = findmonth(cm,days)
     d = days  - cm[mo]
 
     ms = time % (24*60*60*1000)
@@ -82,6 +80,28 @@ function datevec_julian(time::Number)
 end
 
 
+function datenum_cal(cm, y, m, d, h, mi, s, ms = 0)
+    if m < 1 || m > 12
+        error("invalid month $(m)")
+    end
+
+    if d < 1 || d > (cm[m+1] - cm[m])
+        error("invalid day $(d) in $(@sprintf("%04d-%02d-%02dT%02d:%02d:%02d",y,m,d,h,mi,s))")
+    end
+
+    return 24*60*60*1000 * (cm[end] * (y-1) + cm[m] + (d-1)) + 60*60*1000 * h +  60*1000 * mi + 1000*s + ms
+end
+
+# Calendar with regular month-length
+
+function findmonth(cm,t2)
+    mo = length(cm)
+    while cm[mo] > t2
+        mo -= 1
+    end
+    return mo
+end
+
 function datevec_cal(cm,time_::Number)
     timed_ = time_ ÷ (24*60*60*1000)
 
@@ -89,7 +109,8 @@ function datevec_cal(cm,time_::Number)
 
     t2 = timed_ - cm[end]*y
 
-    mo = findlast(cm .<= t2)
+    # find month
+    mo = findmonth(cm,t2)
 
     d = t2  - cm[mo]
 
@@ -111,6 +132,9 @@ function datevec_cal(cm,time_::Number)
 end
 
 datevec_cal(cm,dt) = datevec_cal(cm,Dates.value(dt.instant.periods))
+
+
+
 
 abstract type AbstractCFDateTime end
 
@@ -169,11 +193,6 @@ Construct a `DateTime` type by parts. Arguments must be convertible to [`Int64`]
 """
 function $CFDateTime(y::Int64, m::Int64=1, d::Int64=1,
                   h::Int64=0, mi::Int64=0, s::Int64=0, ms::Int64=0)
-
-    if m < 1 || m > 12
-        error("invalid month $(m)")
-    end
-
     return $CFDateTime(UTInstant(Millisecond(datenum_cal($cmm,y, m, d, h, mi, s, ms))))
 end
 
@@ -215,26 +234,6 @@ end
 
 end
     end
-
-# struct DateTimeNoLeap
-#     instant::UTInstant{Millisecond}
-#     DateTimeNoLeap(instant::UTInstant{Millisecond}) = new(instant)
-# end
-
-
-# cm_noleap = (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)
-  # if strcmp(calendar,'noleap') || strcmp(calendar,'365_day') || strcmp(calendar,'bogus_calendar')
-  #   %cm = [0 cumsum([31 28 31 30 31 30 31 31 30 31 30 31])];
-  #   cm = [0    31    59    90   120   151   181   212   243   273   304   334   365];
-  # elseif strcmp(calendar,'360_day')
-  #   cm = [0 30 60 90 120 150 180 210 240 270 300 330 360];
-  # else
-  #   %[0 cumsum([31 29 31 30 31 30 31 31 30 31 30 31])]
-  #   cm = [0    31    60    91   121   152   182   213   244   274   305   335   366];
-  # end
-
-
-
 
 
 year(dt::AbstractCFDateTime) = datevec(dt)[1]
@@ -300,11 +299,37 @@ dt = DateTimeAllLeap(2001,2,28)
 @test datevec_julian(58*24*60*60*1000) == (1,2,28,0,0,0,0)
 @test datevec_julian(800000*24*60*60*1000) == (2191, 4, 14, 0, 0, 0, 0)
 
-
-for n = 1:800000
+@time for n = 1:800000
     #@show n
-    dv = datevec_julian(n*24*60*60*1000)
-    @test datenum_julian(dv...) ÷ (24*60*60*1000) == n
+    y, m, d, h, mi, s, ms = datevec_julian(n*24*60*60*1000)
+    @test datenum_julian(y, m, d, h, mi, s, ms) ÷ (24*60*60*1000) == n
+end
+
+
+function stresstest(::Type{DT}) where DT
+    t0 = DT(1,1,1)
+    @time for n = 1:800000
+        #@show n
+        t = t0 + Dates.Day(n)
+        y, m, d, h, mi, s, ms = datevec(t)
+        @test DT(y, m, d, h, mi, s, ms) == t
+    end
+end
+
+for DT in [
+    DateTimeAllLeap,
+    DateTimeNoLeap,
+    DateTime360,
+    DateTimeJulian]
+
+    stresstest(DT)
+    # t0 = DT(1,1,1)
+    # @time for n = 1:800000
+    #     #@show n
+    #     t = t0 + Dates.Day(n)
+    #     y, m, d, h, mi, s, ms = datevec(t)
+    #     @test DT(y, m, d, h, mi, s, ms) == t
+    # end
 end
 
 # reference values from python's cftime
@@ -315,3 +340,13 @@ end
 @test DateTimeJulian(2000,1,1) + Dates.Day(12345) == DateTimeJulian(2033,10,19)
 @test DateTimeJulian(2000,1,1) + Dates.Day(12346) == DateTimeJulian(2033,10,20)
 @test DateTimeJulian(1,1,1) + Dates.Day(1234678) == DateTimeJulian(3381,05,14)
+
+
+dt = DateTimeJulian(1959,12,31, 23,39,59,123)
+@test year(dt) == 1959
+@test month(dt) == 12
+@test day(dt) == 31
+@test hour(dt) == 23
+@test minute(dt) == 39
+@test second(dt) == 59
+@test millisecond(dt) == 123
