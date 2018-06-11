@@ -1,6 +1,6 @@
 using Base.Test
 
-function JDFromDate_floor(year,month,day,gregorian::Bool)
+function MJDFromDate_floor(year,month,day,gregorian::Bool)
     # turn year equal to -1 (1 BC) into year = 0
     if year < 0
         year = year+1
@@ -23,12 +23,13 @@ function JDFromDate_floor(year,month,day,gregorian::Bool)
 
     # Julian Day plus 0.5
     Z = floor(Int,365.25 * (year + 4716)) + floor(Int,30.6001 * (month+1)) + day + B - 1524
-
+    # Modified Julan Day
+    Z = Z - 2_400_001
     return Z
 end
 
 
-function JDFromDate_mixed(year,month,day,gregorian::Bool)
+function MJDFromDate(year,month,day,gregorian::Bool)
     # turn year equal to -1 (1 BC) into year = 0
     if year < 0
         year = year+1
@@ -63,6 +64,8 @@ function JDFromDate_mixed(year,month,day,gregorian::Bool)
     # 153/5 is 30.6
 
     Z = (1461 * (year + 4716)) ÷ 4 + (153 * (month+1)) ÷ 5 + day + B - 1524
+    # Modified Julan Day
+    Z = Z - 2_400_001
 
     return Z
 end
@@ -70,7 +73,7 @@ end
 # Meeus, Jean (1998) Astronomical Algorithms (2nd Edition). Willmann-Bell,  Virginia. p. 63
 
 
-JD = 2400_000.5
+JD = 2_400_000.5
 # 1858 November 17 00:00:00
 
 JD = 2436_116.31
@@ -90,7 +93,8 @@ Algorithm:
 Meeus, Jean (1998) Astronomical Algorithms (2nd Edition). Willmann-Bell,
 Virginia. p. 63
 """
-function DateFromJD_floor(Z::Integer,gregorian::Bool)
+function DateFromMJD(Z::Integer,gregorian::Bool)
+    Z = Z + 2_400_001
 
     A =
         if gregorian
@@ -121,24 +125,24 @@ end
 
 
 
-DateFromJD_gregorian(Z::Integer) = DateFromJD(Z,true)
-DateFromJD_julian(Z::Integer) = DateFromJD(Z,false)
-DateFromJD_mixed(Z::Integer) = DateFromJD(Z,Z >= 2299161)
+DateFromMJD_gregorian(Z::Integer) = DateFromMJD(Z,true)
+DateFromMJD_julian(Z::Integer) = DateFromMJD(Z,false)
+DateFromMJD_mixed(Z::Integer) = DateFromMJD(Z,Z >= 2299161 - 2_400_001)
 
 
 # reference value from Meeus, Jean (1998)
 # launch of Sputnik 1
 
-@test DateFromJD_mixed(2_436_116) == (1957, 10, 4)
+@test DateFromMJD_mixed(2_436_116 - 2_400_001) == (1957, 10, 4)
 
 
-@test JDFromDate(1957,10,4,true) == 2_436_116
+@test MJDFromDate(1957,10,4,true) == 2_436_116 - 2_400_001
 
-@test JDFromDate(333,1,27,false) == 1842713
+@test MJDFromDate(333,1,27,false) == 1842713 - 2_400_001
 
-for Z = 1:3_000_000
+for Z = -2_400_000:3_000_000
 
-    year,month,day = DateFromJD_mixed(Z)
-    @test JDFromDate_mixed(year,month,day,Z >= 2299161) == Z
-    #@test JDFromDate_floor(year,month,day,Z >= 2299161) == JDFromDate_mixed(year,month,day,Z >= 2299161)
+    year,month,day = DateFromMJD_mixed(Z)
+    @test MJDFromDate(year,month,day,Z >= 2299161 - 2_400_001) == Z
+    #@test MJDFromDate_floor(year,month,day,Z >= 2299161 - 2_400_001) == MJDFromDate(year,month,day,Z >= 2299161 - 2_400_001)
 end
