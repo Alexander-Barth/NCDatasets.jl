@@ -140,6 +140,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_attrib.jl")
 
     include("test_writevar.jl")
+    include("test_time.jl")
     include("test_timeunits.jl")
     include("test_scaling.jl")
 

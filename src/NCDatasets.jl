@@ -7,6 +7,8 @@ using Base.Test
 using DataArrays
 import Base.convert
 
+include("time.jl")
+
 # NetCDFError, error check and netcdf_c.jl from NetCDF.jl (https://github.com/JuliaGeo/NetCDF.jl)
 # Copyright (c) 2012-2013: Fabian Gans, Max-Planck-Institut fuer Biogeochemie, Jena, Germany
 # MIT
@@ -145,90 +147,6 @@ function defmode(ncid,isdefmode::Vector{Bool})
     end
 end
 
-"""
-    t0,plength = timeunits(units,calendar = "standard")
-
-Parse time units and returns the start time `t0` and the scaling factor
-`plength` in milliseconds.
-"""
-function timeunits(units, calendar = "standard")
-    tunit,starttime = strip.(split(units," since "))
-    tunit = lowercase(tunit)
-
-    starttime = replace(starttime,"T"," ")
-
-    # remove Z time zone indicator
-    # all times are assumed UTC anyway
-    if endswith(starttime,"Z")
-        starttime = starttime[1:end-1]
-    end
-
-
-    negativeyear = starttime[1] == '-'
-    if negativeyear
-        starttime = starttime[2:end]
-    end
-
-    t0 =
-        if contains(starttime,":")
-            DateTime(starttime,"y-m-d H:M:S")
-        else
-            DateTime(starttime,"y-m-d")
-        end
-
-    if negativeyear
-        # year is negative
-        t0 = DateTime(-Dates.year(t0),Dates.month(t0),Dates.day(t0),
-                      Dates.hour(t0),Dates.minute(t0),Dates.second(t0))
-    end
-
-    # make sure that plength is 64-bit on 32-bit platforms
-    plength =
-        if (tunit == "days") || (tunit == "day")
-            24*60*60*Int64(1000)
-        elseif (tunit == "hours") || (tunit == "hour")
-            60*60*Int64(1000)
-        elseif (tunit == "minutes") || (tunit == "minute")
-            60*Int64(1000)
-        elseif (tunit == "seconds") || (tunit == "second")
-            Int64(1000)
-        end
-
-    if (calendar == "standard") || (calendar == "gregorian")
-        return t0,plength
-    elseif calendar == "julian"
-        # only supported time origin
-        # (Chronological Julian Date)
-        @assert t0 == DateTime(-4713,1,1)
-
-        # 327 is the result from
-        # Dates.value(DateTime(2007,2,10) - DateTime(-4713,1,1)) / (24*60*60*1000) - 2454142
-        #
-        # The values DateTime(2007,2,10) and 2454142 are taken from
-        # https://web.archive.org/web/20171129142108/https://www.hermetic.ch/cal_stud/chron_jdate.htm
-        # and confirmed by http://www.julian-date.com/ (setting GMT offset to zero)
-        # https://web.archive.org/web/20180212213256/http://www.julian-date.com/
-
-        return t0 + Dates.Day(327),plength
-    else
-        error("Unsupported calendar: $(calendar). NCDatasets supports only the standard (gregorian) calendar or Chronological Julian Date")
-    end
-end
-
-function timedecode(data,units,calendar = "standard")
-    const t0,plength = timeunits(units,calendar)
-    convert(x) = t0 + Dates.Millisecond(round(Int64,plength * x))
-    return convert.(data)
-end
-
-function timeencode(data::Array{DateTime,N},units,calendar = "standard") where N
-    const t0,plength = timeunits(units,calendar)
-    convert(dt) = Dates.value(dt - t0) / plength
-    return convert.(data)
-end
-
-# do not transform data is not a vector of DateTime
-timeencode(data,units,calendar = "standard") = data
 
 function Base.show(io::IO,a::BaseAttributes; indent = "  ")
     # use the same order of attributes than in the NetCDF file
