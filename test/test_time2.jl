@@ -161,7 +161,7 @@ end
 """
 time is in milliseconds
 """
-function timefrac(time::Number)
+function timetuplefrac(time::Number)
     days = time ÷ (24*60*60*1000)
     ms = time % (24*60*60*1000)
     h = ms ÷ (60*60*1000)
@@ -175,7 +175,7 @@ function timefrac(time::Number)
     return (days,h,mi,s,ms)
 end
 
-function datenum_frac(days,h,mi,s,ms)
+function datenumfrac(days,h,mi,s,ms)
     ms = 60*60*1000 * h +  60*1000 * mi + 1000*s + ms
     return (24*60*60*1000) * days + ms
 end
@@ -230,9 +230,9 @@ end
 
 
 for (calendar,cmm) in [
-    (:AllLeap, (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)),
-    (:NoLeap,  (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)),
-    (:Y360,    (0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360)),
+    ("AllLeap", (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)),
+    ("NoLeap",  (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)),
+    ("360",    (0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360)),
 ]
     @eval begin
         $(Symbol(:MJDFromDate_,calendar))(y, m, d) = datenum_cal($cmm, y, m, d)
@@ -246,7 +246,7 @@ abstract type AbstractCFDateTime end
 const RegTime = Union{Dates.Millisecond,Dates.Second,Dates.Minute,Dates.Hour,Dates.Day}
 
 
-for calendar in [:Standard,:Julian,:PGregorian,:AllLeap,:NoLeap,:Y360]
+for calendar in ["Standard","Julian","PGregorian","AllLeap","NoLeap","360"]
     CFDateTime = Symbol(:DateTime,calendar)
     symdatetuple = Symbol(:datetuple_,calendar)
     symdatenum = Symbol(:datenum_,calendar)
@@ -254,11 +254,11 @@ for calendar in [:Standard,:Julian,:PGregorian,:AllLeap,:NoLeap,:Y360]
     @eval begin
 
         # function $(datenum)(y, m, d, h = 0, mi = 0, s = 0, ms = 0)
-        #     return datenum_frac($(Symbol(:MJDFromDate_,calendar))(y,m,d),h,mi,s,ms)
+        #     return datenumfrac($(Symbol(:MJDFromDate_,calendar))(y,m,d),h,mi,s,ms)
         # end
 
         # function $(datetuple)(time::Number)
-        #     days,h,mi,s,ms = timefrac(time)
+        #     days,h,mi,s,ms = timetuplefrac(time)
         #     y, m, d = $(Symbol(:DateFromMJD_,calendar))(days)
         #     return y, m, d, h, mi, s, ms
         # end
@@ -272,13 +272,13 @@ for calendar in [:Standard,:Julian,:PGregorian,:AllLeap,:NoLeap,:Y360]
                              h::Int64=0, mi::Int64=0, s::Int64=0, ms::Int64=0)
 
             days = $(Symbol(:MJDFromDate_,calendar))(y,m,d)
-            totalms = datenum_frac(days,h,mi,s,ms)
+            totalms = datenumfrac(days,h,mi,s,ms)
             return $CFDateTime(UTInstant(Millisecond(totalms)))
         end
 
         function datetuple(dt::$CFDateTime)
             time = Dates.value(dt.instant.periods)
-            days,h,mi,s,ms = timefrac(time)
+            days,h,mi,s,ms = timetuplefrac(time)
             y, m, d = $(Symbol(:DateFromMJD_,calendar))(days)
             return y, m, d, h, mi, s, ms
         end
@@ -293,11 +293,10 @@ for calendar in [:Standard,:Julian,:PGregorian,:AllLeap,:NoLeap,:Y360]
         end
 
 
-        +(dt::$CFDateTime,Δ::RegTime) = $CFDateTime(UTInstant(dt.instant.periods + Dates.Millisecond(Δ)))
 
         function +(dt::$CFDateTime,Δ::Dates.Year)
             y,mo,d,h,mi,s,ms = datetuple(dt)
-            return $CFDateTime(y+Δ, mo, d, h, mi, s, ms)
+            return $CFDateTime(y+Dates.value(Δ), mo, d, h, mi, s, ms)
         end
 
         function +(dt::$CFDateTime,Δ::Dates.Month)
@@ -308,6 +307,7 @@ for calendar in [:Standard,:Julian,:PGregorian,:AllLeap,:NoLeap,:Y360]
             return $CFDateTime(y, mo2, d,h, mi, s, ms)
         end
 
+        +(dt::$CFDateTime,Δ::RegTime) = $CFDateTime(UTInstant(dt.instant.periods + Dates.Millisecond(Δ)))
     end
 end
 
@@ -403,7 +403,7 @@ function timetype(calendar = "standard")
         elseif (calendar == "all_leap") || (calendar == "366_day")
             DateTimeAllLeap
         elseif calendar == "360_day"
-            DateTimeY360
+            DateTime360
         else
             error("Unsupported calendar: $(calendar)")
         end
@@ -468,7 +468,7 @@ timeencode(data,units,calendar = "standard") = data
 #     (datenum_PGregorian,datetuple_PGregorian)
 #     (datenum_AllLeap,datetuple_AllLeap)
 #     (datenum_NoLeap,datetuple_NoLeap)
-#     (datenum_Y360,datetuple_Y360)
+#     (datenum_360,datetuple_360)
 # ]
 #     testcal(tonum,totuple)
 # end
@@ -482,20 +482,21 @@ timeencode(data,units,calendar = "standard") = data
 @show MJDFromDate(-100, 3, 1,true)
 
 function mytest()
-for (tonum,totuple) in [
-    (MJDFromDate_Standard,DateFromMJD_Standard),
-    (MJDFromDate_Julian,DateFromMJD_Julian),
-    (MJDFromDate_PGregorian,DateFromMJD_PGregorian),
-    (MJDFromDate_AllLeap,DateFromMJD_AllLeap),
-    (MJDFromDate_NoLeap,DateFromMJD_NoLeap),
-    (MJDFromDate_Y360,DateFromMJD_Y360),
-]
-    @time for Z = -2_400_000 + MJD_OFFSET : 11 : 600_000 + MJD_OFFSET
-        y,m,d = totuple(Z)
-        @test tonum(y,m,d) == Z
+    for (tonum,totuple) in [
+        (MJDFromDate_Standard,DateFromMJD_Standard),
+        (MJDFromDate_Julian,DateFromMJD_Julian),
+        (MJDFromDate_PGregorian,DateFromMJD_PGregorian),
+        (MJDFromDate_AllLeap,DateFromMJD_AllLeap),
+        (MJDFromDate_NoLeap,DateFromMJD_NoLeap),
+        (MJDFromDate_360,DateFromMJD_360),
+    ]
+        @time for Z = -2_400_000 + MJD_OFFSET : 11 : 600_000 + MJD_OFFSET
+            y,m,d = totuple(Z)
+            @test tonum(y,m,d) == Z
+        end
     end
 end
-end
+
 
 mytest()
 
@@ -513,3 +514,28 @@ mytest()
     #@test MJDFromDate_trunc(y,m,d,Z >= 2299161 - 2_400_001) == MJDFromDate(y,m,d,Z >= 2299161 - 2_400_001)
 end
 =#
+
+
+# test of DateTime structures
+
+dt = DateTimeNoLeap(1959,12,31,23,39,59,123)
+@test dt + Dates.Millisecond(7) == DateTimeNoLeap(1959,12,31,23,39,59,130)
+@test dt + Dates.Second(7)      == DateTimeNoLeap(1959,12,31,23,40,6,123)
+@test dt + Dates.Minute(7)      == DateTimeNoLeap(1959,12,31,23,46,59,123)
+@test dt + Dates.Hour(7)        == DateTimeNoLeap(1960,1,1,6,39,59,123)
+@test dt + Dates.Day(7)         == DateTimeNoLeap(1960,1,7,23,39,59,123)
+@test dt + Dates.Month(7)       == DateTimeNoLeap(1960,7,31,23,39,59,123)
+@test dt + Dates.Year(7)        == DateTimeNoLeap(1966,12,31,23,39,59,123)
+@test dt + Dates.Month(24)      == DateTimeNoLeap(1961,12,31,23,39,59,123)
+
+@test dt - Dates.Month(0)       == DateTimeNoLeap(1959,12,31,23,39,59,123)
+@test dt - Dates.Month(24)      == DateTimeNoLeap(1957,12,31,23,39,59,123)
+@test dt - Dates.Year(7)        == DateTimeNoLeap(1952,12,31,23,39,59,123)
+
+# leap day
+@test DateTimeAllLeap(2001,2,28) + Dates.Day(1) == DateTimeAllLeap(2001,2,29)
+@test DateTimeNoLeap(2001,2,28) + Dates.Day(1) == DateTimeNoLeap(2001,3,1)
+@test DateTimeJulian(2001,2,28) + Dates.Day(1) == DateTimeJulian(2001,3,1)
+@test DateTimeJulian(1900,2,28) + Dates.Day(1) == DateTimeJulian(1900,2,29)
+@test DateTime360(2001,2,28) + Dates.Day(1) == DateTime360(2001,2,29)
+@test DateTime360(2001,2,29) + Dates.Day(1) == DateTime360(2001,2,30)
