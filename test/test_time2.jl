@@ -144,14 +144,15 @@ function DateFromMJD(Z,gregorian::Bool)
 
     day = B - D - trunc(Int,30.6001 * E)
     month = (E < 14 ? E-1 : E-13)
-    year = (month > 2 ? C - 4716 : C - 4715)
+    y = (month > 2 ? C - 4716 : C - 4715)
 
     # turn year 0 into year -1 (1 BC)
-    if year <= 0
-        year = year-1
+    if y <= 0
+        y = y-1
     end
-    return year,month,day
+    return y,month,day
 end
+
 
 
 
@@ -185,9 +186,9 @@ DateFromMJD_Julian(Z) = DateFromMJD(Z,false)
 DateFromMJD_Standard(Z) = DateFromMJD(Z,Z >= MJD_GREGORIAN_CALENDAR)
 
 
-MJDFromDate_PGregorian(year,month,day) = MJDFromDate(year,month,day,true)
-MJDFromDate_Julian(year,month,day) = MJDFromDate(year,month,day,false)
-MJDFromDate_Standard(year,month,day) = MJDFromDate(year,month,day,(year,month,day) >= GREGORIAN_CALENDAR)
+MJDFromDate_PGregorian(y,m,d) = MJDFromDate(y,m,d,true)
+MJDFromDate_Julian(y,m,d) = MJDFromDate(y,m,d,false)
+MJDFromDate_Standard(y,m,d) = MJDFromDate(y,m,d,(y,m,d) >= GREGORIAN_CALENDAR)
 
 
 function datenum_cal(cm, y, m, d)
@@ -213,11 +214,12 @@ function findmonth(cm,t2)
 end
 
 function datetuple_cal(cm,timed_::Number)
-    y = timed_ ÷ cm[end]
+    y = fld(timed_, cm[end])
     t2 = timed_ - cm[end]*y
+
     # find month
     mo = findmonth(cm,t2)
-    d = t2  - cm[mo]
+    d = t2 - cm[mo]
 
     # day and year start at 1 (not zero)
     d = d+1
@@ -281,8 +283,170 @@ for calendar in [:Standard,:Julian,:PGregorian,:AllLeap,:NoLeap,:Y360]
             return y, m, d, h, mi, s, ms
         end
 
+        function string(dt::$CFDateTime)
+            y,mo,d,h,mi,s,ms = datetuple(dt)
+            return @sprintf("%04d-%02d-%02dT%02d:%02d:%02d",y,mo,d,h,mi,s)
+        end
+
+        function show(io::IO,dt::$CFDateTime)
+            write(io, string(typeof(dt)), "(",string(dt),")")
+        end
+
+
+        +(dt::$CFDateTime,Δ::RegTime) = $CFDateTime(UTInstant(dt.instant.periods + Dates.Millisecond(Δ)))
+
+        function +(dt::$CFDateTime,Δ::Dates.Year)
+            y,mo,d,h,mi,s,ms = datetuple(dt)
+            return $CFDateTime(y+Δ, mo, d, h, mi, s, ms)
+        end
+
+        function +(dt::$CFDateTime,Δ::Dates.Month)
+            y,mo,d,h,mi,s,ms = datetuple(dt)
+            mo = mo + Dates.value(Δ)
+            mo2 = mod(mo - 1, 12) + 1
+            y = y + (mo-mo2) ÷ 12
+            return $CFDateTime(y, mo2, d,h, mi, s, ms)
+        end
+
     end
 end
+
+
+
+
+year(dt::AbstractCFDateTime) = datetuple(dt)[1]
+month(dt::AbstractCFDateTime) = datetuple(dt)[2]
+day(dt::AbstractCFDateTime) = datetuple(dt)[3]
+hour(t::AbstractCFDateTime)   = datetuple(dt)[4]
+minute(dt::AbstractCFDateTime) = datetuple(dt)[5]
+second(dt::AbstractCFDateTime) = datetuple(dt)[6]
+millisecond(dt::AbstractCFDateTime) = datetuple(dt)[7]
+
+
+-(dt::AbstractCFDateTime,Δ) = dt + (-Δ)
+
+
+function parseDT(::Type{DT},str) where DT <: Union{DateTime,AbstractCFDateTime}
+    str = replace(str,"T"," ")
+
+    # remove Z time zone indicator
+    # all times are assumed UTC anyway
+    if endswith(str,"Z")
+        str = str[1:end-1]
+    end
+
+
+    negativeyear = str[1] == '-'
+    if negativeyear
+        str = str[2:end]
+    end
+
+    y,m,d,h,mi,s,ms =
+        if contains(str," ")
+            datestr,timestr = split(str,' ')
+            y,m,d = parse.(Int,split(datestr,'-'))
+            h,mi,s = parse.(Int,split(timestr,':'))
+            (y,m,d,h,mi,s,0)
+        else
+            y,m,d = parse.(Int,split(str,'-'))
+            (y,m,d,0,0,0,0)
+        end
+
+    if negativeyear
+        y = -y
+    end
+
+    return DT(y,m,d,h,mi,s,ms)
+end
+
+
+"""
+    t0,plength = timeunits(units,calendar = "standard")
+
+Parse time units and returns the start time `t0` and the scaling factor
+`plength` in milliseconds.
+"""
+function timeunits(::Type{DT},units) where DT
+    tunit_mixedcase,starttime = strip.(split(units," since "))
+    tunit = lowercase(tunit_mixedcase)
+
+    t0 = parseDT(DT,starttime)
+
+    # make sure that plength is 64-bit on 32-bit platforms
+    plength =
+        if (tunit == "days") || (tunit == "day")
+            24*60*60*Int64(1000)
+        elseif (tunit == "hours") || (tunit == "hour")
+            60*60*Int64(1000)
+        elseif (tunit == "minutes") || (tunit == "minute")
+            60*Int64(1000)
+        elseif (tunit == "seconds") || (tunit == "second")
+            Int64(1000)
+        else
+            error("unknown units $(tunit)")
+        end
+
+    return t0,plength
+end
+
+
+function timetype(calendar = "standard")
+    DT =
+        if (calendar == "standard") || (calendar == "gregorian")
+            DateTime
+        elseif calendar == "proleptic_gregorian"
+            DateTimePGregorian
+        elseif calendar == "julian"
+            DateTimeJulian
+        elseif (calendar == "noleap") || (calendar == "365_day")
+            DateTimeNoLeap
+        elseif (calendar == "all_leap") || (calendar == "366_day")
+            DateTimeAllLeap
+        elseif calendar == "360_day"
+            DateTimeY360
+        else
+            error("Unsupported calendar: $(calendar)")
+        end
+
+    return DT
+end
+
+"""
+    t0,plength = timeunits(units,calendar = "standard")
+
+Parse time units and returns the start time `t0` and the scaling factor
+`plength` in milliseconds.
+"""
+function timeunits(units, calendar = "standard")
+    DT = timetype(calendar)
+    return timeunits(DT,units)
+end
+
+function timedecode(::Type{DT},data,units) where DT
+    const t0,plength = timeunits(DT,units)
+    convert(x) = t0 + Dates.Millisecond(round(Int64,plength * x))
+    return convert.(data)
+end
+
+
+timedecode(data,units,calendar = "standard") =
+    timedecode(timetype(calendar),data,units)
+
+
+function timeencode(data::Array{DT,N},units,calendar = "standard") where N where DT <: Union{DateTime,AbstractCFDateTime}
+    @assert timetype(calendar) == DT
+
+    const t0,plength = timeunits(DT,units)
+    convert(dt) = Dates.value(dt - t0) / plength
+    return convert.(data)
+end
+
+# do not transform data is not a vector of DateTime
+timeencode(data,units,calendar = "standard") = data
+
+
+
+
 
 # reference value from Meeus, Jean (1998)
 # launch of Sputnik 1
@@ -317,21 +481,35 @@ end
 @show MJDFromDate(-100, 2, 28,true)
 @show MJDFromDate(-100, 3, 1,true)
 
+function mytest()
+for (tonum,totuple) in [
+    (MJDFromDate_Standard,DateFromMJD_Standard),
+    (MJDFromDate_Julian,DateFromMJD_Julian),
+    (MJDFromDate_PGregorian,DateFromMJD_PGregorian),
+    (MJDFromDate_AllLeap,DateFromMJD_AllLeap),
+    (MJDFromDate_NoLeap,DateFromMJD_NoLeap),
+    (MJDFromDate_Y360,DateFromMJD_Y360),
+]
+    @time for Z = -2_400_000 + MJD_OFFSET : 11 : 600_000 + MJD_OFFSET
+        y,m,d = totuple(Z)
+        @test tonum(y,m,d) == Z
+    end
+end
+end
+
+mytest()
 
 #=
-#for Z = 1:3_000_000
-#for Z = 2_000_000:3_000_000
+@time for Z = -2_400_000 + MJD_OFFSET : 600_000 + MJD_OFFSET
+    y,m,d = DateFromMJD_Standard(Z)
+    @test MJDFromDate_Standard(y,m,d) == Z
 
-for Z = -2_400_000 + MJD_OFFSET : 600_000 + MJD_OFFSET
-    year,month,day = DateFromMJD_Standard(Z)
-    @test MJDFromDate_Standard(year,month,day) == Z
+    y,m,d = DateFromMJD_Julian(Z)
+    @test MJDFromDate_Julian(y,m,d) == Z
 
-    year,month,day = DateFromMJD_Julian(Z)
-    @test MJDFromDate_Julian(year,month,day) == Z
+    y,m,d = DateFromMJD_PGregorian(Z)
+    @test MJDFromDate_PGregorian(y,m,d) == Z
 
-    year,month,day = DateFromMJD_PGregorian(Z)
-    @test MJDFromDate_PGregorian(year,month,day) == Z
-
-    #@test MJDFromDate_trunc(year,month,day,Z >= 2299161 - 2_400_001) == MJDFromDate(year,month,day,Z >= 2299161 - 2_400_001)
+    #@test MJDFromDate_trunc(y,m,d,Z >= 2299161 - 2_400_001) == MJDFromDate(y,m,d,Z >= 2299161 - 2_400_001)
 end
 =#
