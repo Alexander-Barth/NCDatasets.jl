@@ -1,3 +1,5 @@
+import Base.Dates: UTInstant, Millisecond
+import Base:+, -, string, show
 using Base.Test
 
 # Introduction of the Gregorian Calendar 1582-10-15
@@ -110,7 +112,7 @@ JD = 2436_116.31
     year, month, day = DateFromJD_trunc(Z::Integer,gregorian::Bool)
 
 Compyte year, month and day from Z which is the Julian Day plus 0.5,
-for the gregorian (true) or julian (false) calendar.
+for the gregorian (true) or Julian (false) calendar.
 
 For example:
 Z = 2400_001 for the 1858 November 17 00:00:00
@@ -154,44 +156,182 @@ end
 
 
 
-DateFromMJD_gregorian(Z) = DateFromMJD(Z,true)
-DateFromMJD_julian(Z) = DateFromMJD(Z,false)
-DateFromMJD_mixed(Z) = DateFromMJD(Z,Z >= MJD_GREGORIAN_CALENDAR)
+
+"""
+time is in milliseconds
+"""
+function timefrac(time::Number)
+    days = time ÷ (24*60*60*1000)
+    ms = time % (24*60*60*1000)
+    h = ms ÷ (60*60*1000)
+    ms = ms % (60*60*1000)
+
+    mi = ms ÷ (60*1000)
+    ms = ms % (60*1000)
+
+    s = ms ÷ 1000
+    ms = ms % 1000
+    return (days,h,mi,s,ms)
+end
+
+function datenum_frac(days,h,mi,s,ms)
+    ms = 60*60*1000 * h +  60*1000 * mi + 1000*s + ms
+    return (24*60*60*1000) * days + ms
+end
 
 
-MJDFromDate_gregorian(year,month,day) = MJDFromDate(year,month,day,true)
-MJDFromDate_julian(year,month,day) = MJDFromDate(year,month,day,false)
-MJDFromDate_mixed(year,month,day) = MJDFromDate(year,month,day,(year,month,day) >= GREGORIAN_CALENDAR)
+DateFromMJD_PGregorian(Z) = DateFromMJD(Z,true)
+DateFromMJD_Julian(Z) = DateFromMJD(Z,false)
+DateFromMJD_Standard(Z) = DateFromMJD(Z,Z >= MJD_GREGORIAN_CALENDAR)
+
+
+MJDFromDate_PGregorian(year,month,day) = MJDFromDate(year,month,day,true)
+MJDFromDate_Julian(year,month,day) = MJDFromDate(year,month,day,false)
+MJDFromDate_Standard(year,month,day) = MJDFromDate(year,month,day,(year,month,day) >= GREGORIAN_CALENDAR)
+
+
+function datenum_cal(cm, y, m, d)
+    if m < 1 || m > 12
+        error("invalid month $(m)")
+    end
+
+    if d < 1 || d > (cm[m+1] - cm[m])
+        error("invalid day $(d) in $(@sprintf("%04d-%02d-%02dT%02d:%02d:%02d",y,m,d,h,mi,s))")
+    end
+
+    return cm[end] * (y-1) + cm[m] + (d-1)
+end
+
+# Calendar with regular month-length
+
+function findmonth(cm,t2)
+    mo = length(cm)
+    while cm[mo] > t2
+        mo -= 1
+    end
+    return mo
+end
+
+function datetuple_cal(cm,timed_::Number)
+    y = timed_ ÷ cm[end]
+    t2 = timed_ - cm[end]*y
+    # find month
+    mo = findmonth(cm,t2)
+    d = t2  - cm[mo]
+
+    # day and year start at 1 (not zero)
+    d = d+1
+    y = y+1
+
+    return (y,mo,d)
+end
+
+
+for (calendar,cmm) in [
+    (:AllLeap, (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)),
+    (:NoLeap,  (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)),
+    (:Y360,    (0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360)),
+]
+    @eval begin
+        $(Symbol(:MJDFromDate_,calendar))(y, m, d) = datenum_cal($cmm, y, m, d)
+        $(Symbol(:DateFromMJD_,calendar))(days) = datetuple_cal($cmm,days)
+    end
+end
+
+
+abstract type AbstractCFDateTime end
+
+const RegTime = Union{Dates.Millisecond,Dates.Second,Dates.Minute,Dates.Hour,Dates.Day}
+
+
+for calendar in [:Standard,:Julian,:PGregorian,:AllLeap,:NoLeap,:Y360]
+    CFDateTime = Symbol(:DateTime,calendar)
+    symdatetuple = Symbol(:datetuple_,calendar)
+    symdatenum = Symbol(:datenum_,calendar)
+
+    @eval begin
+
+        # function $(datenum)(y, m, d, h = 0, mi = 0, s = 0, ms = 0)
+        #     return datenum_frac($(Symbol(:MJDFromDate_,calendar))(y,m,d),h,mi,s,ms)
+        # end
+
+        # function $(datetuple)(time::Number)
+        #     days,h,mi,s,ms = timefrac(time)
+        #     y, m, d = $(Symbol(:DateFromMJD_,calendar))(days)
+        #     return y, m, d, h, mi, s, ms
+        # end
+
+        struct $CFDateTime <: AbstractCFDateTime
+            instant::UTInstant{Millisecond}
+            $CFDateTime(instant::UTInstant{Millisecond}) = new(instant)
+        end
+
+        function $CFDateTime(y::Int64, m::Int64=1, d::Int64=1,
+                             h::Int64=0, mi::Int64=0, s::Int64=0, ms::Int64=0)
+
+            days = $(Symbol(:MJDFromDate_,calendar))(y,m,d)
+            totalms = datenum_frac(days,h,mi,s,ms)
+            return $CFDateTime(UTInstant(Millisecond(totalms)))
+        end
+
+        function datetuple(dt::$CFDateTime)
+            time = Dates.value(dt.instant.periods)
+            days,h,mi,s,ms = timefrac(time)
+            y, m, d = $(Symbol(:DateFromMJD_,calendar))(days)
+            return y, m, d, h, mi, s, ms
+        end
+
+    end
+end
 
 # reference value from Meeus, Jean (1998)
 # launch of Sputnik 1
 
-@test DateFromMJD_mixed(2_436_116 - 2_400_001) == (1957, 10, 4)
+@test DateFromMJD_Standard(2_436_116 - 2_400_001) == (1957, 10, 4)
 @test MJDFromDate(1957,10,4,true) == 36115
 
 @test MJDFromDate(333,1,27,false) == -557288
 
-@show DateFromMJD_gregorian(-532783)
-@show DateFromMJD_gregorian(-532784)
-@show DateFromMJD_gregorian(-532785)
-@show DateFromMJD_gregorian(-532786)
+# function testcal(tonum,totuple)
+#     num = 1234567890123
+
+#     @test tonum(totuple(num)...) == num
+# end
+
+# for (tonum,totuple) in [
+#     (datenum_Standard,datetuple_Standard)
+#     (datenum_Julian,datetuple_Julian)
+#     (datenum_PGregorian,datetuple_PGregorian)
+#     (datenum_AllLeap,datetuple_AllLeap)
+#     (datenum_NoLeap,datetuple_NoLeap)
+#     (datenum_Y360,datetuple_Y360)
+# ]
+#     testcal(tonum,totuple)
+# end
+
+@show DateFromMJD_PGregorian(-532783)
+@show DateFromMJD_PGregorian(-532784)
+@show DateFromMJD_PGregorian(-532785)
+@show DateFromMJD_PGregorian(-532786)
 
 @show MJDFromDate(-100, 2, 28,true)
 @show MJDFromDate(-100, 3, 1,true)
 
 
+#=
 #for Z = 1:3_000_000
 #for Z = 2_000_000:3_000_000
 
 for Z = -2_400_000 + MJD_OFFSET : 600_000 + MJD_OFFSET
-    year,month,day = DateFromMJD_mixed(Z)
-    @test MJDFromDate_mixed(year,month,day) == Z
+    year,month,day = DateFromMJD_Standard(Z)
+    @test MJDFromDate_Standard(year,month,day) == Z
 
-    year,month,day = DateFromMJD_julian(Z)
-    @test MJDFromDate_julian(year,month,day) == Z
+    year,month,day = DateFromMJD_Julian(Z)
+    @test MJDFromDate_Julian(year,month,day) == Z
 
-    year,month,day = DateFromMJD_gregorian(Z)
-    @test MJDFromDate_gregorian(year,month,day) == Z
+    year,month,day = DateFromMJD_PGregorian(Z)
+    @test MJDFromDate_PGregorian(year,month,day) == Z
 
     #@test MJDFromDate_trunc(year,month,day,Z >= 2299161 - 2_400_001) == MJDFromDate(year,month,day,Z >= 2299161 - 2_400_001)
 end
+=#
