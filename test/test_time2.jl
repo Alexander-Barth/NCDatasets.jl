@@ -1,5 +1,14 @@
 using Base.Test
 
+# Introduction of the Gregorian Calendar 1582-10-15
+const GREGORIAN_CALENDAR = (1582,10,15)
+
+# Introduction of the Gregorian Calendar 1582-10-15
+# expressed in MJD (modified Julian day)
+# MJD is the number of days since midnight on 1858-11-17)
+
+const MJD_GREGORIAN_CALENDAR = -100840
+
 function MJDFromDate_floor(year,month,day,gregorian::Bool)
     # turn year equal to -1 (1 BC) into year = 0
     if year < 0
@@ -99,7 +108,8 @@ function DateFromMJD(Z::Integer,gregorian::Bool)
     A =
         if gregorian
             # lets magic happen
-            α = floor(Int, (Z - 1867216.25)/36524.25 )
+            α = floor(Int, (Z - 1867_216.25)/36524.25)
+            @show α,Z - 1867_216.25
             Z + 1 + α - (α ÷ 4)
         else
             Z
@@ -127,8 +137,12 @@ end
 
 DateFromMJD_gregorian(Z::Integer) = DateFromMJD(Z,true)
 DateFromMJD_julian(Z::Integer) = DateFromMJD(Z,false)
-DateFromMJD_mixed(Z::Integer) = DateFromMJD(Z,Z >= 2299161 - 2_400_001)
+DateFromMJD_mixed(Z::Integer) = DateFromMJD(Z,Z >= MJD_GREGORIAN_CALENDAR)
 
+
+MJDFromDate_gregorian(year,month,day) = MJDFromDate(year,month,day,true)
+MJDFromDate_julian(year,month,day) = MJDFromDate(year,month,day,false)
+MJDFromDate_mixed(year,month,day) = MJDFromDate(year,month,day,(year,month,day) >= GREGORIAN_CALENDAR)
 
 # reference value from Meeus, Jean (1998)
 # launch of Sputnik 1
@@ -136,13 +150,34 @@ DateFromMJD_mixed(Z::Integer) = DateFromMJD(Z,Z >= 2299161 - 2_400_001)
 @test DateFromMJD_mixed(2_436_116 - 2_400_001) == (1957, 10, 4)
 
 
-@test MJDFromDate(1957,10,4,true) == 2_436_116 - 2_400_001
+@test MJDFromDate(1957,10,4,true) == 36115
 
-@test MJDFromDate(333,1,27,false) == 1842713 - 2_400_001
+@test MJDFromDate(333,1,27,false) == -557288
 
-for Z = -2_400_000:3_000_000
+@show DateFromMJD_gregorian(-532783)
+@show DateFromMJD_gregorian(-532784)
+@show DateFromMJD_gregorian(-532785)
+@show DateFromMJD_gregorian(-532786)
 
-    year,month,day = DateFromMJD_mixed(Z)
-    @test MJDFromDate(year,month,day,Z >= 2299161 - 2_400_001) == Z
+#=
+for Z = 1:-1:-3_000_000
+    year,month,day = DateFromMJD_gregorian(Z)
+    @test MJDFromDate_gregorian(year,month,day) == Z
+
     #@test MJDFromDate_floor(year,month,day,Z >= 2299161 - 2_400_001) == MJDFromDate(year,month,day,Z >= 2299161 - 2_400_001)
 end
+
+#for Z = -2_400_000:3_000_000
+for Z = -1_000:3_000_000
+    year,month,day = DateFromMJD_mixed(Z)
+    @test MJDFromDate_mixed(year,month,day) == Z
+
+    year,month,day = DateFromMJD_julian(Z)
+    @test MJDFromDate_julian(year,month,day) == Z
+
+    year,month,day = DateFromMJD_gregorian(Z)
+    @test MJDFromDate_gregorian(year,month,day) == Z
+
+    #@test MJDFromDate_floor(year,month,day,Z >= 2299161 - 2_400_001) == MJDFromDate(year,month,day,Z >= 2299161 - 2_400_001)
+end
+=#
