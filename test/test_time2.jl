@@ -25,9 +25,9 @@ function MJDFromDate(year,month,day,gregorian::Bool)
         # bring year in range of 1601 to 2000
         ncycles = (2000 - year) ÷ 400
         year = year + 400 * ncycles
-        return MJDFromDate_(year,month,day,gregorian) - ncycles*146_097
+        return MJDFromDate_optim(year,month,day,gregorian) - ncycles*146_097
     else
-        return MJDFromDate_(year,month,day,gregorian)
+        return MJDFromDate_optim(year,month,day,gregorian)
     end
 
 end
@@ -64,11 +64,6 @@ end
 
 
 function MJDFromDate_optim(year,month,day,gregorian::Bool)
-    # turn year equal to -1 (1 BC) into year = 0
-    if year < 0
-        year = year+1
-    end
-
 
     if month <= 2
         # if the date is January or February, it is considered
