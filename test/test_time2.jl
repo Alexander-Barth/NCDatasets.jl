@@ -5,19 +5,34 @@ using Base.Test
 # Introduction of the Gregorian Calendar 1582-10-15
 const GREGORIAN_CALENDAR = (1582,10,15)
 
-# Introduction of the Gregorian Calendar 1582-10-15
-# expressed in MJD (modified Julian day)
+
+# Time offset in days for the time origin
+# if DATENUM_OFFSET = 0, then datenum_gregjulian
+# corresponds to  Modified Julian Days (MJD).
 # MJD is the number of days since midnight on 1858-11-17)
 
+#const DATENUM_OFFSET = 2_400_000.5 # for Julian Days
+const DATENUM_OFFSET = 0 # for Modified Julian Days
 
-#const MJD_OFFSET = 2_400_000.5 # for Julian Days
-const MJD_OFFSET = 0 # for Modified Julian Days
+# Introduction of the Gregorian Calendar 1582-10-15
+# expressed in MJD (if DATENUM_OFFSET = 0)
 
+const DN_GREGORIAN_CALENDAR = -100840 + DATENUM_OFFSET
 
-const MJD_GREGORIAN_CALENDAR = -100840 + MJD_OFFSET
+"""
+    dn = datenum_gregjulian(year,month,day,gregorian::Bool)
 
+Days since 1858-11-17 according to the Gregorian (`gregorian` is `true`) or 
+Julian Calendar (`gregorian` is `false`) based on the Algorithm of
+Jean Meeus [1].
 
-function MJDFromDate(year,month,day,gregorian::Bool)
+The year -1, correspond to 1 BC. The year 0 does not exist in the 
+Gregorian or Julian Calendar.
+
+[1] Meeus, Jean (1998) Astronomical Algorithms (2nd Edition). 
+Willmann-Bell,  Virginia. p. 63
+"""
+function datenum_gregjulian(year,month,day,gregorian::Bool)
     # turn year equal to -1 (1 BC) into year = 0
     if year < 0
         year = year+1
@@ -27,9 +42,9 @@ function MJDFromDate(year,month,day,gregorian::Bool)
         # bring year in range of 1601 to 2000
         ncycles = (2000 - year) ÷ 400
         year = year + 400 * ncycles
-        return MJDFromDate_optim(year,month,day,gregorian) - ncycles*146_097
+        return datenum_optim(year,month,day,gregorian) - ncycles*146_097
     else
-        return MJDFromDate_optim(year,month,day,gregorian)
+        return datenum_optim(year,month,day,gregorian)
     end
 
 end
@@ -38,7 +53,7 @@ end
 # the algorithm does not work for -100:03:01 and before in
 # the proleptic Gregorian Calendar
 
-function MJDFromDate_(year,month,day,gregorian::Bool)
+function datenum_(year,month,day,gregorian::Bool)
 
     if month <= 2
         # if the date is January or February, it is considered
@@ -57,15 +72,13 @@ function MJDFromDate_(year,month,day,gregorian::Bool)
             0
         end
 
-    #@show year,B,trunc(Int,365.25 * (year + 4716))
-    #@show trunc(Int,30.6001 * (month+1)), B
-    #@show day, B
     Z = trunc(Int,365.25 * (year + 4716)) + trunc(Int,30.6001 * (month+1)) + day + B - 2401525
-    return Z + MJD_OFFSET
+    return Z + DATENUM_OFFSET
 end
 
+# Meeus, Jean (1998) Astronomical Algorithms (2nd Edition). Willmann-Bell,  Virginia. p. 63
 
-function MJDFromDate_optim(year,month,day,gregorian::Bool)
+function datenum_optim(year,month,day,gregorian::Bool)
 
     if month <= 2
         # if the date is January or February, it is considered
@@ -82,7 +95,6 @@ function MJDFromDate_optim(year,month,day,gregorian::Bool)
             0
         end
 
-
     # benchmark shows that it is 40% faster replacing
     # trunc(Int,365.25 * (year + 4716))
     # by
@@ -96,35 +108,28 @@ function MJDFromDate_optim(year,month,day,gregorian::Bool)
 
     Z = (1461 * (year + 4716)) ÷ 4 + (153 * (month+1)) ÷ 5 + day + B - 2401525
     # Modified Julan Day
-    return Z + MJD_OFFSET
+    return Z + DATENUM_OFFSET
 end
 
-# Meeus, Jean (1998) Astronomical Algorithms (2nd Edition). Willmann-Bell,  Virginia. p. 63
 
-
-JD = 2_400_000.5
-# 1858 November 17 00:00:00
-
-JD = 2436_116.31
-# 1957 October 4
 
 """
-    year, month, day = DateFromJD_trunc(Z::Integer,gregorian::Bool)
+    year, month, day = datetuple_gregjulian(Z::Integer,gregorian::Bool)
 
-Compyte year, month and day from Z which is the Julian Day plus 0.5,
-for the gregorian (true) or Julian (false) calendar.
+Compute year, month and day from Z which is the Modified Julian Day
+for the Gregorian (true) or Julian (false) calendar.
 
 For example:
-Z = 2400_001 for the 1858 November 17 00:00:00
+Z = 0 for the 1858 November 17 00:00:00
 
 Algorithm:
 
 Meeus, Jean (1998) Astronomical Algorithms (2nd Edition). Willmann-Bell,
 Virginia. p. 63
 """
-function DateFromMJD(Z,gregorian::Bool)
+function datetuple_gregjulian(Z,gregorian::Bool)
     # Z is Julian Day plus 0.5
-    Z = Z + 2_400_001 - MJD_OFFSET
+    Z = Z + 2_400_001 - DATENUM_OFFSET
 
     A =
         if gregorian
@@ -153,13 +158,11 @@ function DateFromMJD(Z,gregorian::Bool)
     return y,month,day
 end
 
-
-
-
-
-
 """
-time is in milliseconds
+    days,h,mi,s,ms = timetuplefrac(time::Number)
+
+Return the number of whole days, hours (`h`), minutes (`mi`), seconds (`s`) and 
+millisecods (`ms`) from `time` expressed in milliseconds.
 """
 function timetuplefrac(time::Number)
     days = time ÷ (24*60*60*1000)
@@ -181,17 +184,22 @@ function datenumfrac(days,h,mi,s,ms)
 end
 
 
-DateFromMJD_PGregorian(Z) = DateFromMJD(Z,true)
-DateFromMJD_Julian(Z) = DateFromMJD(Z,false)
-DateFromMJD_Standard(Z) = DateFromMJD(Z,Z >= MJD_GREGORIAN_CALENDAR)
+datetuple_pgregorian(Z) = datetuple_gregjulian(Z,true)
+datetuple_julian(Z) = datetuple_gregjulian(Z,false)
+datetuple_standard(Z) = datetuple_gregjulian(Z,Z >= DN_GREGORIAN_CALENDAR)
 
 
-MJDFromDate_PGregorian(y,m,d) = MJDFromDate(y,m,d,true)
-MJDFromDate_Julian(y,m,d) = MJDFromDate(y,m,d,false)
-MJDFromDate_Standard(y,m,d) = MJDFromDate(y,m,d,(y,m,d) >= GREGORIAN_CALENDAR)
+datenum_pgregorian(y,m,d) = datenum_gregjulian(y,m,d,true)
+datenum_julian(y,m,d) = datenum_gregjulian(y,m,d,false)
+datenum_standard(y,m,d) = datenum_gregjulian(y,m,d,(y,m,d) >= GREGORIAN_CALENDAR)
 
 
 function datenum_cal(cm, y, m, d)
+    # turn year equal to -1 (1 BC) into year = 0
+    if y < 0
+        y = y+1
+    end
+
     if m < 1 || m > 12
         error("invalid month $(m)")
     end
@@ -225,18 +233,22 @@ function datetuple_cal(cm,timed_::Number)
     d = d+1
     y = y+1
 
+    if y <= 0
+        y = y-1
+    end
+    
     return (y,mo,d)
 end
 
 
 for (calendar,cmm) in [
-    ("AllLeap", (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)),
-    ("NoLeap",  (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)),
+    ("allleap", (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)),
+    ("noleap",  (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)),
     ("360",    (0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360)),
 ]
     @eval begin
-        $(Symbol(:MJDFromDate_,calendar))(y, m, d) = datenum_cal($cmm, y, m, d)
-        $(Symbol(:DateFromMJD_,calendar))(days) = datetuple_cal($cmm,days)
+        $(Symbol(:datenum_,calendar))(y, m, d) = datenum_cal($cmm, y, m, d)
+        $(Symbol(:datetuple_,calendar))(days) = datetuple_cal($cmm,days)
     end
 end
 
@@ -246,23 +258,14 @@ abstract type AbstractCFDateTime end
 const RegTime = Union{Dates.Millisecond,Dates.Second,Dates.Minute,Dates.Hour,Dates.Day}
 
 
-for calendar in ["Standard","Julian","PGregorian","AllLeap","NoLeap","360"]
-    CFDateTime = Symbol(:DateTime,calendar)
-    symdatetuple = Symbol(:datetuple_,calendar)
-    symdatenum = Symbol(:datenum_,calendar)
-
+for (Calendar,calendar) in [("Standard","standard"),
+                            ("Julian","julian"),
+                            ("PGregorian","pgregorian"),
+                            ("AllLeap","allleap"),
+                            ("NoLeap","noleap"),
+                            ("360","360")]
+    CFDateTime = Symbol(:DateTime,Calendar)
     @eval begin
-
-        # function $(datenum)(y, m, d, h = 0, mi = 0, s = 0, ms = 0)
-        #     return datenumfrac($(Symbol(:MJDFromDate_,calendar))(y,m,d),h,mi,s,ms)
-        # end
-
-        # function $(datetuple)(time::Number)
-        #     days,h,mi,s,ms = timetuplefrac(time)
-        #     y, m, d = $(Symbol(:DateFromMJD_,calendar))(days)
-        #     return y, m, d, h, mi, s, ms
-        # end
-
         struct $CFDateTime <: AbstractCFDateTime
             instant::UTInstant{Millisecond}
             $CFDateTime(instant::UTInstant{Millisecond}) = new(instant)
@@ -271,7 +274,7 @@ for calendar in ["Standard","Julian","PGregorian","AllLeap","NoLeap","360"]
         function $CFDateTime(y::Int64, m::Int64=1, d::Int64=1,
                              h::Int64=0, mi::Int64=0, s::Int64=0, ms::Int64=0)
 
-            days = $(Symbol(:MJDFromDate_,calendar))(y,m,d)
+            days = $(Symbol(:datenum_,calendar))(y,m,d)
             totalms = datenumfrac(days,h,mi,s,ms)
             return $CFDateTime(UTInstant(Millisecond(totalms)))
         end
@@ -279,7 +282,7 @@ for calendar in ["Standard","Julian","PGregorian","AllLeap","NoLeap","360"]
         function datetuple(dt::$CFDateTime)
             time = Dates.value(dt.instant.periods)
             days,h,mi,s,ms = timetuplefrac(time)
-            y, m, d = $(Symbol(:DateFromMJD_,calendar))(days)
+            y, m, d = $(Symbol(:datetuple_,calendar))(days)
             return y, m, d, h, mi, s, ms
         end
 
@@ -308,7 +311,30 @@ for calendar in ["Standard","Julian","PGregorian","AllLeap","NoLeap","360"]
         end
 
         +(dt::$CFDateTime,Δ::RegTime) = $CFDateTime(UTInstant(dt.instant.periods + Dates.Millisecond(Δ)))
+
+        -(dt1::$CFDateTime,dt2::$CFDateTime) = dt1.instant.periods - dt2.instant.periods
     end
+end
+
+for DT1 in [:DateTime, :DateTimeStandard, :DateTimeJulian, :DateTimePGregorian,
+            :DateTimeAllLeap, :DateTimeNoLeap, :DateTime360]
+    for DT2 in [:DateTime, :DateTimeStandard, :DateTimeJulian, :DateTimePGregorian,
+                :DateTimeAllLeap, :DateTimeNoLeap, :DateTime360]
+
+        if DT1 != DT2
+            @eval begin
+                convert(::Type{$DT1}, dt::DT2) = $DT1(year(dt),month(dt),day(dt),
+                                                      hours(dt),minute(dt),secods(dt),millisecond(dt))
+            end
+        end
+    end
+
+    if DT1 != DateTime
+        @eval begin
+            convert(::Type{$DT1}, dt::DT2) = $DT1(year(dt),month(dt),day(dt),
+                                                  hours(dt),minute(dt),secods(dt),millisecond(dt))
+        end
+    end    
 end
 
 
@@ -451,10 +477,10 @@ timeencode(data,units,calendar = "standard") = data
 # reference value from Meeus, Jean (1998)
 # launch of Sputnik 1
 
-@test DateFromMJD_Standard(2_436_116 - 2_400_001) == (1957, 10, 4)
-@test MJDFromDate(1957,10,4,true) == 36115
+@test datetuple_standard(2_436_116 - 2_400_001) == (1957, 10, 4)
+@test datenum_gregjulian(1957,10,4,true) == 36115
 
-@test MJDFromDate(333,1,27,false) == -557288
+@test datenum_gregjulian(333,1,27,false) == -557288
 
 # function testcal(tonum,totuple)
 #     num = 1234567890123
@@ -463,9 +489,9 @@ timeencode(data,units,calendar = "standard") = data
 # end
 
 # for (tonum,totuple) in [
-#     (datenum_Standard,datetuple_Standard)
-#     (datenum_Julian,datetuple_Julian)
-#     (datenum_PGregorian,datetuple_PGregorian)
+#     (datenum_standard,datetuple_standard)
+#     (datenum_julian,datetuple_julian)
+#     (datenum_pgregorian,datetuple_pgregorian)
 #     (datenum_AllLeap,datetuple_AllLeap)
 #     (datenum_NoLeap,datetuple_NoLeap)
 #     (datenum_360,datetuple_360)
@@ -473,24 +499,24 @@ timeencode(data,units,calendar = "standard") = data
 #     testcal(tonum,totuple)
 # end
 
-@show DateFromMJD_PGregorian(-532783)
-@show DateFromMJD_PGregorian(-532784)
-@show DateFromMJD_PGregorian(-532785)
-@show DateFromMJD_PGregorian(-532786)
+@show datetuple_pgregorian(-532783)
+@show datetuple_pgregorian(-532784)
+@show datetuple_pgregorian(-532785)
+@show datetuple_pgregorian(-532786)
 
-@show MJDFromDate(-100, 2, 28,true)
-@show MJDFromDate(-100, 3, 1,true)
+@show datenum_gregjulian(-100, 2, 28,true)
+@show datenum_gregjulian(-100, 3, 1,true)
 
 function mytest()
     for (tonum,totuple) in [
-        (MJDFromDate_Standard,DateFromMJD_Standard),
-        (MJDFromDate_Julian,DateFromMJD_Julian),
-        (MJDFromDate_PGregorian,DateFromMJD_PGregorian),
-        (MJDFromDate_AllLeap,DateFromMJD_AllLeap),
-        (MJDFromDate_NoLeap,DateFromMJD_NoLeap),
-        (MJDFromDate_360,DateFromMJD_360),
+        (datenum_standard,datetuple_standard),
+        (datenum_julian,datetuple_julian),
+        (datenum_pgregorian,datetuple_pgregorian),
+        (datenum_allleap,datetuple_allleap),
+        (datenum_noleap,datetuple_noleap),
+        (datenum_360,datetuple_360),
     ]
-        @time for Z = -2_400_000 + MJD_OFFSET : 11 : 600_000 + MJD_OFFSET
+        @time for Z = -2_400_000 + DATENUM_OFFSET : 11 : 600_000 + DATENUM_OFFSET
             y,m,d = totuple(Z)
             @test tonum(y,m,d) == Z
         end
@@ -501,17 +527,17 @@ end
 mytest()
 
 #=
-@time for Z = -2_400_000 + MJD_OFFSET : 600_000 + MJD_OFFSET
-    y,m,d = DateFromMJD_Standard(Z)
-    @test MJDFromDate_Standard(y,m,d) == Z
+@time for Z = -2_400_000 + DATENUM_OFFSET : 600_000 + DATENUM_OFFSET
+    y,m,d = datetuple_standard(Z)
+    @test datenum_standard(y,m,d) == Z
 
-    y,m,d = DateFromMJD_Julian(Z)
-    @test MJDFromDate_Julian(y,m,d) == Z
+    y,m,d = datetuple_julian(Z)
+    @test datenum_julian(y,m,d) == Z
 
-    y,m,d = DateFromMJD_PGregorian(Z)
-    @test MJDFromDate_PGregorian(y,m,d) == Z
+    y,m,d = datetuple_pgregorian(Z)
+    @test datenum_pgregorian(y,m,d) == Z
 
-    #@test MJDFromDate_trunc(y,m,d,Z >= 2299161 - 2_400_001) == MJDFromDate(y,m,d,Z >= 2299161 - 2_400_001)
+    #@test datenum_trunc(y,m,d,Z >= 2299161 - 2_400_001) == datenum_gregjulian(y,m,d,Z >= 2299161 - 2_400_001)
 end
 =#
 
@@ -534,8 +560,17 @@ dt = DateTimeNoLeap(1959,12,31,23,39,59,123)
 
 # leap day
 @test DateTimeAllLeap(2001,2,28) + Dates.Day(1) == DateTimeAllLeap(2001,2,29)
-@test DateTimeNoLeap(2001,2,28) + Dates.Day(1) == DateTimeNoLeap(2001,3,1)
-@test DateTimeJulian(2001,2,28) + Dates.Day(1) == DateTimeJulian(2001,3,1)
-@test DateTimeJulian(1900,2,28) + Dates.Day(1) == DateTimeJulian(1900,2,29)
-@test DateTime360(2001,2,28) + Dates.Day(1) == DateTime360(2001,2,29)
-@test DateTime360(2001,2,29) + Dates.Day(1) == DateTime360(2001,2,30)
+@test DateTimeNoLeap(2001,2,28)  + Dates.Day(1) == DateTimeNoLeap(2001,3,1)
+@test DateTimeJulian(2001,2,28)  + Dates.Day(1) == DateTimeJulian(2001,3,1)
+@test DateTimeJulian(1900,2,28)  + Dates.Day(1) == DateTimeJulian(1900,2,29)
+@test DateTime360(2001,2,28)     + Dates.Day(1) == DateTime360(2001,2,29)
+@test DateTime360(2001,2,29)     + Dates.Day(1) == DateTime360(2001,2,30)
+
+
+
+@test DateTimeAllLeap(2001,2,29) - DateTimeAllLeap(2001,2,28) == Dates.Day(1) 
+@test DateTimeNoLeap(2001,3,1)   - DateTimeNoLeap(2001,2,28)  == Dates.Day(1) 
+@test DateTimeJulian(2001,3,1)   - DateTimeJulian(2001,2,28)  == Dates.Day(1) 
+@test DateTimeJulian(1900,2,29)  - DateTimeJulian(1900,2,28)  == Dates.Day(1) 
+@test DateTime360(2001,2,29)     - DateTime360(2001,2,28)     == Dates.Day(1) 
+@test DateTime360(2001,2,30)     - DateTime360(2001,2,29)     == Dates.Day(1) 
