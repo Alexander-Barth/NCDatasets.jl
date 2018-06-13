@@ -28,13 +28,13 @@ include("../src/time.jl")
 #     testcal(tonum,totuple)
 # end
 
-@show datetuple_pgregorian(-532783)
-@show datetuple_pgregorian(-532784)
-@show datetuple_pgregorian(-532785)
-@show datetuple_pgregorian(-532786)
+# @show datetuple_pgregorian(-532783)
+# @show datetuple_pgregorian(-532784)
+# @show datetuple_pgregorian(-532785)
+# @show datetuple_pgregorian(-532786)
 
-@show datenum_gregjulian(-100, 2, 28,true)
-@show datenum_gregjulian(-100, 3, 1,true)
+# @show datenum_gregjulian(-100, 2, 28,true)
+# @show datenum_gregjulian(-100, 3, 1,true)
 
 function mytest()
     for (tonum,totuple) in [
