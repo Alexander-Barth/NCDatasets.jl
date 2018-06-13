@@ -342,23 +342,23 @@ end
 
 for DT1 in [:DateTime, :DateTimeStandard, :DateTimeJulian, :DateTimePGregorian,
             :DateTimeAllLeap, :DateTimeNoLeap, :DateTime360]
-    for DT2 in [:DateTime, :DateTimeStandard, :DateTimeJulian, :DateTimePGregorian,
+    for DT2 in [:DateTimeStandard, :DateTimeJulian, :DateTimePGregorian,
                 :DateTimeAllLeap, :DateTimeNoLeap, :DateTime360]
 
         if DT1 != DT2
             @eval begin
                 convert(::Type{$DT1}, dt::$DT2) = $DT1(
                     year(dt),month(dt),day(dt),
-                    hours(dt),minute(dt),secods(dt),millisecond(dt))
+                    hour(dt),minute(dt),secods(dt),millisecond(dt))
             end
         end
     end
 
-    if DT1 != DateTime
+    if DT1 != :DateTime
         @eval begin
             convert(::Type{$DT1}, dt::DateTime) = $DT1(
                 Dates.year(dt),Dates.month(dt),Dates.day(dt),
-                Dates.hours(dt),Dates.minute(dt),Dates.secods(dt),
+                Dates.hour(dt),Dates.minute(dt),Dates.secods(dt),
                 Dates.millisecond(dt))
         end
     end    

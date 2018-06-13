@@ -1,53 +1,75 @@
-
-# test of low-level functions
-@test datenum_julian(1,1,1,0,0,0) == 0
-
-@test datenum_julian(-1,1,1)  ÷ (24*60*60*1000) == -366
-@test datenum_julian(-2,1,1)  ÷ (24*60*60*1000) == -731
-@test datenum_julian(-4,1,1)  ÷ (24*60*60*1000) == -1461
-@test datenum_julian(-5,1,1)  ÷ (24*60*60*1000) == -1827
-@test datenum_julian(-10,1,1)  ÷ (24*60*60*1000) == -3653
-@test datenum_julian(-15,1,1)  ÷ (24*60*60*1000) == -5479
-@test datenum_julian(-100,1,1)  ÷ (24*60*60*1000) == -36525
-
-@test datenum_julian(-1,12,31,0,0,0) ÷ (24*60*60*1000) == -1
-@test datenum_julian(-1,12,30,0,0,0) ÷ (24*60*60*1000) == -2
-@test datenum_julian(-1,12,1,0,0,0) ÷ (24*60*60*1000) == -31
-@test datenum_julian(-1,3,1,0,0,0) ÷ (24*60*60*1000) == -306
-@test datenum_julian(-1,2,29,0,0,0) ÷ (24*60*60*1000) == -307
-@test datenum_julian(-5,12,31)  ÷ (24*60*60*1000) == -1462
-@test datenum_julian(-123,4,5)  ÷ (24*60*60*1000) == -44832
+using Base.Test
+include("../src/time.jl")
 
 
 
+# reference value from Meeus, Jean (1998)
+# launch of Sputnik 1
 
-@test datetuple_julian(-1*24*60*60*1000) == (-1,12,31,0,0,0,0)
-@test datetuple_julian(-366*24*60*60*1000) == (-1,1,1,0,0,0,0)
-@test datetuple_julian(-731*24*60*60*1000) == (-2,1,1,0,0,0,0)
-@test datetuple_julian(-3653*24*60*60*1000) == (-10,1,1,0,0,0,0)
-@test datetuple_julian(-36525*24*60*60*1000) == (-100,1,1,0,0,0,0)
-@test datetuple_julian(-367*24*60*60*1000) == (-2,12,31,0,0,0,0)
-@test datetuple_julian(-44832*24*60*60*1000) == (-123,4,5,0,0,0,0)
+@test datetuple_standard(2_436_116 - 2_400_001) == (1957, 10, 4)
+@test datenum_gregjulian(1957,10,4,true) == 36115
 
-#cftime.DatetimeJulian(01,01,01) - cftime.DatetimeJulian(-4713,1,1)
-#datetime.timedelta(1721424, 0, 31)
+@test datenum_gregjulian(333,1,27,false) == -557288
 
+# function testcal(tonum,totuple)
+#     num = 1234567890123
 
-@test datetuple_julian(-1721424*24*60*60*1000) == (-4713,1,1,0,0,0,0)
-@test datenum_julian(-4713,1,1)  ÷ (24*60*60*1000) == -1721424
+#     @test tonum(totuple(num)...) == num
+# end
 
+# for (tonum,totuple) in [
+#     (datenum_standard,datetuple_standard)
+#     (datenum_julian,datetuple_julian)
+#     (datenum_pgregorian,datetuple_pgregorian)
+#     (datenum_AllLeap,datetuple_AllLeap)
+#     (datenum_NoLeap,datetuple_NoLeap)
+#     (datenum_360,datetuple_360)
+# ]
+#     testcal(tonum,totuple)
+# end
 
-@test datetuple_julian(0*24*60*60*1000) == (1,1,1,0,0,0,0)
-@test datetuple_julian(1*24*60*60*1000) == (1,1,2,0,0,0,0)
-@test datetuple_julian(58*24*60*60*1000) == (1,2,28,0,0,0,0)
-@test datetuple_julian(800000*24*60*60*1000) == (2191, 4, 14, 0, 0, 0, 0)
+@show datetuple_pgregorian(-532783)
+@show datetuple_pgregorian(-532784)
+@show datetuple_pgregorian(-532785)
+@show datetuple_pgregorian(-532786)
 
+@show datenum_gregjulian(-100, 2, 28,true)
+@show datenum_gregjulian(-100, 3, 1,true)
 
-for n = -1000:800000
-    #@show n
-    y, m, d, h, mi, s, ms = datetuple_julian(n*24*60*60*1000)
-    @test datenum_julian(y, m, d, h, mi, s, ms) ÷ (24*60*60*1000) == n
+function mytest()
+    for (tonum,totuple) in [
+        (datenum_standard,datetuple_standard),
+        (datenum_julian,datetuple_julian),
+        (datenum_pgregorian,datetuple_pgregorian),
+        (datenum_allleap,datetuple_allleap),
+        (datenum_noleap,datetuple_noleap),
+        (datenum_360,datetuple_360),
+    ]
+        @time for Z = -2_400_000 + DATENUM_OFFSET : 11 : 600_000 + DATENUM_OFFSET
+            y,m,d = totuple(Z)
+            @test tonum(y,m,d) == Z
+        end
+    end
 end
+
+
+#mytest()
+
+#=
+@time for Z = -2_400_000 + DATENUM_OFFSET : 600_000 + DATENUM_OFFSET
+    y,m,d = datetuple_standard(Z)
+    @test datenum_standard(y,m,d) == Z
+
+    y,m,d = datetuple_julian(Z)
+    @test datenum_julian(y,m,d) == Z
+
+    y,m,d = datetuple_pgregorian(Z)
+    @test datenum_pgregorian(y,m,d) == Z
+
+    #@test datenum_trunc(y,m,d,Z >= 2299161 - 2_400_001) == datenum_gregjulian(y,m,d,Z >= 2299161 - 2_400_001)
+end
+=#
+
 
 # test of DateTime structures
 
@@ -67,11 +89,21 @@ dt = DateTimeNoLeap(1959,12,31,23,39,59,123)
 
 # leap day
 @test DateTimeAllLeap(2001,2,28) + Dates.Day(1) == DateTimeAllLeap(2001,2,29)
-@test DateTimeNoLeap(2001,2,28) + Dates.Day(1) == DateTimeNoLeap(2001,3,1)
-@test DateTimeJulian(2001,2,28) + Dates.Day(1) == DateTimeJulian(2001,3,1)
-@test DateTimeJulian(1900,2,28) + Dates.Day(1) == DateTimeJulian(1900,2,29)
-@test DateTime360(2001,2,28) + Dates.Day(1) == DateTime360(2001,2,29)
-@test DateTime360(2001,2,29) + Dates.Day(1) == DateTime360(2001,2,30)
+@test DateTimeNoLeap(2001,2,28)  + Dates.Day(1) == DateTimeNoLeap(2001,3,1)
+@test DateTimeJulian(2001,2,28)  + Dates.Day(1) == DateTimeJulian(2001,3,1)
+@test DateTimeJulian(1900,2,28)  + Dates.Day(1) == DateTimeJulian(1900,2,29)
+@test DateTime360(2001,2,28)     + Dates.Day(1) == DateTime360(2001,2,29)
+@test DateTime360(2001,2,29)     + Dates.Day(1) == DateTime360(2001,2,30)
+
+
+
+@test DateTimeAllLeap(2001,2,29) - DateTimeAllLeap(2001,2,28) == Dates.Day(1) 
+@test DateTimeNoLeap(2001,3,1)   - DateTimeNoLeap(2001,2,28)  == Dates.Day(1) 
+@test DateTimeJulian(2001,3,1)   - DateTimeJulian(2001,2,28)  == Dates.Day(1) 
+@test DateTimeJulian(1900,2,29)  - DateTimeJulian(1900,2,28)  == Dates.Day(1) 
+@test DateTime360(2001,2,29)     - DateTime360(2001,2,28)     == Dates.Day(1) 
+@test DateTime360(2001,2,30)     - DateTime360(2001,2,29)     == Dates.Day(1) 
+
 
 # reference values from python's cftime
 @test DateTimeJulian(2000,1,1) + Dates.Day(1) == DateTimeJulian(2000,01,02)
@@ -83,13 +115,11 @@ dt = DateTimeNoLeap(1959,12,31,23,39,59,123)
 @test DateTimeJulian(1,1,1) + Dates.Day(1234678) == DateTimeJulian(3381,05,14)
 
 
-#@test_broken DateTimeJulian(-4713,01,011) + Dates.Hour(58932297) == DateTimeJulian(2010,10,29,9,0,0)
-
 
 # generic tests
-function stresstest(::Type{DT}) where DT
+function stresstest_DateTime(::Type{DT}) where DT
     t0 = DT(1,1,1)
-    @time for n = 1:800000
+    @time for n = -800000:800000
         #@show n
         t = t0 + Dates.Day(n)
         y, m, d, h, mi, s, ms = datetuple(t)
@@ -98,12 +128,13 @@ function stresstest(::Type{DT}) where DT
 end
 
 for DT in [
+    DateTimeStandard,
+    DateTimeJulian,
+    DateTimePGregorian,
     DateTimeAllLeap,
     DateTimeNoLeap,
-    DateTime360,
-    DateTimeJulian]
-
-    #stresstest(DT)
+    DateTime360
+]
 
     dt = DT(1959,12,30, 23,39,59,123)
     @test year(dt) == 1959
@@ -115,8 +146,9 @@ for DT in [
     @test millisecond(dt) == 123
 
     @test string(DT(2001,2,20)) == "2001-02-20T00:00:00"
-
     @test datetuple(DT(1959,12,30,23,39,59,123)) == (1959,12,30,23,39,59,123)
+
+    #stresstest_DateTime(DT)    
 end
 
 
@@ -145,26 +177,12 @@ t0,plength = timeunits("days since 2000-1-1 0:0:0")
 @test t0 == DateTime(2000,1,1)
 @test plength == 86400000
 
-
-# values from
-# https://web.archive.org/web/20171129142108/https://www.hermetic.ch/cal_stud/chron_jdate.htm
-# rounded to 3 hour
-
-#@test_broken timedecode([2454142.125],"days since -4713-01-01T00:00:00","julian") ==
-#    [DateTime(2007,02,10,03,0,0)]
-
-# values from
-# http://www.julian-date.com/ (setting GMT offset to zero)
-# https://web.archive.org/web/20180212213256/http://www.julian-date.com/
-#@test_broken timedecode([2455512.375],"days since -4713-01-01T00:00:00","julian") ==
-#    [DateTime(2010,11,11,9,0,0)]
-
 # value from python's cftime
 # print(cftime.DatetimeJulian(-4713,1,1) + datetime.timedelta(2455512,.375 * 24*60*60))
 # 2010-10-29 09:00:00
 
-@test timedecode([2455512.375],"days since -4713-01-01T00:00:00","julian") ==
-    [DateTimeJulian(2010,10,29,9,0,0)]
+#@test timedecode([2455512.375],"days since -4713-01-01T00:00:00","julian")
+#   == DateTimeJulian(2010,10,29,09)
 
 # values from
 # https://web.archive.org/web/20180212214229/https://en.wikipedia.org/wiki/Julian_day
@@ -183,6 +201,37 @@ t0,plength = timeunits("days since 2000-1-1 0:0:0")
     [DateTime(2018,2,11,16,30,0)]
 
 
+# The Julian Day Number (JDN) is the integer assigned to a whole solar day in
+# the Julian day count starting from noon Universal time, with Julian day
+# number 0 assigned to the day starting at noon on Monday, January 1, 4713 BC,
+# proleptic Julian calendar (November 24, 4714 BC, in the proleptic Gregorian
+# calendar),
+
+# Julian Day Number of 12:00 UT on January 1, 2000, is 2 451 545
+# https://web.archive.org/web/20180613200023/https://en.wikipedia.org/wiki/Julian_day
+
+
+@test timedecode(DateTimeStandard,2_451_545,"days since -4713-01-01T12:00:00") ==
+    DateTimeStandard(2000,01,01,12,00,00)
+
+# Note for DateTime, 1 BC is the year 0!
+# DateTime(1,1,1)-Dates.Day(1)
+# 0000-12-31T00:00:00
+
+@test timedecode(DateTime,2_451_545,"days since -4713-11-24T12:00:00") ==
+    DateTime(2000,01,01,12,00,00)
+
+@test timedecode(DateTimePGregorian,2_451_545,"days since -4714-11-24T12:00:00") ==
+    DateTimePGregorian(2000,01,01,12,00,00)
+
+
+@test timedecode([2455512.375],"days since -4713-01-01T00:00:00","julian") ==
+    [DateTimeJulian(2010,10,29,9,0,0)]
+
+
+
+# Transition between Julian and Gregorian Calendar
+
 #=
 In [11]: cftime.DatetimeGregorian(1582,10,4) + datetime.timedelta(1)
 Out[11]: cftime.DatetimeGregorian(1582, 10, 15, 0, 0, 0, 0, -1, 1)
@@ -192,6 +241,15 @@ Out[12]: cftime.DatetimeProlepticGregorian(1582, 10, 5, 0, 0, 0, 0, -1, 1)
 
 In [13]: cftime.DatetimeJulian(1582,10,4) + datetime.timedelta(1)
 Out[13]: cftime.DatetimeJulian(1582, 10, 5, 0, 0, 0, 0, -1, 1)
-
-
 =#
+
+@test DateTimeStandard(1582,10,4) + Dates.Day(1) == DateTimeStandard(1582,10,15)
+@test DateTimePGregorian(1582,10,4) + Dates.Day(1) == DateTimePGregorian(1582,10,5)
+@test DateTimeJulian(1582,10,4) + Dates.Day(1) == DateTimeJulian(1582,10,5)
+
+
+
+
+@test datetuple(timedecode(0,"days since -4713-01-01T12:00:00","julian")) ==
+    (-4713, 1, 1, 12, 0, 0, 0)
+
