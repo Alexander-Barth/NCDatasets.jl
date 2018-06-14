@@ -258,7 +258,7 @@ dt = reinterpret(DateTimeStandard, DateTimeJulian(1900,2,28))
 @test typeof(dt) == DateTimeStandard
 @test datetuple(dt) == (1900,2,28,0, 0, 0, 0)
 
-dt = reinterpret(DateTime, DateTimeJulian(1900,2,28))
+dt = reinterpret(DateTime, DateTimeNoLeap(1900,2,28))
 @test typeof(dt) == DateTime
 @test Dates.year(dt) == 1900
 @test Dates.month(dt) == 2
