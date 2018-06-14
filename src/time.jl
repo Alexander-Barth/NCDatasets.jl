@@ -1,7 +1,6 @@
 #module Time
 import Base.Dates: UTInstant, Millisecond
-import Base:+, -, string, show
-using Base.Test
+import Base: +, -, isless, string, show, convert
 
 # Introduction of the Gregorian Calendar 1582-10-15
 const GREGORIAN_CALENDAR = (1582,10,15)
@@ -18,6 +17,13 @@ const DATENUM_OFFSET = 0 # for Modified Julian Days
 # expressed in MJD (if DATENUM_OFFSET = 0)
 
 const DN_GREGORIAN_CALENDAR = -100840 + DATENUM_OFFSET
+
+# DateTime(UTInstant{Millisecond}(Dates.Millisecond(0)))
+# returns 0000-12-31T00:00:00
+# 678576 is the output of datenum_pgregorian(-1,12,31)
+
+const DATETIME_OFFSET = Dates.Millisecond(678576 * (24*60*60*1000))
+
 
 """
     dn = datenum_gregjulian(year,month,day,gregorian::Bool)
@@ -292,7 +298,7 @@ for (Calendar,calendar) in [("Standard","standard"),
     @eval begin
         struct $CFDateTime <: AbstractCFDateTime
             instant::UTInstant{Millisecond}
-            $CFDateTime(instant::UTInstant{Millisecond}) = new(instant)
+             #$CFDateTime(instant::UTInstant{Millisecond}) = new(instant)
         end
 
         function $CFDateTime(y::Int64, m::Int64=1, d::Int64=1,
@@ -337,6 +343,9 @@ for (Calendar,calendar) in [("Standard","standard"),
         +(dt::$CFDateTime,Δ::RegTime) = $CFDateTime(UTInstant(dt.instant.periods + Dates.Millisecond(Δ)))
 
         -(dt1::$CFDateTime,dt2::$CFDateTime) = dt1.instant.periods - dt2.instant.periods
+
+        isless(dt1::$CFDateTime,dt2::$CFDateTime) = dt1.instant.periods < dt2.instant.periods
+
     end
 end
 
@@ -347,21 +356,46 @@ for DT1 in [:DateTime, :DateTimeStandard, :DateTimeJulian, :DateTimePGregorian,
 
         if DT1 != DT2
             @eval begin
-                convert(::Type{$DT1}, dt::$DT2) = $DT1(
+                reinterpret(::Type{$DT1}, dt::$DT2) = $DT1(
                     year(dt),month(dt),day(dt),
-                    hour(dt),minute(dt),secods(dt),millisecond(dt))
+                    hour(dt),minute(dt),second(dt),millisecond(dt))
             end
         end
     end
+end
 
-    if DT1 != :DateTime
-        @eval begin
-            convert(::Type{$DT1}, dt::DateTime) = $DT1(
-                Dates.year(dt),Dates.month(dt),Dates.day(dt),
-                Dates.hour(dt),Dates.minute(dt),Dates.secods(dt),
-                Dates.millisecond(dt))
-        end
-    end    
+
+function reinterpret(::Type{T}, dt::DateTime) where T <: AbstractCFDateTime
+   return T(
+       Dates.year(dt),Dates.month(dt),Dates.day(dt),
+       Dates.hour(dt),Dates.minute(dt),Dates.second(dt),
+       Dates.millisecond(dt))
+end
+
+"""
+    dt2 = convert(::Type{T}, dt)
+
+Convert a DateTime of type `DateTimeStandard`, `DateTimePGregorian`, 
+`DateTimeJulian` or `DateTime` into the type `T` which can be
+`DateTimeStandard`, `DateTimePGregorian`, `DateTimeJulian` or `DateTime`.
+
+Converstion is done such that durations (difference of DateTime types) are 
+preserved. For dates on and after 1582-10-15, the year, month and days are the same for
+the types `DateTimeStandard`, `DateTimePGregorian` and `DateTime`.
+
+For dates before 1582-10-15, the year, month and days are the same for
+the types `DateTimeStandard` and `DateTimeJulian`.
+"""
+function convert(::Type{T1}, dt::T2) where T1 <: Union{DateTimeStandard,DateTimePGregorian,DateTimeJulian} where T2 <: Union{DateTimeStandard,DateTimePGregorian,DateTimeJulian}
+    return T1(dt.instant)
+end
+
+function convert(::Type{DateTime}, dt::T2) where T2 <: Union{DateTimeStandard,DateTimePGregorian,DateTimeJulian}
+    DateTime(UTInstant{Millisecond}(dt.instant.periods + DATETIME_OFFSET))
+end
+
+function convert(::Type{T1}, dt::DateTime) where T1 <: Union{DateTimeStandard,DateTimePGregorian,DateTimeJulian}
+    T1(UTInstant{Millisecond}(dt.instant.periods - DATETIME_OFFSET))
 end
 
 
@@ -370,12 +404,14 @@ end
 year(dt::AbstractCFDateTime) = datetuple(dt)[1]
 month(dt::AbstractCFDateTime) = datetuple(dt)[2]
 day(dt::AbstractCFDateTime) = datetuple(dt)[3]
-hour(t::AbstractCFDateTime)   = datetuple(dt)[4]
+hour(dt::AbstractCFDateTime)   = datetuple(dt)[4]
 minute(dt::AbstractCFDateTime) = datetuple(dt)[5]
 second(dt::AbstractCFDateTime) = datetuple(dt)[6]
 millisecond(dt::AbstractCFDateTime) = datetuple(dt)[7]
 
+export year, month, day, hour, minute, second, millisecond
 
+    
 -(dt::AbstractCFDateTime,Δ) = dt + (-Δ)
 
 

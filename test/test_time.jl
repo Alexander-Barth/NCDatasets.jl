@@ -253,3 +253,61 @@ Out[13]: cftime.DatetimeJulian(1582, 10, 5, 0, 0, 0, 0, -1, 1)
 @test datetuple(timedecode(0,"days since -4713-01-01T12:00:00","julian")) ==
     (-4713, 1, 1, 12, 0, 0, 0)
 
+
+dt = reinterpret(DateTimeStandard, DateTimeJulian(1900,2,28))
+@test typeof(dt) == DateTimeStandard
+@test datetuple(dt) == (1900,2,28,0, 0, 0, 0)
+
+dt = reinterpret(DateTime, DateTimeJulian(1900,2,28))
+@test typeof(dt) == DateTime
+@test Dates.year(dt) == 1900
+@test Dates.month(dt) == 2
+@test Dates.day(dt) == 28
+
+# check ordering
+
+@test DateTimeStandard(2000,01,01) < DateTimeStandard(2000,01,02)
+@test DateTimeStandard(2000,01,01) ≤ DateTimeStandard(2000,01,01)
+
+@test DateTimeStandard(2000,01,03) > DateTimeStandard(2000,01,02)
+@test DateTimeStandard(2000,01,03) ≥ DateTimeStandard(2000,01,01)
+
+datetuple(dt::DateTime) = (Dates.year(dt),Dates.month(dt),Dates.day(dt),
+                           Dates.hour(dt),Dates.minute(dt),Dates.second(dt),
+                           Dates.millisecond(dt))
+
+
+# check convertion
+
+for T1 in [DateTimePGregorian,DateTimeStandard,DateTime]
+    for T2 in [DateTimePGregorian,DateTimeStandard,DateTime]
+        # datetuple should not change after 1582-10-15
+        # for Gregorian Calendars
+        dt1 = T1(2000,01,03)
+        dt2 = convert(T2,dt1)
+
+        @test datetuple(dt1) == datetuple(dt2)
+    end
+end
+
+
+for T1 in [DateTimeStandard,DateTimeJulian]
+    for T2 in [DateTimeStandard,DateTimeJulian]
+        # datetuple should not change before 1582-10-15
+        # for Julian Calendars
+        dt1 = T1(200,01,03)
+        dt2 = convert(T2,dt1)
+
+        @test datetuple(dt1) == datetuple(dt2)
+    end
+end
+
+for T1 in [DateTimePGregorian,DateTimeJulian,DateTimeStandard,DateTime]
+    for T2 in [DateTimePGregorian,DateTimeJulian,DateTimeStandard,DateTime]
+        # verify that durations (even accross 1582-10-15) are maintained
+        # after convert
+        dt1 = [T1(2000,01,03), T1(-100,2,20)]
+        dt2 = convert.(T2,dt1)
+        @test dt1[2]-dt1[1] == dt2[2]-dt2[1]
+    end
+end
