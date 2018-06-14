@@ -531,16 +531,16 @@ function timeencode(data::Array{DT,N},units,calendar = "standard") where N where
     DT2 = timetype(calendar)
     #@assert timetype(calendar) == DT
     try
-        data = convert(DT2,data)
+        data = convert.(DT2,data)
     catch
-        error("Is is not possible to convert between $(DT) and $(DT2)")
+        error("It is not possible to convert between $(DT) and $(DT2)")
     end
 
-    t0,plength = timeunits(DT,units)
-    t0c = convert(DT2,t0)
+    t0,plength = timeunits(DT2,units)
+    #@show data,typeof(t0)
 
-    convert(dt) = Dates.value(dt - t0) / plength
-    return convert.(data)
+    encode(dt) = Dates.value(dt - t0) / plength
+    return encode.(data)
 end
 
 # do not transform data is not a vector of DateTime

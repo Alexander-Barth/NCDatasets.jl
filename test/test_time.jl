@@ -1,5 +1,5 @@
 using Base.Test
-#include("../src/time.jl")
+include("../src/time.jl")
 
 
 
