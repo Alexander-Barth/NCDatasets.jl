@@ -1,5 +1,6 @@
 #module Time
 import Base.Dates: UTInstant, Millisecond
+import Base.Dates: year,  month,  day, hour, minute, second, millisecond
 import Base: +, -, isless, string, show, convert
 
 # Introduction of the Gregorian Calendar 1582-10-15
@@ -28,14 +29,14 @@ const DATETIME_OFFSET = Dates.Millisecond(678576 * (24*60*60*1000))
 """
     dn = datenum_gregjulian(year,month,day,gregorian::Bool)
 
-Days since 1858-11-17 according to the Gregorian (`gregorian` is `true`) or 
+Days since 1858-11-17 according to the Gregorian (`gregorian` is `true`) or
 Julian Calendar (`gregorian` is `false`) based on the Algorithm of
 Jean Meeus [1].
 
-The year -1, correspond to 1 BC. The year 0 does not exist in the 
+The year -1, correspond to 1 BC. The year 0 does not exist in the
 Gregorian or Julian Calendar.
 
-[1] Meeus, Jean (1998) Astronomical Algorithms (2nd Edition). 
+[1] Meeus, Jean (1998) Astronomical Algorithms (2nd Edition).
 Willmann-Bell,  Virginia. p. 63
 """
 function datenum_gregjulian(year,month,day,gregorian::Bool)
@@ -117,7 +118,7 @@ function datenum_optim(year,month,day,gregorian::Bool)
     # 15 (January), 16 (February)
 
     # cm = 153 * (4:16) ÷ 5; cm[2:end]-cm[1:end-1]
-    # 
+    #
     # length of each month
     # --------------------
     # 31  March
@@ -132,7 +133,7 @@ function datenum_optim(year,month,day,gregorian::Bool)
     # 31  December
     # 31  January
     # 30  February (wrong, but not used, since it is the last month)
-    
+
     Z = (1461 * (year + 4716)) ÷ 4 + (153 * (month+1)) ÷ 5 + day + B - 2401525
     # Modified Julan Day
     return Z + DATENUM_OFFSET
@@ -188,7 +189,7 @@ end
 """
     days,h,mi,s,ms = timetuplefrac(time::Number)
 
-Return the number of whole days, hours (`h`), minutes (`mi`), seconds (`s`) and 
+Return the number of whole days, hours (`h`), minutes (`mi`), seconds (`s`) and
 millisecods (`ms`) from `time` expressed in milliseconds.
 """
 
@@ -196,7 +197,7 @@ function timetuplefrac(time::Number)
     # time can be negative, use fld instead of ÷
     days = fld(time, (24*60*60*1000))
     ms = time - days * (24*60*60*1000)
-    
+
     h = ms ÷ (60*60*1000)
     ms = ms - h * (60*60*1000)
 
@@ -266,7 +267,7 @@ function datetuple_cal(cm,timed_::Number)
     if y <= 0
         y = y-1
     end
-    
+
     return (y,mo,d)
 end
 
@@ -349,24 +350,9 @@ for (Calendar,calendar) in [("Standard","standard"),
     end
 end
 
-for DT1 in [:DateTime, :DateTimeStandard, :DateTimeJulian, :DateTimePGregorian,
-            :DateTimeAllLeap, :DateTimeNoLeap, :DateTime360]
-    for DT2 in [:DateTimeStandard, :DateTimeJulian, :DateTimePGregorian,
-                :DateTimeAllLeap, :DateTimeNoLeap, :DateTime360]
 
-        if DT1 != DT2
-            @eval begin
-                reinterpret(::Type{$DT1}, dt::$DT2) = $DT1(
-                    year(dt),month(dt),day(dt),
-                    hour(dt),minute(dt),second(dt),millisecond(dt))
-            end
-        end
-    end
-end
-
-
-function reinterpret(::Type{T}, dt::DateTime) where T <: AbstractCFDateTime
-   return T(
+function reinterpret(::Type{T1}, dt::T2) where T1 <: Union{AbstractCFDateTime,DateTime} where T2 <: Union{AbstractCFDateTime,DateTime}
+   return T1(
        Dates.year(dt),Dates.month(dt),Dates.day(dt),
        Dates.hour(dt),Dates.minute(dt),Dates.second(dt),
        Dates.millisecond(dt))
@@ -375,11 +361,11 @@ end
 """
     dt2 = convert(::Type{T}, dt)
 
-Convert a DateTime of type `DateTimeStandard`, `DateTimePGregorian`, 
+Convert a DateTime of type `DateTimeStandard`, `DateTimePGregorian`,
 `DateTimeJulian` or `DateTime` into the type `T` which can be
 `DateTimeStandard`, `DateTimePGregorian`, `DateTimeJulian` or `DateTime`.
 
-Converstion is done such that durations (difference of DateTime types) are 
+Converstion is done such that durations (difference of DateTime types) are
 preserved. For dates on and after 1582-10-15, the year, month and days are the same for
 the types `DateTimeStandard`, `DateTimePGregorian` and `DateTime`.
 
@@ -401,17 +387,17 @@ end
 
 
 
-year(dt::AbstractCFDateTime) = datetuple(dt)[1]
-month(dt::AbstractCFDateTime) = datetuple(dt)[2]
-day(dt::AbstractCFDateTime) = datetuple(dt)[3]
-hour(dt::AbstractCFDateTime)   = datetuple(dt)[4]
-minute(dt::AbstractCFDateTime) = datetuple(dt)[5]
-second(dt::AbstractCFDateTime) = datetuple(dt)[6]
-millisecond(dt::AbstractCFDateTime) = datetuple(dt)[7]
+Dates.year(dt::AbstractCFDateTime) = datetuple(dt)[1]
+Dates.month(dt::AbstractCFDateTime) = datetuple(dt)[2]
+Dates.day(dt::AbstractCFDateTime) = datetuple(dt)[3]
+Dates.hour(dt::AbstractCFDateTime)   = datetuple(dt)[4]
+Dates.minute(dt::AbstractCFDateTime) = datetuple(dt)[5]
+Dates.second(dt::AbstractCFDateTime) = datetuple(dt)[6]
+Dates.millisecond(dt::AbstractCFDateTime) = datetuple(dt)[7]
 
-export year, month, day, hour, minute, second, millisecond
 
-    
+
+
 -(dt::AbstractCFDateTime,Δ) = dt + (-Δ)
 
 
@@ -482,7 +468,7 @@ end
 function timetype(calendar = "standard")
     DT =
         if (calendar == "standard") || (calendar == "gregorian")
-            DateTime
+            DateTimeStandard
         elseif calendar == "proleptic_gregorian"
             DateTimePGregorian
         elseif calendar == "julian"
@@ -518,14 +504,41 @@ function timedecode(::Type{DT},data,units) where DT
 end
 
 
-timedecode(data,units,calendar = "standard") =
-    timedecode(timetype(calendar),data,units)
+"""
+    dt = timedecode(data,units,calendar = "standard", prefer_datetime = true)
+
+Decode the time information in data as given by the units `units` according to
+the specified calendar. If prefer_datetime is true (default), dates are
+converted to the Julia DateTime type (for the calendars
+"standard", "gregorian", "proleptic_gregorian" and "julian"). Such convertion is
+not possible for other calendars.
+"""
+function timedecode(data,units,calendar = "standard"; prefer_datetime = true)
+    DT = timetype(calendar)
+    dt = timedecode(DT,data,units)
+
+    if prefer_datetime &&
+        (DT in [DateTimeStandard,DateTimePGregorian,DateTimeJulian])
+
+        return convert.(DateTime,dt)
+    else
+        return dt
+    end
+end
 
 
 function timeencode(data::Array{DT,N},units,calendar = "standard") where N where DT <: Union{DateTime,AbstractCFDateTime}
-    @assert timetype(calendar) == DT
+    DT2 = timetype(calendar)
+    #@assert timetype(calendar) == DT
+    try
+        data = convert(DT2,data)
+    catch
+        error("Is is not possible to convert between $(DT) and $(DT2)")
+    end
 
-    const t0,plength = timeunits(DT,units)
+    t0,plength = timeunits(DT,units)
+    t0c = convert(DT2,t0)
+
     convert(dt) = Dates.value(dt - t0) / plength
     return convert.(data)
 end
@@ -534,3 +547,5 @@ end
 timeencode(data,units,calendar = "standard") = data
 
 
+export DateTimeStandard, DateTimeJulian, DateTimePGregorian,
+    DateTimeAllLeap, DateTimeNoLeap, DateTime360

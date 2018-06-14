@@ -1,5 +1,5 @@
 using Base.Test
-include("../src/time.jl")
+#include("../src/time.jl")
 
 
 
@@ -97,12 +97,12 @@ dt = DateTimeNoLeap(1959,12,31,23,39,59,123)
 
 
 
-@test DateTimeAllLeap(2001,2,29) - DateTimeAllLeap(2001,2,28) == Dates.Day(1) 
-@test DateTimeNoLeap(2001,3,1)   - DateTimeNoLeap(2001,2,28)  == Dates.Day(1) 
-@test DateTimeJulian(2001,3,1)   - DateTimeJulian(2001,2,28)  == Dates.Day(1) 
-@test DateTimeJulian(1900,2,29)  - DateTimeJulian(1900,2,28)  == Dates.Day(1) 
-@test DateTime360(2001,2,29)     - DateTime360(2001,2,28)     == Dates.Day(1) 
-@test DateTime360(2001,2,30)     - DateTime360(2001,2,29)     == Dates.Day(1) 
+@test DateTimeAllLeap(2001,2,29) - DateTimeAllLeap(2001,2,28) == Dates.Day(1)
+@test DateTimeNoLeap(2001,3,1)   - DateTimeNoLeap(2001,2,28)  == Dates.Day(1)
+@test DateTimeJulian(2001,3,1)   - DateTimeJulian(2001,2,28)  == Dates.Day(1)
+@test DateTimeJulian(1900,2,29)  - DateTimeJulian(1900,2,28)  == Dates.Day(1)
+@test DateTime360(2001,2,29)     - DateTime360(2001,2,28)     == Dates.Day(1)
+@test DateTime360(2001,2,30)     - DateTime360(2001,2,29)     == Dates.Day(1)
 
 
 # reference values from python's cftime
@@ -137,44 +137,44 @@ for DT in [
 ]
 
     dt = DT(1959,12,30, 23,39,59,123)
-    @test year(dt) == 1959
-    @test month(dt) == 12
-    @test day(dt) == 30
-    @test hour(dt) == 23
-    @test minute(dt) == 39
-    @test second(dt) == 59
-    @test millisecond(dt) == 123
+    @test Dates.year(dt) == 1959
+    @test Dates.month(dt) == 12
+    @test Dates.day(dt) == 30
+    @test Dates.hour(dt) == 23
+    @test Dates.minute(dt) == 39
+    @test Dates.second(dt) == 59
+    @test Dates.millisecond(dt) == 123
 
     @test string(DT(2001,2,20)) == "2001-02-20T00:00:00"
     @test datetuple(DT(1959,12,30,23,39,59,123)) == (1959,12,30,23,39,59,123)
 
-    #stresstest_DateTime(DT)    
+    #stresstest_DateTime(DT)
 end
 
 
 
 
 t0,plength = timeunits("days since 1950-01-02T03:04:05Z")
-@test t0 == DateTime(1950,1,2, 3,4,5)
+@test t0 == DateTimeStandard(1950,1,2, 3,4,5)
 @test plength == 86400000
 
 
 t0,plength = timeunits("days since -4713-01-01T00:00:00Z")
-@test t0 == DateTime(-4713,1,1)
+@test t0 == DateTimeStandard(-4713,1,1)
 @test plength == 86400000
 
 
 t0,plength = timeunits("days since -4713-01-01")
-@test t0 == DateTime(-4713,1,1)
+@test t0 == DateTimeStandard(-4713,1,1)
 @test plength == 86400000
 
 
 t0,plength = timeunits("days since 2000-01-01 0:0:0")
-@test t0 == DateTime(2000,1,1)
+@test t0 == DateTimeStandard(2000,1,1)
 @test plength == 86400000
 
 t0,plength = timeunits("days since 2000-1-1 0:0:0")
-@test t0 == DateTime(2000,1,1)
+@test t0 == DateTimeStandard(2000,1,1)
 @test plength == 86400000
 
 # value from python's cftime
@@ -225,7 +225,7 @@ t0,plength = timeunits("days since 2000-1-1 0:0:0")
     DateTimePGregorian(2000,01,01,12,00,00)
 
 
-@test timedecode([2455512.375],"days since -4713-01-01T00:00:00","julian") ==
+@test timedecode([2455512.375],"days since -4713-01-01T00:00:00","julian", prefer_datetime = false) ==
     [DateTimeJulian(2010,10,29,9,0,0)]
 
 
@@ -250,7 +250,7 @@ Out[13]: cftime.DatetimeJulian(1582, 10, 5, 0, 0, 0, 0, -1, 1)
 
 
 
-@test datetuple(timedecode(0,"days since -4713-01-01T12:00:00","julian")) ==
+@test datetuple(timedecode(0,"days since -4713-01-01T12:00:00","julian", prefer_datetime = false)) ==
     (-4713, 1, 1, 12, 0, 0, 0)
 
 
