@@ -546,6 +546,7 @@ end
 # do not transform data is not a vector of DateTime
 timeencode(data,units,calendar = "standard") = data
 
+export timeencode, timedecode, datetuple
 
 export DateTimeStandard, DateTimeJulian, DateTimePGregorian,
     DateTimeAllLeap, DateTimeNoLeap, DateTime360

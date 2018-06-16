@@ -1,15 +1,15 @@
 using Base.Test
-include("../src/time.jl")
+#include("../src/time.jl")
 
 
 
 # reference value from Meeus, Jean (1998)
 # launch of Sputnik 1
 
-@test datetuple_standard(2_436_116 - 2_400_001) == (1957, 10, 4)
-@test datenum_gregjulian(1957,10,4,true) == 36115
+@test NCDatasets.datetuple_standard(2_436_116 - 2_400_001) == (1957, 10, 4)
+@test NCDatasets.datenum_gregjulian(1957,10,4,true) == 36115
 
-@test datenum_gregjulian(333,1,27,false) == -557288
+@test NCDatasets.datenum_gregjulian(333,1,27,false) == -557288
 
 # function testcal(tonum,totuple)
 #     num = 1234567890123
@@ -38,12 +38,12 @@ include("../src/time.jl")
 
 function mytest()
     for (tonum,totuple) in [
-        (datenum_standard,datetuple_standard),
-        (datenum_julian,datetuple_julian),
-        (datenum_pgregorian,datetuple_pgregorian),
-        (datenum_allleap,datetuple_allleap),
-        (datenum_noleap,datetuple_noleap),
-        (datenum_360,datetuple_360),
+        (NCDatasets.datenum_standard,NCDatasets.datetuple_standard),
+        (NCDatasets.datenum_julian,NCDatasets.datetuple_julian),
+        (NCDatasets.datenum_pgregorian,NCDatasets.datetuple_pgregorian),
+        (NCDatasets.datenum_allleap,NCDatasets.datetuple_allleap),
+        (NCDatasets.datenum_noleap,NCDatasets.datetuple_noleap),
+        (NCDatasets.datenum_360,NCDatasets.datetuple_360),
     ]
         @time for Z = -2_400_000 + DATENUM_OFFSET : 11 : 600_000 + DATENUM_OFFSET
             y,m,d = totuple(Z)
@@ -57,13 +57,13 @@ end
 
 #=
 @time for Z = -2_400_000 + DATENUM_OFFSET : 600_000 + DATENUM_OFFSET
-    y,m,d = datetuple_standard(Z)
+    y,m,d = NCDatasets.datetuple_standard(Z)
     @test datenum_standard(y,m,d) == Z
 
-    y,m,d = datetuple_julian(Z)
+    y,m,d = NCDatasets.datetuple_julian(Z)
     @test datenum_julian(y,m,d) == Z
 
-    y,m,d = datetuple_pgregorian(Z)
+    y,m,d = NCDatasets.datetuple_pgregorian(Z)
     @test datenum_pgregorian(y,m,d) == Z
 
     #@test datenum_trunc(y,m,d,Z >= 2299161 - 2_400_001) == datenum_gregjulian(y,m,d,Z >= 2299161 - 2_400_001)
@@ -122,7 +122,7 @@ function stresstest_DateTime(::Type{DT}) where DT
     @time for n = -800000:800000
         #@show n
         t = t0 + Dates.Day(n)
-        y, m, d, h, mi, s, ms = datetuple(t)
+        y, m, d, h, mi, s, ms = NCDatasets.datetuple(t)
         @test DT(y, m, d, h, mi, s, ms) == t
     end
 end
@@ -154,26 +154,26 @@ end
 
 
 
-t0,plength = timeunits("days since 1950-01-02T03:04:05Z")
+t0,plength = NCDatasets.timeunits("days since 1950-01-02T03:04:05Z")
 @test t0 == DateTimeStandard(1950,1,2, 3,4,5)
 @test plength == 86400000
 
 
-t0,plength = timeunits("days since -4713-01-01T00:00:00Z")
+t0,plength = NCDatasets.timeunits("days since -4713-01-01T00:00:00Z")
 @test t0 == DateTimeStandard(-4713,1,1)
 @test plength == 86400000
 
 
-t0,plength = timeunits("days since -4713-01-01")
+t0,plength = NCDatasets.timeunits("days since -4713-01-01")
 @test t0 == DateTimeStandard(-4713,1,1)
 @test plength == 86400000
 
 
-t0,plength = timeunits("days since 2000-01-01 0:0:0")
+t0,plength = NCDatasets.timeunits("days since 2000-01-01 0:0:0")
 @test t0 == DateTimeStandard(2000,1,1)
 @test plength == 86400000
 
-t0,plength = timeunits("days since 2000-1-1 0:0:0")
+t0,plength = NCDatasets.timeunits("days since 2000-1-1 0:0:0")
 @test t0 == DateTimeStandard(2000,1,1)
 @test plength == 86400000
 
@@ -228,6 +228,8 @@ t0,plength = timeunits("days since 2000-1-1 0:0:0")
 @test timedecode([2455512.375],"days since -4713-01-01T00:00:00","julian", prefer_datetime = false) ==
     [DateTimeJulian(2010,10,29,9,0,0)]
 
+@test timeencode([DateTimeJulian(2010,10,29,9,0,0)],"days since -4713-01-01T00:00:00","julian") ==
+    [2455512.375]
 
 
 # Transition between Julian and Gregorian Calendar
@@ -254,11 +256,11 @@ Out[13]: cftime.DatetimeJulian(1582, 10, 5, 0, 0, 0, 0, -1, 1)
     (-4713, 1, 1, 12, 0, 0, 0)
 
 
-dt = reinterpret(DateTimeStandard, DateTimeJulian(1900,2,28))
+dt = NCDatasets.reinterpret(DateTimeStandard, DateTimeJulian(1900,2,28))
 @test typeof(dt) == DateTimeStandard
 @test datetuple(dt) == (1900,2,28,0, 0, 0, 0)
 
-dt = reinterpret(DateTime, DateTimeNoLeap(1900,2,28))
+dt = NCDatasets.reinterpret(DateTime, DateTimeNoLeap(1900,2,28))
 @test typeof(dt) == DateTime
 @test Dates.year(dt) == 1900
 @test Dates.month(dt) == 2
@@ -272,6 +274,7 @@ dt = reinterpret(DateTime, DateTimeNoLeap(1900,2,28))
 @test DateTimeStandard(2000,01,03) > DateTimeStandard(2000,01,02)
 @test DateTimeStandard(2000,01,03) ≥ DateTimeStandard(2000,01,01)
 
+import NCDatasets: datetuple
 datetuple(dt::DateTime) = (Dates.year(dt),Dates.month(dt),Dates.day(dt),
                            Dates.hour(dt),Dates.minute(dt),Dates.second(dt),
                            Dates.millisecond(dt))
