@@ -284,7 +284,8 @@ for (calendar,cmm) in [
 end
 
 
-abstract type AbstractCFDateTime end
+abstract type AbstractCFDateTime <: Dates.AbstractTime
+end
 
 const RegTime = Union{Dates.Millisecond,Dates.Second,Dates.Minute,Dates.Hour,Dates.Day}
 
