@@ -21,7 +21,7 @@ const DN_GREGORIAN_CALENDAR = -100840 + DATENUM_OFFSET
 
 # DateTime(UTInstant{Millisecond}(Dates.Millisecond(0)))
 # returns 0000-12-31T00:00:00
-# 678576 is the output of datenum_pgregorian(-1,12,31)
+# 678576 is the output of datenum_prolepticgregorian(-1,12,31)
 
 const DATETIME_OFFSET = Dates.Millisecond(678576 * (24*60*60*1000))
 
@@ -215,12 +215,12 @@ function datenumfrac(days,h,mi,s,ms)
 end
 
 
-datetuple_pgregorian(Z) = datetuple_gregjulian(Z,true)
+datetuple_prolepticgregorian(Z) = datetuple_gregjulian(Z,true)
 datetuple_julian(Z) = datetuple_gregjulian(Z,false)
 datetuple_standard(Z) = datetuple_gregjulian(Z,Z >= DN_GREGORIAN_CALENDAR)
 
 
-datenum_pgregorian(y,m,d) = datenum_gregjulian(y,m,d,true)
+datenum_prolepticgregorian(y,m,d) = datenum_gregjulian(y,m,d,true)
 datenum_julian(y,m,d) = datenum_gregjulian(y,m,d,false)
 datenum_standard(y,m,d) = datenum_gregjulian(y,m,d,(y,m,d) >= GREGORIAN_CALENDAR)
 
@@ -275,7 +275,7 @@ end
 for (calendar,cmm) in [
     ("allleap", (0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)),
     ("noleap",  (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)),
-    ("360",    (0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360)),
+    ("360day",    (0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360)),
 ]
     @eval begin
         $(Symbol(:datenum_,calendar))(y, m, d) = datenum_cal($cmm, y, m, d)
@@ -292,10 +292,10 @@ const RegTime = Union{Dates.Millisecond,Dates.Second,Dates.Minute,Dates.Hour,Dat
 
 for (Calendar,calendar) in [("Standard","standard"),
                             ("Julian","julian"),
-                            ("PGregorian","pgregorian"),
+                            ("ProlepticGregorian","prolepticgregorian"),
                             ("AllLeap","allleap"),
                             ("NoLeap","noleap"),
-                            ("360","360")]
+                            ("360Day","360day")]
     CFDateTime = Symbol(:DateTime,Calendar)
     @eval begin
         struct $CFDateTime <: AbstractCFDateTime
@@ -362,26 +362,26 @@ end
 """
     dt2 = convert(::Type{T}, dt)
 
-Convert a DateTime of type `DateTimeStandard`, `DateTimePGregorian`,
+Convert a DateTime of type `DateTimeStandard`, `DateTimeProlepticGregorian`,
 `DateTimeJulian` or `DateTime` into the type `T` which can be
-`DateTimeStandard`, `DateTimePGregorian`, `DateTimeJulian` or `DateTime`.
+`DateTimeStandard`, `DateTimeProlepticGregorian`, `DateTimeJulian` or `DateTime`.
 
 Converstion is done such that durations (difference of DateTime types) are
 preserved. For dates on and after 1582-10-15, the year, month and days are the same for
-the types `DateTimeStandard`, `DateTimePGregorian` and `DateTime`.
+the types `DateTimeStandard`, `DateTimeProlepticGregorian` and `DateTime`.
 
 For dates before 1582-10-15, the year, month and days are the same for
 the types `DateTimeStandard` and `DateTimeJulian`.
 """
-function convert(::Type{T1}, dt::T2) where T1 <: Union{DateTimeStandard,DateTimePGregorian,DateTimeJulian} where T2 <: Union{DateTimeStandard,DateTimePGregorian,DateTimeJulian}
+function convert(::Type{T1}, dt::T2) where T1 <: Union{DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian} where T2 <: Union{DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian}
     return T1(dt.instant)
 end
 
-function convert(::Type{DateTime}, dt::T2) where T2 <: Union{DateTimeStandard,DateTimePGregorian,DateTimeJulian}
+function convert(::Type{DateTime}, dt::T2) where T2 <: Union{DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian}
     DateTime(UTInstant{Millisecond}(dt.instant.periods + DATETIME_OFFSET))
 end
 
-function convert(::Type{T1}, dt::DateTime) where T1 <: Union{DateTimeStandard,DateTimePGregorian,DateTimeJulian}
+function convert(::Type{T1}, dt::DateTime) where T1 <: Union{DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian}
     T1(UTInstant{Millisecond}(dt.instant.periods - DATETIME_OFFSET))
 end
 
@@ -471,7 +471,7 @@ function timetype(calendar = "standard")
         if (calendar == "standard") || (calendar == "gregorian")
             DateTimeStandard
         elseif calendar == "proleptic_gregorian"
-            DateTimePGregorian
+            DateTimeProlepticGregorian
         elseif calendar == "julian"
             DateTimeJulian
         elseif (calendar == "noleap") || (calendar == "365_day")
@@ -479,7 +479,7 @@ function timetype(calendar = "standard")
         elseif (calendar == "all_leap") || (calendar == "366_day")
             DateTimeAllLeap
         elseif calendar == "360_day"
-            DateTime360
+            DateTime360Day
         else
             error("Unsupported calendar: $(calendar)")
         end
@@ -519,7 +519,7 @@ function timedecode(data,units,calendar = "standard"; prefer_datetime = true)
     dt = timedecode(DT,data,units)
 
     if prefer_datetime &&
-        (DT in [DateTimeStandard,DateTimePGregorian,DateTimeJulian])
+        (DT in [DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian])
 
         return convert.(DateTime,dt)
     else
@@ -549,5 +549,5 @@ timeencode(data,units,calendar = "standard") = data
 
 export timeencode, timedecode, datetuple
 
-export DateTimeStandard, DateTimeJulian, DateTimePGregorian,
-    DateTimeAllLeap, DateTimeNoLeap, DateTime360
+export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
+    DateTimeAllLeap, DateTimeNoLeap, DateTime360Day

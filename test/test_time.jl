@@ -20,18 +20,18 @@ using Base.Test
 # for (tonum,totuple) in [
 #     (datenum_standard,datetuple_standard)
 #     (datenum_julian,datetuple_julian)
-#     (datenum_pgregorian,datetuple_pgregorian)
+#     (datenum_prolepticgregorian,datetuple_prolepticgregorian)
 #     (datenum_AllLeap,datetuple_AllLeap)
 #     (datenum_NoLeap,datetuple_NoLeap)
-#     (datenum_360,datetuple_360)
+#     (datenum_360day,datetuple_360day)
 # ]
 #     testcal(tonum,totuple)
 # end
 
-# @show datetuple_pgregorian(-532783)
-# @show datetuple_pgregorian(-532784)
-# @show datetuple_pgregorian(-532785)
-# @show datetuple_pgregorian(-532786)
+# @show datetuple_prolepticgregorian(-532783)
+# @show datetuple_prolepticgregorian(-532784)
+# @show datetuple_prolepticgregorian(-532785)
+# @show datetuple_prolepticgregorian(-532786)
 
 # @show datenum_gregjulian(-100, 2, 28,true)
 # @show datenum_gregjulian(-100, 3, 1,true)
@@ -40,10 +40,10 @@ function mytest()
     for (tonum,totuple) in [
         (NCDatasets.datenum_standard,NCDatasets.datetuple_standard),
         (NCDatasets.datenum_julian,NCDatasets.datetuple_julian),
-        (NCDatasets.datenum_pgregorian,NCDatasets.datetuple_pgregorian),
+        (NCDatasets.datenum_prolepticgregorian,NCDatasets.datetuple_prolepticgregorian),
         (NCDatasets.datenum_allleap,NCDatasets.datetuple_allleap),
         (NCDatasets.datenum_noleap,NCDatasets.datetuple_noleap),
-        (NCDatasets.datenum_360,NCDatasets.datetuple_360),
+        (NCDatasets.datenum_360day,NCDatasets.datetuple_360day),
     ]
         @time for Z = -2_400_000 + DATENUM_OFFSET : 11 : 600_000 + DATENUM_OFFSET
             y,m,d = totuple(Z)
@@ -63,8 +63,8 @@ end
     y,m,d = NCDatasets.datetuple_julian(Z)
     @test datenum_julian(y,m,d) == Z
 
-    y,m,d = NCDatasets.datetuple_pgregorian(Z)
-    @test datenum_pgregorian(y,m,d) == Z
+    y,m,d = NCDatasets.datetuple_prolepticgregorian(Z)
+    @test datenum_prolepticgregorian(y,m,d) == Z
 
     #@test datenum_trunc(y,m,d,Z >= 2299161 - 2_400_001) == datenum_gregjulian(y,m,d,Z >= 2299161 - 2_400_001)
 end
@@ -92,8 +92,8 @@ dt = DateTimeNoLeap(1959,12,31,23,39,59,123)
 @test DateTimeNoLeap(2001,2,28)  + Dates.Day(1) == DateTimeNoLeap(2001,3,1)
 @test DateTimeJulian(2001,2,28)  + Dates.Day(1) == DateTimeJulian(2001,3,1)
 @test DateTimeJulian(1900,2,28)  + Dates.Day(1) == DateTimeJulian(1900,2,29)
-@test DateTime360(2001,2,28)     + Dates.Day(1) == DateTime360(2001,2,29)
-@test DateTime360(2001,2,29)     + Dates.Day(1) == DateTime360(2001,2,30)
+@test DateTime360Day(2001,2,28)     + Dates.Day(1) == DateTime360Day(2001,2,29)
+@test DateTime360Day(2001,2,29)     + Dates.Day(1) == DateTime360Day(2001,2,30)
 
 
 
@@ -101,8 +101,8 @@ dt = DateTimeNoLeap(1959,12,31,23,39,59,123)
 @test DateTimeNoLeap(2001,3,1)   - DateTimeNoLeap(2001,2,28)  == Dates.Day(1)
 @test DateTimeJulian(2001,3,1)   - DateTimeJulian(2001,2,28)  == Dates.Day(1)
 @test DateTimeJulian(1900,2,29)  - DateTimeJulian(1900,2,28)  == Dates.Day(1)
-@test DateTime360(2001,2,29)     - DateTime360(2001,2,28)     == Dates.Day(1)
-@test DateTime360(2001,2,30)     - DateTime360(2001,2,29)     == Dates.Day(1)
+@test DateTime360Day(2001,2,29)     - DateTime360Day(2001,2,28)     == Dates.Day(1)
+@test DateTime360Day(2001,2,30)     - DateTime360Day(2001,2,29)     == Dates.Day(1)
 
 
 # reference values from python's cftime
@@ -130,10 +130,10 @@ end
 for DT in [
     DateTimeStandard,
     DateTimeJulian,
-    DateTimePGregorian,
+    DateTimeProlepticGregorian,
     DateTimeAllLeap,
     DateTimeNoLeap,
-    DateTime360
+    DateTime360Day
 ]
 
     dt = DT(1959,12,30, 23,39,59,123)
@@ -221,8 +221,8 @@ t0,plength = NCDatasets.timeunits("days since 2000-1-1 0:0:0")
 @test timedecode(DateTime,2_451_545,"days since -4713-11-24T12:00:00") ==
     DateTime(2000,01,01,12,00,00)
 
-@test timedecode(DateTimePGregorian,2_451_545,"days since -4714-11-24T12:00:00") ==
-    DateTimePGregorian(2000,01,01,12,00,00)
+@test timedecode(DateTimeProlepticGregorian,2_451_545,"days since -4714-11-24T12:00:00") ==
+    DateTimeProlepticGregorian(2000,01,01,12,00,00)
 
 
 @test timedecode([2455512.375],"days since -4713-01-01T00:00:00","julian", prefer_datetime = false) ==
@@ -246,7 +246,7 @@ Out[13]: cftime.DatetimeJulian(1582, 10, 5, 0, 0, 0, 0, -1, 1)
 =#
 
 @test DateTimeStandard(1582,10,4) + Dates.Day(1) == DateTimeStandard(1582,10,15)
-@test DateTimePGregorian(1582,10,4) + Dates.Day(1) == DateTimePGregorian(1582,10,5)
+@test DateTimeProlepticGregorian(1582,10,4) + Dates.Day(1) == DateTimeProlepticGregorian(1582,10,5)
 @test DateTimeJulian(1582,10,4) + Dates.Day(1) == DateTimeJulian(1582,10,5)
 
 
@@ -282,8 +282,8 @@ datetuple(dt::DateTime) = (Dates.year(dt),Dates.month(dt),Dates.day(dt),
 
 # check convertion
 
-for T1 in [DateTimePGregorian,DateTimeStandard,DateTime]
-    for T2 in [DateTimePGregorian,DateTimeStandard,DateTime]
+for T1 in [DateTimeProlepticGregorian,DateTimeStandard,DateTime]
+    for T2 in [DateTimeProlepticGregorian,DateTimeStandard,DateTime]
         # datetuple should not change after 1582-10-15
         # for Gregorian Calendars
         dt1 = T1(2000,01,03)
@@ -305,8 +305,8 @@ for T1 in [DateTimeStandard,DateTimeJulian]
     end
 end
 
-for T1 in [DateTimePGregorian,DateTimeJulian,DateTimeStandard,DateTime]
-    for T2 in [DateTimePGregorian,DateTimeJulian,DateTimeStandard,DateTime]
+for T1 in [DateTimeProlepticGregorian,DateTimeJulian,DateTimeStandard,DateTime]
+    for T2 in [DateTimeProlepticGregorian,DateTimeJulian,DateTimeStandard,DateTime]
         # verify that durations (even accross 1582-10-15) are maintained
         # after convert
         dt1 = [T1(2000,01,03), T1(-100,2,20)]
