@@ -1,7 +1,5 @@
 using Base.Test
-#include("../src/time.jl")
-
-
+using NCDatasets
 
 # reference value from Meeus, Jean (1998)
 # launch of Sputnik 1
@@ -314,3 +312,25 @@ for T1 in [DateTimeProlepticGregorian,DateTimeJulian,DateTimeStandard,DateTime]
         @test dt1[2]-dt1[1] == dt2[2]-dt2[1]
     end
 end
+
+
+
+# issue #12
+
+units = "days since 1850-01-01 00:00:00"
+calendar = "noleap"
+data_orig = [54750.5, 54751.5, 54752.5]
+
+# Decoding
+datacal = timedecode(data_orig, units, calendar)
+# Reencoding
+data_orig_back = timeencode(datacal, units, calendar)
+@test data_orig ≈ data_orig_back
+
+# DataArray
+data_orig = DataArrays.DataArray([54750.5, 54751.5, 54752.5])
+# Decoding
+datacal = timedecode(data_orig, units, calendar)
+# Reencoding
+data_orig_back = timeencode(datacal, units, calendar)
+@test data_orig ≈ data_orig_back

@@ -528,9 +528,18 @@ function timedecode(data,units,calendar = "standard"; prefer_datetime = true)
 end
 
 
-function timeencode(data::Array{DT,N},units,calendar = "standard") where N where DT <: Union{DateTime,AbstractCFDateTime}
+# Oddly this returns false
+# DataArrays.DataArray{NCDatasets.DateTimeNoLeap,1} <: AbstractArray{DT,1} where DT <: Union{DateTime,NCDatasets.DateTimeNoLeap}
+# DataArrays.DataArray{Float64,1} <: AbstractArray{Float64,1}
+#
+# while this is true:
+# DataArrays.DataArray <: AbstractArray
+
+function timeencode(data::Union{DataArray{DT,N},AbstractArray{DT,N}},units,
+                    calendar = "standard") where N where DT <: Union{DateTime,AbstractCFDateTime}
+
     DT2 = timetype(calendar)
-    #@assert timetype(calendar) == DT
+
     try
         data = convert.(DT2,data)
     catch
@@ -538,7 +547,6 @@ function timeencode(data::Array{DT,N},units,calendar = "standard") where N where
     end
 
     t0,plength = timeunits(DT2,units)
-    #@show data,typeof(t0)
 
     encode(dt) = Dates.value(dt - t0) / plength
     return encode.(data)
