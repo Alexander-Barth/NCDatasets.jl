@@ -108,6 +108,9 @@ for DT in [
     stresstest_DateTime(DT)
 end
 
+@test_throws ErrorException DateTime360Day(2010,0,1)
+@test_throws ErrorException DateTime360Day(2010,1,0)
+
 
 
 # test show

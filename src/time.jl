@@ -212,7 +212,7 @@ function datenum_cal(cm, y, m, d)
     end
 
     if d < 1 || d > (cm[m+1] - cm[m])
-        error("invalid day $(d) in $(@sprintf("%04d-%02d-%02dT%02d:%02d:%02d",y,m,d,h,mi,s))")
+        error("invalid day $(d) in $(@sprintf("%04d-%02d-%02d",y,m,d))")
     end
 
     return cm[end] * (y-1) + cm[m] + (d-1)
