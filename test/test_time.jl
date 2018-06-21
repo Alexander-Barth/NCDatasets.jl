@@ -9,32 +9,8 @@ using NCDatasets
 
 @test NCDatasets.datenum_gregjulian(333,1,27,false) == -557288
 
-# function testcal(tonum,totuple)
-#     num = 1234567890123
 
-#     @test tonum(totuple(num)...) == num
-# end
-
-# for (tonum,totuple) in [
-#     (datenum_standard,datetuple_standard)
-#     (datenum_julian,datetuple_julian)
-#     (datenum_prolepticgregorian,datetuple_prolepticgregorian)
-#     (datenum_AllLeap,datetuple_AllLeap)
-#     (datenum_NoLeap,datetuple_NoLeap)
-#     (datenum_360day,datetuple_360day)
-# ]
-#     testcal(tonum,totuple)
-# end
-
-# @show datetuple_prolepticgregorian(-532783)
-# @show datetuple_prolepticgregorian(-532784)
-# @show datetuple_prolepticgregorian(-532785)
-# @show datetuple_prolepticgregorian(-532786)
-
-# @show datenum_gregjulian(-100, 2, 28,true)
-# @show datenum_gregjulian(-100, 3, 1,true)
-
-function mytest()
+function datenum_datetuple_all_calendars()
     for (tonum,totuple) in [
         (NCDatasets.datenum_standard,NCDatasets.datetuple_standard),
         (NCDatasets.datenum_julian,NCDatasets.datetuple_julian),
@@ -43,31 +19,14 @@ function mytest()
         (NCDatasets.datenum_noleap,NCDatasets.datetuple_noleap),
         (NCDatasets.datenum_360day,NCDatasets.datetuple_360day),
     ]
-        @time for Z = -2_400_000 + DATENUM_OFFSET : 11 : 600_000 + DATENUM_OFFSET
+        for Z = -2_400_000 + NCDatasets.DATENUM_OFFSET : 11 : 600_000 + NCDatasets.DATENUM_OFFSET
             y,m,d = totuple(Z)
             @test tonum(y,m,d) == Z
         end
     end
 end
 
-
-#mytest()
-
-#=
-@time for Z = -2_400_000 + DATENUM_OFFSET : 600_000 + DATENUM_OFFSET
-    y,m,d = NCDatasets.datetuple_standard(Z)
-    @test datenum_standard(y,m,d) == Z
-
-    y,m,d = NCDatasets.datetuple_julian(Z)
-    @test datenum_julian(y,m,d) == Z
-
-    y,m,d = NCDatasets.datetuple_prolepticgregorian(Z)
-    @test datenum_prolepticgregorian(y,m,d) == Z
-
-    #@test datenum_trunc(y,m,d,Z >= 2299161 - 2_400_001) == datenum_gregjulian(y,m,d,Z >= 2299161 - 2_400_001)
-end
-=#
-
+datenum_datetuple_all_calendars()
 
 # test of DateTime structures
 
@@ -117,7 +76,7 @@ dt = DateTimeNoLeap(1959,12,31,23,39,59,123)
 # generic tests
 function stresstest_DateTime(::Type{DT}) where DT
     t0 = DT(1,1,1)
-    @time for n = -800000:800000
+    for n = -800000:11:800000
         #@show n
         t = t0 + Dates.Day(n)
         y, m, d, h, mi, s, ms = NCDatasets.datetuple(t)
@@ -146,11 +105,18 @@ for DT in [
     @test string(DT(2001,2,20)) == "2001-02-20T00:00:00"
     @test datetuple(DT(1959,12,30,23,39,59,123)) == (1959,12,30,23,39,59,123)
 
-    #stresstest_DateTime(DT)
+    stresstest_DateTime(DT)
 end
 
 
 
+# test show
+io = IOBuffer()
+show(io,DateTimeJulian(-1000,1,1))
+isempty(findfirst("Julian",String(io))) == false
+
+
+# time
 
 t0,plength = NCDatasets.timeunits("days since 1950-01-02T03:04:05Z")
 @test t0 == DateTimeStandard(1950,1,2, 3,4,5)
@@ -171,9 +137,25 @@ t0,plength = NCDatasets.timeunits("days since 2000-01-01 0:0:0")
 @test t0 == DateTimeStandard(2000,1,1)
 @test plength == 86400000
 
-t0,plength = NCDatasets.timeunits("days since 2000-1-1 0:0:0")
-@test t0 == DateTimeStandard(2000,1,1)
-@test plength == 86400000
+
+for (calendar,DT) in [
+    ("standard",DateTimeStandard),
+    ("gregorian",DateTimeStandard),
+    ("proleptic_gregorian",DateTimeProlepticGregorian),
+    ("julian",DateTimeJulian),
+    ("noleap",DateTimeNoLeap),
+    ("365_day",DateTimeNoLeap),
+    ("all_leap",DateTimeAllLeap),
+    ("366_day",DateTimeAllLeap),
+    ("360_day",DateTime360Day)]
+
+    t0,plength = NCDatasets.timeunits("days since 2000-1-1 0:0:0",calendar)
+    @test t0 == DT(2000,1,1)
+    @test plength == 86400000
+end
+
+@test_throws ErrorException NCDatasets.timeunits("fortnights since 2000-01-01")
+@test_throws ErrorException NCDatasets.timeunits("days since 2000-1-1 0:0:0","foo")
 
 # value from python's cftime
 # print(cftime.DatetimeJulian(-4713,1,1) + datetime.timedelta(2455512,.375 * 24*60*60))
@@ -229,6 +211,10 @@ t0,plength = NCDatasets.timeunits("days since 2000-1-1 0:0:0")
 @test timeencode([DateTimeJulian(2010,10,29,9,0,0)],"days since -4713-01-01T00:00:00","julian") ==
     [2455512.375]
 
+
+@test_throws ErrorException timeencode(
+    [DateTimeJulian(2010,10,29,9,0,0)],
+    "days since -4713-01-01T00:00:00","360_day")
 
 # Transition between Julian and Gregorian Calendar
 

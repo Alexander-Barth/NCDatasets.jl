@@ -49,43 +49,19 @@ function datenum_gregjulian(year,month,day,gregorian::Bool)
         # bring year in range of 1601 to 2000
         ncycles = (2000 - year) ÷ 400
         year = year + 400 * ncycles
-        return datenum_optim(year,month,day,gregorian) - ncycles*146_097
+        return datenum_ac(year,month,day,gregorian) - ncycles*146_097
     else
-        return datenum_optim(year,month,day,gregorian)
+        return datenum_ac(year,month,day,gregorian)
     end
 
 end
 
-
-# the algorithm does not work for -100:03:01 and before in
-# the proleptic Gregorian Calendar
-
-function datenum_(year,month,day,gregorian::Bool)
-
-    if month <= 2
-        # if the date is January or February, it is considered
-        # the 13rth or 14th month of the preceeding year
-        year = year - 1
-        month = month + 12
-    end
-
-
-    B =
-        if gregorian
-            A = year ÷ 100
-            #@show A
-            2 - A + A ÷ 4
-        else
-            0
-        end
-
-    Z = trunc(Int,365.25 * (year + 4716)) + trunc(Int,30.6001 * (month+1)) + day + B - 2401525
-    return Z + DATENUM_OFFSET
-end
 
 # Meeus, Jean (1998) Astronomical Algorithms (2nd Edition). Willmann-Bell,  Virginia. p. 63
+# However, the algorithm does not work for -100:03:01 and before in
+# the proleptic Gregorian Calendar
 
-function datenum_optim(year,month,day,gregorian::Bool)
+function datenum_ac(year,month,day,gregorian::Bool)
 
     if month <= 2
         # if the date is January or February, it is considered
