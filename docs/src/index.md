@@ -78,6 +78,31 @@ Explore a NetCDF dataset
 Base.start(a::NCDatasets.NCIterable)
 ```
 
+
+
+# Time functions
+
+```@docs
+DateTimeStandard
+DateTimeJulian
+DateTimeProlepticGregorian
+DateTimeAllLeap
+DateTimeNoLeap
+DateTime360Day
+Dates.year(dt::AbstractCFDateTime)
+Dates.month(dt::AbstractCFDateTime)
+Dates.day(dt::AbstractCFDateTime)
+Dates.hour(dt::AbstractCFDateTime)
+Dates.minute(dt::AbstractCFDateTime)
+Dates.second(dt::AbstractCFDateTime)
+Dates.millisecond(dt::AbstractCFDateTime)
+convert
+reinterpret
+timedecode
+timeencode
+```
+
+
 # Utility functions
 
 ```@docs

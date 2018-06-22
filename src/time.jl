@@ -1,7 +1,7 @@
 #module Time
 import Base.Dates: UTInstant, Millisecond
 import Base.Dates: year,  month,  day, hour, minute, second, millisecond
-import Base: +, -, isless, string, show, convert
+import Base: +, -, isless, string, show, convert, reinterpret
 
 # Introduction of the Gregorian Calendar 1582-10-15
 const GREGORIAN_CALENDAR = (1582,10,15)
@@ -266,19 +266,30 @@ end
 const RegTime = Union{Dates.Millisecond,Dates.Second,Dates.Minute,Dates.Hour,Dates.Day}
 
 
-for (Calendar,calendar) in [("Standard","standard"),
-                            ("Julian","julian"),
-                            ("ProlepticGregorian","prolepticgregorian"),
-                            ("AllLeap","allleap"),
-                            ("NoLeap","noleap"),
-                            ("360Day","360day")]
-    CFDateTime = Symbol(:DateTime,Calendar)
+for (CFDateTime,calendar) in [(:DateTimeStandard,"standard"),
+                              (:DateTimeJulian,"julian"),
+                              (:DateTimeProlepticGregorian,"prolepticgregorian"),
+                              (:DateTimeAllLeap,"allleap"),
+                              (:DateTimeNoLeap,"noleap"),
+                              (:DateTime360Day,"360day")]
     @eval begin
         struct $CFDateTime <: AbstractCFDateTime
             instant::UTInstant{Millisecond}
-             #$CFDateTime(instant::UTInstant{Millisecond}) = new(instant)
         end
 
+        """
+    $($CFDateTime)(y, [m, d, h, mi, s, ms]) -> $($CFDateTime)
+
+Construct a `$($CFDateTime)` type by year (`y`), month (`m`, default 1),
+day (`d`, default 1), hour (`h`, default 0), minute (`mi`, default 0),
+second (`s`, default 0), millisecond (`ms`, default 0).
+All arguments must be convertible to `Int64`.
+`$($CFDateTime)` is a subtype of `AbstractCFDateTime`.
+
+The netCDF CF calendars are defined at [1].
+
+[1] https://web.archive.org/web/20180622080424/http://cfconventions.org/cf-conventions/cf-conventions.html#calendar
+        """
         function $CFDateTime(y::Int64, m::Int64=1, d::Int64=1,
                              h::Int64=0, mi::Int64=0, s::Int64=0, ms::Int64=0)
 
@@ -327,7 +338,16 @@ for (Calendar,calendar) in [("Standard","standard"),
     end
 end
 
+"""
+    dt2 = reinterpret(::Type{T}, dt)
 
+Convert a variable `dt` of type `DateTime`, `DateTimeStandard`, `DateTimeJulian`,
+`DateTimeProlepticGregorian`, `DateTimeAllLeap`, `DateTimeNoLeap` or
+`DateTime360Day` into the date time type `T` using the same values for
+year, month, day, minute, second and millisecond.
+The convertion might fail if a particular date does not exist in the
+target calendar.
+"""
 function reinterpret(::Type{T1}, dt::T2) where T1 <: Union{AbstractCFDateTime,DateTime} where T2 <: Union{AbstractCFDateTime,DateTime}
    return T1(
        Dates.year(dt),Dates.month(dt),Dates.day(dt),
@@ -339,7 +359,7 @@ end
     dt2 = convert(::Type{T}, dt)
 
 Convert a DateTime of type `DateTimeStandard`, `DateTimeProlepticGregorian`,
-`DateTimeJulian` or `DateTime` into the type `T` which can be
+`DateTimeJulian` or `DateTime` into the type `T` which can also be either
 `DateTimeStandard`, `DateTimeProlepticGregorian`, `DateTimeJulian` or `DateTime`.
 
 Converstion is done such that durations (difference of DateTime types) are
@@ -362,7 +382,11 @@ function convert(::Type{T1}, dt::DateTime) where T1 <: Union{DateTimeStandard,Da
 end
 
 
+# ```
+#     Dates.year(dt::AbstractCFDateTime)
 
+# The year of a `AbstractCFDateTime` as an Int64.
+# ```
 
 Dates.year(dt::AbstractCFDateTime) = datetuple(dt)[1]
 Dates.month(dt::AbstractCFDateTime) = datetuple(dt)[2]
@@ -374,9 +398,19 @@ Dates.millisecond(dt::AbstractCFDateTime) = datetuple(dt)[7]
 
 
 
+for func in (:year, :month, :day, :hour, :minute, :second, :millisecond)
+    name = string(func)
+    @eval begin
+        @doc """
+            Dates.$($name)(dt::AbstractCFDateTime) -> Int64
+
+        Extract the $($name)-part of a `AbstractCFDateTime` as an `Int64`.
+        """ $func(dt::AbstractCFDateTime)
+    end
+end
+
 
 -(dt::AbstractCFDateTime,Δ) = dt + (-Δ)
-
 
 function parseDT(::Type{DT},str) where DT <: Union{DateTime,AbstractCFDateTime}
     str = replace(str,"T"," ")
@@ -412,12 +446,6 @@ function parseDT(::Type{DT},str) where DT <: Union{DateTime,AbstractCFDateTime}
 end
 
 
-"""
-    t0,plength = timeunits(units,calendar = "standard")
-
-Parse time units and returns the start time `t0` and the scaling factor
-`plength` in milliseconds.
-"""
 function timeunits(::Type{DT},units) where DT
     tunit_mixedcase,starttime = strip.(split(units," since "))
     tunit = lowercase(tunit_mixedcase)
@@ -466,8 +494,8 @@ end
 """
     t0,plength = timeunits(units,calendar = "standard")
 
-Parse time units and returns the start time `t0` and the scaling factor
-`plength` in milliseconds.
+Parse time units (e.g. "days since 2000-01-01 00:00:00") and returns the start
+time `t0` and the scaling factor `plength` in milliseconds.
 """
 function timeunits(units, calendar = "standard")
     DT = timetype(calendar)
@@ -485,10 +513,24 @@ end
     dt = timedecode(data,units,calendar = "standard", prefer_datetime = true)
 
 Decode the time information in data as given by the units `units` according to
-the specified calendar. If prefer_datetime is true (default), dates are
-converted to the Julia DateTime type (for the calendars
+the specified calendar. Valid values for `calendar` are
+"standard", "gregorian", "proleptic_gregorian", "julian", "noleap", "365_day",
+"all_leap", "366_day" and "360_day".
+
+If `prefer_datetime` is `true` (default), dates are
+converted to the `DateTime` type (for the calendars
 "standard", "gregorian", "proleptic_gregorian" and "julian"). Such convertion is
-not possible for other calendars.
+not possible for the other calendars.
+
+| Calendar            | Type (prefer_datetime=true) | Type (prefer_datetime=false) |
+| ------------------- | --------------------------- | ---------------------------- |
+| standard, gregorian | DateTime                    | DateTimeStandard             |
+| proleptic_gregorian | DateTime                    | DateTimeProlepticGregorian   |
+| julian              | DateTime                    | DateTimeJulian               |
+| noleap, 365_day     | DateTimeNoLeap              | DateTimeNoLeap               |
+| all_leap, 366_day   | DateTimeAllLeap             | DateTimeAllLeap              |
+| 360_day             | DateTime360Day              | DateTime360Day               |
+
 """
 function timedecode(data,units,calendar = "standard"; prefer_datetime = true)
     DT = timetype(calendar)
@@ -511,6 +553,17 @@ end
 # while this is true:
 # DataArrays.DataArray <: AbstractArray
 
+"""
+    data = timeencode(dt,units,calendar = "standard")
+
+Convert a vector or array of `DateTime` (or `DateTimeStandard`,
+`DateTimeProlepticGregorian`, `DateTimeJulian`, `DateTimeNoLeap`,
+`DateTimeAllLeap`, `DateTime360Day`) accoring to
+the specified units (e.g. "days since 2000-01-01 00:00:00") using the calendar
+`calendar`.  Valid values for calendar are:
+"standard", "gregorian", "proleptic_gregorian", "julian", "noleap", "365_day",
+"all_leap", "366_day", "360_day".
+"""
 function timeencode(data::Union{DataArray{DT,N},AbstractArray{DT,N}},units,
                     calendar = "standard") where N where DT <: Union{DateTime,AbstractCFDateTime}
 
@@ -534,4 +587,4 @@ timeencode(data,units,calendar = "standard") = data
 export timeencode, timedecode, datetuple
 
 export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
-    DateTimeAllLeap, DateTimeNoLeap, DateTime360Day
+    DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
