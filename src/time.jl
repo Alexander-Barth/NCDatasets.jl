@@ -79,7 +79,7 @@ function datenum_ac(year,month,day,gregorian::Bool)
         end
 
     # benchmark shows that it is 40% faster replacing
-    # trunc(Int,365.25 * (year + 4716))
+    # trunc(Int64,365.25 * (year + 4716))
     # by
     # (1461 * (year + 4716)) ÷ 4
     #
@@ -138,20 +138,20 @@ function datetuple_gregjulian(Z,gregorian::Bool)
     A =
         if gregorian
             # lets magic happen
-            α = trunc(Int, (Z - 1867_216.25)/36524.25)
+            α = trunc(Int64, (Z - 1867_216.25)/36524.25)
             #@show α,Z - 1867_216.25
             Z + 1 + α - (α ÷ 4)
         else
-            Z
+            Int64(Z)
         end
 
     # even more magic...
     B = A + 1524
-    C = trunc(Int, (B - 122.1) / 365.25)
-    D = trunc(Int, 365.25 * C)
-    E = trunc(Int, (B-D)/30.6001)
+    C = trunc(Int64, (B - 122.1) / 365.25)
+    D = trunc(Int64, 365.25 * C)
+    E = trunc(Int64, (B-D)/30.6001)
 
-    day = B - D - trunc(Int,30.6001 * E)
+    day = B - D - trunc(Int64,30.6001 * E)
     month = (E < 14 ? E-1 : E-13)
     y = (month > 2 ? C - 4716 : C - 4715)
 
@@ -171,8 +171,8 @@ millisecods (`ms`) from `time` expressed in milliseconds.
 
 function timetuplefrac(time::Number)
     # time can be negative, use fld instead of ÷
-    days = fld(time, (24*60*60*1000))
-    ms = time - days * (24*60*60*1000)
+    days = fld(Int64(time), (24*60*60*1000))
+    ms = Int64(time) - days * (24*60*60*1000)
 
     h = ms ÷ (60*60*1000)
     ms = ms - h * (60*60*1000)
@@ -187,7 +187,7 @@ end
 
 function datenumfrac(days,h,mi,s,ms)
     ms = 60*60*1000 * h +  60*1000 * mi + 1000*s + ms
-    return (24*60*60*1000) * days + ms
+    return (24*60*60*1000) * Int64(days) + ms
 end
 
 
@@ -229,8 +229,8 @@ function findmonth(cm,t2)
 end
 
 function datetuple_cal(cm,timed_::Number)
-    y = fld(timed_, cm[end])
-    t2 = timed_ - cm[end]*y
+    y = fld(Int64(timed_), cm[end])
+    t2 = Int64(timed_) - cm[end]*y
 
     # find month
     mo = findmonth(cm,t2)
@@ -297,6 +297,11 @@ The netCDF CF calendars are defined at [1].
             totalms = datenumfrac(days,h,mi,s,ms)
             return $CFDateTime(UTInstant(Millisecond(totalms)))
         end
+
+        # Fallback constructors
+        $CFDateTime(y, m=1, d=1, h=0, mi=0, s=0, ms=0) = $CFDateTime(
+            Int64(y), Int64(m), Int64(d), Int64(h), Int64(mi), Int64(s),
+            Int64(ms))
 
         function datetuple(dt::$CFDateTime)
             time = Dates.value(dt.instant.periods)
@@ -382,12 +387,6 @@ function convert(::Type{T1}, dt::DateTime) where T1 <: Union{DateTimeStandard,Da
 end
 
 
-# ```
-#     Dates.year(dt::AbstractCFDateTime)
-
-# The year of a `AbstractCFDateTime` as an Int64.
-# ```
-
 Dates.year(dt::AbstractCFDateTime) = datetuple(dt)[1]
 Dates.month(dt::AbstractCFDateTime) = datetuple(dt)[2]
 Dates.day(dt::AbstractCFDateTime) = datetuple(dt)[3]
@@ -430,12 +429,12 @@ function parseDT(::Type{DT},str) where DT <: Union{DateTime,AbstractCFDateTime}
     y,m,d,h,mi,s,ms =
         if contains(str," ")
             datestr,timestr = split(str,' ')
-            y,m,d = parse.(Int,split(datestr,'-'))
-            h,mi,s = parse.(Int,split(timestr,':'))
-            (y,m,d,h,mi,s,0)
+            y,m,d = parse.(Int64,split(datestr,'-'))
+            h,mi,s = parse.(Int64,split(timestr,':'))
+            (y,m,d,h,mi,s,Int64(0))
         else
-            y,m,d = parse.(Int,split(str,'-'))
-            (y,m,d,0,0,0,0)
+            y,m,d = parse.(Int64,split(str,'-'))
+            (y,m,d,Int64(0),Int64(0),Int64(0),Int64(0))
         end
 
     if negativeyear
