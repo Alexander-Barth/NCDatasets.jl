@@ -275,6 +275,7 @@ for (CFDateTime,calendar) in [(:DateTimeStandard,"standard"),
     @eval begin
         struct $CFDateTime <: AbstractCFDateTime
             instant::UTInstant{Millisecond}
+            $CFDateTime(instant::UTInstant{Millisecond}) = new(instant)
         end
 
         """
