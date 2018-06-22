@@ -257,6 +257,150 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "index.html#NCDatasets.DateTimeStandard",
+    "page": "NCDatasets.jl",
+    "title": "NCDatasets.DateTimeStandard",
+    "category": "type",
+    "text": "NCDatasets.DateTimeStandard(y, [m, d, h, mi, s, ms]) -> NCDatasets.DateTimeStandard\n\nConstruct a NCDatasets.DateTimeStandard type by year (y), month (m, default 1), day (d, default 1), hour (h, default 0), minute (mi, default 0), second (s, default 0), millisecond (ms, default 0). All arguments must be convertible to Int64. NCDatasets.DateTimeStandard is a subtype of AbstractCFDateTime.\n\nThe netCDF CF calendars are defined at [1].\n\n[1] https://web.archive.org/web/20180622080424/http://cfconventions.org/cf-conventions/cf-conventions.html#calendar\n\n\n\n"
+},
+
+{
+    "location": "index.html#NCDatasets.DateTimeJulian",
+    "page": "NCDatasets.jl",
+    "title": "NCDatasets.DateTimeJulian",
+    "category": "type",
+    "text": "NCDatasets.DateTimeJulian(y, [m, d, h, mi, s, ms]) -> NCDatasets.DateTimeJulian\n\nConstruct a NCDatasets.DateTimeJulian type by year (y), month (m, default 1), day (d, default 1), hour (h, default 0), minute (mi, default 0), second (s, default 0), millisecond (ms, default 0). All arguments must be convertible to Int64. NCDatasets.DateTimeJulian is a subtype of AbstractCFDateTime.\n\nThe netCDF CF calendars are defined at [1].\n\n[1] https://web.archive.org/web/20180622080424/http://cfconventions.org/cf-conventions/cf-conventions.html#calendar\n\n\n\n"
+},
+
+{
+    "location": "index.html#NCDatasets.DateTimeProlepticGregorian",
+    "page": "NCDatasets.jl",
+    "title": "NCDatasets.DateTimeProlepticGregorian",
+    "category": "type",
+    "text": "NCDatasets.DateTimeProlepticGregorian(y, [m, d, h, mi, s, ms]) -> NCDatasets.DateTimeProlepticGregorian\n\nConstruct a NCDatasets.DateTimeProlepticGregorian type by year (y), month (m, default 1), day (d, default 1), hour (h, default 0), minute (mi, default 0), second (s, default 0), millisecond (ms, default 0). All arguments must be convertible to Int64. NCDatasets.DateTimeProlepticGregorian is a subtype of AbstractCFDateTime.\n\nThe netCDF CF calendars are defined at [1].\n\n[1] https://web.archive.org/web/20180622080424/http://cfconventions.org/cf-conventions/cf-conventions.html#calendar\n\n\n\n"
+},
+
+{
+    "location": "index.html#NCDatasets.DateTimeAllLeap",
+    "page": "NCDatasets.jl",
+    "title": "NCDatasets.DateTimeAllLeap",
+    "category": "type",
+    "text": "NCDatasets.DateTimeAllLeap(y, [m, d, h, mi, s, ms]) -> NCDatasets.DateTimeAllLeap\n\nConstruct a NCDatasets.DateTimeAllLeap type by year (y), month (m, default 1), day (d, default 1), hour (h, default 0), minute (mi, default 0), second (s, default 0), millisecond (ms, default 0). All arguments must be convertible to Int64. NCDatasets.DateTimeAllLeap is a subtype of AbstractCFDateTime.\n\nThe netCDF CF calendars are defined at [1].\n\n[1] https://web.archive.org/web/20180622080424/http://cfconventions.org/cf-conventions/cf-conventions.html#calendar\n\n\n\n"
+},
+
+{
+    "location": "index.html#NCDatasets.DateTimeNoLeap",
+    "page": "NCDatasets.jl",
+    "title": "NCDatasets.DateTimeNoLeap",
+    "category": "type",
+    "text": "NCDatasets.DateTimeNoLeap(y, [m, d, h, mi, s, ms]) -> NCDatasets.DateTimeNoLeap\n\nConstruct a NCDatasets.DateTimeNoLeap type by year (y), month (m, default 1), day (d, default 1), hour (h, default 0), minute (mi, default 0), second (s, default 0), millisecond (ms, default 0). All arguments must be convertible to Int64. NCDatasets.DateTimeNoLeap is a subtype of AbstractCFDateTime.\n\nThe netCDF CF calendars are defined at [1].\n\n[1] https://web.archive.org/web/20180622080424/http://cfconventions.org/cf-conventions/cf-conventions.html#calendar\n\n\n\n"
+},
+
+{
+    "location": "index.html#NCDatasets.DateTime360Day",
+    "page": "NCDatasets.jl",
+    "title": "NCDatasets.DateTime360Day",
+    "category": "type",
+    "text": "NCDatasets.DateTime360Day(y, [m, d, h, mi, s, ms]) -> NCDatasets.DateTime360Day\n\nConstruct a NCDatasets.DateTime360Day type by year (y), month (m, default 1), day (d, default 1), hour (h, default 0), minute (mi, default 0), second (s, default 0), millisecond (ms, default 0). All arguments must be convertible to Int64. NCDatasets.DateTime360Day is a subtype of AbstractCFDateTime.\n\nThe netCDF CF calendars are defined at [1].\n\n[1] https://web.archive.org/web/20180622080424/http://cfconventions.org/cf-conventions/cf-conventions.html#calendar\n\n\n\n"
+},
+
+{
+    "location": "index.html#Base.Dates.year-Tuple{NCDatasets.AbstractCFDateTime}",
+    "page": "NCDatasets.jl",
+    "title": "Base.Dates.year",
+    "category": "method",
+    "text": "Dates.year(dt::AbstractCFDateTime) -> Int64\n\nExtract the year-part of a AbstractCFDateTime as an Int64.\n\n\n\n"
+},
+
+{
+    "location": "index.html#Base.Dates.month-Tuple{NCDatasets.AbstractCFDateTime}",
+    "page": "NCDatasets.jl",
+    "title": "Base.Dates.month",
+    "category": "method",
+    "text": "Dates.month(dt::AbstractCFDateTime) -> Int64\n\nExtract the month-part of a AbstractCFDateTime as an Int64.\n\n\n\n"
+},
+
+{
+    "location": "index.html#Base.Dates.day-Tuple{NCDatasets.AbstractCFDateTime}",
+    "page": "NCDatasets.jl",
+    "title": "Base.Dates.day",
+    "category": "method",
+    "text": "Dates.day(dt::AbstractCFDateTime) -> Int64\n\nExtract the day-part of a AbstractCFDateTime as an Int64.\n\n\n\n"
+},
+
+{
+    "location": "index.html#Base.Dates.hour-Tuple{NCDatasets.AbstractCFDateTime}",
+    "page": "NCDatasets.jl",
+    "title": "Base.Dates.hour",
+    "category": "method",
+    "text": "Dates.hour(dt::AbstractCFDateTime) -> Int64\n\nExtract the hour-part of a AbstractCFDateTime as an Int64.\n\n\n\n"
+},
+
+{
+    "location": "index.html#Base.Dates.minute-Tuple{NCDatasets.AbstractCFDateTime}",
+    "page": "NCDatasets.jl",
+    "title": "Base.Dates.minute",
+    "category": "method",
+    "text": "Dates.minute(dt::AbstractCFDateTime) -> Int64\n\nExtract the minute-part of a AbstractCFDateTime as an Int64.\n\n\n\n"
+},
+
+{
+    "location": "index.html#Base.Dates.second-Tuple{NCDatasets.AbstractCFDateTime}",
+    "page": "NCDatasets.jl",
+    "title": "Base.Dates.second",
+    "category": "method",
+    "text": "Dates.second(dt::AbstractCFDateTime) -> Int64\n\nExtract the second-part of a AbstractCFDateTime as an Int64.\n\n\n\n"
+},
+
+{
+    "location": "index.html#Base.Dates.millisecond-Tuple{NCDatasets.AbstractCFDateTime}",
+    "page": "NCDatasets.jl",
+    "title": "Base.Dates.millisecond",
+    "category": "method",
+    "text": "Dates.millisecond(dt::AbstractCFDateTime) -> Int64\n\nExtract the millisecond-part of a AbstractCFDateTime as an Int64.\n\n\n\n"
+},
+
+{
+    "location": "index.html#Base.convert",
+    "page": "NCDatasets.jl",
+    "title": "Base.convert",
+    "category": "function",
+    "text": "dt2 = convert(::Type{T}, dt)\n\nConvert a DateTime of type DateTimeStandard, DateTimeProlepticGregorian, DateTimeJulian or DateTime into the type T which can also be either DateTimeStandard, DateTimeProlepticGregorian, DateTimeJulian or DateTime.\n\nConverstion is done such that durations (difference of DateTime types) are preserved. For dates on and after 1582-10-15, the year, month and days are the same for the types DateTimeStandard, DateTimeProlepticGregorian and DateTime.\n\nFor dates before 1582-10-15, the year, month and days are the same for the types DateTimeStandard and DateTimeJulian.\n\n\n\n"
+},
+
+{
+    "location": "index.html#Base.reinterpret",
+    "page": "NCDatasets.jl",
+    "title": "Base.reinterpret",
+    "category": "function",
+    "text": "dt2 = reinterpret(::Type{T}, dt)\n\nConvert a variable dt of type DateTime, DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian, DateTimeAllLeap, DateTimeNoLeap or DateTime360Day into the date time type T using the same values for year, month, day, minute, second and millisecond. The convertion might fail if a particular date does not exist in the target calendar.\n\n\n\n"
+},
+
+{
+    "location": "index.html#NCDatasets.timedecode",
+    "page": "NCDatasets.jl",
+    "title": "NCDatasets.timedecode",
+    "category": "function",
+    "text": "dt = timedecode(data,units,calendar = \"standard\", prefer_datetime = true)\n\nDecode the time information in data as given by the units units according to the specified calendar. Valid values for calendar are \"standard\", \"gregorian\", \"proleptic_gregorian\", \"julian\", \"noleap\", \"365_day\", \"all_leap\", \"366_day\" and \"360_day\".\n\nIf prefer_datetime is true (default), dates are converted to the DateTime type (for the calendars \"standard\", \"gregorian\", \"proleptic_gregorian\" and \"julian\"). Such convertion is not possible for the other calendars.\n\nCalendar Type (prefer_datetime=true) Type (prefer_datetime=false)\nstandard, gregorian DateTime DateTimeStandard\nproleptic_gregorian DateTime DateTimeProlepticGregorian\njulian DateTime DateTimeJulian\nnoleap, 365_day DateTimeNoLeap DateTimeNoLeap\nall_leap, 366_day DateTimeAllLeap DateTimeAllLeap\n360_day DateTime360Day DateTime360Day\n\n\n\n"
+},
+
+{
+    "location": "index.html#NCDatasets.timeencode",
+    "page": "NCDatasets.jl",
+    "title": "NCDatasets.timeencode",
+    "category": "function",
+    "text": "data = timeencode(dt,units,calendar = \"standard\")\n\nConvert a vector or array of DateTime (or DateTimeStandard, DateTimeProlepticGregorian, DateTimeJulian, DateTimeNoLeap, DateTimeAllLeap, DateTime360Day) accoring to the specified units (e.g. \"days since 2000-01-01 00:00:00\") using the calendar calendar.  Valid values for calendar are: \"standard\", \"gregorian\", \"proleptic_gregorian\", \"julian\", \"noleap\", \"365_day\", \"all_leap\", \"366_day\", \"360_day\".\n\n\n\n"
+},
+
+{
+    "location": "index.html#Time-functions-1",
+    "page": "NCDatasets.jl",
+    "title": "Time functions",
+    "category": "section",
+    "text": "DateTimeStandard\nDateTimeJulian\nDateTimeProlepticGregorian\nDateTimeAllLeap\nDateTimeNoLeap\nDateTime360Day\nDates.year(dt::AbstractCFDateTime)\nDates.month(dt::AbstractCFDateTime)\nDates.day(dt::AbstractCFDateTime)\nDates.hour(dt::AbstractCFDateTime)\nDates.minute(dt::AbstractCFDateTime)\nDates.second(dt::AbstractCFDateTime)\nDates.millisecond(dt::AbstractCFDateTime)\nconvert\nreinterpret\ntimedecode\ntimeencode"
+},
+
+{
     "location": "index.html#NCDatasets.ncgen-Tuple{Any}",
     "page": "NCDatasets.jl",
     "title": "NCDatasets.ncgen",
