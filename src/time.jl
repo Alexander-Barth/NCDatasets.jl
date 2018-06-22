@@ -23,7 +23,7 @@ const DN_GREGORIAN_CALENDAR = -100840 + DATENUM_OFFSET
 # returns 0000-12-31T00:00:00
 # 678576 is the output of datenum_prolepticgregorian(-1,12,31)
 
-const DATETIME_OFFSET = Dates.Millisecond(678576 * (24*60*60*1000))
+const DATETIME_OFFSET = Dates.Millisecond(678576 * (24*60*60*Int64(1000)))
 
 
 """
