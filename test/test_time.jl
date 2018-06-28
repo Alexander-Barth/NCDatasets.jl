@@ -1,4 +1,9 @@
-using Base.Test
+if VERSION >= v"0.7.0-beta.65"
+    using Test
+else
+    using Base.Test
+end
+
 using NCDatasets
 
 # reference value from Meeus, Jean (1998)
@@ -316,10 +321,14 @@ datacal = timedecode(data_orig, units, calendar)
 data_orig_back = timeencode(datacal, units, calendar)
 @test data_orig ≈ data_orig_back
 
-# DataArray
-data_orig = DataArrays.DataArray([54750.5, 54751.5, 54752.5])
-# Decoding
-datacal = timedecode(data_orig, units, calendar)
-# Reencoding
-data_orig_back = timeencode(datacal, units, calendar)
-@test data_orig ≈ data_orig_back
+
+# if @isdefined DataArrays
+
+# # DataArray
+# data_orig = DataArrays.DataArray([54750.5, 54751.5, 54752.5])
+# # Decoding
+# datacal = timedecode(data_orig, units, calendar)
+# # Reencoding
+# data_orig_back = timeencode(datacal, units, calendar)
+# @test data_orig ≈ data_orig_back
+# end

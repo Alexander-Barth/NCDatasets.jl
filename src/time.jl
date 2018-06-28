@@ -1,6 +1,13 @@
 #module Time
-import Base.Dates: UTInstant, Millisecond
-import Base.Dates: year,  month,  day, hour, minute, second, millisecond
+
+if VERSION >= v"0.7.0-beta.65"
+    import Dates: UTInstant, Millisecond
+    import Dates: year,  month,  day, hour, minute, second, millisecond
+else
+    import Base.Dates: UTInstant, Millisecond
+    import Base.Dates: year,  month,  day, hour, minute, second, millisecond
+end
+
 import Base: +, -, isless, string, show, convert, reinterpret
 
 # Introduction of the Gregorian Calendar 1582-10-15
@@ -168,7 +175,6 @@ end
 Return the number of whole days, hours (`h`), minutes (`mi`), seconds (`s`) and
 millisecods (`ms`) from `time` expressed in milliseconds.
 """
-
 function timetuplefrac(time::Number)
     # time can be negative, use fld instead of ÷
     days = fld(Int64(time), (24*60*60*1000))
@@ -503,7 +509,7 @@ function timeunits(units, calendar = "standard")
 end
 
 function timedecode(::Type{DT},data,units) where DT
-    const t0,plength = timeunits(DT,units)
+    t0,plength = timeunits(DT,units)
     convert(x) = t0 + Dates.Millisecond(round(Int64,plength * x))
     return convert.(data)
 end

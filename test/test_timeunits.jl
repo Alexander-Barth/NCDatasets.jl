@@ -1,5 +1,3 @@
-using Dates
-
 # time
 
 for (timeunit,factor) in [("days",1),("hours",24),("minutes",24*60),("seconds",24*60*60)]

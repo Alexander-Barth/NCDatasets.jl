@@ -514,9 +514,16 @@ nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Int64) =
 nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Vector{Int64}) =
     nc_put_att(ncid,varid,name,Int32.(data))
 
-function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::T) where T <: Union{Number,Char}
-    check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Void}),
+function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Number)
+    check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Nothing}),
                 ncid,varid,name,ncType[typeof(data)],1,[data]))
+end
+
+function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Char)
+    # UInt8('α')
+    # ERROR: InexactError: trunc(UInt8, 945)
+    check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Nothing}),
+                ncid,varid,name,ncType[typeof(data)],1,[UInt8(data)]))
 end
 
 function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Vector{T}) where T <: AbstractString
@@ -545,7 +552,7 @@ function nc_get_att(ncid::Integer,varid::Integer,name)
         # see issue #12
         inull = findfirst(val .== 0)
 
-        if inull == 0
+        if inull == nothing
             return join(Char.(val))
         else
             return join(Char.(view(val,1:inull-1)))

@@ -1,5 +1,9 @@
 using NCDatasets
-using Test
+if VERSION >= v"0.7.0-beta.65"
+    using Test
+else
+    using Base.Test
+end
 
 println("NetCDF library: ",NCDatasets.libnetcdf)
 println("NetCDF version: ",NCDatasets.nc_inq_libvers())
