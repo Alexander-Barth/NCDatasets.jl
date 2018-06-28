@@ -919,7 +919,7 @@ Define the dimension with the name NAME and the length LEN in the
 dataset NCID.  The id of the dimension is returned
 """
 function nc_def_dim(ncid::Integer,name,len::Integer)
-    idp = Vector{Cint}(1)
+    idp = Vector{Cint}(undef,1)
 
     check(ccall((:nc_def_dim,libnetcdf),Cint,(Cint,Cstring,Cint,Ptr{Cint}),ncid,name,len,idp))
     return idp[1]
@@ -1102,7 +1102,7 @@ end
 # end
 
 function nc_def_var(ncid::Integer,name,xtype::Integer,dimids::Vector{Cint})
-    varidp = Vector{Cint}(1)
+    varidp = Vector{Cint}(undef,1)
 
     check(ccall((:nc_def_var,libnetcdf),Cint,(Cint,Cstring,nc_type,Cint,Ptr{Cint},Ptr{Cint}),ncid,name,xtype,length(dimids),dimids,varidp))
 
