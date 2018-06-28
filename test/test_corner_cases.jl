@@ -1,4 +1,3 @@
-using Base.Test
 fname = tempname()
 
 # known quirks
@@ -14,7 +13,7 @@ NCDatasets.Dataset(fname,"c") do ds
     # issue 12
     str = "some_string_with_null\0"
     ccall((:nc_put_att,NCDatasets.libnetcdf),Cint,
-          (Cint,Cint,Cstring,NCDatasets.nc_type,Csize_t,Ptr{Void}),
+          (Cint,Cint,Cstring,NCDatasets.nc_type,Csize_t,Ptr{Nothing}),
           ds.ncid,NCDatasets.NC_GLOBAL,"attrib",NCDatasets.NC_CHAR,length(str),pointer.(str))
     
 end

@@ -1,6 +1,7 @@
 using NCDatasets
 if VERSION >= v"0.7.0-beta.65"
     using Test
+    using Dates
 else
     using Base.Test
 end
