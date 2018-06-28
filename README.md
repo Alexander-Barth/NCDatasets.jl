@@ -10,7 +10,7 @@
 [![documentation latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/latest/)
 
 
-`NCDatasets` allows one to read and create NetCDF files.
+`NCDatasets` allows one to read and create netCDF files.
 NetCDF data set and attribute list behave like Julia dictionaries and variables like Julia arrays.
 
 
@@ -51,7 +51,7 @@ using NCDatasets
 ds = Dataset("file.nc")
 ```
 
-The following displays the information just for the variable `varname` and the global attributes:
+The following displays the information just for the variable `varname` and for the global attributes:
 
 ```julia
 ds["varname"]
@@ -213,15 +213,28 @@ units = get(v,"units","adimensional")
 close(ds)
 ```
 
+## Get one or several variables by specifying the value of an attribute
+
+The variable name are not always standardized, for example the longitude we can
+find: `lon`, `LON`, `longitude`, ...
+
+The solution implemented in the function `varbyattrib` consists in searching for the
+variables that have specified value for a given attribute.
+
+```julia
+lon = varbyattrib(ds, standard_name="longitude");
+```
+will return the list of variables of the dataset `ds` that have "longitude"
+as standard name. 
 
 # Filing an issue
 
 When you file an issue, please include sufficient information that would _allow somebody else to reproduce the issue_, in particular:
-1. Provide the code that reproduces the issue
-2. If necessary to run your code, provide the used netCDF file(s)
+1. Provide the code that generates the issue.
+2. If necessary to run your code, provide the used netCDF file(s).
 3. Make your code and netCDF file(s) as simple as possible (while still showing the error and being runnable). A big thank you for the 5-star-premium-gold users who do not forget this point! 👍🏅🏆
-4. The full error message that you are seeing (in particular file names and line numbers of the stack-trace)
-5. Which version of Julia and NCDatasets are you using? Please include the output of:
+4. The full error message that you are seeing (in particular file names and line numbers of the stack-trace).
+5. Which version of Julia and `NCDatasets` are you using? Please include the output of:
 ```
 versioninfo()
 Pkg.installed()["NCDatasets"]

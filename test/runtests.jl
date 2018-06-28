@@ -139,6 +139,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_attrib.jl")
 
     include("test_writevar.jl")
+    include("test_time.jl")
     include("test_timeunits.jl")
     include("test_scaling.jl")
 
@@ -166,7 +167,9 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_vlen.jl")
 
     include("test_ncgen.jl")
-    include("test_varbyatt.jl")  
+    include("test_varbyatt.jl")
+
+    include("test_corner_cases.jl")
 
     # display
     s = IOBuffer()

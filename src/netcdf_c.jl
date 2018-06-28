@@ -507,7 +507,7 @@ function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Vect
     nc_put_att(ncid,varid,name,join(data))
 end
 
-# NetCDF does not support 64 bit attributes
+# NetCDF does not necessarily support 64 bit attributes
 nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Int64) =
     nc_put_att(ncid,varid,name,Int32(data))
 
@@ -540,11 +540,26 @@ function nc_get_att(ncid::Integer,varid::Integer,name)
     if xtype == NC_CHAR
         val = Vector{UInt8}(len)
         check(ccall((:nc_get_att,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{Void}),ncid,varid,name,val))
-        return join(Char.(val))
+
+        # remove everything following a null terminating character if present
+        # see issue #12
+        inull = findfirst(val .== 0)
+
+        if inull == 0
+            return join(Char.(val))
+        else
+            return join(Char.(view(val,1:inull-1)))
+        end
     elseif xtype == NC_STRING
         val = Vector{Ptr{UInt8}}(len)
         check(ccall((:nc_get_att,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{Void}),ncid,varid,name,val))
-        return unsafe_string.(val)
+
+        str = unsafe_string.(val)
+        if len == 1
+            return str[1]
+        else
+            return str
+        end
     else
         val = Vector{jlType[xtype]}(len)
         check(ccall((:nc_get_att,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{Void}),ncid,varid,name,val))

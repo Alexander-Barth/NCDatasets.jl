@@ -8,6 +8,8 @@ using Missings
 using Printf
 import Base.convert
 
+include("time.jl")
+
 # NetCDFError, error check and netcdf_c.jl from NetCDF.jl (https://github.com/JuliaGeo/NetCDF.jl)
 # Copyright (c) 2012-2013: Fabian Gans, Max-Planck-Institut fuer Biogeochemie, Jena, Germany
 # MIT
@@ -144,90 +146,6 @@ function defmode(ncid,isdefmode::Vector{Bool})
     end
 end
 
-"""
-    t0,plength = timeunits(units,calendar = "standard")
-
-Parse time units and returns the start time `t0` and the scaling factor
-`plength` in milliseconds.
-"""
-function timeunits(units, calendar = "standard")
-    tunit,starttime = strip.(split(units," since "))
-    tunit = lowercase(tunit)
-
-    starttime = replace(starttime,"T" => " ")
-
-    # remove Z time zone indicator
-    # all times are assumed UTC anyway
-    if endswith(starttime,"Z")
-        starttime = starttime[1:end-1]
-    end
-
-
-        negativeyear = starttime[1] == '-'
-        if negativeyear
-            starttime = starttime[2:end]
-        end
-
-        t0 =
-            if occursin(":",starttime)
-                DateTime(starttime,"y-m-d H:M:S")
-            else
-                DateTime(starttime,"y-m-d")
-            end
-
-        if negativeyear
-            # year is negative
-            t0 = DateTime(-Dates.year(t0),Dates.month(t0),Dates.day(t0),
-                          Dates.hour(t0),Dates.minute(t0),Dates.second(t0))
-        end
-
-        # make sure that plength is 64-bit on 32-bit platforms
-        plength =
-            if (tunit == "days") || (tunit == "day")
-                24*60*60*Int64(1000)
-            elseif (tunit == "hours") || (tunit == "hour")
-                60*60*Int64(1000)
-            elseif (tunit == "minutes") || (tunit == "minute")
-                60*Int64(1000)
-            elseif (tunit == "seconds") || (tunit == "second")
-                Int64(1000)
-            end
-
-    if (calendar == "standard") || (calendar == "gregorian")
-        return t0,plength
-    elseif calendar == "julian"
-        # only supported time origin
-        # (Chronological Julian Date)
-        @assert t0 == DateTime(-4713,1,1)
-
-        # 327 is the result from
-        # Dates.value(DateTime(2007,2,10) - DateTime(-4713,1,1)) / (24*60*60*1000) - 2454142
-        #
-        # The values DateTime(2007,2,10) and 2454142 are taken from
-        # https://web.archive.org/web/20171129142108/https://www.hermetic.ch/cal_stud/chron_jdate.htm
-        # and confirmed by http://www.julian-date.com/ (setting GMT offset to zero)
-        # https://web.archive.org/web/20180212213256/http://www.julian-date.com/
-
-        return t0 + Dates.Day(327),plength
-
-    end
-end
-
-function timedecode(data,units,calendar = "standard")
-    t0,plength = timeunits(units,calendar)
-    convert(x) = t0 + Dates.Millisecond(round(Int64,plength * x))
-    return convert.(data)
-end
-
-function timeencode(data::Array{DateTime,N},units,calendar = "standard") where N
-    t0,plength = timeunits(units,calendar)
-    convert(dt) = Dates.value(dt - t0) / plength
-    return convert.(data)
-end
-
-# do not transform data is not a vector of DateTime
-timeencode(data,units,calendar = "standard") = data
-
 function Base.show(io::IO,a::BaseAttributes; indent = "  ")
     # use the same order of attributes than in the NetCDF file
 
@@ -312,7 +230,7 @@ function Base.setindex!(a::Attributes,data,name::AbstractString)
 end
 
 """
-   keys(a::Attributes)
+   Base.keys(a::Attributes)
 
 Return a list of the names of all attributes.
 """
@@ -337,21 +255,39 @@ end
 
 Base.keys(a::MFAttributes) = keys(a.as)
 
+"""
+    Base.keys(g::NCDatasets.Groups)
 
-
+Return the names of all subgroubs of the group `g`.
+"""
 function Base.keys(g::Groups)
     return String[nc_inq_grpname(ncid)
                   for ncid in nc_inq_grps(g.ncid)]
 end
 
 """
-Existing group
+    group = getindex(g::NCDatasets.Groups,groupname::AbstractString)
+
+Return the NetCDF `group` with the name `groupname`.
+For example:
+
+```julia-repl
+julia> ds = Dataset("results.nc", "r");
+julia> forecast_group = ds.group["forecast"]
+julia> forecast_temp = forecast_group["temperature"]
+```
+
 """
 function Base.getindex(g::Groups,groupname::AbstractString)
     grp_ncid = nc_inq_grp_ncid(g.ncid,groupname)
     return Dataset(grp_ncid,g.isdefmode)
 end
 
+"""
+    defGroup(ds::Dataset,groupname)
+
+Create the group with the name `groupname` in the dataset `ds`.
+"""
 function defGroup(ds::Dataset,groupname)
     grp_ncid = nc_def_grp(ds.ncid,groupname)
     return Dataset(grp_ncid,ds.isdefmode)
@@ -373,16 +309,16 @@ end
 
 Create a new NetCDF file if the `mode` is "c". An existing file with the same
 name will be overwritten. If `mode` is "a", then an existing file is open into
-append mode (i.e. existing data in the NetCDF file is not overwritten and
-a variabale can be added). With the mode equal to "r", an existing NetCDF file or
+append mode (i.e. existing data in the netCDF file is not overwritten and
+a variable can be added). With the mode set to "r", an existing netCDF file or
 OPeNDAP URL can be open in read-only mode.  The default mode is "r".
 
 # Supported formats:
 
-* :netcdf4 (default): HDF5-based NetCDF format
-* :netcdf4_classic: Only netCDF 3 compatible API features will be used
-* :netcdf3_classic: classic NetCDF format supporting only files smaller than 2GB.
-* :netcdf3_64bit_offset: improved NetCDF format supporting files larger than 2GB.
+* :netcdf4 (default): HDF5-based NetCDF format.
+* :netcdf4_classic: Only netCDF 3 compatible API features will be used.
+* :netcdf3_classic: classic netCDF format supporting only files smaller than 2GB.
+* :netcdf3_64bit_offset: improved netCDF format supporting files larger than 2GB.
 
 Files can also be open and automatically closed with a `do` block.
 
@@ -446,7 +382,7 @@ end
 """
     defDim(ds::Dataset,name,len)
 
-Define a dimension in the data-set `ds` with the given `name` and length `len`.
+Define a dimension in the data set `ds` with the given `name` and length `len`.
 If `len` is the special value `Inf`, then the dimension is considered as
 `unlimited`, i.e. it will grow as data is added to the NetCDF file.
 
@@ -667,6 +603,8 @@ variable is indexed:
 * `scale_factor` and `add_offset` are applied
 * time variables (recognized by the units attribute) are returned
 as `DateTime` object.
+
+A call `getindex(ds,varname)` is usually written as `ds[varname]`.
 """
 function Base.getindex(ds::Dataset,varname::AbstractString)
     v = variable(ds,varname)
@@ -1167,13 +1105,32 @@ Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
 # for iteration as a Dict
 
 """
-    start(ds::Dataset)
+    start(ds::NCDatasets.Dataset)
+    start(a::NCDatasets.Attributes)
+    start(d::NCDatasets.Dimensions)
+    start(g::NCDatasets.Groups)
 
-Allow to iterate over a dataset.
+Allow one to iterate over a dataset, attribute list, dimensions and NetCDF groups.
 
 ```julia
 for (varname,var) in ds
+    # all variables
     @show (varname,size(var))
+end
+
+for (dimname,dim) in ds.dims
+    # all dimensions
+    @show (dimname,dim)
+end
+
+for (attribname,attrib) in ds.attrib
+    # all attributes
+    @show (attribname,attrib)
+end
+
+for (groupname,group) in ds.groups
+    # all groups
+    @show (groupname,group)
 end
 ```
 """
@@ -1236,7 +1193,7 @@ end
 
 Generate the Julia code that would produce a NetCDF file with the same metadata
 as the NetCDF file `fname`. The code is placed in the file `jlname` or printed
-to the standard output. Per default the new NetCDF file is called `filename.nc`.
+to the standard output. By default the new NetCDF file is called `filename.nc`.
 This can be changed with the optional parameter `newfname`.
 """
 ncgen(fname; kwargs...)  = ncgen(STDOUT,fname; kwargs...)
@@ -1348,7 +1305,8 @@ export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
     deflate, chunking, checksum, fillvalue, fillmode, ncgen
 export nomissing
 export varbyattrib
-
+export path
+export defGroup
 
 # it is good practise to use the default fill-values, thus we export them
 export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,
