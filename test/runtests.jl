@@ -5,6 +5,8 @@ else
     using Base.Test
 end
 
+using Compat
+
 println("NetCDF library: ",NCDatasets.libnetcdf)
 println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 

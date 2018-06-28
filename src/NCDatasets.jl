@@ -2,10 +2,12 @@ __precompile__()
 
 module NCDatasets
 using Base
-using Test
-using Dates
 using Missings
-using Printf
+using Compat
+if VERSION >= v"0.7.0-beta.65"
+    using Dates
+    using Printf
+end
 import Base.convert
 
 include("time.jl")

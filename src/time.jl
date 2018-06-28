@@ -560,7 +560,8 @@ end
 # DataArrays.DataArray <: AbstractArray
 
 
-if VERSION >= v"0.7.0-DEV.3382"
+#if VERSION >= v"0.7.0-DEV.3382"
+if true
 function timeencode(data::AbstractArray{DT,N},units,
                     calendar = "standard") where N where DT <: Union{DateTime,AbstractCFDateTime}
 

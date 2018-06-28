@@ -1,5 +1,6 @@
-using Test
-using Random
+if VERSION >= v"0.7.0-beta.65"
+    using Random
+end
 import NCDatasets
 
 varname = "varname"

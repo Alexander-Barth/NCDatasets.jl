@@ -1,4 +1,3 @@
-using Test
 import NCDatasets
 
 filename = tempname()
