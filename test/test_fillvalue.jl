@@ -83,6 +83,19 @@ v[:,:] = datam
 # load without transformation
 @test isnan(v.var[1,1])
 
-
 NCDatasets.close(ds)
 
+# test nomissing
+
+data = [missing, Float64(1.), Float64(2.)]
+@test_throws ErrorException NCDatasets.nomissing(data)
+
+dataf = NCDatasets.nomissing(data,-9999.)
+@test eltype(dataf) == Float64
+@test dataf == [-9999., 1., 2.]
+
+
+data = Union{Float64,Missing}[1., 2.]
+dataf = NCDatasets.nomissing(data)
+@test eltype(dataf) == Float64
+@test dataf == [1., 2.]

@@ -1290,7 +1290,11 @@ function nomissing(da::Array{Union{T,Missing},N}) where {T,N}
         error("arrays contains missing values (values equal to the fill values attribute in the NetCDF file)")
     end
 
-    return replace(da, missing => da[1])
+    if VERSION >= v"0.7.0-beta.65"
+        return replace(da, missing => da[1])
+    else
+        return Array{T}(da)
+    end
 end
 
 """
@@ -1300,7 +1304,13 @@ Retun the values of the array `da` of type `Array{Union{T,Missing},N}`
 as a regular Julia array `a` by replacing all missing value by `value`.
 """
 function nomissing(da::Array{Union{T,Missing},N},value) where {T,N}
-    return replace(da, missing => T(value))
+    if VERSION >= v"0.7.0-beta.65"
+        return replace(da, missing => T(value))
+    else
+        tmp = fill(T(value),size(da))
+        tmp[.!ismissing.(da)] = da[.!ismissing.(da)]
+        return tmp
+    end
 end
 
 export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
