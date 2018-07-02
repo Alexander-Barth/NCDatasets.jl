@@ -1,4 +1,4 @@
-if VERSION >= v"0.7.0-beta.65"
+if VERSION >= v"0.7.0-beta.0"
     using Test
 else
     using Base.Test
@@ -98,14 +98,14 @@ for DT in [
     DateTime360Day
 ]
 
-    dt = DT(1959,12,30, 23,39,59,123)
-    @test Dates.year(dt) == 1959
-    @test Dates.month(dt) == 12
-    @test Dates.day(dt) == 30
-    @test Dates.hour(dt) == 23
-    @test Dates.minute(dt) == 39
-    @test Dates.second(dt) == 59
-    @test Dates.millisecond(dt) == 123
+    dtime = DT(1959,12,30, 23,39,59,123)
+    @test Dates.year(dtime) == 1959
+    @test Dates.month(dtime) == 12
+    @test Dates.day(dtime) == 30
+    @test Dates.hour(dtime) == 23
+    @test Dates.minute(dtime) == 39
+    @test Dates.second(dtime) == 59
+    @test Dates.millisecond(dtime) == 123
 
     @test string(DT(2001,2,20)) == "2001-02-20T00:00:00"
     @test datetuple(DT(1959,12,30,23,39,59,123)) == (1959,12,30,23,39,59,123)
@@ -157,9 +157,9 @@ for (calendar,DT) in [
     ("366_day",DateTimeAllLeap),
     ("360_day",DateTime360Day)]
 
-    t0,plength = NCDatasets.timeunits("days since 2000-1-1 0:0:0",calendar)
-    @test t0 == DT(2000,1,1)
-    @test plength == 86400000
+    calendart0,calendarplength = NCDatasets.timeunits("days since 2000-1-1 0:0:0",calendar)
+    @test calendart0 == DT(2000,1,1)
+    @test calendarplength == 86400000
 end
 
 @test_throws ErrorException NCDatasets.timeunits("fortnights since 2000-01-01")

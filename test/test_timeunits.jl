@@ -1,7 +1,8 @@
 # time
 
+filename = tempname()
+
 for (timeunit,factor) in [("days",1),("hours",24),("minutes",24*60),("seconds",24*60*60)]
-    filename = tempname()
 
     NCDatasets.Dataset(filename,"c") do ds
         NCDatasets.defDim(ds,"time",3)
@@ -27,7 +28,6 @@ for (timeunit,factor) in [("days",1),("hours",24),("minutes",24*60),("seconds",2
         v2 = ds["time"][:]
         @test v2[1] == DateTime(2000,1,2)
     end
+
     rm(filename)
-
 end
-

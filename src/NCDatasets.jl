@@ -1,13 +1,13 @@
 __precompile__()
 
 module NCDatasets
-using Base
-using Missings
-using Compat
-if VERSION >= v"0.7.0-beta.65"
+if VERSION >= v"0.7.0-beta.0"
     using Dates
     using Printf
 end
+using Base
+using Missings
+using Compat
 import Base.convert
 
 include("time.jl")
@@ -1290,7 +1290,7 @@ function nomissing(da::Array{Union{T,Missing},N}) where {T,N}
         error("arrays contains missing values (values equal to the fill values attribute in the NetCDF file)")
     end
 
-    if VERSION >= v"0.7.0-beta.65"
+    if VERSION >= v"0.7.0-beta.0"
         return replace(da, missing => da[1])
     else
         return Array{T}(da)
@@ -1304,7 +1304,7 @@ Retun the values of the array `da` of type `Array{Union{T,Missing},N}`
 as a regular Julia array `a` by replacing all missing value by `value`.
 """
 function nomissing(da::Array{Union{T,Missing},N},value) where {T,N}
-    if VERSION >= v"0.7.0-beta.65"
+    if VERSION >= v"0.7.0-beta.0"
         return replace(da, missing => T(value))
     else
         tmp = fill(T(value),size(da))

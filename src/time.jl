@@ -1,6 +1,7 @@
 #module Time
 
-if VERSION >= v"0.7.0-beta.65"
+if VERSION >= v"0.7.0-beta.0"
+    using Dates
     import Dates: UTInstant, Millisecond
     import Dates: year,  month,  day, hour, minute, second, millisecond
 else
@@ -419,7 +420,12 @@ end
 -(dt::AbstractCFDateTime,Δ) = dt + (-Δ)
 
 function parseDT(::Type{DT},str) where DT <: Union{DateTime,AbstractCFDateTime}
-    str = replace(str,"T"," ")
+    str =
+        if VERSION >= v"0.7.0-beta.0"
+            replace(str,"T" => " ")
+        else
+            replace(str,"T"," ")
+        end
 
     # remove Z time zone indicator
     # all times are assumed UTC anyway
@@ -434,7 +440,7 @@ function parseDT(::Type{DT},str) where DT <: Union{DateTime,AbstractCFDateTime}
     end
 
     y,m,d,h,mi,s,ms =
-        if contains(str," ")
+        if occursin(" ",str)
             datestr,timestr = split(str,' ')
             y,m,d = parse.(Int64,split(datestr,'-'))
             h,mi,s = parse.(Int64,split(timestr,':'))

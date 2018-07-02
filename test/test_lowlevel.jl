@@ -1,4 +1,4 @@
-if VERSION >= v"0.7.0-beta.65"
+if VERSION >= v"0.7.0-beta.0"
     using Random
 end
 import NCDatasets
