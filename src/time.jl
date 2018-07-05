@@ -514,6 +514,11 @@ function timeunits(units, calendar = "standard")
     return timeunits(DT,units)
 end
 
+function timedecode(::Type{DT},data::AbstractArray{Float32,N},units) where {DT,N}
+    # convert to Float64
+    return timedecode(DT,Float64.(data),units)
+end
+
 function timedecode(::Type{DT},data,units) where DT
     t0,plength = timeunits(DT,units)
     convert(x) = t0 + Dates.Millisecond(round(Int64,plength * x))

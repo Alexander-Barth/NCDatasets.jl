@@ -220,6 +220,8 @@ end
     [2455512.375]
 
 
+@test timedecode(DateTime,[22280.0f0],"days since 1950-01-01 00:00:00") == [DateTime(2011,1,1)]
+
 @test_throws ErrorException timeencode(
     [DateTimeJulian(2010,10,29,9,0,0)],
     "days since -4713-01-01T00:00:00","360_day")
