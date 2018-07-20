@@ -5,12 +5,12 @@ filename = tempname()
 
 NCDatasets.Dataset(filename,"c") do ds
 
-    # define the dimension "lon" and "lat" 
+    # define the dimension "lon" and "lat"
     ds.dim["lon"] = sz[1]
     ds.dim["lat"] = sz[2]
 
     # variables
-    for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]        
+    for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
     #for T in [Float32]
         data = [T(i+2*j) for i = 1:sz[1], j = 1:sz[2]]
 
@@ -29,9 +29,9 @@ NCDatasets.Dataset(filename,"c") do ds
 
         # ignore extra index
         @test v[2:3,3,1,1] == data[2:3,3,1,1]
-        
-        
-        # write scalar, 
+
+
+        # write scalar,
         v.var[:,:] = T(100)
         @test all(v.var[:,:][:] .== 100)
 
