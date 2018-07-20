@@ -506,7 +506,10 @@ path(ds::Dataset) = nc_inq_path(ds.ncid)
 
 Write all changes in Dataset `ds` to the disk.
 """
-sync(ds::Dataset) = nc_sync(ds.ncid)
+function sync(ds::Dataset)
+    datamode(ds.ncid,ds.isdefmode)
+    nc_sync(ds.ncid)
+end
 
 """
     close(ds::Dataset)
