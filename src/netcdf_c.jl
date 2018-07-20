@@ -621,8 +621,21 @@ function nc_put_var(ncid::Integer,varid::Integer,data::Array{Vector{T},N}) where
     nc_put_var(ncid,varid,convert(Array{nc_vlen_t{T},N},data))
 end
 
-function nc_put_var(ncid::Integer,varid::Integer,data)
+function nc_unsafe_put_var(ncid::Integer,varid::Integer,data)
     check(ccall((:nc_put_var,libnetcdf),Cint,(Cint,Cint,Ptr{Nothing}),ncid,varid,data))
+end
+
+function nc_put_var(ncid::Integer,varid::Integer,data)
+    dimids = nc_inq_vardimid(ncid,varid)
+    ndims = length(dimids)
+    ncsize = ntuple(i -> nc_inq_dimlen(ncid,dimids[ndims-i+1]), ndims)
+    if ncsize != size(data)
+        path = nc_inq_path(ncid)
+        varname = nc_inq_varname(ncid,varid)
+        throw(NetCDFError(-1,"wrong size of variable '$varname' (size $ncsize) in file '$path' for an array of size $(size(data))"))
+    end
+
+    nc_unsafe_put_var(ncid::Integer,varid::Integer,data)
 end
 
 function nc_get_var!(ncid::Integer,varid::Integer,ip::Array{Char,N}) where N
@@ -1162,12 +1175,12 @@ function nc_inq_varndims(ncid::Integer,varid::Integer)
     return ndimsp[1]
 end
 
-# function nc_inq_vardimid(ncid::Integer,varid::Integer)
-#     ndims = nc_inq_varndims(ncid,varid)
-#     dimids = zeros(Cint,ndims)
-#     check(ccall((:nc_inq_vardimid,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,dimids))
-#     return dimids
-# end
+function nc_inq_vardimid(ncid::Integer,varid::Integer)
+    ndims = nc_inq_varndims(ncid,varid)
+    dimids = zeros(Cint,ndims)
+    check(ccall((:nc_inq_vardimid,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,dimids))
+    return dimids
+end
 
 function nc_inq_varnatts(ncid::Integer,varid::Integer)
     nattsp = Vector{Cint}(undef,1)

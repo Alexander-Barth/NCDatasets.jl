@@ -1,6 +1,7 @@
 if VERSION >= v"0.7.0-beta.0"
     using Random
 end
+using Compat
 import NCDatasets
 
 varname = "varname"
@@ -12,15 +13,15 @@ samples = [
 
     # Floats
     [1. 2. 3.; 4. 5. 6.],
-    
+
     # chars
     ['a','b','c'],
     ['a' 'b' 'c'; 'd' 'e' 'f'],
-    
+
     # strings
     ["wieso","weshalb","warum"],
     ["wieso" "weshalb" "warum"; "why" "why" "whyyy"],
-    map(x -> randstring(rand(3:10)), zeros(2,3,4)),    
+    map(x -> randstring(rand(3:10)), zeros(2,3,4)),
 ]
 
 
@@ -37,7 +38,8 @@ for data in samples
 
     T = eltype(data)
     xtype = NCDatasets.ncType[T]
-    varid = NCDatasets.nc_def_var(ncid, varname, xtype, dimids)
+    # reverse order
+    varid = NCDatasets.nc_def_var(ncid, varname, xtype, reverse(dimids))
     NCDatasets.nc_put_var(ncid, varid, data)
     NCDatasets.nc_close(ncid)
 
