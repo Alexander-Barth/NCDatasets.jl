@@ -884,7 +884,7 @@ function Base.getindex(v::Variable,indexes::Union{Int,Colon,UnitRange{Int},StepR
     data = v[ind...]
     # squeeze any dimension which was indexed with a scalar
     if any(squeezedim)
-        return @static if VERSION >= v"0.7.0-beta.0"
+        return @static if VERSION >= v"0.7.0-beta2.188"
             dropdims(data,dims=(findall(squeezedim)...,))
         else
             squeeze(data,dims=(findall(squeezedim)...,))
