@@ -25,22 +25,22 @@ samples = [
 ]
 
 
-for data in samples
+for sampledata in samples
     rm(filename;force=true)
 
     # write data
     ncid = NCDatasets.nc_create(filename,NCDatasets.NC_CLOBBER | NCDatasets.NC_NETCDF4)
 
-    dimids = zeros(Cint,ndims(data))
-    for i = 1:ndims(data)
-        dimids[i] = NCDatasets.nc_def_dim(ncid, "dim-$(i)", size(data,i))
+    dimids = zeros(Cint,ndims(sampledata))
+    for i = 1:ndims(sampledata)
+        dimids[i] = NCDatasets.nc_def_dim(ncid, "dim-$(i)", size(sampledata,i))
     end
 
-    T = eltype(data)
+    T = eltype(sampledata)
     xtype = NCDatasets.ncType[T]
     # reverse order
     varid = NCDatasets.nc_def_var(ncid, varname, xtype, reverse(dimids))
-    NCDatasets.nc_put_var(ncid, varid, data)
+    NCDatasets.nc_put_var(ncid, varid, sampledata)
     NCDatasets.nc_close(ncid)
 
     # load data
@@ -51,9 +51,9 @@ for data in samples
 
     @test xtype == xtype
 
-    data2 = Array{T,ndims(data)}(undef,size(data))
-    NCDatasets.nc_get_var!(ncid,varid,data2)
-    @test data == data2
+    sampledata2 = Array{T,ndims(sampledata)}(undef,size(sampledata))
+    NCDatasets.nc_get_var!(ncid,varid,sampledata2)
+    @test sampledata == sampledata2
 
     NCDatasets.nc_close(ncid)
 end

@@ -121,7 +121,7 @@ end
 # test show
 io = IOBuffer()
 show(io,DateTimeJulian(-1000,1,1))
-isempty(findfirst("Julian",String(io))) == false
+isempty(findfirst("Julian",String(take!(io)))) == false
 
 
 # time

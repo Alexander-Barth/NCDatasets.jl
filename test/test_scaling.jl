@@ -7,6 +7,9 @@ NCDatasets.defDim(ds,"lon",10)
 NCDatasets.defDim(ds,"lat",11)
 
 for T in [Int32,Float32]
+    
+    local v, data
+
     v = NCDatasets.defVar(ds,"scaled_var_$(T)",T,("lon","lat"))
 
     data = [-12.3*i + 23.4*j for i = 1:10, j = 1:11]

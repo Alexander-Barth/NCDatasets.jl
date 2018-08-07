@@ -13,6 +13,8 @@ println("NetCDF library: ",NCDatasets.libnetcdf)
 println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
 @testset "NCDatasets" begin
+    global v
+
     sz = (123,145)
     data = randn(sz)
 
@@ -26,7 +28,6 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     ds = Dataset(filename)
     v = ds["var"]
-    
 
     A = v[:,:]
     @test A == data
@@ -124,9 +125,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
 
     # define scalar
-
     filename = tempname()
-
     NCDatasets.Dataset(filename,"c") do ds
         v = NCDatasets.defVar(ds,"scalar",Float32,())
         v[:] = 123.f0
@@ -139,6 +138,19 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     end
     rm(filename)
 
+    # define scalar with .=
+    filename = tempname()
+    NCDatasets.Dataset(filename,"c") do ds
+        v = NCDatasets.defVar(ds,"scalar",Float32,())
+        v .= 1234.f0
+        nothing
+    end
+
+    NCDatasets.Dataset(filename,"r") do ds
+        v2 = ds["scalar"][:]
+        @test v2 == 1234
+    end
+    rm(filename)
 
     include("test_append.jl")
 

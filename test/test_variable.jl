@@ -18,6 +18,7 @@ NCDatasets.Dataset(filename,"c") do ds
     # variables
     for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
     #for T in []
+        local data
         data = [T(i+2*j) for i = 1:sz[1], j = 1:sz[2]]
 
         v = NCDatasets.defVar(ds,"var-$T",T,("lon","lat"))

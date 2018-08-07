@@ -13,6 +13,7 @@ NCDatasets.Dataset(filename,"c") do ds
     # variables
     for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
     #for T in [Float32]
+        local data
         data = fill(T(123),sz)
 
         v = NCDatasets.defVar(ds,"var-$T",T,("lon","lat");

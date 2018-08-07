@@ -1,4 +1,4 @@
-__precompile__()
+VERSION < v"0.7.0-beta2.199" && __precompile__()
 
 module NCDatasets
 if VERSION >= v"0.7.0-beta.0"
@@ -766,13 +766,16 @@ function Base.setindex!(v::Variable{T,N},data::T,indexes::Colon...) where {T,N}
     return data
 end
 
-function Base.setindex!(v::Variable{T,N},data::Number,indexes::Colon...) where {T,N}
+# call to v .= 123
+function Base.setindex!(v::Variable{T,N},data::Number) where {T,N}
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     tmp = fill(convert(T,data),size(v))
     #@show "here number",indexes,size(v),tmp
     nc_put_var(v.ncid,v.varid,tmp)
     return data
 end
+
+Base.setindex!(v::Variable,data::Number,indexes::Colon...) = setindex!(v::Variable,data)
 
 function Base.setindex!(v::Variable{T,N},data::Array{T,N},indexes::Colon...) where {T,N}
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
@@ -1084,7 +1087,7 @@ end
 
 Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=indent)
 
-Base.display(v::Union{Variable,CFVariable}) = show(STDOUT,v)
+Base.display(v::Union{Variable,CFVariable}) = show(Compat.stdout,v)
 
 
 # Common methods
@@ -1148,6 +1151,15 @@ Base.done(a::NCIterable,state) = length(state) == 0
 Base.next(a::NCIterable,state) = (state[1] => a[popfirst!(state)], state)
 
 
+function Base.iterate(a::NCIterable, state = keys(a))
+    if length(state) == 0
+        return nothing
+    end
+
+    return (state[1] => a[popfirst!(state)], state)
+end
+
+
 """
     escape(val)
 
@@ -1205,7 +1217,7 @@ as the NetCDF file `fname`. The code is placed in the file `jlname` or printed
 to the standard output. By default the new NetCDF file is called `filename.nc`.
 This can be changed with the optional parameter `newfname`.
 """
-ncgen(fname; kwargs...)  = ncgen(STDOUT,fname; kwargs...)
+ncgen(fname; kwargs...)  = ncgen(Compat.stdout,fname; kwargs...)
 
 function ncgen(fname,jlname; kwargs...)
     open(jlname,"w") do io
