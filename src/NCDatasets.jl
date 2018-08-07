@@ -1150,7 +1150,7 @@ Base.start(a::NCIterable) = keys(a)
 Base.done(a::NCIterable,state) = length(state) == 0
 Base.next(a::NCIterable,state) = (state[1] => a[popfirst!(state)], state)
 
-
+@static if VERSION >= v"0.7.0-beta.0"
 function Base.iterate(a::NCIterable, state = keys(a))
     if length(state) == 0
         return nothing
@@ -1158,7 +1158,7 @@ function Base.iterate(a::NCIterable, state = keys(a))
 
     return (state[1] => a[popfirst!(state)], state)
 end
-
+end
 
 """
     escape(val)
