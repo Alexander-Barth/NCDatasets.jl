@@ -1114,50 +1114,19 @@ name `temperature`.
 """
 Base.haskey(a::NCIterable,name::AbstractString) = name in keys(a)
 Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
-# for iteration as a Dict
-
-"""
-    start(ds::NCDatasets.Dataset)
-    start(a::NCDatasets.Attributes)
-    start(d::NCDatasets.Dimensions)
-    start(g::NCDatasets.Groups)
-
-Allow one to iterate over a dataset, attribute list, dimensions and NetCDF groups.
-
-```julia
-for (varname,var) in ds
-    # all variables
-    @show (varname,size(var))
-end
-
-for (dimname,dim) in ds.dims
-    # all dimensions
-    @show (dimname,dim)
-end
-
-for (attribname,attrib) in ds.attrib
-    # all attributes
-    @show (attribname,attrib)
-end
-
-for (groupname,group) in ds.groups
-    # all groups
-    @show (groupname,group)
-end
-```
-"""
-Base.start(a::NCIterable) = keys(a)
-Base.done(a::NCIterable,state) = length(state) == 0
-Base.next(a::NCIterable,state) = (state[1] => a[popfirst!(state)], state)
 
 @static if VERSION >= v"0.7.0-beta.0"
-function Base.iterate(a::NCIterable, state = keys(a))
-    if length(state) == 0
-        return nothing
-    end
+    function Base.iterate(a::NCIterable, state = keys(a))
+        if length(state) == 0
+            return nothing
+        end
 
-    return (state[1] => a[popfirst!(state)], state)
-end
+        return (state[1] => a[popfirst!(state)], state)
+    end
+else
+    Base.start(a::NCIterable) = keys(a)
+    Base.done(a::NCIterable,state) = length(state) == 0
+    Base.next(a::NCIterable,state) = (state[1] => a[popfirst!(state)], state)
 end
 
 """
@@ -1299,7 +1268,7 @@ end
 """
     a = nomissing(da)
 
-Retun the values of the array `da` of type `Array{Union{T,Missing},N}` 
+Retun the values of the array `da` of type `Array{Union{T,Missing},N}`
 (potentially containing missing values) as a regular Julia array `a` of the same
 element type and checks that no missing values are present.
 
@@ -1319,7 +1288,7 @@ end
 """
     a = nomissing(da,value)
 
-Retun the values of the array `da` of type `Array{Union{T,Missing},N}` 
+Retun the values of the array `da` of type `Array{Union{T,Missing},N}`
 as a regular Julia array `a` by replacing all missing value by `value`.
 """
 function nomissing(da::Array{Union{T,Missing},N},value) where {T,N}

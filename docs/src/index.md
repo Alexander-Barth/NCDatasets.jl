@@ -72,12 +72,29 @@ Base.keys(g::NCDatasets.Groups)
 
 ## Common methods
 
-Explore a NetCDF dataset
+One can iterate over a dataset, attribute list, dimensions and NetCDF groups.
 
-```@docs
-Base.start(a::NCDatasets.NCIterable)
+```julia
+for (varname,var) in ds
+    # all variables
+    @show (varname,size(var))
+end
+
+for (dimname,dim) in ds.dims
+    # all dimensions
+    @show (dimname,dim)
+end
+
+for (attribname,attrib) in ds.attrib
+    # all attributes
+    @show (attribname,attrib)
+end
+
+for (groupname,group) in ds.groups
+    # all groups
+    @show (groupname,group)
+end
 ```
-
 
 
 # Time functions
@@ -159,7 +176,7 @@ tempvar.attrib["_FillValue"] = Float32(-9999.)
 
 * An attribute representing a vector with a single value (e.g. `[1]`) will be read back as a scalar (`1`) (same behavior in python netCDF4 1.3.1).
 
-* NetCDF and Julia distinguishes between a vector of chars and a string, but both are returned as string for ease of use, in particular 
+* NetCDF and Julia distinguishes between a vector of chars and a string, but both are returned as string for ease of use, in particular
 an attribute representing a vector of chars `['u','n','i','t','s']` will be read back as the string `"units"`.
 
 * An attribute representing a vector of chars `['u','n','i','t','s','\0']` will also be read back as the string `"units"` (issue #12).
