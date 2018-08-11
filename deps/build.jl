@@ -1,6 +1,10 @@
 using BinDeps
 import CondaBinDeps
 
+if VERSION >= v"0.7.0"
+    using Libdl
+end
+
 function validate_netcdf_version(name,handle)
     f = Libdl.dlsym_e(handle, "nc_inq_libvers")
     #
