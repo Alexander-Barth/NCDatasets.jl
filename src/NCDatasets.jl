@@ -352,11 +352,13 @@ function Dataset(filename::AbstractString,mode::AbstractString = "r";
         elseif format == :netcdf3_classic
             # do nothing
         else
-            error("Unkown format $(format)")
+            throw(NetCDFError(-1, "Unkown format '$(format)' for filename '$(filename)'"))
         end
 
         ncid = nc_create(filename,mode)
         isdefmode[1] = true
+    else
+        throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
     end
 
     return Dataset(ncid,isdefmode)
