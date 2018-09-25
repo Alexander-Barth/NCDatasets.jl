@@ -66,11 +66,11 @@ for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
     # step range
     ref = zeros(sz)
     v[:,:] = 0
-    
+
     ref[1:2:end,2:2:end] .= 1
     v[1:2:end,2:2:end] = 1
     @test v[:,:] == ref
-    
+
     # write scalar (different type)
     ref[1:2:end,2:2:end] .= UInt8(2)
     v[1:2:end,2:2:end] = UInt8(2)
@@ -78,8 +78,8 @@ for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
 
     ref[1,1] = 3
     v[1,1] = 3
-    
-    @test v[:,:] == ref    
+
+    @test v[:,:] == ref
 end
 
 v = NCDatasets.defVar(ds,"var-Char",Char,("lon","lat"))
@@ -144,4 +144,3 @@ v[:,:] = ref
 @test NCDatasets.name(v) == "var-Char"
 
 NCDatasets.close(ds)
-
