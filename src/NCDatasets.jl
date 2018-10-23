@@ -702,7 +702,7 @@ function chunking(v::Variable)
 end
 
 """
-    shuffle,deflate,deflate_level = deflate(v::Variable)
+    isshuffled,isdeflated,deflate_level = deflate(v::Variable)
 
 Return compression information of the variable `v`. If shuffle
 is `true`, then shuffling (byte interlacing) is activaded. If
