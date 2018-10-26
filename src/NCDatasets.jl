@@ -1011,6 +1011,29 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
     end
 end
 
+
+function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime}}
+
+    #@show "data-",typeof(data)
+    attnames = keys(v.attrib)
+    units =
+        if "units" in attnames
+            v.attrib["units"]
+        else
+            @debug "set time units to $DEFAULT_TIME_UNITS"
+            v.attrib["units"] = DEFAULT_TIME_UNITS
+            DEFAULT_TIME_UNITS
+        end
+
+    if occursin(" since ",units)
+        calendar = get(v.attrib,"calendar","standard")
+        v[indexes...] = timeencode(data,units,calendar)
+        return data
+    end
+
+    throw(NetCDFError(-1, "time unit ('$units') of the variable $(name(v)) does not include the word ' since '"))
+end
+
 function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     x =
         if typeof(data) <: AbstractArray
@@ -1019,7 +1042,6 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
             Array{typeof(data),1}(undef,1)
         end
 
-    #@show typeof(data)
     #@show eltype(v.var)
 
     attnames = keys(v.attrib)
@@ -1035,13 +1057,13 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
         x[.!mask] = data[.!mask]
     end
 
-    if "units" in attnames
-        units = v.attrib["units"]
-        if occursin(" since ",units)
-            calendar = get(v.attrib,"calendar","standard")
-            x = timeencode(x,units,calendar)
-        end
-    end
+    # if "units" in attnames
+    #     units = v.attrib["units"]
+    #     if occursin(" since ",units)
+    #         calendar = get(v.attrib,"calendar","standard")
+    #         x = timeencode(x,units,calendar)
+    #     end
+    # end
 
     if "_FillValue" in attnames
         x[mask] .= v.attrib["_FillValue"]

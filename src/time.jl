@@ -11,6 +11,9 @@ end
 
 import Base: +, -, isless, string, show, convert, reinterpret
 
+
+const DEFAULT_TIME_UNITS = "days since 1900-00-00 00:00:00"
+
 # Introduction of the Gregorian Calendar 1582-10-15
 const GREGORIAN_CALENDAR = (1582,10,15)
 
@@ -574,21 +577,34 @@ end
 #if VERSION >= v"0.7.0-DEV.3382"
 if true
 function timeencode(data::AbstractArray{DT,N},units,
-                    calendar = "standard") where N where DT <: Union{DateTime,AbstractCFDateTime}
+                    calendar = "standard") where N where DT <: Union{DateTime,AbstractCFDateTime,Union{DateTime,Missing}}
 
     DT2 = timetype(calendar)
-
-    try
-        data = convert.(DT2,data)
-    catch
-        error("It is not possible to convert between $(DT) and $(DT2)")
-    end
-
     t0,plength = timeunits(DT2,units)
 
-    encode(dt) = Dates.value(dt - t0) / plength
+    function encode(dt)
+        if ismissing(dt)
+            return missing
+        end
+
+        tmp =
+            try
+                convert.(DT2,dt)
+            catch
+                error("It is not possible to convert between $(DT) and $(DT2)")
+            end
+
+        return Dates.value(tmp - t0) / plength
+    end
     return encode.(data)
 end
+
+
+    function timeencode(data::DT,units,
+                        calendar = "standard") where N where DT <: Union{DateTime,AbstractCFDateTime}
+        return timeencode([data],units,calendar)[1]
+    end
+
 else
 """
     data = timeencode(dt,units,calendar = "standard")
