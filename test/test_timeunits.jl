@@ -33,7 +33,6 @@ for (timeunit,factor) in [("days",1),("hours",24),("minutes",24*60),("seconds",2
 end
 
 
-#=
 # currently broken
 
 filename = tempname()
@@ -49,4 +48,3 @@ NCDatasets.Dataset(filename,"c") do ds
     @test v[1] == DateTime(2000,1,2)
 end
 
-=#

@@ -782,14 +782,14 @@ end
 
 Base.setindex!(v::Variable,data::Number,indexes::Colon...) = setindex!(v::Variable,data)
 
-function Base.setindex!(v::Variable{T,N},data::Array{T,N},indexes::Colon...) where {T,N}
+function Base.setindex!(v::Variable{T,N},data::AbstractArray{T,N},indexes::Colon...) where {T,N}
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     #@show @__LINE__,@__FILE__
     nc_put_var(v.ncid,v.varid,data)
     return data
 end
 
-function Base.setindex!(v::Variable{T,N},data::Array{T2,N},indexes::Colon...) where {T,T2,N}
+function Base.setindex!(v::Variable{T,N},data::AbstractArray{T2,N},indexes::Colon...) where {T,T2,N}
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     tmp =
         if T <: Integer
@@ -1038,51 +1038,45 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
     throw(NetCDFError(-1, "time unit ('$units') of the variable $(name(v)) does not include the word ' since '"))
 end
 
-function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) 
-    x =
-        if typeof(data) <: AbstractArray
-            Array{eltype(data),ndims(data)}(undef,size(data))
+
+function transform(v,offset,scale)
+    if offset !== nothing
+        if scale !== nothing
+            return (v - offset) / scale
         else
-            Array{typeof(data),1}(undef,1)
+            return v - offset
         end
-
-    #@show eltype(v.var)
-
-    attnames = keys(v.attrib)
-
-    #@show "here",ndims(x),ndims(data)
-
-    if !(typeof(data) <: AbstractArray)
-        # for scalars
-        x = [data]
-        mask = [false]
     else
-        mask = ismissing.(data)
-        x[.!mask] = data[.!mask]
-    end
-
-    if "_FillValue" in attnames
-        x[mask] .= v.attrib["_FillValue"]
-    else
-        # should we issue a warning?
-    end
-
-    # do not scale characters and strings
-    if eltype(v.var) != Char
-        if "add_offset" in attnames
-            x[.!mask] = x[.!mask] .- v.attrib["add_offset"]
-        end
-
-        if "scale_factor" in attnames
-            x[.!mask] = x[.!mask] / v.attrib["scale_factor"]
+        if scale !== nothing
+            return v / scale
+        else
+            return v
         end
     end
+end
 
-    if !(typeof(data) <: AbstractArray)
-        v.var[indexes...] = x[1]
-    else
-        v.var[indexes...] = x
-    end
+# the transformv function is necessary to avoid "iterating" over a single character
+# https://discourse.julialang.org/t/broadcasting-and-single-characters/16836
+transformv(data,offset,scale) = transform.(data,offset,scale)
+transformv(data::Char,offset,scale) = data
+
+function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
+    offset,scale =
+        if eltype(v.var) == Char
+            (nothing,nothing)
+        else
+            (get(v.attrib,"add_offset",nothing),
+             get(v.attrib,"scale_factor",nothing))
+        end
+
+    fillvalue = get(v.attrib,"_FillValue",nothing)
+
+    v.var[indexes...] =
+        if fillvalue == nothing
+            transformv(data,offset,scale)
+        else
+            coalesce.(transformv(data,offset,scale),fillvalue)
+        end
 
     return data
 end
