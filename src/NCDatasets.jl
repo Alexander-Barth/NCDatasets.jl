@@ -1011,6 +1011,10 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
     end
 end
 
+function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N
+    v.var[indexes...] = fill(v.attrib["_FillValue"],size(data))
+end
+
 
 function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime}}
 
@@ -1034,7 +1038,7 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
     throw(NetCDFError(-1, "time unit ('$units') of the variable $(name(v)) does not include the word ' since '"))
 end
 
-function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
+function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) 
     x =
         if typeof(data) <: AbstractArray
             Array{eltype(data),ndims(data)}(undef,size(data))
@@ -1056,14 +1060,6 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
         mask = ismissing.(data)
         x[.!mask] = data[.!mask]
     end
-
-    # if "units" in attnames
-    #     units = v.attrib["units"]
-    #     if occursin(" since ",units)
-    #         calendar = get(v.attrib,"calendar","standard")
-    #         x = timeencode(x,units,calendar)
-    #     end
-    # end
 
     if "_FillValue" in attnames
         x[mask] .= v.attrib["_FillValue"]

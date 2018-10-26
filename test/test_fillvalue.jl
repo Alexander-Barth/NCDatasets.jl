@@ -86,7 +86,6 @@ v[:,:] = datam
 NCDatasets.close(ds)
 
 # all fill-values
-#=
 filename = tempname()
 ds = NCDatasets.Dataset(filename,"c")
 ds.dim["lon"] = 3
@@ -99,7 +98,6 @@ v[:] = data
 @test all(ismissing.(v[:]))
 
 NCDatasets.close(ds)
-=#
 
 # test nomissing
 
