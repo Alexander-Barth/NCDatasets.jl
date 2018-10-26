@@ -643,9 +643,9 @@ function Base.getindex(ds::Dataset,varname::AbstractString)
     # return element type of any index operation
 
     if eltype(v) <: Number
-        rettype = Float64
+        rettype = Union{Missing,Float64}
     else
-        rettype = eltype(v)
+        rettype = Union{Missing,eltype(v)}
     end
 
     # return CFVariable{eltype(v),rettype,ndims(v)}(v,attrib,has_fillvalue,has_add_offset,
@@ -925,7 +925,7 @@ end
 # Variable (with applied transformation following the CF convention)
 
 
-mutable struct CFVariable{NetCDFType,T,N}  <: AbstractArray{Float64, N}
+mutable struct CFVariable{NetCDFType,T,N}  <: AbstractArray{T, N}
     var::Variable{NetCDFType,N}
     attrib::Attributes
     #has_fillvalue::Bool
