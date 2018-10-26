@@ -755,6 +755,7 @@ function nc_get_vars(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Arra
 end
 
 function nc_get_vars(ncid::Integer,varid::Integer,startp,countp,stridep,ip)
+    @debug "nc_get_vars: $startp,$countp,$stridep"
     check(ccall((:nc_get_vars,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,stridep,ip))
 end
 

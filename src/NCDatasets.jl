@@ -9,6 +9,7 @@ using Base
 using Missings
 using Compat
 import Base.convert
+import Compat: @debug
 
 include("time.jl")
 
