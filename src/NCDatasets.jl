@@ -1038,6 +1038,28 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
     throw(NetCDFError(-1, "time unit ('$units') of the variable $(name(v)) does not include the word ' since '"))
 end
 
+@static if VERSION < v"0.7"
+    function Base.setindex!(v::CFVariable,data::T,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime}}
+
+        attnames = keys(v.attrib)
+        units =
+            if "units" in attnames
+                v.attrib["units"]
+            else
+                @debug "set time units to $DEFAULT_TIME_UNITS"
+                v.attrib["units"] = DEFAULT_TIME_UNITS
+                DEFAULT_TIME_UNITS
+            end
+
+        if occursin(" since ",units)
+            calendar = get(v.attrib,"calendar","standard")
+            v[indexes...] = timeencode(data,units,calendar)
+            return data
+        end
+
+        throw(NetCDFError(-1, "time unit ('$units') of the variable $(name(v)) does not include the word ' since '"))
+    end
+end
 
 function transform(v,offset,scale)
     if offset !== nothing

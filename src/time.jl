@@ -601,7 +601,7 @@ end
 
 
     function timeencode(data::DT,units,
-                        calendar = "standard") where N where DT <: Union{DateTime,AbstractCFDateTime}
+                        calendar = "standard") where DT <: Union{DateTime,AbstractCFDateTime}
         return timeencode([data],units,calendar)[1]
     end
 
