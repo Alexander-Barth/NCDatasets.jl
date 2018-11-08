@@ -218,3 +218,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     end
 
 end
+
+@testset "Multi-file datasets" begin
+    include("test_catarrays.jl")
+end

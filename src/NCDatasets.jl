@@ -12,6 +12,8 @@ import Base.convert
 import Compat: @debug
 
 include("time.jl")
+include("CatArrays.jl")
+export CatArrays
 
 # NetCDFError, error check and netcdf_c.jl from NetCDF.jl (https://github.com/JuliaGeo/NetCDF.jl)
 # Copyright (c) 2012-2013: Fabian Gans, Max-Planck-Institut fuer Biogeochemie, Jena, Germany
