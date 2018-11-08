@@ -1346,7 +1346,7 @@ end
     ncsave(filename,datadict)
 
 Save the dictionary `datadict` in the NetCDF filename.
-Only arrays of floats, integers and DateTime and 
+Only arrays of floats, integers and DateTime and
 arrays of vectors (of floats, integers and DateTime) are supported.
 """
 function ncsave(filename,datadict)
@@ -1383,8 +1383,8 @@ function _writevar(ds,varname,value,dims)
             ds.dim[dims[i]] = size(value,i)
         end
     end
-    
-    v =         
+
+    v =
         if varname in ds
             ds[varname]
         else
