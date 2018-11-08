@@ -531,7 +531,7 @@ Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.Variable`. No scaling is applied when this variable is
 indexes.
 """
-function variable(ds::Dataset,varname::String)
+function variable(ds::Dataset,varname::AbstractString)
     varid = nc_inq_varid(ds.ncid,varname)
     name,nctype,dimids,nattr = nc_inq_var(ds.ncid,varid)
     ndims = length(dimids)
