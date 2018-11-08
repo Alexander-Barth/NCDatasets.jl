@@ -45,7 +45,7 @@ var documenterSearchIndex = {"docs": [
     "page": "NCDatasets.jl",
     "title": "Base.getindex",
     "category": "method",
-    "text": "getindex(ds::Dataset,varname::AbstractString)\n\nReturn the NetCDF variable varname in the dataset ds as a NCDataset.CFVariable. The CF convention are honored when the variable is indexed:\n\n_FillValue will be returned as missing (DataArrays)\nscale_factor and add_offset are applied\ntime variables (recognized by the units attribute) are returned\n\nas DateTime object.\n\nA call getindex(ds,varname) is usually written as ds[varname].\n\n\n\n"
+    "text": "getindex(ds::Dataset,varname::AbstractString)\n\nReturn the NetCDF variable varname in the dataset ds as a NCDataset.CFVariable. The CF convention are honored when the variable is indexed:\n\n_FillValue will be returned as missing\nscale_factor and add_offset are applied\ntime variables (recognized by the units attribute) are returned\n\nas DateTime object.\n\nA call getindex(ds,varname) is usually written as ds[varname].\n\n\n\n"
 },
 
 {
@@ -125,7 +125,7 @@ var documenterSearchIndex = {"docs": [
     "page": "NCDatasets.jl",
     "title": "NCDatasets.deflate",
     "category": "function",
-    "text": "shuffle,deflate,deflate_level = deflate(v::Variable)\n\nReturn compression information of the variable v. If shuffle is true, then shuffling (byte interlacing) is activaded. If deflate is true, then the data chunks (see chunking) are compressed using the compression level deflate_level (0 means no compression and 9 means maximum compression).\n\n\n\n"
+    "text": "isshuffled,isdeflated,deflate_level = deflate(v::Variable)\n\nReturn compression information of the variable v. If shuffle is true, then shuffling (byte interlacing) is activaded. If deflate is true, then the data chunks (see chunking) are compressed using the compression level deflate_level (0 means no compression and 9 means maximum compression).\n\n\n\n"
 },
 
 {
@@ -241,19 +241,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#Base.start-Tuple{Union{NCDatasets.BaseAttributes, NCDatasets.Dataset, NCDatasets.Dimensions, NCDatasets.Groups}}",
-    "page": "NCDatasets.jl",
-    "title": "Base.start",
-    "category": "method",
-    "text": "start(ds::NCDatasets.Dataset)\nstart(a::NCDatasets.Attributes)\nstart(d::NCDatasets.Dimensions)\nstart(g::NCDatasets.Groups)\n\nAllow one to iterate over a dataset, attribute list, dimensions and NetCDF groups.\n\nfor (varname,var) in ds\n    # all variables\n    @show (varname,size(var))\nend\n\nfor (dimname,dim) in ds.dims\n    # all dimensions\n    @show (dimname,dim)\nend\n\nfor (attribname,attrib) in ds.attrib\n    # all attributes\n    @show (attribname,attrib)\nend\n\nfor (groupname,group) in ds.groups\n    # all groups\n    @show (groupname,group)\nend\n\n\n\n"
-},
-
-{
     "location": "index.html#Common-methods-1",
     "page": "NCDatasets.jl",
     "title": "Common methods",
     "category": "section",
-    "text": "Explore a NetCDF datasetBase.start(a::NCDatasets.NCIterable)"
+    "text": "One can iterate over a dataset, attribute list, dimensions and NetCDF groups.for (varname,var) in ds\n    # all variables\n    @show (varname,size(var))\nend\n\nfor (dimname,dim) in ds.dims\n    # all dimensions\n    @show (dimname,dim)\nend\n\nfor (attribname,attrib) in ds.attrib\n    # all attributes\n    @show (attribname,attrib)\nend\n\nfor (groupname,group) in ds.groups\n    # all groups\n    @show (groupname,group)\nend"
 },
 
 {
@@ -393,35 +385,43 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "index.html#Base.Dates.daysinmonth",
+    "page": "NCDatasets.jl",
+    "title": "Base.Dates.daysinmonth",
+    "category": "function",
+    "text": "monthlength = daysinmonth(::Type{DT},y,m)\n\nReturns the number of days in a month for the year y and the month m according to the calenar given by the type DT.\n\nExample\n\njulia> daysinmonth(DateTimeAllLeap,2001,2)\n29\n\n\n\nmonthlength = daysinmonth(t)\n\nReturns the number of days in a month containing the date t\n\nExample\n\njulia> daysinmonth(DateTimeAllLeap(2001,2,1))\n29\n\n\n\n"
+},
+
+{
+    "location": "index.html#Base.Dates.daysinyear",
+    "page": "NCDatasets.jl",
+    "title": "Base.Dates.daysinyear",
+    "category": "function",
+    "text": "yearlength = daysinyear(::Type{DT},y)\n\nReturns the number of days in a year for the year y according to the calenar given by the type DT.\n\nExample\n\njulia> daysinyear(DateTimeAllLeap,2001,2)\n366\n\n\n\nyearlength = daysinyear(t)\n\nReturns the number of days in a year containing the date t\n\nExample\n\njulia> daysinyear(DateTimeAllLeap(2001,2,1))\n366\n\n\n\n"
+},
+
+{
     "location": "index.html#Time-functions-1",
     "page": "NCDatasets.jl",
     "title": "Time functions",
     "category": "section",
-    "text": "DateTimeStandard\nDateTimeJulian\nDateTimeProlepticGregorian\nDateTimeAllLeap\nDateTimeNoLeap\nDateTime360Day\nDates.year(dt::AbstractCFDateTime)\nDates.month(dt::AbstractCFDateTime)\nDates.day(dt::AbstractCFDateTime)\nDates.hour(dt::AbstractCFDateTime)\nDates.minute(dt::AbstractCFDateTime)\nDates.second(dt::AbstractCFDateTime)\nDates.millisecond(dt::AbstractCFDateTime)\nconvert\nreinterpret\ntimedecode\ntimeencode"
+    "text": "DateTimeStandard\nDateTimeJulian\nDateTimeProlepticGregorian\nDateTimeAllLeap\nDateTimeNoLeap\nDateTime360Day\nDates.year(dt::AbstractCFDateTime)\nDates.month(dt::AbstractCFDateTime)\nDates.day(dt::AbstractCFDateTime)\nDates.hour(dt::AbstractCFDateTime)\nDates.minute(dt::AbstractCFDateTime)\nDates.second(dt::AbstractCFDateTime)\nDates.millisecond(dt::AbstractCFDateTime)\nconvert\nreinterpret\ntimedecode\ntimeencode\ndaysinmonth\ndaysinyear"
 },
 
 {
-    "location": "index.html#NCDatasets.ncgen-Tuple{Any}",
+    "location": "index.html#NCDatasets.ncgen",
     "page": "NCDatasets.jl",
     "title": "NCDatasets.ncgen",
-    "category": "method",
+    "category": "function",
     "text": "ncgen(fname; ...)\nncgen(fname,jlname; ...)\n\nGenerate the Julia code that would produce a NetCDF file with the same metadata as the NetCDF file fname. The code is placed in the file jlname or printed to the standard output. By default the new NetCDF file is called filename.nc. This can be changed with the optional parameter newfname.\n\n\n\n"
 },
 
 {
-    "location": "index.html#NCDatasets.nomissing-Tuple{DataArrays.DataArray}",
+    "location": "index.html#NCDatasets.nomissing",
     "page": "NCDatasets.jl",
     "title": "NCDatasets.nomissing",
-    "category": "method",
-    "text": "a = nomissing(da::DataArray)\n\nRetun the values of the DataArray da as a regular Julia array a of the same element type and checks that no missing values are present.\n\n\n\n"
-},
-
-{
-    "location": "index.html#NCDatasets.nomissing-Tuple{DataArrays.DataArray,Any}",
-    "page": "NCDatasets.jl",
-    "title": "NCDatasets.nomissing",
-    "category": "method",
-    "text": "a = nomissing(da::DataArray,value)\n\nRetun the values of the DataArray da as a regular Julia array a by replacing all missing value by value.\n\n\n\n"
+    "category": "function",
+    "text": "a = nomissing(da)\n\nRetun the values of the array da of type Array{Union{T,Missing},N} (potentially containing missing values) as a regular Julia array a of the same element type and checks that no missing values are present.\n\n\n\na = nomissing(da,value)\n\nRetun the values of the array da of type Array{Union{T,Missing},N} as a regular Julia array a by replacing all missing value by value.\n\n\n\n"
 },
 
 {
@@ -437,7 +437,7 @@ var documenterSearchIndex = {"docs": [
     "page": "NCDatasets.jl",
     "title": "Utility functions",
     "category": "section",
-    "text": "ncgen(fname)\nnomissing(da::DataArrays.DataArray)\nnomissing(da::DataArrays.DataArray,value)\nvarbyattrib"
+    "text": "ncgen\nnomissing\nvarbyattrib"
 },
 
 {
@@ -469,7 +469,7 @@ var documenterSearchIndex = {"docs": [
     "page": "NCDatasets.jl",
     "title": "Corner cases",
     "category": "section",
-    "text": "An attribute representing a vector with a single value (e.g. [1]) will be read back as a scalar (1) (same behavior in python netCDF4 1.3.1).\nNetCDF and Julia distinguishes between a vector of chars and a string, but both are returned as string for ease of use, in particular an attribute representing a vector of chars [\'u\',\'n\',\'i\',\'t\',\'s\'] will be read back as the string \"units\".An attribute representing a vector of chars [\'u\',\'n\',\'i\',\'t\',\'s\',\'\\0\'] will also be read back as the string \"units\" (issue #12).<!–  LocalWords:  NCDatasets jl Datasets Dataset netCDF  –>"
+    "text": "An attribute representing a vector with a single value (e.g. [1]) will be read back as a scalar (1) (same behavior in python netCDF4 1.3.1).\nNetCDF and Julia distinguishes between a vector of chars and a string, but both are returned as string for ease of use, in particularan attribute representing a vector of chars [\'u\',\'n\',\'i\',\'t\',\'s\'] will be read back as the string \"units\".An attribute representing a vector of chars [\'u\',\'n\',\'i\',\'t\',\'s\',\'\\0\'] will also be read back as the string \"units\" (issue #12).<!–  LocalWords:  NCDatasets jl Datasets Dataset netCDF  –>"
 },
 
 ]}
