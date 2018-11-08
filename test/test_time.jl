@@ -16,6 +16,9 @@ using NCDatasets
 
 
 function datenum_datetuple_all_calendars()
+    #dayincrement = 11
+    dayincrement = 11000
+
     for (tonum,totuple) in [
         (NCDatasets.datenum_standard,NCDatasets.datetuple_standard),
         (NCDatasets.datenum_julian,NCDatasets.datetuple_julian),
@@ -24,7 +27,7 @@ function datenum_datetuple_all_calendars()
         (NCDatasets.datenum_noleap,NCDatasets.datetuple_noleap),
         (NCDatasets.datenum_360day,NCDatasets.datetuple_360day),
     ]
-        for Z = -2_400_000 + NCDatasets.DATENUM_OFFSET : 11 : 600_000 + NCDatasets.DATENUM_OFFSET
+        for Z = -2_400_000 + NCDatasets.DATENUM_OFFSET : dayincrement : 600_000 + NCDatasets.DATENUM_OFFSET
             y,m,d = totuple(Z)
             @test tonum(y,m,d) == Z
         end
@@ -323,6 +326,30 @@ datacal = timedecode(data_orig, units, calendar)
 data_orig_back = timeencode(datacal, units, calendar)
 @test data_orig ≈ data_orig_back
 
+
+# issue #17
+
+# reference values from cftime
+# for T in [cftime.DatetimeGregorian,cftime.DatetimeJulian,cftime.DatetimeProlepticGregorian,cftime.DatetimeAllLeap,cftime.DatetimeNoLeap, cftime.Datetime360Day]:
+#     print(T,T(1582,11,1) - T(1582,10,1))
+
+@test daysinmonth(DateTimeStandard(1582,10,1)) == 21
+@test daysinmonth(DateTimeJulian(1582,10,1)) == 31
+@test daysinmonth(DateTimeProlepticGregorian(1582,10,1)) == 31
+@test daysinmonth(DateTimeAllLeap(1582,10,1)) == 31
+@test daysinmonth(DateTimeNoLeap(1582,10,1)) == 31
+@test daysinmonth(DateTime360Day(1582,10,1)) == 30
+
+# import cftime
+# for T in [cftime.DatetimeGregorian,cftime.DatetimeJulian,cftime.DatetimeProlepticGregorian,cftime.DatetimeAllLeap,cftime.DatetimeNoLeap, cftime.Datetime360Day]:
+#    print(T,T(1583,1,1) - T(1582,1,1))
+
+@test daysinyear(DateTimeStandard(1582,10,1)) == 355
+@test daysinyear(DateTimeJulian(1582,10,1)) == 365
+@test daysinyear(DateTimeProlepticGregorian(1582,10,1)) == 365
+@test daysinyear(DateTimeAllLeap(1582,10,1)) == 366
+@test daysinyear(DateTimeNoLeap(1582,10,1)) == 365
+@test daysinyear(DateTime360Day(1582,10,1)) == 360
 
 # if @isdefined DataArrays
 

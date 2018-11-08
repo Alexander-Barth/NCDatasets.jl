@@ -117,18 +117,19 @@ convert
 reinterpret
 timedecode
 timeencode
+daysinmonth
+daysinyear
 ```
+
 
 
 # Utility functions
 
 ```@docs
-ncgen(fname)
-nomissing(da::DataArrays.DataArray)
-nomissing(da::DataArrays.DataArray,value)
+ncgen
+nomissing
 varbyattrib
 ```
-
 
 # Issues
 

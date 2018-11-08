@@ -4,9 +4,11 @@ if VERSION >= v"0.7.0-beta.0"
     using Dates
     import Dates: UTInstant, Millisecond
     import Dates: year,  month,  day, hour, minute, second, millisecond
+    import Dates: daysinmonth, daysinyear
 else
     import Base.Dates: UTInstant, Millisecond
     import Base.Dates: year,  month,  day, hour, minute, second, millisecond
+    import Base.Dates: daysinmonth, daysinyear
 end
 
 import Base: +, -, isless, string, show, convert, reinterpret
@@ -574,8 +576,17 @@ end
 # DataArrays.DataArray <: AbstractArray
 
 
-#if VERSION >= v"0.7.0-DEV.3382"
-if true
+"""
+    data = timeencode(dt,units,calendar = "standard")
+
+Convert a vector or array of `DateTime` (or `DateTimeStandard`,
+`DateTimeProlepticGregorian`, `DateTimeJulian`, `DateTimeNoLeap`,
+`DateTimeAllLeap`, `DateTime360Day`) accoring to
+the specified units (e.g. "days since 2000-01-01 00:00:00") using the calendar
+`calendar`.  Valid values for calendar are:
+"standard", "gregorian", "proleptic_gregorian", "julian", "noleap", "365_day",
+"all_leap", "366_day", "360_day".
+"""
 function timeencode(data::AbstractArray{DT,N},units,
                     calendar = "standard") where N where DT <: Union{DateTime,AbstractCFDateTime,Union{DateTime,Missing}}
 
@@ -600,45 +611,87 @@ function timeencode(data::AbstractArray{DT,N},units,
 end
 
 
-    function timeencode(data::DT,units,
-                        calendar = "standard") where DT <: Union{DateTime,AbstractCFDateTime}
-        return timeencode([data],units,calendar)[1]
-    end
-
-else
-"""
-    data = timeencode(dt,units,calendar = "standard")
-
-Convert a vector or array of `DateTime` (or `DateTimeStandard`,
-`DateTimeProlepticGregorian`, `DateTimeJulian`, `DateTimeNoLeap`,
-`DateTimeAllLeap`, `DateTime360Day`) accoring to
-the specified units (e.g. "days since 2000-01-01 00:00:00") using the calendar
-`calendar`.  Valid values for calendar are:
-"standard", "gregorian", "proleptic_gregorian", "julian", "noleap", "365_day",
-"all_leap", "366_day", "360_day".
-"""
-function timeencode(data::Union{DataArray{DT,N},AbstractArray{DT,N}},units,
-                    calendar = "standard") where N where DT <: Union{DateTime,AbstractCFDateTime}
-
-    DT2 = timetype(calendar)
-
-    try
-        data = convert.(DT2,data)
-    catch
-        error("It is not possible to convert between $(DT) and $(DT2)")
-    end
-
-    t0,plength = timeunits(DT2,units)
-
-    encode(dt) = Dates.value(dt - t0) / plength
-    return encode.(data)
+function timeencode(data::DT,units,
+                    calendar = "standard") where DT <: Union{DateTime,AbstractCFDateTime}
+    return timeencode([data],units,calendar)[1]
 end
-end
+
 
 # do not transform data is not a vector of DateTime
 timeencode(data,units,calendar = "standard") = data
 
 export timeencode, timedecode, datetuple
+
+
+# utility functions
+
+"""
+    monthlength = daysinmonth(::Type{DT},y,m)
+
+Returns the number of days in a month for the year `y` and the month `m`
+according to the calenar given by the type `DT`.
+
+Example
+```julia-repl
+julia> daysinmonth(DateTimeAllLeap,2001,2)
+29
+```
+
+"""
+function daysinmonth(::Type{DT},y,m) where DT <: Union{DateTime, AbstractCFDateTime}
+    t = DT(y,m,1)
+    return Dates.value((t + Dates.Month(1)) - t) ÷ (24*60*60*1000)
+end
+
+"""
+    monthlength = daysinmonth(t)
+
+Returns the number of days in a month containing the date `t`
+
+Example
+```julia-repl
+julia> daysinmonth(DateTimeAllLeap(2001,2,1))
+29
+```
+"""
+function daysinmonth(t::DT) where DT <: Union{DateTime, AbstractCFDateTime}
+    return daysinmonth(DT,Dates.year(t),Dates.month(t))
+end
+
+"""
+    yearlength = daysinyear(::Type{DT},y)
+
+Returns the number of days in a year for the year `y`
+according to the calenar given by the type `DT`.
+
+Example
+```julia-repl
+julia> daysinyear(DateTimeAllLeap,2001,2)
+366
+```
+
+"""
+function daysinyear(::Type{DT},y) where DT <: Union{DateTime, AbstractCFDateTime}
+    t = DT(y,1,1)
+    return Dates.value((t + Dates.Year(1)) - t) ÷ (24*60*60*1000)
+end
+
+"""
+    yearlength = daysinyear(t)
+
+Returns the number of days in a year containing the date `t`
+
+Example
+```julia-repl
+julia> daysinyear(DateTimeAllLeap(2001,2,1))
+366
+```
+"""
+function daysinyear(t::DT) where DT <: Union{DateTime, AbstractCFDateTime}
+    return daysinyear(DT,Dates.year(t))
+end
+
+export daysinmonth, daysinyear
 
 export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
     DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
