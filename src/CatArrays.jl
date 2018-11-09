@@ -108,7 +108,7 @@ end
 function Base.getindex(CA::CatArray{T,N},idx...) where {T,N}
 
     ind,squeezedim = normalizeindexes(size(CA),idx)
-    @show typeof(ind)
+    @debug "typeof(ind) ",typeof(ind)
 
     idx_global,idx_local,sz = idx_global_local_(CA,ind)
 
