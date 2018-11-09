@@ -635,27 +635,7 @@ A call `getindex(ds,varname)` is usually written as `ds[varname]`.
 """
 function Base.getindex(ds::Dataset,varname::AbstractString)
     v = variable(ds,varname)
-    # fillvalue = zero(eltype(v))
-    # add_offset = 0
-    # scale_factor = 1
-
     attrib = Attributes(v.ncid,v.varid,ds.isdefmode)
-    # attnames = keys(attrib)
-
-    # has_fillvalue = "_FillValue" in attnames
-    # if has_fillvalue
-    #     fillvalue = attrib["_FillValue"]
-    # end
-
-    # has_add_offset = "add_offset" in attnames
-    # if has_add_offset
-    #     add_offset = attrib["add_offset"]
-    # end
-
-    # has_scale_factor = "scale_factor" in attnames
-    # if has_scale_factor
-    #     scale_factor = attrib["scale_factor"]
-    # end
 
     # return element type of any index operation
 
@@ -664,10 +644,6 @@ function Base.getindex(ds::Dataset,varname::AbstractString)
     else
         rettype = Union{Missing,eltype(v)}
     end
-
-    # return CFVariable{eltype(v),rettype,ndims(v)}(v,attrib,has_fillvalue,has_add_offset,
-    #                                               has_scale_factor,fillvalue,
-    #                                               add_offset,scale_factor)
 
     return CFVariable{eltype(v),rettype,ndims(v)}(v,attrib)
 end
@@ -939,19 +915,12 @@ end
 
 
 # -----------------------------------------------------
-# Variable (with applied transformation following the CF convention)
+# Variable (with applied transformations following the CF convention)
 
 
 mutable struct CFVariable{NetCDFType,T,N}  <: AbstractArray{T, N}
     var::Variable{NetCDFType,N}
     attrib::Attributes
-    #has_fillvalue::Bool
-    #has_add_offset::Bool
-    #has_scale_factor::Bool
-
-    #fillvalue::NetCDFType
-    #add_offset
-    #scale_factor
 end
 
 Base.size(v::CFVariable) = size(v.var)
