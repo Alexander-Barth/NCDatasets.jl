@@ -7,10 +7,6 @@ else
 end
 
 using NCDatasets
-import NCDatasets: variable, MFAttributes, close
-using NCDatasets
-import NCDatasets.CatArrays: CatArray
-import Base: getindex, setindex!, close
 
 function example_file(i,array)
     fname = "/tmp/filename_$(i).nc"
@@ -89,53 +85,9 @@ idx_global,idx_local,sz = CatArrays.idx_global_local_(CA,(1:1,1:1,1:1))
     @test CA[1,1,1] == C[1,1,1]
 end
 
-mutable struct MFDataset{N}
-    ds::Array{Dataset,N}
-    aggdim::AbstractString
-    attrib::MFAttributes
-end
 
 fnames = example_file.(1:3,A)
 
-function MFDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing) where N where TS <: AbstractString
-    ds = Dataset.(fnames,mode);
-
-    if aggdim == nothing
-        # first unlimited dimensions
-        aggdim = NCDatasets.unlimited(ds[1].dim)[1]
-    end
-
-    attrib = MFAttributes([d.attrib for d in ds])
-    return MFDataset(ds,aggdim,attrib)
-end
-function close(mfds::MFDataset)
-    close.(mfds.ds)
-end
-
-mutable struct MFVariable{T,N,M,TA} <: AbstractArray{T,N}
-    var::CatArray{T,N,M,TA}
-    attrib::MFAttributes
-end
-
-Base.getindex(v::MFVariable,indexes...) = getindex(v.var,indexes...)
-Base.setindex!(v::MFVariable,data,indexes...) = setindex!(v.var,data,indexes...)
-
-function variable(mfds::MFDataset,varname::AbstractString)
-    vars = variable.(mfds.ds,varname)
-
-    dim = findfirst(dimnames(vars[1]) .== mfds.aggdim)
-    @show dim
-    @debug begin
-        @show dim
-    end
-
-    if dim != nothing
-        v = CatArrays.CatArray(dim,vars...)
-        return MFVariable(v,MFAttributes([var.attrib for var in vars]))
-    else
-        return vars[1]
-    end
-end
 
 
 
