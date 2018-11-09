@@ -916,9 +916,17 @@ end
 #     check(ccall((:nc_inq_unlimdim,libnetcdf),Cint,(Cint,Ptr{Cint}),ncid,unlimdimidp))
 # end
 
-# function nc_inq_unlimdims(ncid::Integer,nunlimdimsp,unlimdimidsp)
-#     check(ccall((:nc_inq_unlimdims,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,nunlimdimsp,unlimdimidsp))
-# end
+"""
+Returns the identifiers of unlimited dimensions
+"""
+function nc_inq_unlimdims(ncid::Integer)
+    nunlimdimsp = Vector{Cint}(undef,1)
+    check(ccall((:nc_inq_unlimdims,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,nunlimdimsp,C_NULL))
+
+    unlimdimids = Vector{Cint}(undef,nunlimdimsp[1])
+    check(ccall((:nc_inq_unlimdims,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,nunlimdimsp,unlimdimids))
+    return unlimdimids
+end
 
 # function nc_inq_format(ncid::Integer,formatp)
 #     check(ccall((:nc_inq_format,libnetcdf),Cint,(Cint,Ptr{Cint}),ncid,formatp))

@@ -22,7 +22,7 @@ function example_file(i,array)
 
     ds.dim["lon"] = size(array,1)
     ds.dim["lat"] = size(array,2)
-    ds.dim["time"] = 1
+    ds.dim["time"] = Inf
 
     # Declare variables
 
@@ -91,20 +91,25 @@ end
 
 mutable struct MFDataset{N}
     ds::Array{Dataset,N}
-    dimname::AbstractString
+    aggdim::AbstractString
     attrib::MFAttributes
 end
 
 fnames = example_file.(1:3,A)
 
-function MFDataset(fnames::AbstractArray{TS,N},mode = "r") where N where TS <: AbstractString
+function MFDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing) where N where TS <: AbstractString
     ds = Dataset.(fnames,mode);
-    dimname = "time"
+
+    if aggdim == nothing
+        # first unlimited dimensions
+        aggdim = NCDatasets.unlimited(ds[1].dim)[1]
+    end
+
     attrib = MFAttributes([d.attrib for d in ds])
-    return MFDataset(ds,dimname,attrib)
+    return MFDataset(ds,aggdim,attrib)
 end
-function close(ds::MFDataset)
-    close.(ds.ds)
+function close(mfds::MFDataset)
+    close.(mfds.ds)
 end
 
 mutable struct MFVariable{T,N,M,TA} <: AbstractArray{T,N}
@@ -115,24 +120,40 @@ end
 Base.getindex(v::MFVariable,indexes...) = getindex(v.var,indexes...)
 Base.setindex!(v::MFVariable,data,indexes...) = setindex!(v.var,data,indexes...)
 
-function variable(ds::MFDataset,varname::AbstractString)
-    vars = variable.(ds.ds,varname)
-    dim = 3
-    v = CatArrays.CatArray(dim,vars...)
+function variable(mfds::MFDataset,varname::AbstractString)
+    vars = variable.(mfds.ds,varname)
 
-    return MFVariable(v,MFAttributes([var.attrib for var in vars]))
+    dim = findfirst(dimnames(vars[1]) .== mfds.aggdim)
+    @show dim
+    @debug begin
+        @show dim
+    end
+
+    if dim != nothing
+        v = CatArrays.CatArray(dim,vars...)
+        return MFVariable(v,MFAttributes([var.attrib for var in vars]))
+    else
+        return vars[1]
+    end
 end
 
 
-ds = MFDataset(fnames);
-varname = "var"
-var = variable(ds,varname);
-data = var[:,:,:]
 
 @testset "Multi-file" begin
-    @test C == data
-    @test ds.attrib["history"] == "foo"
+    mfds = MFDataset(fnames);
+    varname = "var"
+    var = variable(mfds,varname);
+    data = var[:,:,:]
+
+    @test C == var[:,:,:]
+    @test mfds.attrib["history"] == "foo"
     @test var.attrib["units"] == "meter second-1"
+
+    # lon does not vary in time and thus there should be no aggregation
+    lon = variable(mfds,"lon");
+    @test lon.attrib["units"] == "degrees_east"
+    @test size(lon) == (size(data,1),size(data,2))
+
+    close(mfds)
 end
 
-close(ds)

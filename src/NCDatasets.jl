@@ -179,6 +179,17 @@ function Base.getindex(a::Dimensions,name::AbstractString)
 end
 
 """
+    unlimited(d::Dimensions)
+
+Return the names of all unlimited dimensions.
+"""
+function unlimited(d::Dimensions)
+    return String[nc_inq_dimname(d.ncid,dimid)
+                  for dimid in nc_inq_unlimdims(d.ncid)]
+end
+
+
+"""
     Base.setindex!(d::Dimensions,len,name::AbstractString)
 
 Defines the dimension called `name` to the length `len`.
