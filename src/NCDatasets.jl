@@ -11,13 +11,12 @@ using Compat
 import Base.convert
 import Compat: @debug
 
+import Base: close
 include("time.jl")
 
 include("CatArrays.jl")
 export CatArrays
 
-include("multifile.jl")
-export MFDataset
 
 # NetCDFError, error check and netcdf_c.jl from NetCDF.jl (https://github.com/JuliaGeo/NetCDF.jl)
 # Copyright (c) 2012-2013: Fabian Gans, Max-Planck-Institut fuer Biogeochemie, Jena, Germany
@@ -276,6 +275,14 @@ function Base.setindex!(a::MFAttributes,data,name::AbstractString)
 end
 
 Base.keys(a::MFAttributes) = keys(a.as)
+
+
+mutable struct MFDataset{N}
+    ds::Array{Dataset,N}
+    aggdim::AbstractString
+    attrib::MFAttributes
+end
+
 
 """
     Base.keys(g::NCDatasets.Groups)
@@ -633,19 +640,17 @@ as `DateTime` object.
 
 A call `getindex(ds,varname)` is usually written as `ds[varname]`.
 """
-function Base.getindex(ds::Dataset,varname::AbstractString)
+function Base.getindex(ds::Union{Dataset,MFDataset},varname::AbstractString)
     v = variable(ds,varname)
-    attrib = Attributes(v.ncid,v.varid,ds.isdefmode)
 
     # return element type of any index operation
-
     if eltype(v) <: Number
         rettype = Union{Missing,Float64}
     else
         rettype = Union{Missing,eltype(v)}
     end
 
-    return CFVariable{eltype(v),rettype,ndims(v)}(v,attrib)
+    return CFVariable{eltype(v),rettype,ndims(v)}(v,v.attrib)
 end
 
 
@@ -665,6 +670,9 @@ end
 # the size of a variable can change, i.e. for a variable with an unlimited
 # dimension
 Base.size(v::Variable) = (Int[nc_inq_dimlen(v.ncid,dimid) for dimid in v.dimids]...,)
+
+
+_attrib(v::Variable) = Attributes(v.ncid,v.varid,v.isdefmode)
 
 """
     dimnames(v::Variable)
@@ -1408,6 +1416,10 @@ export nomissing
 export varbyattrib
 export path
 export defGroup
+
+include("multifile.jl")
+export MFDataset, close
+
 
 # it is good practise to use the default fill-values, thus we export them
 export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,

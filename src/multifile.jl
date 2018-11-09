@@ -1,8 +1,3 @@
-mutable struct MFDataset{N}
-    ds::Array{Dataset,N}
-    aggdim::AbstractString
-    attrib::MFAttributes
-end
 
 function MFDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing) where N where TS <: AbstractString
     ds = Dataset.(fnames,mode);
@@ -20,12 +15,14 @@ close(mfds::MFDataset) = close.(mfds.ds)
 
 
 mutable struct MFVariable{T,N,M,TA} <: AbstractArray{T,N}
-    var::CatArray{T,N,M,TA}
+    var::CatArrays.CatArray{T,N,M,TA}
     attrib::MFAttributes
 end
 
 Base.getindex(v::MFVariable,indexes...) = getindex(v.var,indexes...)
 Base.setindex!(v::MFVariable,data,indexes...) = setindex!(v.var,data,indexes...)
+_attrib(v::MFVariable) = Attributes(v.ncid,v.varid,v.isdefmode)
+
 
 function variable(mfds::MFDataset,varname::AbstractString)
     vars = variable.(mfds.ds,varname)
