@@ -7,7 +7,10 @@ else
 end
 
 using NCDatasets
-import NCDatasets: variable, MFAttributes
+import NCDatasets: variable, MFAttributes, close
+using NCDatasets
+import NCDatasets.CatArrays: CatArray
+import Base: getindex, setindex!, close
 
 function example_file(i,array)
     fname = "/tmp/filename_$(i).nc"
@@ -63,7 +66,6 @@ function example_file(i,array)
 end
 
 
-using NCDatasets
 
 A = [randn(2,3),randn(2,3),randn(2,3)]
 
@@ -90,7 +92,7 @@ end
 mutable struct MFDataset{N}
     ds::Array{Dataset,N}
     dimname::AbstractString
-    attrib::NCDatasets.MFAttributes
+    attrib::MFAttributes
 end
 
 fnames = example_file.(1:3,A)
@@ -101,11 +103,24 @@ function MFDataset(fnames::AbstractArray{TS,N},mode = "r") where N where TS <: A
     attrib = MFAttributes([d.attrib for d in ds])
     return MFDataset(ds,dimname,attrib)
 end
+function close(ds::MFDataset)
+    close.(ds.ds)
+end
+
+mutable struct MFVariable{T,N,M,TA} <: AbstractArray{T,N}
+    var::CatArray{T,N,M,TA}
+    attrib::MFAttributes
+end
+
+Base.getindex(v::MFVariable,indexes...) = getindex(v.var,indexes...)
+Base.setindex!(v::MFVariable,data,indexes...) = setindex!(v.var,data,indexes...)
 
 function variable(ds::MFDataset,varname::AbstractString)
     vars = variable.(ds.ds,varname)
     dim = 3
-    return CatArrays.CatArray(dim,vars...)
+    v = CatArrays.CatArray(dim,vars...)
+
+    return MFVariable(v,MFAttributes([var.attrib for var in vars]))
 end
 
 
@@ -117,4 +132,7 @@ data = var[:,:,:]
 @testset "Multi-file" begin
     @test C == data
     @test ds.attrib["history"] == "foo"
+    @test var.attrib["units"] == "meter second-1"
 end
+
+close(ds)
