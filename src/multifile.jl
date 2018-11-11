@@ -13,29 +13,28 @@ end
 
 close(mfds::MFDataset) = close.(mfds.ds)
 
-
-mutable struct MFVariable{T,N,M,TA} <: AbstractArray{T,N}
-    var::CatArrays.CatArray{T,N,M,TA}
-    attrib::MFAttributes
-end
+path(mfds::MFDataset) = path(mfds.ds[1])
 
 Base.getindex(v::MFVariable,indexes...) = getindex(v.var,indexes...)
 Base.setindex!(v::MFVariable,data,indexes...) = setindex!(v.var,data,indexes...)
-_attrib(v::MFVariable) = Attributes(v.ncid,v.varid,v.isdefmode)
+Base.size(v::MFVariable) = size(v.var)
+dimnames(v::MFVariable) = v.dimnames
+name(v::MFVariable) = v.varname
 
 
 function variable(mfds::MFDataset,varname::AbstractString)
     vars = variable.(mfds.ds,varname)
 
     dim = findfirst(dimnames(vars[1]) .== mfds.aggdim)
-    @show dim
+
     @debug begin
         @show dim
     end
 
     if dim != nothing
         v = CatArrays.CatArray(dim,vars...)
-        return MFVariable(v,MFAttributes([var.attrib for var in vars]))
+        return MFVariable(v,MFAttributes([var.attrib for var in vars]),
+                          dimnames(vars[1]),varname)
     else
         return vars[1]
     end

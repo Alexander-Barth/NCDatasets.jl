@@ -274,7 +274,7 @@ function Base.setindex!(a::MFAttributes,data,name::AbstractString)
     return data
 end
 
-Base.keys(a::MFAttributes) = keys(a.as)
+Base.keys(a::MFAttributes) = keys(a.as[1])
 
 
 mutable struct MFDataset{N}
@@ -578,7 +578,9 @@ function variable(ds::Dataset,varname::AbstractString)
                                   attrib,ds.isdefmode)
 end
 
-function Base.show(io::IO,ds::Dataset; indent="")
+
+
+function Base.show(io::IO,ds::Union{Dataset,MFDataset}; indent="")
     printstyled(io, indent, "Dataset: ",path(ds),"\n", color=:red)
     print(io,indent,"Group: ",nc_inq_grpname(ds.ncid),"\n")
     print(io,"\n")
@@ -615,13 +617,12 @@ function Base.show(io::IO,ds::Dataset; indent="")
     end
 
     # groups
-    grpids = nc_inq_grps(ds.ncid)
+    groupnames = keys(ds.group)
 
-    if length(grpids) > 0
+    if length(groupnames) > 0
         printstyled(io, indent, "Groups\n",color = :red)
-        for grpid in grpids
-            grpname = nc_inq_grpname(grpid)
-            show(io,group(ds,grpname); indent = "  ")
+        for groupname in groupnames
+            show(io,group(ds,groupname); indent = "  ")
         end
     end
 
@@ -650,7 +651,7 @@ function Base.getindex(ds::Union{Dataset,MFDataset},varname::AbstractString)
         rettype = Union{Missing,eltype(v)}
     end
 
-    return CFVariable{eltype(v),rettype,ndims(v)}(v,v.attrib)
+    return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib)}(v,v.attrib)
 end
 
 
@@ -667,12 +668,17 @@ mutable struct Variable{NetCDFType,N}  <: AbstractArray{NetCDFType, N}
     isdefmode::Vector{Bool}
 end
 
+mutable struct MFVariable{T,N,M,TA} <: AbstractArray{T,N}
+    var::CatArrays.CatArray{T,N,M,TA}
+    attrib::MFAttributes
+    dimnames::NTuple{N,String}
+    varname::String
+end
+
 # the size of a variable can change, i.e. for a variable with an unlimited
 # dimension
 Base.size(v::Variable) = (Int[nc_inq_dimlen(v.ncid,dimid) for dimid in v.dimids]...,)
 
-
-_attrib(v::Variable) = Attributes(v.ncid,v.varid,v.isdefmode)
 
 """
     dimnames(v::Variable)
@@ -926,9 +932,9 @@ end
 # Variable (with applied transformations following the CF convention)
 
 
-mutable struct CFVariable{NetCDFType,T,N}  <: AbstractArray{T, N}
-    var::Variable{NetCDFType,N}
-    attrib::Attributes
+mutable struct CFVariable{T,N,TV,TA}  <: AbstractArray{T, N}
+    var::TV
+    attrib::TA
 end
 
 Base.size(v::CFVariable) = size(v.var)
@@ -1099,7 +1105,7 @@ end
 
 
 
-function Base.show(io::IO,v::Variable; indent="")
+function Base.show(io::IO,v::Union{Variable,MFVariable}; indent="")
     delim = " × "
     sz = size(v)
 

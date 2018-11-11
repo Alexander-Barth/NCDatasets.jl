@@ -10,6 +10,9 @@ using NCDatasets
 
 function example_file(i,array)
     fname = "/tmp/filename_$(i).nc"
+    if isfile(fname)
+        rm(fname)
+    end
     @debug begin
         @show fname
     end
@@ -91,7 +94,7 @@ fnames = example_file.(1:3,A)
 
 
 
-@testset "Multi-file" begin
+#@testset "Multi-file" begin
     mfds = MFDataset(fnames);
     varname = "var"
     var = variable(mfds,varname);
@@ -101,11 +104,17 @@ fnames = example_file.(1:3,A)
     @test mfds.attrib["history"] == "foo"
     @test var.attrib["units"] == "meter second-1"
 
+    @test dimnames(var) == ("lon", "lat", "time")
     # lon does not vary in time and thus there should be no aggregation
     lon = variable(mfds,"lon");
     @test lon.attrib["units"] == "degrees_east"
     @test size(lon) == (size(data,1),size(data,2))
 
-    close(mfds)
-end
+    var = mfds[varname]
+    @test C == var[:,:,:]
+    @test dimnames(var) == ("lon", "lat", "time")
+
+
+#    close(mfds)
+#end
 
