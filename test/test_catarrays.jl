@@ -3,7 +3,7 @@ if VERSION >= v"0.7"
 else
     using Base.Test
     using Compat
-    using Compat: cat
+    using Compat: cat, @debug
 end
 
 using NCDatasets
@@ -94,7 +94,7 @@ fnames = example_file.(1:3,A)
 
 
 
-#@testset "Multi-file" begin
+@testset "Multi-file" begin
     mfds = MFDataset(fnames);
     varname = "var"
     var = variable(mfds,varname);
@@ -114,7 +114,11 @@ fnames = example_file.(1:3,A)
     @test C == var[:,:,:]
     @test dimnames(var) == ("lon", "lat", "time")
 
+    @test mfds.dim["lon"] == size(C,1)
+    @test mfds.dim["lat"] == size(C,2)
+    @test mfds.dim["time"] == size(C,3)
 
-#    close(mfds)
-#end
+
+    close(mfds)
+end
 

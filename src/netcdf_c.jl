@@ -552,9 +552,7 @@ function nc_get_att(ncid::Integer,varid::Integer,name)
         # see issue #12
         inull = findfirst(val .== 0)
 
-        # compat with julia 0.6
-        if (((inull == nothing) && (VERSION >= v"0.7.0-DEV.3382")) ||
-            ((inull == 0) && (VERSION < v"0.7.0-DEV.3382")))
+        if inull == nothing
             return join(Char.(val))
         else
             return join(Char.(view(val,1:inull-1)))

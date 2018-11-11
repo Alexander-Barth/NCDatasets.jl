@@ -9,7 +9,7 @@ using Base
 using Missings
 using Compat
 import Base.convert
-import Compat: @debug
+import Compat: @debug, findfirst
 
 import Base: close
 include("time.jl")
@@ -277,10 +277,37 @@ end
 Base.keys(a::MFAttributes) = keys(a.as[1])
 
 
+
+# -----------------------------------------------------
+
+mutable struct MFDimensions
+    as::Vector{Dimensions}
+    aggdim::String
+end
+
+function Base.getindex(a::MFDimensions,name::AbstractString)
+    if name == a.aggdim
+        return sum(d[name] for d in a.as)
+    else
+        return a.as[1][name]
+    end
+end
+
+function Base.setindex!(a::MFDimensions,data,name::AbstractString)
+    for a in a.as
+        a[name] = data
+    end
+    return data
+end
+
+Base.keys(a::MFDimensions) = keys(a.as[1])
+
+#---
 mutable struct MFDataset{N}
     ds::Array{Dataset,N}
     aggdim::AbstractString
     attrib::MFAttributes
+    dim::MFDimensions
 end
 
 
@@ -585,14 +612,12 @@ function Base.show(io::IO,ds::Union{Dataset,MFDataset}; indent="")
     print(io,indent,"Group: ",nc_inq_grpname(ds.ncid),"\n")
     print(io,"\n")
 
-    dimids = nc_inq_dimids(ds.ncid,false)
+    dims = collect(ds.dim)
 
-    if length(dimids) > 0
+    if length(dims) > 0
         printstyled(io, indent, "Dimensions\n",color=:red)
 
-        for dimid in dimids
-            dimname = nc_inq_dimname(ds.ncid,dimid)
-            dimlen = nc_inq_dimlen(ds.ncid,dimid)
+        for (dimname,dimlen) in dims
             print(io,indent,"   $(dimname) = $(dimlen)\n")
         end
         print(io,"\n")
@@ -1131,7 +1156,7 @@ Base.display(v::Union{Variable,CFVariable}) = show(Compat.stdout,v)
 
 # Common methods
 
-const NCIterable = Union{BaseAttributes,Dimensions,Dataset,Groups}
+const NCIterable = Union{BaseAttributes,Dimensions,MFDimensions,Dataset,Groups}
 
 Base.length(a::NCIterable) = length(keys(a))
 
