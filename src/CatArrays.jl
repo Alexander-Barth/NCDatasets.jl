@@ -3,7 +3,7 @@ module CatArrays
 if VERSION >= v"0.7"
 else
     using Compat
-    using Compat: dropdims, findall
+    using Compat: dropdims, findall, @debug
 end
 using Base
 
