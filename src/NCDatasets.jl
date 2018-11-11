@@ -285,6 +285,14 @@ mutable struct MFDimensions
     aggdim::String
 end
 
+
+mutable struct MFGroups
+    as::Vector{Groups}
+    aggdim::String
+end
+
+
+
 function Base.getindex(a::MFDimensions,name::AbstractString)
     if name == a.aggdim
         return sum(d[name] for d in a.as)
@@ -300,7 +308,17 @@ function Base.setindex!(a::MFDimensions,data,name::AbstractString)
     return data
 end
 
-Base.keys(a::MFDimensions) = keys(a.as[1])
+Base.keys(a::Union{MFDimensions,MFGroups}) = keys(a.as[1])
+
+
+function Base.getindex(a::MFGroups,name::AbstractString)
+    ds = getindex.(a.as,name)
+    attrib = MFAttributes([d.attrib for d in ds])
+    dim = MFDimensions([d.dim for d in ds],a.aggdim)
+    group = MFGroups([d.group for d in ds],a.aggdim)
+
+    return MFDataset(ds,a.aggdim,attrib,dim,group)
+end
 
 #---
 mutable struct MFDataset{N}
@@ -308,6 +326,7 @@ mutable struct MFDataset{N}
     aggdim::AbstractString
     attrib::MFAttributes
     dim::MFDimensions
+    group::MFGroups
 end
 
 
@@ -349,10 +368,7 @@ function defGroup(ds::Dataset,groupname)
     return Dataset(grp_ncid,ds.isdefmode)
 end
 
-function group(ds::Dataset,groupname)
-    grp_ncid = nc_inq_grp_ncid(ds.ncid,groupname)
-    return Dataset(grp_ncid,ds.isdefmode)
-end
+group(ds::Union{Dataset,MFDataset},groupname) = ds.group[groupname]
 
 
 # -----------------------------------------------------
@@ -557,6 +573,10 @@ Return the file path (or the opendap URL) of the Dataset `ds`
 """
 path(ds::Dataset) = nc_inq_path(ds.ncid)
 
+
+groupname(ds::Dataset) = nc_inq_grpname(ds.ncid)
+
+
 """
     sync(ds::Dataset)
 
@@ -609,7 +629,7 @@ end
 
 function Base.show(io::IO,ds::Union{Dataset,MFDataset}; indent="")
     printstyled(io, indent, "Dataset: ",path(ds),"\n", color=:red)
-    print(io,indent,"Group: ",nc_inq_grpname(ds.ncid),"\n")
+    print(io,indent,"Group: ",groupname(ds),"\n")
     print(io,"\n")
 
     dims = collect(ds.dim)
@@ -1156,7 +1176,7 @@ Base.display(v::Union{Variable,CFVariable}) = show(Compat.stdout,v)
 
 # Common methods
 
-const NCIterable = Union{BaseAttributes,Dimensions,MFDimensions,Dataset,Groups}
+const NCIterable = Union{BaseAttributes,Dimensions,MFDimensions,Dataset,Groups,MFGroups}
 
 Base.length(a::NCIterable) = length(keys(a))
 

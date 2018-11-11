@@ -17,49 +17,57 @@ function example_file(i,array)
         @show fname
     end
     Dataset(fname,"c") do ds
-    # Dimensions
+        # Dimensions
 
-    ds.dim["lon"] = size(array,1)
-    ds.dim["lat"] = size(array,2)
-    ds.dim["time"] = Inf
+        ds.dim["lon"] = size(array,1)
+        ds.dim["lat"] = size(array,2)
+        ds.dim["time"] = Inf
 
-    # Declare variables
+        # Declare variables
 
-    ncvar = defVar(ds,"var", Float64, ("lon", "lat", "time"))
-    ncvar.attrib["field"] = "u-wind, scalar, series"
-    ncvar.attrib["units"] = "meter second-1"
-    ncvar.attrib["long_name"] = "surface u-wind component"
-    ncvar.attrib["time"] = "time"
-    ncvar.attrib["coordinates"] = "lon lat"
+        ncvar = defVar(ds,"var", Float64, ("lon", "lat", "time"))
+        ncvar.attrib["field"] = "u-wind, scalar, series"
+        ncvar.attrib["units"] = "meter second-1"
+        ncvar.attrib["long_name"] = "surface u-wind component"
+        ncvar.attrib["time"] = "time"
+        ncvar.attrib["coordinates"] = "lon lat"
 
 
-    nclat = defVar(ds,"lat", Float64, ("lon", "lat"))
-    nclat.attrib["units"] = "degrees_north"
-    nclat.attrib["point_spacing"] = "uneven"
-    nclat.attrib["axis"] = "Y"
+        nclat = defVar(ds,"lat", Float64, ("lon", "lat"))
+        nclat.attrib["units"] = "degrees_north"
+        nclat.attrib["point_spacing"] = "uneven"
+        nclat.attrib["axis"] = "Y"
 
-    nclon = defVar(ds,"lon", Float64, ("lon", "lat"))
-    nclon.attrib["units"] = "degrees_east"
-    nclon.attrib["modulo"] = 360.0
-    nclon.attrib["point_spacing"] = "even"
-    nclon.attrib["axis"] = "X"
+        nclon = defVar(ds,"lon", Float64, ("lon", "lat"))
+        nclon.attrib["units"] = "degrees_east"
+        nclon.attrib["modulo"] = 360.0
+        nclon.attrib["point_spacing"] = "even"
+        nclon.attrib["axis"] = "X"
 
-    nctime = defVar(ds,"time", Float64, ("time",))
-    nctime.attrib["long_name"] = "surface wind time"
-    nctime.attrib["field"] = "time, scalar, series"
-    nctime.attrib["units"] = "days since 1858-11-17 00:00:00 GMT"
+        nctime = defVar(ds,"time", Float64, ("time",))
+        nctime.attrib["long_name"] = "surface wind time"
+        nctime.attrib["field"] = "time, scalar, series"
+        nctime.attrib["units"] = "days since 2000-01-01 00:00:00 GMT"
 
-    # Global attributes
+        # Global attributes
 
-    ds.attrib["history"] = "foo"
+        ds.attrib["history"] = "foo"
 
-    # Define variables
+        # Define variables
 
-    ncvar[:,:,1] = array
-    # nclat[:] = ...
-    # nclon[:] = ...
-    nctime[:] = i
+        g = defGroup(ds,"group")
+        ncvarg = defVar(g,"var", Float64, ("lon", "lat", "time"))
+        ncvarg.attrib["field"] = "u-wind, scalar, series"
+        ncvarg.attrib["units"] = "meter second-1"
+        ncvarg.attrib["long_name"] = "surface u-wind component"
+        ncvarg.attrib["time"] = "time"
+        ncvarg.attrib["coordinates"] = "lon lat"
 
+        ncvar[:,:,1] = array
+        ncvarg[:,:,1] = array.+1
+        # nclat[:] = ...
+        # nclon[:] = ...
+        nctime[:] = i
     end
     return fname
 end

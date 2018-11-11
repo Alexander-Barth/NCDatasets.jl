@@ -9,13 +9,18 @@ function MFDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing) whe
 
     attrib = MFAttributes([d.attrib for d in ds])
     dim = MFDimensions([d.dim for d in ds],aggdim)
+    group = MFGroups([d.group for d in ds],aggdim)
 
-    return MFDataset(ds,aggdim,attrib,dim)
+    return MFDataset(ds,aggdim,attrib,dim,group)
 end
 
 close(mfds::MFDataset) = close.(mfds.ds)
 
-path(mfds::MFDataset) = path(mfds.ds[1])
+function path(mfds::MFDataset)
+    path(mfds.ds[1]) * "…" * path(mfds.ds[end])
+end
+groupname(mfds::MFDataset) = groupname(mfds.ds[1])
+Base.keys(mfds::MFDataset) = keys(mfds.ds[1])
 
 Base.getindex(v::MFVariable,indexes...) = getindex(v.var,indexes...)
 Base.setindex!(v::MFVariable,data,indexes...) = setindex!(v.var,data,indexes...)
@@ -40,4 +45,5 @@ function variable(mfds::MFDataset,varname::AbstractString)
         return vars[1]
     end
 end
+
 
