@@ -126,6 +126,7 @@ fnames = example_file.(1:3,A)
     @test mfds.dim["lat"] == size(C,2)
     @test mfds.dim["time"] == size(C,3)
 
+    @test mfds.dim["time"] == size(C,3)
 
     close(mfds)
 end
