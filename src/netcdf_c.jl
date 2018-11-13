@@ -543,21 +543,20 @@ end
 
 function nc_get_att(ncid::Integer,varid::Integer,name)
     xtype,len = nc_inq_att(ncid,varid,name)
+    @debug begin
+        @show varid,name,xtype,NC_CHAR,NC_STRING
+    end
 
     if xtype == NC_CHAR
         val = Vector{UInt8}(undef,len)
         check(ccall((:nc_get_att,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{Nothing}),ncid,varid,name,val))
 
-        # remove everything following a null terminating character if present
-        # see issue #12
-        inull = findfirst(val .== 0)
-
-        # compat with julia 0.6
-        if (((inull == nothing) && (VERSION >= v"0.7.0-DEV.3382")) ||
-            ((inull == 0) && (VERSION < v"0.7.0-DEV.3382")))
-            return join(Char.(val))
+        if any(val .== 0)
+            # consider the null terminating character if present
+            # see issue #12
+            return unsafe_string(pointer(val))
         else
-            return join(Char.(view(val,1:inull-1)))
+            return unsafe_string(pointer(val),length(val))
         end
     elseif xtype == NC_STRING
         val = Vector{Ptr{UInt8}}(undef,len)

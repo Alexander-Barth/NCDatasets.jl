@@ -9,7 +9,6 @@ NCDatasets.Dataset(filename,"c") do ds
 
     v = NCDatasets.defVar(ds,"temperature",Float32,("lon","lat"),
                           attrib = ["long_name" => "Temperature",
-                                    "comment" => "dummy",
                                     "test_vector_attrib" => [1,2,3]])
 
     # write attributes
@@ -21,6 +20,7 @@ NCDatasets.Dataset(filename,"c") do ds
     @test "comment" in v.attrib
     @test v.attrib["long_name"] == "Temperature"
     @test v.attrib["test_vector_attrib"] == [1,2,3]
+    @test v.attrib["comment"] == "this is a string attribute with unicode Ω ∈ ∑ ∫ f(x) dx "
 
     @test NCDatasets.get(v.attrib,"does-not-exist","default") == "default"
     @test NCDatasets.get(v.attrib,"units","default") == "degree Celsius"
