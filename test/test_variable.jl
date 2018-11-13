@@ -1,3 +1,13 @@
+if VERSION >= v"0.7.0-beta.0"
+    using Test
+    using Dates
+    using Printf
+else
+    using Base.Test
+end
+using NCDatasets
+
+
 sz = (4,5)
 filename = tempname()
 #filename = "/tmp/test-6.nc"
@@ -43,4 +53,17 @@ NCDatasets.Dataset(filename,"c") do ds
         @test all(v.var[:,:][:] .== 100)
 
     end
+end
+
+# quick interface
+Dataset(filename,"c") do ds
+    data = Int32[i+3*j for i = 1:sz[1], j = 1:sz[2]]
+    defVar(ds,"temp",data,("lon","lat"), attrib = [
+        "units" => "degree_Celsius",
+        "long_name" => "Temperature"
+    ])
+    @test ds["temp"][:] == data
+    @test eltype(ds["temp"].var) == Int32
+    @test ds.dim["lon"] == sz[1]
+    @test ds.dim["lat"] == sz[2]
 end

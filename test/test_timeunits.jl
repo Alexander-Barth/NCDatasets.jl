@@ -18,7 +18,6 @@ for (timeunit,factor) in [("days",1),("hours",24),("minutes",24*60),("seconds",2
         # time origin
         v[3] = 0
         @test v[3] == DateTime(2000,1,1)
-
     end
 
     NCDatasets.Dataset(filename,"r") do ds
@@ -30,6 +29,16 @@ for (timeunit,factor) in [("days",1),("hours",24),("minutes",24*60),("seconds",2
     end
 
     rm(filename)
+end
+
+NCDatasets.Dataset(filename,"c") do ds
+    NCDatasets.defDim(ds,"time",3)
+
+    v2 = NCDatasets.defVar(ds,"time2",
+                           [DateTime(2000,1,2), DateTime(2000,1,3), DateTime(2000,1,4)],("time",))
+
+    @test v2[:] == [DateTime(2000,1,2), DateTime(2000,1,3), DateTime(2000,1,4)]
+    @test v2.attrib["units"] == NCDatasets.DEFAULT_TIME_UNITS
 end
 
 #=

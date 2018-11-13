@@ -407,11 +407,18 @@ defDim(ds::Dataset,name,len) = nc_def_dim(ds.ncid,name,
 
 """
     defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
+    defVar(ds::Dataset,name,data,dimnames; kwargs...)
 
 Define a variable with the name `name` in the dataset `ds`.  `vtype` can be
-Julia types in the table below (with the corresponding NetCDF type).  The parameter `dimnames` is a tuple with the
-names of the dimension.  For scalar this parameter is the empty tuple ().
+Julia types in the table below (with the corresponding NetCDF type). Instead of
+providing the variable type one can directly give also the data `data` which
+will be used to fill the NetCDF variable. The parameter `dimnames` is a tuple with the
+names of the dimension.  For scalar this parameter is the empty tuple `()`.
 The variable is returned (of the type CFVariable).
+
+Note if `data` is a vector or array of `DateTime` objects, then the dates are
+saved as double-precision floats and units "$(DEFAULT_TIME_UNITS)" (unless a time unit
+is specifed with the `attrib` keyword described below)
 
 ## Keyword arguments
 
@@ -421,7 +428,7 @@ The variable is returned (of the type CFVariable).
 * `deflatelevel`: Compression level: 0 (default) means no compression and 9 means maximum compression. Each chunk will be compressed individually.
 * `shuffle`: If true, the shuffle filter is activated which can improve the compression ratio.
 * `checksum`: The checksum method can be `:fletcher32` or `:nochecksum` (checksumming is disabled, which is the default)
-* `attrib`: An iterable of attribute name and attribute value pairs
+* `attrib`: An iterable of attribute name and attribute value pairs, for example a `Dict`, `DataStructures.OrderedDict` or simply a vector of pairs (see example below)
 * `typename` (string): The name of the NetCDF type required for vlen arrays [1]
 
 `chunksizes`, `deflatelevel`, `shuffle` and `checksum` can only be
@@ -440,6 +447,20 @@ set on NetCDF 4 files.
 | NC_DOUBLE   | Float64 |
 | NC_CHAR     | Char |
 | NC_STRING   | String |
+
+
+## Example:
+
+```julia-repl
+julia> data = randn(3,5)
+julia> Dataset("test_file.nc","c") do ds
+          defVar(ds,"temp",data,("lon","lat"), attrib = [
+             "units" => "degree_Celsius",
+             "long_name" => "Temperature"
+          ])
+       end;
+
+```
 
 [1] https://web.archive.org/save/https://www.unidata.ucar.edu/software/netcdf/netcdf-4/newdocs/netcdf-c/nc_005fdef_005fvlen.html
 """
@@ -500,6 +521,23 @@ function defVar(ds::Dataset,name,vtype::DataType,dimnames; kwargs...)
     return ds[name]
 end
 
+function defVar(ds::Dataset,name,data,dimnames; kwargs...)
+    vtype = eltype(data)
+    if vtype == DateTime
+        vtype = Float64
+    end
+
+    # define the dimensions if necessary
+    for i = 1:length(dimnames)
+        if !(dimnames[i] in ds.dim)
+            ds.dim[dimnames[i]] = size(data,i)
+        end
+    end
+
+    v = defVar(ds,name,vtype,dimnames; kwargs...)
+    v[:] = data
+    return v
+end
 
 """
     keys(ds::Dataset)
