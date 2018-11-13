@@ -7,7 +7,10 @@ NCDatasets.Dataset(filename,"c") do ds
     ds.dim["lon"] = sz[1]
     ds.dim["lat"] = sz[2]
 
-    v = NCDatasets.defVar(ds,"temperature",Float32,("lon","lat"))
+    v = NCDatasets.defVar(ds,"temperature",Float32,("lon","lat"),
+                          attrib = ["long_name" => "Temperature",
+                                    "comment" => "dummy",
+                                    "test_vector_attrib" => [1,2,3]])
 
     # write attributes
     v.attrib["units"] = "degree Celsius"
@@ -16,6 +19,8 @@ NCDatasets.Dataset(filename,"c") do ds
     # check presence of attribute
     @test NCDatasets.haskey(v.attrib,"comment")
     @test "comment" in v.attrib
+    @test v.attrib["long_name"] == "Temperature"
+    @test v.attrib["test_vector_attrib"] == [1,2,3]
 
     @test NCDatasets.get(v.attrib,"does-not-exist","default") == "default"
     @test NCDatasets.get(v.attrib,"units","default") == "degree Celsius"
