@@ -152,13 +152,22 @@ function defmode(ncid,isdefmode::Vector{Bool})
 end
 
 function Base.show(io::IO,a::BaseAttributes; indent = "  ")
-    # use the same order of attributes than in the NetCDF file
-
-   for (attname,attval) in a
-       print(io,indent,@sprintf("%-20s = ",attname))
-       printstyled(io, @sprintf("%s",attval),color=:blue)
-       print(io,"\n")
-   end
+    try
+        # use the same order of attributes than in the NetCDF file
+        for (attname,attval) in a
+            print(io,indent,@sprintf("%-20s = ",attname))
+            printstyled(io, @sprintf("%s",attval),color=:blue)
+            print(io,"\n")
+        end
+    catch err
+        if isa(err,NetCDFError)
+            if err.code == NC_EBADID
+                print(io,"NetCDF attributes (file closed)")
+                return
+            end
+        end
+        rethrow
+    end
 end
 
 
@@ -289,13 +298,21 @@ function Base.getindex(g::Groups,groupname::AbstractString)
 end
 
 """
-    defGroup(ds::Dataset,groupname)
+    defGroup(ds::Dataset,groupname, attrib = []))
 
 Create the group with the name `groupname` in the dataset `ds`.
+`attrib` is a list of attribute name and attribute value pairs (see `Dataset`).
 """
-function defGroup(ds::Dataset,groupname)
+function defGroup(ds::Dataset,groupname; attrib = [])
     grp_ncid = nc_def_grp(ds.ncid,groupname)
-    return Dataset(grp_ncid,ds.isdefmode)
+    ds = Dataset(grp_ncid,ds.isdefmode)
+
+    # set global attributes for group
+    for (attname,attval) in attrib
+        ds.attrib[attname] = attval
+    end
+
+    return ds
 end
 
 function group(ds::Dataset,groupname)
@@ -303,20 +320,20 @@ function group(ds::Dataset,groupname)
     return Dataset(grp_ncid,ds.isdefmode)
 end
 
-
 # -----------------------------------------------------
 # Dataset
 
 
 """
     Dataset(filename::AbstractString,mode::AbstractString = "r";
-                     format::Symbol = :netcdf4)
+                     format::Symbol = :netcdf4, attrib = [])
 
 Create a new NetCDF file if the `mode` is "c". An existing file with the same
 name will be overwritten. If `mode` is "a", then an existing file is open into
 append mode (i.e. existing data in the netCDF file is not overwritten and
 a variable can be added). With the mode set to "r", an existing netCDF file or
 OPeNDAP URL can be open in read-only mode.  The default mode is "r".
+The optional parameter `attrib` is an iterable of attribute name and attribute value pairs, for example a `Dict`, `DataStructures.OrderedDict` or simply a vector of pairs (see example below).
 
 # Supported formats:
 
@@ -333,9 +350,15 @@ Dataset("file.nc") do ds
 end
 ```
 
+```julia
+Dataset("file.nc", "c", attrib = ["title" => "my first netCDF file"]) do ds
+   defVar(ds,"temp",[10.,20.,30.],("time",))
+end;
+```
+
 """
 function Dataset(filename::AbstractString,mode::AbstractString = "r";
-                 format::Symbol = :netcdf4)
+                 format::Symbol = :netcdf4, attrib = [])
     ncid = -1
     isdefmode = [false]
 
@@ -364,7 +387,14 @@ function Dataset(filename::AbstractString,mode::AbstractString = "r";
         throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
     end
 
-    return Dataset(ncid,isdefmode)
+    ds = Dataset(ncid,isdefmode)
+
+    # set global attributes
+    for (attname,attval) in attrib
+        ds.attrib[attname] = attval
+    end
+
+    return ds
 end
 
 function Dataset(ncid::Integer,
@@ -601,7 +631,19 @@ function variable(ds::Dataset,varname::AbstractString)
 end
 
 function Base.show(io::IO,ds::Dataset; indent="")
-    printstyled(io, indent, "Dataset: ",path(ds),"\n", color=:red)
+    try
+        dspath = path(ds)
+        printstyled(io, indent, "Dataset: ",dspath,"\n", color=:red)
+    catch err
+        if isa(err,NetCDFError)
+            if err.code == NC_EBADID
+                print(io,"closed NetCDF Dataset")
+                return
+            end
+        end
+        rethrow
+    end
+
     print(io,indent,"Group: ",nc_inq_grpname(ds.ncid),"\n")
     print(io,"\n")
 
@@ -1153,13 +1195,25 @@ end
 
 function Base.show(io::IO,v::Variable; indent="")
     delim = " × "
+    dims =
+        try
+            dimnames(v)
+        catch err
+            if isa(err,NetCDFError)
+                if err.code == NC_EBADID
+                    print(io,"NetCDF variable (file closed)")
+                    return
+                end
+            end
+            rethrow
+        end
     sz = size(v)
 
     printstyled(io, indent, name(v),color=:green)
     if length(sz) > 0
         print(io,indent," (",join(sz,delim),")\n")
         print(io,indent,"  Datatype:    ",eltype(v),"\n")
-        print(io,indent,"  Dimensions:  ",join(dimnames(v),delim),"\n")
+        print(io,indent,"  Dimensions:  ",join(dims,delim),"\n")
     else
         print(io,indent,"\n")
     end
