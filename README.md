@@ -16,12 +16,14 @@ NetCDF data set and attribute list behave like Julia dictionaries and variables 
 
 The module `NCDatasets` provides support for the following [netCDF CF conventions](http://cfconventions.org/):
 * `_FillValue` will be returned as `missing` ([more information](https://docs.julialang.org/en/latest/manual/missing/))
-* `scale_factor` and `add_offset` are applied
+* `scale_factor` and `add_offset` are applied if present
 * time variables (recognized by the `units` attribute) are returned as `DateTime` objects.
+* Support of the [CF calendars](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#calendar) (standard, gregorian, proleptic gregorian, julian, all leap, no leap, 360 day)
+* The raw data can also be accessed (without the transformations above).
 
-The raw data can also be accessed (without the transformations above).
-
-The module also includes an utility function `ncgen` which generates the Julia code that would produce a netCDF file with the same metadata as a template netCDF file.
+Other features include:
+* Support for NetCDF 4 compression and variable-length arrays (i.e. arrays of vectors where each vector can have potentailly a different length)
+* The module also includes an utility function [`ncgen`](https://alexander-barth.github.io/NCDatasets.jl/stable/#NCDatasets.ncgen-Tuple{Any}) which generates the Julia code that would produce a netCDF file with the same metadata as a template netCDF file.
 
 ## Installation
 
