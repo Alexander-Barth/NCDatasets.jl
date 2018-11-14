@@ -4,11 +4,11 @@ if VERSION >= v"0.7.0-beta.0"
     using Dates
     import Dates: UTInstant, Millisecond
     import Dates: year,  month,  day, hour, minute, second, millisecond
-    import Dates: daysinmonth, daysinyear
+    import Dates: daysinmonth, daysinyear, yearmonthday, yearmonth
 else
     import Base.Dates: UTInstant, Millisecond
     import Base.Dates: year,  month,  day, hour, minute, second, millisecond
-    import Base.Dates: daysinmonth, daysinyear
+    import Base.Dates: daysinmonth, daysinyear, yearmonthday, yearmonth
 end
 
 import Base: +, -, isless, string, show, convert, reinterpret
@@ -691,7 +691,21 @@ function daysinyear(t::DT) where DT <: Union{DateTime, AbstractCFDateTime}
     return daysinyear(DT,Dates.year(t))
 end
 
-export daysinmonth, daysinyear
+"""
+    yearmonthday(dt::AbstractCFDateTime) -> (Int64, Int64, Int64)
+
+Simultaneously return the year, month and day parts of `dt`.
+"""
+yearmonthday(dt::AbstractCFDateTime) = (Dates.year(dt),Dates.month(dt),Dates.day(dt))
+
+"""
+    yearmonth(dt::AbstractCFDateTime) -> (Int64, Int64, Int64)
+
+Simultaneously return the year and month parts of `dt`.
+"""
+yearmonth(dt::AbstractCFDateTime) = (Dates.year(dt),Dates.month(dt))
+
+export daysinmonth, daysinyear, yearmonthday, yearmonth
 
 export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
     DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
