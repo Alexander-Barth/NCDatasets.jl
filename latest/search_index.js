@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "NCDatasets.jl",
     "title": "NCDatasets.Dataset",
     "category": "type",
-    "text": "Dataset(filename::AbstractString,mode::AbstractString = \"r\";\n                 format::Symbol = :netcdf4)\n\nCreate a new NetCDF file if the mode is \"c\". An existing file with the same name will be overwritten. If mode is \"a\", then an existing file is open into append mode (i.e. existing data in the netCDF file is not overwritten and a variable can be added). With the mode set to \"r\", an existing netCDF file or OPeNDAP URL can be open in read-only mode.  The default mode is \"r\".\n\nSupported formats:\n\n:netcdf4 (default): HDF5-based NetCDF format.\n:netcdf4_classic: Only netCDF 3 compatible API features will be used.\n:netcdf3_classic: classic netCDF format supporting only files smaller than 2GB.\n:netcdf3_64bit_offset: improved netCDF format supporting files larger than 2GB.\n\nFiles can also be open and automatically closed with a do block.\n\nDataset(\"file.nc\") do ds\n    data = ds[\"temperature\"][:,:]\nend\n\n\n\n"
+    "text": "Dataset(filename::AbstractString,mode::AbstractString = \"r\";\n                 format::Symbol = :netcdf4, attrib = [])\n\nCreate a new NetCDF file if the mode is \"c\". An existing file with the same name will be overwritten. If mode is \"a\", then an existing file is open into append mode (i.e. existing data in the netCDF file is not overwritten and a variable can be added). With the mode set to \"r\", an existing netCDF file or OPeNDAP URL can be open in read-only mode.  The default mode is \"r\". The optional parameter attrib is an iterable of attribute name and attribute value pairs, for example a Dict, DataStructures.OrderedDict or simply a vector of pairs (see example below).\n\nSupported formats:\n\n:netcdf4 (default): HDF5-based NetCDF format.\n:netcdf4_classic: Only netCDF 3 compatible API features will be used.\n:netcdf3_classic: classic netCDF format supporting only files smaller than 2GB.\n:netcdf3_64bit_offset: improved netCDF format supporting files larger than 2GB.\n\nFiles can also be open and automatically closed with a do block.\n\nDataset(\"file.nc\") do ds\n    data = ds[\"temperature\"][:,:]\nend\n\nDataset(\"file.nc\", \"c\", attrib = [\"title\" => \"my first netCDF file\"]) do ds\n   defVar(ds,\"temp\",[10.,20.,30.],(\"time\",))\nend;\n\n\n\n"
 },
 
 {
@@ -213,7 +213,7 @@ var documenterSearchIndex = {"docs": [
     "page": "NCDatasets.jl",
     "title": "NCDatasets.defGroup",
     "category": "method",
-    "text": "defGroup(ds::Dataset,groupname)\n\nCreate the group with the name groupname in the dataset ds.\n\n\n\n"
+    "text": "defGroup(ds::Dataset,groupname, attrib = []))\n\nCreate the group with the name groupname in the dataset ds. attrib is a list of attribute name and attribute value pairs (see Dataset).\n\n\n\n"
 },
 
 {
