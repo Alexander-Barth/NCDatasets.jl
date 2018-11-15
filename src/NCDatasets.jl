@@ -651,6 +651,10 @@ Return the file path (or the opendap URL) of the Dataset `ds`
 path(ds::Dataset) = nc_inq_path(ds.ncid)
 
 
+"""
+    groupname(ds::Dataset)
+Return the group name of the Dataset `ds`
+"""
 groupname(ds::Dataset) = nc_inq_grpname(ds.ncid)
 
 
@@ -716,7 +720,7 @@ function Base.show(io::IO,ds::Union{Dataset,MFDataset}; indent="")
         rethrow
     end
 
-    print(io,indent,"Group: ",nc_inq_grpname(ds.ncid),"\n")
+    print(io,indent,"Group: ",groupname(ds),"\n")
     print(io,"\n")
 
     dims = collect(ds.dim)
