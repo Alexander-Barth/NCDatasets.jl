@@ -65,6 +65,7 @@ ds.attrib
 The following gives an example of how to create a netCDF file by defining dimensions, variables and attributes.
 
 ```julia
+using NCDatasets
 # This creates a new NetCDF file /tmp/test.nc.
 # The mode "c" stands for creating a new file (clobber)
 ds = Dataset("/tmp/test.nc","c")
@@ -76,9 +77,8 @@ defDim(ds,"lat",110)
 # Define a global attribute
 ds.attrib["title"] = "this is a test file"
 
-# Define the variables temperature and salinity
+# Define the variables temperature
 v = defVar(ds,"temperature",Float32,("lon","lat"))
-S = defVar(ds,"salinity",Float32,("lon","lat"))
 
 # Generate some example data
 data = [Float32(i+j) for i = 1:100, j = 1:110]
@@ -91,10 +91,27 @@ v[:,:] = data
 
 # write attributes
 v.attrib["units"] = "degree Celsius"
-v.attrib["units_string"] = "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
+v.attrib["comments"] = "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
 
 close(ds)
 ```
+
+An equivalent way to create the previous NetCDF would be the following code:
+
+```julia
+using NCDatasets
+data = [Float32(i+j) for i = 1:100, j = 1:110]
+
+Dataset("/tmp/test2.nc","c",attrib = ["title" => "this is a test file"]) do ds
+    # Define the variable temperature. The dimension "lon" and "lat" with the
+    # size 100 and 110 resp are implicetly created
+    defVar(ds,"temperature",data,("lon","lat"), attrib = [
+           "units" => "degree Celsius",
+           "comments" => "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
+    ])
+end
+```
+
 
 ## Create a netCDF file from a template
 
