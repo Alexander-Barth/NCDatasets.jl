@@ -351,6 +351,14 @@ data_orig_back = timeencode(datacal, units, calendar)
 @test daysinyear(DateTimeNoLeap(1582,10,1)) == 365
 @test daysinyear(DateTime360Day(1582,10,1)) == 360
 
+
+for T in [DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
+          DateTimeAllLeap, DateTimeNoLeap, DateTime360Day]
+    @test Dates.yearmonthday(T(2004,1,2)) == (2004, 1, 2)
+    @test Dates.yearmonth(T(2004,1,2)) == (2004, 1)
+end
+
+
 # if @isdefined DataArrays
 
 # # DataArray
