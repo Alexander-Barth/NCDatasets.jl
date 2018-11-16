@@ -1419,9 +1419,14 @@ function nomissing(da::Array{Union{T,Missing},N}) where {T,N}
     end
 
     if VERSION >= v"0.7.0-beta.0"
-        return replace(da, missing => da[1])
+         if isempty(da)
+            return Array{T,N}([])
+         else
+            return replace(da, missing => da[1])
+         end
     else
-        return Array{T}(da)
+        # Illegal instruction (core dumped) in Julia 1.0.1
+        return Array{T,N}(da)
     end
 end
 
