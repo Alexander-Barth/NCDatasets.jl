@@ -150,4 +150,16 @@ Dataset(fnames[1]) do ds
     @test ds.attrib["history"] == "foo2"
 end
 
+@test_throws NCDatasets.NetCDFError Dataset(fnames,"not-a-mode")
+
+@test keys(mfds) == ["var", "lat", "lon", "time"]
+@test keys(mfds.dim) == ["lon", "lat", "time"]
+@test NCDatasets.groupname(mfds) == "/"
+@test size(mfds["var"]) == (2, 3, 3)
+@test size(mfds["var"].var) == (2, 3, 3)
+@test name(mfds["var"].var) == "var"
+@test NCDatasets.groupname(mfds.group["group"]) == "group"
+
+
+
 nothing

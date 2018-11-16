@@ -113,3 +113,5 @@ data = Union{Float64,Missing}[1., 2.]
 dataf = NCDatasets.nomissing(data)
 @test eltype(dataf) == Float64
 @test dataf == [1., 2.]
+
+@test nomissing(Union{Int64,Missing}[]) == []

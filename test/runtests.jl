@@ -170,6 +170,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_bitarray.jl")
 
     # error handling
+    @test_throws NCDatasets.NetCDFError Dataset("file","not-a-mode")
     @test_throws NCDatasets.NetCDFError Dataset(":/does/not/exist")
 
     include("test_variable.jl")
@@ -185,9 +186,9 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_corner_cases.jl")
 
     # display
-    s = IOBuffer()
+    buf = IOBuffer()
     filename = tempname()
-    NCDatasets.Dataset(filename,"c") do ds
+    closedvar = NCDatasets.Dataset(filename,"c") do ds
         # define the dimension "lon" and "lat" with the size 100 and 110 resp.
         NCDatasets.defDim(ds,"lon",100)
         NCDatasets.defDim(ds,"lat",110)
@@ -197,19 +198,29 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
         v = NCDatasets.defVar(ds,"temperature",Float32,("lon","lat"))
         v.attrib["units"] = "degree Celsius"
 
-        show(s,ds)
-        @test occursin("temperature",String(take!(s)))
+        show(buf,ds)
+        @test occursin("temperature",String(take!(buf)))
 
-        show(s,ds.attrib)
-        @test occursin("title",String(take!(s)))
+        show(buf,ds.attrib)
+        @test occursin("title",String(take!(buf)))
 
-        show(s,ds["temperature"])
-        @test occursin("temperature",String(take!(s)))
+        show(buf,ds["temperature"])
+        @test occursin("temperature",String(take!(buf)))
 
-        show(s,ds["temperature"].attrib)
-        @test occursin("Celsius",String(take!(s)))
+        show(buf,ds["temperature"].attrib)
+        @test occursin("Celsius",String(take!(buf)))
+        v
     end
 
+    # test displaying closed dataset
+    show(buf,ds)
+    @test occursin("closed",String(take!(buf)))
+
+    show(buf,ds.attrib)
+    @test occursin("closed",String(take!(buf)))
+
+    show(buf,closedvar)
+    @test occursin("closed",String(take!(buf)))
 end
 
 @testset "NetCDF4 groups" begin

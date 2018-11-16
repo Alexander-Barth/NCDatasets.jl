@@ -18,7 +18,8 @@ NCDatasets.Dataset(filename,"c", attrib = [
     NCDatasets.defDim(ds,"lon",sz[1])
     NCDatasets.defDim(ds,"lat",sz[2])
 
-    forecast = NCDatasets.defGroup(ds,"forecast")
+    forecast = NCDatasets.defGroup(ds,"forecast", attrib = [
+        "model" => "my model"])
     v = NCDatasets.defVar(forecast,"var",Float64,("lon","lat"))
     v[:,:] = fill(Float64(123),size(v))
 end
