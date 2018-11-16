@@ -651,6 +651,10 @@ Return the file path (or the opendap URL) of the Dataset `ds`
 path(ds::Dataset) = nc_inq_path(ds.ncid)
 
 
+"""
+    groupname(ds::Dataset)
+Return the group name of the Dataset `ds`
+"""
 groupname(ds::Dataset) = nc_inq_grpname(ds.ncid)
 
 
@@ -716,7 +720,7 @@ function Base.show(io::IO,ds::Union{Dataset,MFDataset}; indent="")
         rethrow
     end
 
-    print(io,indent,"Group: ",nc_inq_grpname(ds.ncid),"\n")
+    print(io,indent,"Group: ",groupname(ds),"\n")
     print(io,"\n")
 
     dims = collect(ds.dim)
@@ -1462,9 +1466,14 @@ function nomissing(da::Array{Union{T,Missing},N}) where {T,N}
     end
 
     if VERSION >= v"0.7.0-beta.0"
-        return replace(da, missing => da[1])
+         if isempty(da)
+            return Array{T,N}([])
+         else
+            return replace(da, missing => da[1])
+         end
     else
-        return Array{T}(da)
+        # Illegal instruction (core dumped) in Julia 1.0.1
+        return Array{T,N}(da)
     end
 end
 
