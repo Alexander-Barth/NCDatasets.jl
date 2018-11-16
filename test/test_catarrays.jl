@@ -33,16 +33,12 @@ function example_file(i,array)
         ncvar.attrib["coordinates"] = "lon lat"
 
 
-        nclat = defVar(ds,"lat", Float64, ("lon", "lat"))
+        nclat = defVar(ds,"lat", Float64, ("lat",))
         nclat.attrib["units"] = "degrees_north"
-        nclat.attrib["point_spacing"] = "uneven"
-        nclat.attrib["axis"] = "Y"
 
-        nclon = defVar(ds,"lon", Float64, ("lon", "lat"))
+        nclon = defVar(ds,"lon", Float64, ("lon",))
         nclon.attrib["units"] = "degrees_east"
         nclon.attrib["modulo"] = 360.0
-        nclon.attrib["point_spacing"] = "even"
-        nclon.attrib["axis"] = "X"
 
         nctime = defVar(ds,"time", Float64, ("time",))
         nctime.attrib["long_name"] = "surface wind time"
@@ -65,8 +61,8 @@ function example_file(i,array)
 
         ncvar[:,:,1] = array
         ncvarg[:,:,1] = array.+1
-        # nclat[:] = ...
-        # nclon[:] = ...
+        #nclon[:] = 1:size(array,1)
+        #nclat[:] = 1:size(array,2)
         nctime[:] = i
     end
     return fname
@@ -83,51 +79,75 @@ idx_global,idx_local,sz = CatArrays.idx_global_local_(CA,(1:1,1:1,1:1))
 
 @inferred CatArrays.idx_global_local_(CA,(1:1,1:1,1:1))
 
-@testset "CatArrays" begin
-    @test CA[1:1,1:1,1:1] == C[1:1,1:1,1:1]
-    @test CA[1:1,1:1,1:2] == C[1:1,1:1,1:2]
-    @test CA[1:2,1:1,1:2] == C[1:2,1:1,1:2]
+@test CA[1:1,1:1,1:1] == C[1:1,1:1,1:1]
+@test CA[1:1,1:1,1:2] == C[1:1,1:1,1:2]
+@test CA[1:2,1:1,1:2] == C[1:2,1:1,1:2]
 
 
-    @test CA[:,:,1] == C[:,:,1]
-    @test CA[:,:,2] == C[:,:,2]
-    @test CA[:,2,:] == C[:,2,:]
-    @test CA[:,1:2:end,:] == C[:,1:2:end,:]
-    @test CA[1,1,1] == C[1,1,1]
-end
+@test CA[:,:,1] == C[:,:,1]
+@test CA[:,:,2] == C[:,:,2]
+@test CA[:,2,:] == C[:,2,:]
+@test CA[:,1:2:end,:] == C[:,1:2:end,:]
+@test CA[1,1,1] == C[1,1,1]
+
+CA[2,2,:] = [1.,2.,3.]
+@test A[1][2,2] == 1.
+@test A[2][2,2] == 2.
+@test A[3][2,2] == 3.
 
 
+
+A = [randn(2,3),randn(2,3),randn(2,3)]
+C = cat(A...; dims = 3)
 fnames = example_file.(1:3,A)
 
 
+mfds = Dataset(fnames);
+varname = "var"
+var = variable(mfds,varname);
+data = var[:,:,:]
 
+@test C == var[:,:,:]
+@test mfds.attrib["history"] == "foo"
+@test var.attrib["units"] == "meter second-1"
 
-@testset "Multi-file" begin
-    mfds = MFDataset(fnames);
-    varname = "var"
-    var = variable(mfds,varname);
-    data = var[:,:,:]
+@test dimnames(var) == ("lon", "lat", "time")
+# lon does not vary in time and thus there should be no aggregation
+lon = variable(mfds,"lon");
+@test lon.attrib["units"] == "degrees_east"
+@test size(lon) == (size(data,1),)
 
-    @test C == var[:,:,:]
-    @test mfds.attrib["history"] == "foo"
-    @test var.attrib["units"] == "meter second-1"
+var = mfds[varname]
+@test C == var[:,:,:]
+@test dimnames(var) == ("lon", "lat", "time")
 
-    @test dimnames(var) == ("lon", "lat", "time")
-    # lon does not vary in time and thus there should be no aggregation
-    lon = variable(mfds,"lon");
-    @test lon.attrib["units"] == "degrees_east"
-    @test size(lon) == (size(data,1),size(data,2))
+@test mfds.dim["lon"] == size(C,1)
+@test mfds.dim["lat"] == size(C,2)
+@test mfds.dim["time"] == size(C,3)
 
-    var = mfds[varname]
-    @test C == var[:,:,:]
-    @test dimnames(var) == ("lon", "lat", "time")
+@test mfds.dim["time"] == size(C,3)
+close(mfds)
 
-    @test mfds.dim["lon"] == size(C,1)
-    @test mfds.dim["lat"] == size(C,2)
-    @test mfds.dim["time"] == size(C,3)
+# show
+buf = IOBuffer()
+show(buf,mfds)
+occursin("time = 3",String(take!(buf)))
 
-    @test mfds.dim["time"] == size(C,3)
+# write
+mfds = Dataset(fnames,"a");
+mfds["var"][2,2,:] = 1:length(fnames)
 
-    close(mfds)
+for n = 1:length(fnames)
+    Dataset(fnames[n]) do ds
+        @test ds["var"][2,2,1] == n
+    end
 end
 
+mfds.attrib["history"] = "foo2"
+sync(mfds)
+
+Dataset(fnames[1]) do ds
+    @test ds.attrib["history"] == "foo2"
+end
+
+nothing

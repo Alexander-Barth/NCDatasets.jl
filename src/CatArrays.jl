@@ -160,7 +160,7 @@ function idx_global_local_(CA::CatArray,idx::NTuple{N}) where N
     idx_global = Vector{NTuple{N,StepRange{Int,Int}}}(undef,length(CA.arrays))
 
     # loop over all arrays
-    for j=1:length(CA.arrays)
+    for j = 1:length(CA.arrays)
         idx_local_tmp = Vector{StepRange{Int,Int}}(undef,n)
         idx_global_tmp = Vector{StepRange{Int,Int}}(undef,n)
 
@@ -200,23 +200,29 @@ function idx_global_local_(CA::CatArray,idx::NTuple{N}) where N
 
 end
 
+
+function Base.setindex!(CA::CatArray{T,N},data,idx...) where {T,N}
+    ind,squeezedim = normalizeindexes(size(CA),idx)
+    idx_global,idx_local,sz = idx_global_local_(CA,ind);
+    @debug begin
+        @show ind,idx_global,idx_local,sz
+    end
+    data2 = reshape(data,sz)
+    for j = 1:length(CA.arrays)
+        # get subset from global array x
+        subset = @view data2[idx_global[j]...]
+
+        @debug begin
+            @show idx_local[j]
+        end
+        # set subset in j-th array
+        CA.arrays[j][idx_local[j]...] = subset;
+    end
+
+    return data
+end
+
 export CatArray
 end
 
 
-#nothing
-
-# Copyright (C) 2012,2017 Alexander Barth <barth.alexander@gmail.com>
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; If not, see <http://www.gnu.org/licenses/>.

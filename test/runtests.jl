@@ -159,8 +159,6 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_attrib.jl")
 
     include("test_writevar.jl")
-    include("test_time.jl")
-    include("test_timeunits.jl")
     include("test_scaling.jl")
 
     include("test_fillvalue.jl")
@@ -176,15 +174,10 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     include("test_variable.jl")
 
-    include("test_group.jl")
-    include("test_group2.jl")
     include("test_variable_unlim.jl")
 
     include("test_strings.jl")
     include("test_lowlevel.jl")
-
-    include("test_vlen_lowlevel.jl")
-    include("test_vlen.jl")
 
     include("test_ncgen.jl")
     include("test_varbyatt.jl")
@@ -217,6 +210,21 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
         @test occursin("Celsius",String(take!(s)))
     end
 
+end
+
+@testset "NetCDF4 groups" begin
+    include("test_group.jl")
+    include("test_group2.jl")
+end
+
+@testset "Variable-length arrays" begin
+    include("test_vlen_lowlevel.jl")
+    include("test_vlen.jl")
+end
+
+@testset "Time and calendars" begin
+    include("test_time.jl")
+    include("test_timeunits.jl")
 end
 
 @testset "Multi-file datasets" begin
