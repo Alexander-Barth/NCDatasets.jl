@@ -40,6 +40,7 @@ for sampledata in samples
     xtype = NCDatasets.ncType[T]
     # reverse order
     varid = NCDatasets.nc_def_var(ncid, varname, xtype, reverse(dimids))
+    NCDatasets.nc_put_att(ncid, varid, "attr-string-list",["one","two"])
     NCDatasets.nc_put_var(ncid, varid, sampledata)
     NCDatasets.nc_close(ncid)
 
@@ -48,8 +49,10 @@ for sampledata in samples
     ncid = NCDatasets.nc_open(filename,NCDatasets.NC_NOWRITE)
     varid = NCDatasets.nc_inq_varid(ncid,varname)
     xtype2 = NCDatasets.nc_inq_vartype(ncid,varid)
-
     @test xtype == xtype
+
+    attrval = NCDatasets.nc_get_att(ncid, varid, "attr-string-list")
+    @test attrval == ["one","two"]
 
     sampledata2 = Array{T,ndims(sampledata)}(undef,size(sampledata))
     NCDatasets.nc_get_var!(ncid,varid,sampledata2)

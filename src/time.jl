@@ -618,6 +618,7 @@ end
 
 
 # do not transform data is not a vector of DateTime
+# unused, should be removed
 timeencode(data,units,calendar = "standard") = data
 
 export timeencode, timedecode, datetuple

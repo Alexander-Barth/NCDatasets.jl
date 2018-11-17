@@ -94,8 +94,7 @@ function normalizeindexes(sz,indexes)
         elseif indT == StepRange{Int,Int}
             ind[i] = indexes[i]
         else
-            @show indT
-            error("unsupported index")
+            error("$indT: unsupported index")
         end
     end
 

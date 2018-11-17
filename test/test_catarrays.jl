@@ -158,5 +158,12 @@ end
 @test NCDatasets.groupname(mfds.group["group"]) == "group"
 
 
+# create new dimension in all files
+mfds.dim["newdim"] = 123;
+sync(mfds);
+Dataset(fnames[1]) do ds
+    @test ds.dim["newdim"] == 123
+end
+close(mfds)
 
 nothing

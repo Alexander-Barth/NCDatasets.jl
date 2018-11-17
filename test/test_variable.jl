@@ -26,10 +26,16 @@ NCDatasets.Dataset(filename,"c") do ds
     @test_throws NCDatasets.NetCDFError v[-1,1] = 1
 
     # variables
-    for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
+    for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64,
+              Char,String]
     #for T in []
         local data
-        data = [T(i+2*j) for i = 1:sz[1], j = 1:sz[2]]
+        data, scalar_data =
+            if T == String
+                [Char(i+60) * Char(j+60) for i = 1:sz[1], j = 1:sz[2]], "abcde"
+            else
+                [T(i+2*j) for i = 1:sz[1], j = 1:sz[2]], T(100)
+            end
 
         v = NCDatasets.defVar(ds,"var-$T",T,("lon","lat"))
         v[:,:] = data
@@ -49,8 +55,8 @@ NCDatasets.Dataset(filename,"c") do ds
 
 
         # write scalar,
-        v.var[:,:] = T(100)
-        @test all(v.var[:,:][:] .== 100)
+        v.var[:,:] = scalar_data
+        @test all(v.var[:,:][:] .== scalar_data)
 
     end
 end
