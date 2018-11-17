@@ -9,10 +9,7 @@ end
 using NCDatasets
 
 function example_file(i,array)
-    fname = "/tmp/filename_$(i).nc"
-    if isfile(fname)
-        rm(fname)
-    end
+    fname = tempname()
     @debug begin
         @show fname
     end
