@@ -121,14 +121,19 @@ daysinmonth
 daysinyear
 ```
 
-
-
 # Utility functions
 
 ```@docs
 ncgen
 nomissing
 varbyattrib
+```
+
+# Experimental functions
+
+```
+NCDatasets.ancillaryvariables
+NCDatasets.filter
 ```
 
 # Issues

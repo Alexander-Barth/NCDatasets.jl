@@ -1344,7 +1344,7 @@ function ncgen(io::IO,fname; newfname = "filename.nc")
     print(io,"\n# Declare variables\n\n")
 
     for (d,v) in ds
-        print(io,"nc$d = defVar(ds,\"$d\", $(eltype(v.var)), $(dimnames(v))) \n")
+        print(io,"nc$d = defVar(ds,\"$d\", $(eltype(v.var)), $(dimnames(v)))\n")
         ncgen_setattrib(io,"nc$d",v.attrib)
         print(io,"\n")
     end
@@ -1504,6 +1504,7 @@ export defGroup
 include("multifile.jl")
 export MFDataset, close
 
+include("cfconventions.jl")
 
 # it is good practise to use the default fill-values, thus we export them
 export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,
