@@ -441,6 +441,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "index.html#Experimental-functions-1",
+    "page": "NCDatasets.jl",
+    "title": "Experimental functions",
+    "category": "section",
+    "text": "NCDatasets.ancillaryvariables\nNCDatasets.filter"
+},
+
+{
     "location": "index.html#Issues-1",
     "page": "NCDatasets.jl",
     "title": "Issues",
