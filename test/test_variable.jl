@@ -53,6 +53,8 @@ NCDatasets.Dataset(filename,"c") do ds
         # ignore extra index
         @test v[2:3,3,1,1] == data[2:3,3,1,1]
 
+        @show v[[1,2,3],:]
+        @test v[[1,2,3],:] == data[[1,2,3],:]
 
         # write scalar,
         v.var[:,:] = scalar_data

@@ -543,9 +543,6 @@ end
 
 function nc_get_att(ncid::Integer,varid::Integer,name)
     xtype,len = nc_inq_att(ncid,varid,name)
-    @debug begin
-        @show varid,name,xtype,NC_CHAR,NC_STRING
-    end
 
     if xtype == NC_CHAR
         val = Vector{UInt8}(undef,len)
@@ -672,6 +669,7 @@ function nc_put_var1(ncid::Integer,varid::Integer,indexp,op::T) where T
 end
 
 function nc_get_var1(::Type{Char},ncid::Integer,varid::Integer,indexp)
+    @debug "nc_get_var1",indexp
     tmp = Vector{UInt8}(undef,1)
     check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),ncid,varid,indexp,tmp))
     return Char(tmp[1])
