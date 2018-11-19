@@ -5,7 +5,6 @@ Return the first ancillary variables from the NetCDF variable `ncv` with the
 standard name modifier `modifier`. It can be used for example to access
 related variable like status flags.
 """
-
 function ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
     ds = Dataset(ncv.var.ncid,ncv.var.isdefmode)
     varname = name(ncv)
@@ -31,7 +30,15 @@ end
 """
     data = filter(ncv, indices...; accepted_status_flags = nothing)
 
-Load a filter observations.
+Load and filter observations by replacing all variables without an acepted status
+flag to `missing`. It is used the attribute `ancillary_variables` to identify
+the status flag.
+
+```
+# da["data"] is 2D matrix
+good_data = NCDatasets.filter(ds["data"],:,:, accepted_status_flags = ["good_data","probably_good_data"])
+```
+
 """
 function filter(ncv, indices...; accepted_status_flags = nothing)
     data = ncv[indices...];
