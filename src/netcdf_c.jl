@@ -724,7 +724,7 @@ end
 
 
 function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,op)
-    @debug @show startp,countp,stridep,op
+    @debug "nc_put_vars: $startp,$countp,$stridep"
 
     check(ccall((:nc_put_vars,libnetcdf),Cint,
                 (Cint,Cint,Ptr{Cint},Ptr{Cint},
