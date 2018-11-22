@@ -58,6 +58,12 @@ for sampledata in samples
     NCDatasets.nc_get_var!(ncid,varid,sampledata2)
     @test sampledata == sampledata2
 
+    # start = [1,1]
+    # count = [size(
+
+    # NCDatasets.nc_get_vara!(ncid,varid,start,count,sampledata2)
+    # @test sampledata == sampledata2
+
     NCDatasets.nc_close(ncid)
 end
 
