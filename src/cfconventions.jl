@@ -41,6 +41,8 @@ good_data = NCDatasets.filter(ds["data"],:,:, accepted_status_flags = ["good_dat
 
 """
 function filter(ncv, indices...; accepted_status_flags = nothing)
+#function filter_(ncv, indices...)
+#    accepted_status_flags = ("good_value", "probably_good_value")
     data = ncv[indices...];
 
     if (accepted_status_flags != nothing)
@@ -50,7 +52,7 @@ function filter(ncv, indices...; accepted_status_flags = nothing)
         end
 
         flag_values = ncv_ancillary.attrib["flag_values"]
-        flag_meanings = ncv_ancillary.attrib["flag_meanings"]
+        flag_meanings = ncv_ancillary.attrib["flag_meanings"]::String
         if typeof(flag_meanings) <: AbstractString
             flag_meanings = split(flag_meanings)
         end
@@ -64,9 +66,9 @@ function filter(ncv, indices...; accepted_status_flags = nothing)
             end
             accepted_status_flag_values[i] = flag_values[tmp]
         end
-        @debug accepted_status_flag_values
+        #@debug accepted_status_flag_values
 
-        dataflag = ncv_ancillary[indices...];
+        dataflag = ncv_ancillary.var[indices...];
         for i in eachindex(data)
             good = false;
             for accepted_status_flag_value in accepted_status_flag_values
@@ -81,3 +83,4 @@ function filter(ncv, indices...; accepted_status_flags = nothing)
 
     return data
 end
+
