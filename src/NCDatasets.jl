@@ -956,7 +956,7 @@ end
 function Base.getindex(v::Variable{T,N},indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
     data = Array{T,N}(undef,jlshape)
-    nc_get_vars(v.ncid,v.varid,start,count,stride,data)
+    nc_get_vars!(v.ncid,v.varid,start,count,stride,data)
     return data
 end
 

@@ -732,29 +732,29 @@ function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,op)
 end
 
 
-function nc_get_vars(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{Char,N}) where N
+function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{Char,N}) where N
     tmp = Array{UInt8,N}(undef,size(ip))
-    nc_get_vars(ncid,varid,startp,countp,stridep,tmp)
+    nc_get_vars!(ncid,varid,startp,countp,stridep,tmp)
     ip[:] = convert(Array{Char,1},tmp[:])
 end
 
-function nc_get_vars(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{String,N}) where N
+function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{String,N}) where N
     tmp = Array{Ptr{UInt8},N}(undef,size(ip))
-    nc_get_vars(ncid,varid,startp,countp,stridep,tmp)
+    nc_get_vars!(ncid,varid,startp,countp,stridep,tmp)
     ip[:] = unsafe_string.(tmp)
 end
 
-function nc_get_vars(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{Vector{T},N}) where {T,N}
+function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{Vector{T},N}) where {T,N}
     tmp = Array{NCDatasets.nc_vlen_t{T},N}(undef,size(ip))
-    nc_get_vars(ncid,varid,startp,countp,stridep,tmp)
+    nc_get_vars!(ncid,varid,startp,countp,stridep,tmp)
 
     for i in eachindex(tmp)
         ip[i] = unsafe_wrap(Vector{T},tmp[i].p,(tmp[i].len,))
     end
 end
 
-function nc_get_vars(ncid::Integer,varid::Integer,startp,countp,stridep,ip)
-    @debug "nc_get_vars: $startp,$countp,$stridep"
+function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip)
+    @debug "nc_get_vars!: $startp,$countp,$stridep"
     check(ccall((:nc_get_vars,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,stridep,ip))
 end
 
