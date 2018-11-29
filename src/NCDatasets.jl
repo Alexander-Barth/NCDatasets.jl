@@ -1063,6 +1063,35 @@ function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int}
 end
 
 
+
+"""
+    load!(ncvar::Variable, data, indices)
+
+Loads a NetCDF variables `ncvar` and puts the result in `data` along the
+specified indices.
+
+```julia
+data = zeros(5,6); # must have the right shape and type
+load!(ds["temp"].var,data,:,:) # loads all data
+
+data = zeros(5); # must have the right shape and type
+load!(ds["temp"].var,data,:,1) # loads the 1st column
+```
+"""
+@inline function load!(ncvar::NCDatasets.Variable{T,N}, data, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
+    ind = to_indices(ncvar,indices)
+    start,count,stride,jlshape = ncsub(ind)
+    nc_get_vars!(ncvar.ncid,ncvar.varid,start,count,stride,data)
+end
+
+@inline function load!(ncvar::NCDatasets.Variable{T,2}, data, i::Colon,j::UnitRange) where T
+    # reversed and 0-based
+    start = [first(j)-1,0]
+    count = [length(j),size(ncvar,1)]
+    nc_get_vara!(ncvar.ncid,ncvar.varid,start,count,data)
+end
+
+
 # -----------------------------------------------------
 # Variable (with applied transformations following the CF convention)
 

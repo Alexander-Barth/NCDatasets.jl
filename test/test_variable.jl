@@ -73,4 +73,13 @@ Dataset(filename,"c") do ds
     @test eltype(ds["temp"].var) == Int32
     @test ds.dim["lon"] == sz[1]
     @test ds.dim["lat"] == sz[2]
+
+    # load in-place
+    data2 = similar(data)
+    NCDatasets.load!(ds["temp"].var,data2,:,:)
+    @test data2 == data
+
+    data2 = zeros(eltype(data),sz[1],2)
+    NCDatasets.load!(ds["temp"].var,data2,:,1:2)
+    @test data2 == data[:,1:2]
 end
