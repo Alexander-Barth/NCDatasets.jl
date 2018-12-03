@@ -700,13 +700,20 @@ Simultaneously return the year, month and day parts of `dt`.
 yearmonthday(dt::AbstractCFDateTime) = (Dates.year(dt),Dates.month(dt),Dates.day(dt))
 
 """
-    yearmonth(dt::AbstractCFDateTime) -> (Int64, Int64, Int64)
+    yearmonth(dt::AbstractCFDateTime) -> (Int64, Int64)
 
 Simultaneously return the year and month parts of `dt`.
 """
 yearmonth(dt::AbstractCFDateTime) = (Dates.year(dt),Dates.month(dt))
 
-export daysinmonth, daysinyear, yearmonthday, yearmonth
+"""
+    monthday(dt::AbstractCFDateTime) -> (Int64, Int64)
+
+Simultaneously return the month and day parts of `dt`.
+"""
+monthday(dt::AbstractCFDateTime) = (Dates.month(dt),Dates.day(dt))
+
+export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
 
 export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
     DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
