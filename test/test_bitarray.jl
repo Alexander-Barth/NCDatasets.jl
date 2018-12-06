@@ -1,5 +1,3 @@
-using DataArrays
-
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
 ds = NCDatasets.Dataset(filename,"c")

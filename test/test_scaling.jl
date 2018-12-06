@@ -1,13 +1,16 @@
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
-ds = Dataset(filename,"c")
+ds = NCDatasets.Dataset(filename,"c")
 
 # define the dimension "lon" and "lat" with the size 10 and 11 resp.
-defDim(ds,"lon",10)
-defDim(ds,"lat",11)
+NCDatasets.defDim(ds,"lon",10)
+NCDatasets.defDim(ds,"lat",11)
 
 for T in [Int32,Float32]
-    v = defVar(ds,"scaled_var_$(T)",T,("lon","lat"))
+    
+    local v, data
+
+    v = NCDatasets.defVar(ds,"scaled_var_$(T)",T,("lon","lat"))
 
     data = [-12.3*i + 23.4*j for i = 1:10, j = 1:11]
     offset = 20.
@@ -19,7 +22,7 @@ for T in [Int32,Float32]
     @test v[:,:] ≈ data atol=1e-4
     
     # load without transformation (offset/scaling)
-    @test v.var[:,:] ≈ (data-offset)/factor atol=1e-4
+    @test v.var[:,:] ≈ (data .- offset)/factor atol=1e-4
     
     # write/read without transformation (offset/scaling)
     v.var[:,:] = data
@@ -30,4 +33,5 @@ for T in [Int32,Float32]
     end
 end
 
-close(ds)
+NCDatasets.close(ds)
+rm(filename)

@@ -1,4 +1,3 @@
-using Base.Test
 import NCDatasets
 
 ncfile1 = tempname()

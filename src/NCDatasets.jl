@@ -1,17 +1,30 @@
-__precompile__()
+VERSION < v"0.7.0-beta2.199" && __precompile__()
 
 module NCDatasets
+if VERSION >= v"0.7.0-beta.0"
+    using Dates
+    using Printf
+end
+
 using Base
-using Base.Test
-#using NullableArrays
-using DataArrays
+using Missings
+using Compat
+import Base.convert
+import Compat: @debug, findfirst
+
+import Base: close
+include("time.jl")
+
+include("CatArrays.jl")
+export CatArrays
+
 
 # NetCDFError, error check and netcdf_c.jl from NetCDF.jl (https://github.com/JuliaGeo/NetCDF.jl)
 # Copyright (c) 2012-2013: Fabian Gans, Max-Planck-Institut fuer Biogeochemie, Jena, Germany
 # MIT
 
 # Exception type for error thrown by the NetCDF library
-type NetCDFError <: Exception
+mutable struct NetCDFError <: Exception
     code::Cint
     msg::String
 end
@@ -21,7 +34,6 @@ end
 
 Construct a NetCDFError from the error code.
 """
-
 NetCDFError(code::Cint) = NetCDFError(code, nc_strerror(code))
 
 #function Base.showerror(io::IO, err::NetCDFError)
@@ -42,6 +54,8 @@ end
 include("netcdf_c.jl")
 
 # end of code from NetCDF.jl
+
+const default_timeunits = "days since 1900-00-00 00:00:00"
 
 ### type definition
 
@@ -66,23 +80,23 @@ end
 # List of attributes (for a single NetCDF file)
 # all ids should be Cint
 
-type Attributes <: BaseAttributes
+mutable struct Attributes <: BaseAttributes
     ncid::Cint
     varid::Cint
     isdefmode::Vector{Bool}
 end
 
-type Groups
+mutable struct Groups
     ncid::Cint
     isdefmode::Vector{Bool}
 end
 
-type Dimensions
+mutable struct Dimensions
     ncid::Cint
     isdefmode::Vector{Bool}
 end
 
-type Dataset
+mutable struct Dataset
     ncid::Cint
     # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
     # need to be an array, so that it is copied by reference
@@ -116,10 +130,9 @@ listVar(ncid) = String[nc_inq_varname(ncid,varid)
                        for varid in nc_inq_varids(ncid)]
 
 "Return all attribute names"
-
 function listAtt(ncid,varid)
     natts = nc_inq_varnatts(ncid,varid)
-    names = Vector{String}(natts)
+    names = Vector{String}(undef,natts)
 
     for attnum = 0:natts-1
         names[attnum+1] = nc_inq_attname(ncid,varid,attnum)
@@ -144,98 +157,23 @@ function defmode(ncid,isdefmode::Vector{Bool})
     end
 end
 
-"""
-    t0,plength = timeunits(units,calendar = "standard")
-
-Parse time units and returns the start time `t0` and the scaling factor
-`plength` in milliseconds.
-"""
-function timeunits(units, calendar = "standard")
-    tunit,starttime = strip.(split(units," since "))
-    tunit = lowercase(tunit)
-
-    starttime = replace(starttime,"T"," ")
-
-    # remove Z time zone indicator
-    # all times are assumed UTC anyway
-    if endswith(starttime,"Z")
-        starttime = starttime[1:end-1]
-    end
-
-
-        negativeyear = starttime[1] == '-'
-        if negativeyear
-            starttime = starttime[2:end]
-        end
-
-        t0 =
-            if contains(starttime,":")
-                DateTime(starttime,"y-m-d H:M:S")
-            else
-                DateTime(starttime,"y-m-d")
-            end
-
-        if negativeyear
-            # year is negative
-            t0 = DateTime(-Dates.year(t0),Dates.month(t0),Dates.day(t0),
-                          Dates.hour(t0),Dates.minute(t0),Dates.second(t0))
-        end
-
-        # make sure that plength is 64-bit on 32-bit platforms
-        plength =
-            if (tunit == "days") || (tunit == "day")
-                24*60*60*Int64(1000)
-            elseif (tunit == "hours") || (tunit == "hour")
-                60*60*Int64(1000)
-            elseif (tunit == "minutes") || (tunit == "minute")
-                60*Int64(1000)
-            elseif (tunit == "seconds") || (tunit == "second")
-                Int64(1000)
-            end
-
-    if (calendar == "standard") || (calendar == "gregorian")
-        return t0,plength
-    elseif calendar == "julian"
-        # only supported time origin
-        # (Chronological Julian Date)
-        @assert t0 == DateTime(-4713,1,1)
-
-        # 327 is the result from
-        # Dates.value(DateTime(2007,2,10) - DateTime(-4713,1,1)) / (24*60*60*1000) - 2454142
-        #
-        # The values DateTime(2007,2,10) and 2454142 are taken from
-        # https://web.archive.org/web/20171129142108/https://www.hermetic.ch/cal_stud/chron_jdate.htm
-        # and confirmed by http://www.julian-date.com/ (setting GMT offset to zero)
-        # https://web.archive.org/web/20180212213256/http://www.julian-date.com/
-
-        return t0 + Dates.Day(327),plength
-
-    end
-end
-
-function timedecode(data,units,calendar = "standard")
-    const t0,plength = timeunits(units,calendar)
-    convert(x) = t0 + Dates.Millisecond(round(Int64,plength * x))
-    return convert.(data)
-end
-
-function timeencode(data::Array{DateTime,N},units,calendar = "standard") where N
-    const t0,plength = timeunits(units,calendar)
-    convert(dt) = Dates.value(dt - t0) / plength
-    return convert.(data)
-end
-
-# do not transform data is not a vector of DateTime
-timeencode(data,units,calendar = "standard") = data
-
 function Base.show(io::IO,a::BaseAttributes; indent = "  ")
-    # use the same order of attributes than in the NetCDF file
-
-   for (attname,attval) in a
-       print(io,indent,@sprintf("%-20s = ",attname))
-       print_with_color(:blue, io, @sprintf("%s",attval))
-       print(io,"\n")
-   end
+    try
+        # use the same order of attributes than in the NetCDF file
+        for (attname,attval) in a
+            print(io,indent,@sprintf("%-20s = ",attname))
+            printstyled(io, @sprintf("%s",attval),color=:blue)
+            print(io,"\n")
+        end
+    catch err
+        if isa(err,NetCDFError)
+            if err.code == NC_EBADID
+                print(io,"NetCDF attributes (file closed)")
+                return
+            end
+        end
+        rethrow
+    end
 end
 
 
@@ -254,6 +192,17 @@ function Base.getindex(a::Dimensions,name::AbstractString)
 end
 
 """
+    unlimited(d::Dimensions)
+
+Return the names of all unlimited dimensions.
+"""
+function unlimited(d::Dimensions)
+    return String[nc_inq_dimname(d.ncid,dimid)
+                  for dimid in nc_inq_unlimdims(d.ncid)]
+end
+
+
+"""
     Base.setindex!(d::Dimensions,len,name::AbstractString)
 
 Defines the dimension called `name` to the length `len`.
@@ -267,7 +216,6 @@ ds.dim["longitude"] = 100
 If `len` is the special value `Inf`, then the dimension is considered as
 `unlimited`, i.e. it will grow as data is added to the NetCDF file.
 """
-
 function Base.setindex!(d::Dimensions,len,name::AbstractString)
     defmode(d.ncid,d.isdefmode) # make sure that the file is in define mode
     dimid = nc_def_dim(d.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
@@ -290,7 +238,6 @@ ds = Dataset("file.nc")
 title = ds.attrib["title"]
 ```
 """
-
 function Base.getindex(a::Attributes,name::AbstractString)
     return nc_get_att(a.ncid,a.varid,name)
 end
@@ -308,14 +255,13 @@ ds = Dataset("file.nc","c")
 ds.attrib["title"] = "my title"
 ```
 """
-
 function Base.setindex!(a::Attributes,data,name::AbstractString)
     defmode(a.ncid,a.isdefmode) # make sure that the file is in define mode
     return nc_put_att(a.ncid,a.varid,name,data)
 end
 
 """
-   keys(a::Attributes)
+   Base.keys(a::Attributes)
 
 Return a list of the names of all attributes.
 """
@@ -323,7 +269,7 @@ Base.keys(a::Attributes) = listAtt(a.ncid,a.varid)
 
 # -----------------------------------------------------
 
-type MFAttributes <: BaseAttributes
+mutable struct MFAttributes <: BaseAttributes
     as::Vector{Attributes}
 end
 
@@ -338,34 +284,109 @@ function Base.setindex!(a::MFAttributes,data,name::AbstractString)
     return data
 end
 
-Base.keys(a::MFAttributes) = keys(a.as)
+Base.keys(a::MFAttributes) = keys(a.as[1])
 
 
 
+# -----------------------------------------------------
+
+mutable struct MFDimensions
+    as::Vector{Dimensions}
+    aggdim::String
+end
+
+
+mutable struct MFGroups
+    as::Vector{Groups}
+    aggdim::String
+end
+
+
+
+function Base.getindex(a::MFDimensions,name::AbstractString)
+    if name == a.aggdim
+        return sum(d[name] for d in a.as)
+    else
+        return a.as[1][name]
+    end
+end
+
+function Base.setindex!(a::MFDimensions,data,name::AbstractString)
+    for a in a.as
+        a[name] = data
+    end
+    return data
+end
+
+Base.keys(a::Union{MFDimensions,MFGroups}) = keys(a.as[1])
+
+
+function Base.getindex(a::MFGroups,name::AbstractString)
+    ds = getindex.(a.as,name)
+    attrib = MFAttributes([d.attrib for d in ds])
+    dim = MFDimensions([d.dim for d in ds],a.aggdim)
+    group = MFGroups([d.group for d in ds],a.aggdim)
+
+    return MFDataset(ds,a.aggdim,attrib,dim,group)
+end
+
+#---
+mutable struct MFDataset{N}
+    ds::Array{Dataset,N}
+    aggdim::AbstractString
+    attrib::MFAttributes
+    dim::MFDimensions
+    group::MFGroups
+end
+
+
+"""
+    Base.keys(g::NCDatasets.Groups)
+
+Return the names of all subgroubs of the group `g`.
+"""
 function Base.keys(g::Groups)
     return String[nc_inq_grpname(ncid)
                   for ncid in nc_inq_grps(g.ncid)]
 end
 
 """
-Existing group
-"""
+    group = getindex(g::NCDatasets.Groups,groupname::AbstractString)
 
+Return the NetCDF `group` with the name `groupname`.
+For example:
+
+```julia-repl
+julia> ds = Dataset("results.nc", "r");
+julia> forecast_group = ds.group["forecast"]
+julia> forecast_temp = forecast_group["temperature"]
+```
+
+"""
 function Base.getindex(g::Groups,groupname::AbstractString)
     grp_ncid = nc_inq_grp_ncid(g.ncid,groupname)
     return Dataset(grp_ncid,g.isdefmode)
 end
 
-function defGroup(ds::Dataset,groupname)
+"""
+    defGroup(ds::Dataset,groupname, attrib = []))
+
+Create the group with the name `groupname` in the dataset `ds`.
+`attrib` is a list of attribute name and attribute value pairs (see `Dataset`).
+"""
+function defGroup(ds::Dataset,groupname; attrib = [])
     grp_ncid = nc_def_grp(ds.ncid,groupname)
-    return Dataset(grp_ncid,ds.isdefmode)
+    ds = Dataset(grp_ncid,ds.isdefmode)
+
+    # set global attributes for group
+    for (attname,attval) in attrib
+        ds.attrib[attname] = attval
+    end
+
+    return ds
 end
 
-function group(ds::Dataset,groupname)
-    grp_ncid = nc_inq_grp_ncid(ds.ncid,groupname)
-    return Dataset(grp_ncid,ds.isdefmode)
-end
-
+group(ds::Union{Dataset,MFDataset},groupname) = ds.group[groupname]
 
 # -----------------------------------------------------
 # Dataset
@@ -373,20 +394,21 @@ end
 
 """
     Dataset(filename::AbstractString,mode::AbstractString = "r";
-                     format::Symbol = :netcdf4)
+                     format::Symbol = :netcdf4, attrib = [])
 
 Create a new NetCDF file if the `mode` is "c". An existing file with the same
 name will be overwritten. If `mode` is "a", then an existing file is open into
-append mode (i.e. existing data in the NetCDF file is not overwritten and
-a variabale can be added). With the mode equal to "r", an existing NetCDF file or
+append mode (i.e. existing data in the netCDF file is not overwritten and
+a variable can be added). With the mode set to "r", an existing netCDF file or
 OPeNDAP URL can be open in read-only mode.  The default mode is "r".
+The optional parameter `attrib` is an iterable of attribute name and attribute value pairs, for example a `Dict`, `DataStructures.OrderedDict` or simply a vector of pairs (see example below).
 
 # Supported formats:
 
-* :netcdf4 (default): HDF5-based NetCDF format
-* :netcdf4_classic: Only netCDF 3 compatible API features will be used
-* :netcdf3_classic: classic NetCDF format supporting only files smaller than 2GB.
-* :netcdf3_64bit_offset: improved NetCDF format supporting files larger than 2GB.
+* :netcdf4 (default): HDF5-based NetCDF format.
+* :netcdf4_classic: Only netCDF 3 compatible API features will be used.
+* :netcdf3_classic: classic netCDF format supporting only files smaller than 2GB.
+* :netcdf3_64bit_offset: improved netCDF format supporting files larger than 2GB.
 
 Files can also be open and automatically closed with a `do` block.
 
@@ -396,10 +418,15 @@ Dataset("file.nc") do ds
 end
 ```
 
-"""
+```julia
+Dataset("file.nc", "c", attrib = ["title" => "my first netCDF file"]) do ds
+   defVar(ds,"temp",[10.,20.,30.],("time",))
+end;
+```
 
+"""
 function Dataset(filename::AbstractString,mode::AbstractString = "r";
-                 format::Symbol = :netcdf4)
+                 format::Symbol = :netcdf4, attrib = [])
     ncid = -1
     isdefmode = [false]
 
@@ -419,14 +446,23 @@ function Dataset(filename::AbstractString,mode::AbstractString = "r";
         elseif format == :netcdf3_classic
             # do nothing
         else
-            error("Unkown format $(format)")
+            throw(NetCDFError(-1, "Unkown format '$(format)' for filename '$(filename)'"))
         end
 
         ncid = nc_create(filename,mode)
         isdefmode[1] = true
+    else
+        throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
     end
 
-    return Dataset(ncid,isdefmode)
+    ds = Dataset(ncid,isdefmode)
+
+    # set global attributes
+    for (attname,attval) in attrib
+        ds.attrib[attname] = attval
+    end
+
+    return ds
 end
 
 function Dataset(ncid::Integer,
@@ -451,7 +487,7 @@ end
 """
     defDim(ds::Dataset,name,len)
 
-Define a dimension in the data-set `ds` with the given `name` and length `len`.
+Define a dimension in the data set `ds` with the given `name` and length `len`.
 If `len` is the special value `Inf`, then the dimension is considered as
 `unlimited`, i.e. it will grow as data is added to the NetCDF file.
 
@@ -464,17 +500,23 @@ defDim(ds,"lon",100)
 
 This defines the dimension `lon` with the size 100.
 """
-
 defDim(ds::Dataset,name,len) = nc_def_dim(ds.ncid,name,
                                           (isinf(len) ? NC_UNLIMITED : len))
 
 """
     defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
+    defVar(ds::Dataset,name,data,dimnames; kwargs...)
 
 Define a variable with the name `name` in the dataset `ds`.  `vtype` can be
-Julia types in the table below (with the corresponding NetCDF type).  The parameter `dimnames` is a tuple with the
-names of the dimension.  For scalar this parameter is the empty tuple ().
+Julia types in the table below (with the corresponding NetCDF type). Instead of
+providing the variable type one can directly give also the data `data` which
+will be used to fill the NetCDF variable. The parameter `dimnames` is a tuple with the
+names of the dimension.  For scalar this parameter is the empty tuple `()`.
 The variable is returned (of the type CFVariable).
+
+Note if `data` is a vector or array of `DateTime` objects, then the dates are
+saved as double-precision floats and units "$(DEFAULT_TIME_UNITS)" (unless a time unit
+is specifed with the `attrib` keyword described below)
 
 ## Keyword arguments
 
@@ -484,6 +526,7 @@ The variable is returned (of the type CFVariable).
 * `deflatelevel`: Compression level: 0 (default) means no compression and 9 means maximum compression. Each chunk will be compressed individually.
 * `shuffle`: If true, the shuffle filter is activated which can improve the compression ratio.
 * `checksum`: The checksum method can be `:fletcher32` or `:nochecksum` (checksumming is disabled, which is the default)
+* `attrib`: An iterable of attribute name and attribute value pairs, for example a `Dict`, `DataStructures.OrderedDict` or simply a vector of pairs (see example below)
 * `typename` (string): The name of the NetCDF type required for vlen arrays [1]
 
 `chunksizes`, `deflatelevel`, `shuffle` and `checksum` can only be
@@ -503,10 +546,23 @@ set on NetCDF 4 files.
 | NC_CHAR     | Char |
 | NC_STRING   | String |
 
+
+## Example:
+
+```julia-repl
+julia> data = randn(3,5)
+julia> Dataset("test_file.nc","c") do ds
+          defVar(ds,"temp",data,("lon","lat"), attrib = [
+             "units" => "degree_Celsius",
+             "long_name" => "Temperature"
+          ])
+       end;
+
+```
+
 [1] https://web.archive.org/save/https://www.unidata.ucar.edu/software/netcdf/netcdf-4/newdocs/netcdf-c/nc_005fdef_005fvlen.html
 """
-
-function defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
+function defVar(ds::Dataset,name,vtype::DataType,dimnames; kwargs...)
     # all keyword arguments as dictionary
     kw = Dict(k => v for (k,v) in kwargs)
 
@@ -553,16 +609,39 @@ function defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
         nc_def_var_fill(ds.ncid, varid, nofill, vtype(fillvalue))
     end
 
+    if haskey(kw,:attrib)
+        v = ds[name]
+        for (attname,attval) in kw[:attrib]
+            v.attrib[attname] = attval
+        end
+    end
+
     return ds[name]
 end
 
+function defVar(ds::Dataset,name,data,dimnames; kwargs...)
+    vtype = eltype(data)
+    if vtype == DateTime
+        vtype = Float64
+    end
+
+    # define the dimensions if necessary
+    for i = 1:length(dimnames)
+        if !(dimnames[i] in ds.dim)
+            ds.dim[dimnames[i]] = size(data,i)
+        end
+    end
+
+    v = defVar(ds,name,vtype,dimnames; kwargs...)
+    v[:] = data
+    return v
+end
 
 """
     keys(ds::Dataset)
 
 Return a list of all variables names in Dataset `ds`.
 """
-
 Base.keys(ds::Dataset) = listVar(ds.ncid)
 
 """
@@ -571,13 +650,23 @@ Return the file path (or the opendap URL) of the Dataset `ds`
 """
 path(ds::Dataset) = nc_inq_path(ds.ncid)
 
+
+"""
+    groupname(ds::Dataset)
+Return the group name of the Dataset `ds`
+"""
+groupname(ds::Dataset) = nc_inq_grpname(ds.ncid)
+
+
 """
     sync(ds::Dataset)
 
 Write all changes in Dataset `ds` to the disk.
 """
-
-sync(ds::Dataset) = nc_sync(ds.ncid)
+function sync(ds::Dataset)
+    datamode(ds.ncid,ds.isdefmode)
+    nc_sync(ds.ncid)
+end
 
 """
     close(ds::Dataset)
@@ -585,7 +674,6 @@ sync(ds::Dataset) = nc_sync(ds.ncid)
 Close the Dataset `ds`. All pending changes will be written
 to the disk.
 """
-
 Base.close(ds::Dataset) = nc_close(ds.ncid)
 
 """
@@ -595,8 +683,7 @@ Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.Variable`. No scaling is applied when this variable is
 indexes.
 """
-
-function variable(ds::Dataset,varname::String)
+function variable(ds::Dataset,varname::AbstractString)
     varid = nc_inq_varid(ds.ncid,varname)
     name,nctype,dimids,nattr = nc_inq_var(ds.ncid,varid)
     ndims = length(dimids)
@@ -615,23 +702,33 @@ function variable(ds::Dataset,varname::String)
     # reverse dimids to have the dimension order in Fortran style
     return Variable{nctype,ndims}(ds.ncid,varid,
                                   #(shape...),
-                                  (reverse(dimids)...),
+                                  (reverse(dimids)...,),
                                   attrib,ds.isdefmode)
 end
 
-function Base.show(io::IO,ds::Dataset; indent="")
-    print_with_color(:red, io, indent, "Dataset: ",path(ds),"\n")
-    print(io,indent,"Group: ",nc_inq_grpname(ds.ncid),"\n")
+function Base.show(io::IO,ds::Union{Dataset,MFDataset}; indent="")
+    try
+        dspath = path(ds)
+        printstyled(io, indent, "Dataset: ",dspath,"\n", color=:red)
+    catch err
+        if isa(err,NetCDFError)
+            if err.code == NC_EBADID
+                print(io,"closed NetCDF Dataset")
+                return
+            end
+        end
+        rethrow
+    end
+
+    print(io,indent,"Group: ",groupname(ds),"\n")
     print(io,"\n")
 
-    dimids = nc_inq_dimids(ds.ncid,false)
+    dims = collect(ds.dim)
 
-    if length(dimids) > 0
-        print_with_color(:red, io, indent, "Dimensions\n")
+    if length(dims) > 0
+        printstyled(io, indent, "Dimensions\n",color=:red)
 
-        for dimid in dimids
-            dimname = nc_inq_dimname(ds.ncid,dimid)
-            dimlen = nc_inq_dimlen(ds.ncid,dimid)
+        for (dimname,dimlen) in dims
             print(io,indent,"   $(dimname) = $(dimlen)\n")
         end
         print(io,"\n")
@@ -641,7 +738,7 @@ function Base.show(io::IO,ds::Dataset; indent="")
 
     if length(varnames) > 0
 
-        print_with_color(:red, io, indent, "Variables\n")
+        printstyled(io, indent, "Variables\n",color=:red)
 
         for name in varnames
             show(io,variable(ds,name); indent = "$(indent)  ")
@@ -651,18 +748,17 @@ function Base.show(io::IO,ds::Dataset; indent="")
 
     # global attribues
     if length(ds.attrib) > 0
-        print_with_color(:red, io, indent, "Global attributes\n")
+        printstyled(io, indent, "Global attributes\n",color=:red)
         show(io,ds.attrib; indent = "$(indent)  ");
     end
 
     # groups
-    grpids = nc_inq_grps(ds.ncid)
+    groupnames = keys(ds.group)
 
-    if length(grpids) > 0
-        print_with_color(:red, io, indent, "Groups\n")
-        for grpid in grpids
-            grpname = nc_inq_grpname(grpid)
-            show(io,group(ds,grpname); indent = "  ")
+    if length(groupnames) > 0
+        printstyled(io, indent, "Groups\n",color = :red)
+        for groupname in groupnames
+            show(io,group(ds,groupname); indent = "  ")
         end
     end
 
@@ -674,49 +770,24 @@ end
 Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The CF convention are honored when the
 variable is indexed:
-* `_FillValue` will be returned as NA (DataArrays)
+* `_FillValue` will be returned as `missing`
 * `scale_factor` and `add_offset` are applied
 * time variables (recognized by the units attribute) are returned
 as `DateTime` object.
+
+A call `getindex(ds,varname)` is usually written as `ds[varname]`.
 """
-
-function Base.getindex(ds::Dataset,varname::AbstractString)
+function Base.getindex(ds::Union{Dataset,MFDataset},varname::AbstractString)
     v = variable(ds,varname)
-    # fillvalue = zero(eltype(v))
-    # add_offset = 0
-    # scale_factor = 1
-
-    attrib = Attributes(v.ncid,v.varid,ds.isdefmode)
-    # attnames = keys(attrib)
-
-    # has_fillvalue = "_FillValue" in attnames
-    # if has_fillvalue
-    #     fillvalue = attrib["_FillValue"]
-    # end
-
-    # has_add_offset = "add_offset" in attnames
-    # if has_add_offset
-    #     add_offset = attrib["add_offset"]
-    # end
-
-    # has_scale_factor = "scale_factor" in attnames
-    # if has_scale_factor
-    #     scale_factor = attrib["scale_factor"]
-    # end
 
     # return element type of any index operation
-
     if eltype(v) <: Number
-        rettype = Float64
+        rettype = Union{Missing,Float64}
     else
-        rettype = eltype(v)
+        rettype = Union{Missing,eltype(v)}
     end
 
-    # return CFVariable{eltype(v),rettype,ndims(v)}(v,attrib,has_fillvalue,has_add_offset,
-    #                                               has_scale_factor,fillvalue,
-    #                                               add_offset,scale_factor)
-
-    return CFVariable{eltype(v),rettype,ndims(v)}(v,attrib)
+    return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib)}(v,v.attrib)
 end
 
 
@@ -725,7 +796,7 @@ end
 # Variable (as stored in NetCDF file, without using
 # add_offset, scale_factor and _FillValue)
 
-type Variable{NetCDFType,N}  <: AbstractArray{NetCDFType, N}
+mutable struct Variable{NetCDFType,N}  <: AbstractArray{NetCDFType, N}
     ncid::Cint
     varid::Cint
     dimids::NTuple{N,Cint}
@@ -733,9 +804,17 @@ type Variable{NetCDFType,N}  <: AbstractArray{NetCDFType, N}
     isdefmode::Vector{Bool}
 end
 
+mutable struct MFVariable{T,N,M,TA} <: AbstractArray{T,N}
+    var::CatArrays.CatArray{T,N,M,TA}
+    attrib::MFAttributes
+    dimnames::NTuple{N,String}
+    varname::String
+end
+
 # the size of a variable can change, i.e. for a variable with an unlimited
 # dimension
-Base.size(v::Variable) = (Int[nc_inq_dimlen(v.ncid,dimid) for dimid in v.dimids]...)
+Base.size(v::Variable) = (Int[nc_inq_dimlen(v.ncid,dimid) for dimid in v.dimids]...,)
+
 
 """
     dimnames(v::Variable)
@@ -743,7 +822,7 @@ Base.size(v::Variable) = (Int[nc_inq_dimlen(v.ncid,dimid) for dimid in v.dimids]
 Return a tuple of the dimension names of the variable `v`.
 """
 function dimnames(v::Variable)
-    return (String[nc_inq_dimname(v.ncid,dimid) for dimid in v.dimids]...)
+    return (String[nc_inq_dimname(v.ncid,dimid) for dimid in v.dimids]...,)
 end
 
 """
@@ -751,7 +830,6 @@ end
 
 Return the name of the NetCDF variable `v`.
 """
-
 name(v::Variable) = nc_inq_varname(v.ncid,v.varid)
 
 chunking(v::Variable,storage,chunksizes) = nc_def_var_chunking(v.ncid,v.varid,storage,reverse(chunksizes))
@@ -768,7 +846,7 @@ function chunking(v::Variable)
 end
 
 """
-    shuffle,deflate,deflate_level = deflate(v::Variable)
+    isshuffled,isdeflated,deflate_level = deflate(v::Variable)
 
 Return compression information of the variable `v`. If shuffle
 is `true`, then shuffling (byte interlacing) is activaded. If
@@ -776,7 +854,6 @@ deflate is `true`, then the data chunks (see `chunking`) are
 compressed using the compression level `deflate_level`
 (0 means no compression and 9 means maximum compression).
 """
-
 deflate(v::Variable,shuffle,deflate,deflate_level) = nc_def_var_deflate(v.ncid,v.varid,shuffle,deflate,deflate_level)
 deflate(v::Variable) = nc_inq_var_deflate(v.ncid,v.varid)
 
@@ -788,7 +865,6 @@ checksum(v::Variable,checksummethod) = nc_def_var_fletcher32(v.ncid,v.varid,chec
 Return the checksum method of the variable `v` which can be either
 be `:fletcher32` or `:nochecksum`.
 """
-
 checksum(v::Variable) = nc_inq_var_fletcher32(v.ncid,v.varid)
 
 
@@ -805,36 +881,32 @@ end
 
 function Base.getindex(v::Variable,indexes::Int...)
     #    @show "ind",indexes
-
-    data = Vector{eltype(v)}(1)
-    # use zero-based indexes
-    nc_get_var1!(v.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],data)
-    return data[1]
+    return nc_get_var1(eltype(v),v.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
 end
 
 function Base.setindex!(v::Variable{T,N},data,indexes::Int...) where N where T
     datamode(v.ncid,v.isdefmode)
     # use zero-based indexes and reversed order
-    nc_put_var1(v.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],[T(data)])
+    nc_put_var1(v.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],T(data))
     return data
 end
 
-function Base.getindex{T,N}(v::Variable{T,N},indexes::Colon...)
+function Base.getindex(v::Variable{T,N},indexes::Colon...) where {T,N}
     # special case for scalar NetCDF variable
     if N == 0
-        data = Vector{T}(1)
+        data = Vector{T}(undef,1)
         nc_get_var!(v.ncid,v.varid,data)
         return data[1]
     else
         #@show v.shape,typeof(v.shape),T,N
         #@show v.ncid,v.varid
-        data = Array{T,N}(size(v))
+        data = Array{T,N}(undef,size(v))
         nc_get_var!(v.ncid,v.varid,data)
         return data
     end
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::Colon...)
+function Base.setindex!(v::Variable{T,N},data::T,indexes::Colon...) where {T,N}
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     tmp = fill(data,size(v))
     #@show "here number",indexes,size(v),fill(data,size(v))
@@ -842,7 +914,8 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::Colon...)
     return data
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::Colon...)
+# call to v .= 123
+function Base.setindex!(v::Variable{T,N},data::Number) where {T,N}
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     tmp = fill(convert(T,data),size(v))
     #@show "here number",indexes,size(v),tmp
@@ -850,14 +923,16 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::Colon...)
     return data
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data::Array{T,N},indexes::Colon...)
+Base.setindex!(v::Variable,data::Number,indexes::Colon...) = setindex!(v::Variable,data)
+
+function Base.setindex!(v::Variable{T,N},data::AbstractArray{T,N},indexes::Colon...) where {T,N}
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     #@show @__LINE__,@__FILE__
     nc_put_var(v.ncid,v.varid,data)
     return data
 end
 
-function Base.setindex!{T,T2,N}(v::Variable{T,N},data::Array{T2,N},indexes::Colon...)
+function Base.setindex!(v::Variable{T,N},data::AbstractArray{T2,N},indexes::Colon...) where {T,T2,N}
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     tmp =
         if T <: Integer
@@ -870,54 +945,22 @@ function Base.setindex!{T,T2,N}(v::Variable{T,N},data::Array{T2,N},indexes::Colo
     return data
 end
 
-
-# vlen types
-function Base.setindex!(v::Variable{Vector{T},N},data::Array{Vector{T},N},indexes::Colon...) where N where T
-    datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
-
-    #@show T
-    ncdata = Array{nc_vlen_t{T},N}(size(data))
-
-    for i = 1:length(data)
-        ncdata[i] = nc_vlen_t{T}(length(data[i]), pointer(data[i]))
-    end
-
-    nc_put_var(v.ncid,v.varid,ncdata)
-    return data
-end
-
-# vlen types
-function Base.getindex(v::Variable{Vector{T},N},indexes::Colon...) where N where T
-    #@show T
-    ncdata = Array{nc_vlen_t{T},N}(size(v))
-    nc_get_var!(v.ncid,v.varid,ncdata)
-
-    data = Array{Vector{T},N}(size(v))
-    for i = 1:length(data)
-        data[i] = unsafe_wrap(Vector{T},ncdata[i].p,(ncdata[i].len,))
-    end
-
-    return data
-end
-
-
 function ncsub(indexes)
     count = [length(i) for i in indexes[end:-1:1]]
     start = [first(i)-1 for i in indexes[end:-1:1]]     # use zero-based indexes
     stride = [step(i) for i in indexes[end:-1:1]]
-    jlshape = (count[end:-1:1]...)
+    jlshape = (count[end:-1:1]...,)
     return start,count,stride,jlshape
 end
 
-function Base.getindex{T,N}(v::Variable{T,N},indexes::StepRange{Int,Int}...)
-    #@show "get sr",indexes
+function Base.getindex(v::Variable{T,N},indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
-    data = Array{T,N}(jlshape)
-    nc_get_vars(v.ncid,v.varid,start,count,stride,data)
+    data = Array{T,N}(undef,jlshape)
+    nc_get_vars!(v.ncid,v.varid,start,count,stride,data)
     return data
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...)
+function Base.setindex!(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...) where {T,N}
     #@show @__FILE__,@__LINE__,indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
@@ -926,7 +969,7 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::T,indexes::StepRange{Int,Int
     return data
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::StepRange{Int,Int}...)
+function Base.setindex!(v::Variable{T,N},data::Number,indexes::StepRange{Int,Int}...) where {T,N}
     #@show @__FILE__,@__LINE__,indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
@@ -935,7 +978,7 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::Number,indexes::StepRange{In
     return data
 end
 
-function Base.setindex!{T,N}(v::Variable{T,N},data::Array{T,N},indexes::StepRange{Int,Int}...)
+function Base.setindex!(v::Variable{T,N},data::Array{T,N},indexes::StepRange{Int,Int}...) where {T,N}
     #@show "sr",indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
@@ -944,7 +987,7 @@ function Base.setindex!{T,N}(v::Variable{T,N},data::Array{T,N},indexes::StepRang
 end
 
 # data can be Array{T2,N} or BitArray{N}
-function Base.setindex!{T,N}(v::Variable{T,N},data::AbstractArray,indexes::StepRange{Int,Int}...)
+function Base.setindex!(v::Variable{T,N},data::AbstractArray,indexes::StepRange{Int,Int}...) where {T,N}
     #@show "sr2",indexes
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
@@ -957,7 +1000,7 @@ end
 
 function normalizeindexes(sz,indexes)
     ndims = length(sz)
-    ind = Vector{StepRange}(ndims)
+    ind = Vector{StepRange}(undef,ndims)
     squeezedim = falses(ndims)
 
     # normalize indexes
@@ -991,7 +1034,11 @@ function Base.getindex(v::Variable,indexes::Union{Int,Colon,UnitRange{Int},StepR
     data = v[ind...]
     # squeeze any dimension which was indexed with a scalar
     if any(squeezedim)
-        return squeeze(data,(find(squeezedim)...))
+        return @static if VERSION >= v"0.7.0-beta2.188"
+            dropdims(data,dims=(findall(squeezedim)...,))
+        else
+            squeeze(data,dims=(findall(squeezedim)...,))
+        end
     else
         return data
     end
@@ -1004,11 +1051,11 @@ function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int}
 
     # make arrays out of scalars
     if ndims(data) == 0
-        data = fill(data,([length(i) for i in ind]...))
+        data = fill(data,([length(i) for i in ind]...,))
     end
 
     if ndims(data) == 1 && size(data,1) == 1
-        data = fill(data[1],([length(i) for i in ind]...))
+        data = fill(data[1],([length(i) for i in ind]...,))
     end
 
     # return data
@@ -1016,20 +1063,42 @@ function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int}
 end
 
 
+
+"""
+    load!(ncvar::Variable, data, indices)
+
+Loads a NetCDF variables `ncvar` and puts the result in `data` along the
+specified indices.
+
+```julia
+data = zeros(5,6); # must have the right shape and type
+load!(ds["temp"].var,data,:,:) # loads all data
+
+data = zeros(5); # must have the right shape and type
+load!(ds["temp"].var,data,:,1) # loads the 1st column
+```
+"""
+@inline function load!(ncvar::NCDatasets.Variable{T,N}, data, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
+    ind = to_indices(ncvar,indices)
+    start,count,stride,jlshape = ncsub(ind)
+    nc_get_vars!(ncvar.ncid,ncvar.varid,start,count,stride,data)
+end
+
+@inline function load!(ncvar::NCDatasets.Variable{T,2}, data, i::Colon,j::UnitRange) where T
+    # reversed and 0-based
+    start = [first(j)-1,0]
+    count = [length(j),size(ncvar,1)]
+    nc_get_vara!(ncvar.ncid,ncvar.varid,start,count,data)
+end
+
+
 # -----------------------------------------------------
-# Variable (with applied transformation following the CF convention)
+# Variable (with applied transformations following the CF convention)
 
 
-type CFVariable{NetCDFType,T,N}  <: AbstractArray{Float64, N}
-    var::Variable{NetCDFType,N}
-    attrib::Attributes
-    #has_fillvalue::Bool
-    #has_add_offset::Bool
-    #has_scale_factor::Bool
-
-    #fillvalue::NetCDFType
-    #add_offset
-    #scale_factor
+mutable struct CFVariable{T,N,TV,TA}  <: AbstractArray{T, N}
+    var::TV
+    attrib::TA
 end
 
 Base.size(v::CFVariable) = size(v.var)
@@ -1070,7 +1139,7 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
             mask = data .== v.attrib["_FillValue"]
         end
     else
-        mask = falses(data)
+        mask = falses(size(data))
     end
 
     # do not scale characters and strings
@@ -1080,13 +1149,13 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
         end
 
         if "add_offset" in attnames
-            data = data + v.attrib["add_offset"]
+            data = data .+ v.attrib["add_offset"]
         end
     end
 
     if "units" in attnames
         units = v.attrib["units"]
-        if contains(units," since ")
+        if occursin(" since ",units)
             # type of data changes
             calendar = get(v.attrib,"calendar","standard")
             data = timedecode(data,units,calendar)
@@ -1094,88 +1163,133 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
     end
 
     if isscalar
-        #return NullableArray(data,mask)[1]
-        return DataArray(data,mask)[1]
+        if mask[1]
+            missing
+        else
+            data[1]
+        end
     else
-        #return NullableArray(data,mask)
-        return DataArray(data,mask)
+        datam = Array{Union{eltype(data),Missing}}(data)
+        datam[mask] .= missing
+        return datam
     end
 end
 
-function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
-    x =
-        if typeof(data) <: AbstractArray
-            Array{eltype(data),ndims(data)}(size(data))
-        else
-            Array{typeof(data),1}(1)
-        end
+function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N
+    v.var[indexes...] = fill(v.attrib["_FillValue"],size(data))
+end
 
-    #@show typeof(data)
-    #@show eltype(v.var)
 
+function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime}}
+
+    #@show "data-",typeof(data)
     attnames = keys(v.attrib)
-
-    #@show "here",ndims(x),ndims(data)
-
-    if isa(data,DataArray)
-        mask = ismissing.(data)
-        x[.!mask] = data[.!mask]
-    else
-        if !(typeof(data) <: AbstractArray)
-            # for scalars
-            x = [data]
-            mask = [false]
+    units =
+        if "units" in attnames
+            v.attrib["units"]
         else
-            x = copy(data)
-            mask = falses(data)
+            @debug "set time units to $DEFAULT_TIME_UNITS"
+            v.attrib["units"] = DEFAULT_TIME_UNITS
+            DEFAULT_TIME_UNITS
         end
+
+    if occursin(" since ",units)
+        calendar = get(v.attrib,"calendar","standard")
+        v[indexes...] = timeencode(data,units,calendar)
+        return data
     end
 
-    if "units" in attnames
-        units = v.attrib["units"]
-        if contains(units," since ")
+    throw(NetCDFError(-1, "time unit ('$units') of the variable $(name(v)) does not include the word ' since '"))
+end
+
+@static if VERSION < v"0.7"
+    function Base.setindex!(v::CFVariable,data::T,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime}}
+
+        attnames = keys(v.attrib)
+        units =
+            if "units" in attnames
+                v.attrib["units"]
+            else
+                @debug "set time units to $DEFAULT_TIME_UNITS"
+                v.attrib["units"] = DEFAULT_TIME_UNITS
+                DEFAULT_TIME_UNITS
+            end
+
+        if occursin(" since ",units)
             calendar = get(v.attrib,"calendar","standard")
-            x = timeencode(x,units,calendar)
+            v[indexes...] = timeencode(data,units,calendar)
+            return data
         end
-    end
 
-    if "_FillValue" in attnames
-        x[mask] = v.attrib["_FillValue"]
+        throw(NetCDFError(-1, "time unit ('$units') of the variable $(name(v)) does not include the word ' since '"))
+    end
+end
+
+function transform(v,offset,scale)
+    if offset !== nothing
+        if scale !== nothing
+            return (v - offset) / scale
+        else
+            return v - offset
+        end
     else
-        # should we issue a warning?
-    end
-
-    # do not scale characters and strings
-    if eltype(v.var) != Char
-        if "add_offset" in attnames
-            x[.!mask] = x[.!mask] - v.attrib["add_offset"]
-        end
-
-        if "scale_factor" in attnames
-            x[.!mask] = x[.!mask] / v.attrib["scale_factor"]
+        if scale !== nothing
+            return v / scale
+        else
+            return v
         end
     end
+end
 
-    if !(typeof(data) <: AbstractArray)
-        v.var[indexes...] = x[1]
-    else
-        v.var[indexes...] = x
-    end
+# the transformv function is necessary to avoid "iterating" over a single character
+# https://discourse.julialang.org/t/broadcasting-and-single-characters/16836
+transformv(data,offset,scale) = transform.(data,offset,scale)
+transformv(data::Char,offset,scale) = data
+
+function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
+    offset,scale =
+        if eltype(v.var) == Char
+            (nothing,nothing)
+        else
+            (get(v.attrib,"add_offset",nothing),
+             get(v.attrib,"scale_factor",nothing))
+        end
+
+    fillvalue = get(v.attrib,"_FillValue",nothing)
+
+    v.var[indexes...] =
+        if fillvalue == nothing
+            transformv(data,offset,scale)
+        else
+            coalesce.(transformv(data,offset,scale),fillvalue)
+        end
 
     return data
 end
 
 
 
-function Base.show(io::IO,v::Variable; indent="")
+function Base.show(io::IO,v::Union{Variable,MFVariable}; indent="")
     delim = " × "
+    dims =
+        try
+            dimnames(v)
+        catch err
+            if isa(err,NetCDFError)
+                if err.code == NC_EBADID
+                    print(io,"NetCDF variable (file closed)")
+                    return
+                end
+            end
+            rethrow
+        end
     sz = size(v)
 
-    print_with_color(:green, io, indent, name(v))
+    printstyled(io, indent, name(v),color=:green)
     if length(sz) > 0
         print(io,indent," (",join(sz,delim),")\n")
         print(io,indent,"  Datatype:    ",eltype(v),"\n")
-        print(io,indent,"  Dimensions:  ",join(dimnames(v),delim),"\n")
+        print(io,indent,"  Dimensions:  ",join(dims,delim),"\n")
     else
         print(io,indent,"\n")
     end
@@ -1188,12 +1302,12 @@ end
 
 Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=indent)
 
-Base.display(v::Union{Variable,CFVariable}) = show(STDOUT,v)
+Base.display(v::Union{Variable,CFVariable}) = show(Compat.stdout,v)
 
 
 # Common methods
 
-const NCIterable = Union{BaseAttributes,Dimensions,Dataset,Groups}
+const NCIterable = Union{BaseAttributes,Dimensions,MFDimensions,Dataset,Groups,MFGroups}
 
 Base.length(a::NCIterable) = length(keys(a))
 
@@ -1213,27 +1327,22 @@ end
 This example checks if the file `/tmp/test.nc` has a variable with the
 name `temperature`.
 """
-
 Base.haskey(a::NCIterable,name::AbstractString) = name in keys(a)
 Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
-# for iteration as a Dict
 
-"""
-    start(ds::Dataset)
+@static if VERSION >= v"0.7.0-beta.0"
+    function Base.iterate(a::NCIterable, state = keys(a))
+        if length(state) == 0
+            return nothing
+        end
 
-Allow to iterate over a dataset.
-
-```julia
-for (varname,var) in ds
-    @show (varname,size(var))
+        return (state[1] => a[popfirst!(state)], state)
+    end
+else
+    Base.start(a::NCIterable) = keys(a)
+    Base.done(a::NCIterable,state) = length(state) == 0
+    Base.next(a::NCIterable,state) = (state[1] => a[popfirst!(state)], state)
 end
-```
-"""
-
-Base.start(a::NCIterable) = keys(a)
-Base.done(a::NCIterable,state) = length(state) == 0
-Base.next(a::NCIterable,state) = (state[1] => a[shift!(state)], state)
-
 
 """
     escape(val)
@@ -1244,7 +1353,7 @@ function escape(val)
      valescaped = val
      # backslash must come first
      for c in ['\\','$','"']
-        valescaped = replace(valescaped,c,"\\$c")
+        valescaped = replace(valescaped,c => "\\$c")
     end
 	return valescaped
 end
@@ -1263,7 +1372,7 @@ function ncgen(io::IO,fname; newfname = "filename.nc")
     print(io,"\n# Declare variables\n\n")
 
     for (d,v) in ds
-        print(io,"nc$d = defVar(ds,\"$d\", $(eltype(v.var)), $(dimnames(v))) \n")
+        print(io,"nc$d = defVar(ds,\"$d\", $(eltype(v.var)), $(dimnames(v)))\n")
         ncgen_setattrib(io,"nc$d",v.attrib)
         print(io,"\n")
     end
@@ -1289,11 +1398,10 @@ end
 
 Generate the Julia code that would produce a NetCDF file with the same metadata
 as the NetCDF file `fname`. The code is placed in the file `jlname` or printed
-to the standard output. Per default the new NetCDF file is called `filename.nc`.
+to the standard output. By default the new NetCDF file is called `filename.nc`.
 This can be changed with the optional parameter `newfname`.
 """
-
-ncgen(fname; kwargs...)  = ncgen(STDOUT,fname; kwargs...)
+ncgen(fname; kwargs...)  = ncgen(Compat.stdout,fname; kwargs...)
 
 function ncgen(fname,jlname; kwargs...)
     open(jlname,"w") do io
@@ -1318,8 +1426,113 @@ function ncgen_setattrib(io,v,attrib)
     end
 end
 
+"""
+    varbyattrib(ds, attname = attval)
+
+Returns a list of variable(s) which has the attribute `attname` matching the value `attval`
+in the dataset `ds`.
+The list is empty if the none of the variables has the match.
+The output is a list of `CFVariable`s.
+
+# Examples
+
+Load all the data of the first variable with standard name "longitude" from the
+NetCDF file `results.nc`.
+
+```julia-repl
+julia> ds = Dataset("results.nc", "r");
+julia> data = varbyattrib(ds, standard_name = "longitude")[1][:]
+```
+
+"""
+function varbyattrib(ds::Dataset; kwargs...)
+    # Start with an empty list of variables
+    varlist = []
+
+    # Loop on the variables
+    for v in keys(ds)
+        var = ds[v]
+
+        matchall = true
+
+        for (attsym,attval) in kwargs
+            attname = String(attsym)
+
+            # Check if the variable has the desired attribute
+            if haskey(var.attrib, attname)
+                # Check if the attribute value is the selected one
+                if var.attrib[attname] != attval
+                    matchall = false
+                    break
+                end
+            else
+                matchall = false
+                break
+            end
+        end
+
+        if matchall
+            push!(varlist, var)
+        end
+    end
+
+    return varlist
+end
+
+
+"""
+    a = nomissing(da)
+
+Retun the values of the array `da` of type `Array{Union{T,Missing},N}`
+(potentially containing missing values) as a regular Julia array `a` of the same
+element type and checks that no missing values are present.
+
+"""
+function nomissing(da::Array{Union{T,Missing},N}) where {T,N}
+    if any(ismissing.(da))
+        error("arrays contains missing values (values equal to the fill values attribute in the NetCDF file)")
+    end
+
+    if VERSION >= v"0.7.0-beta.0"
+         if isempty(da)
+            return Array{T,N}([])
+         else
+            return replace(da, missing => da[1])
+         end
+    else
+        # Illegal instruction (core dumped) in Julia 1.0.1
+        return Array{T,N}(da)
+    end
+end
+
+"""
+    a = nomissing(da,value)
+
+Retun the values of the array `da` of type `Array{Union{T,Missing},N}`
+as a regular Julia array `a` by replacing all missing value by `value`.
+"""
+function nomissing(da::Array{Union{T,Missing},N},value) where {T,N}
+    if VERSION >= v"0.7.0-beta.0"
+        return replace(da, missing => T(value))
+    else
+        tmp = fill(T(value),size(da))
+        tmp[.!ismissing.(da)] = da[.!ismissing.(da)]
+        return tmp
+    end
+end
+
+
 export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
     deflate, chunking, checksum, fillvalue, fillmode, ncgen
+export nomissing
+export varbyattrib
+export path
+export defGroup
+
+include("multifile.jl")
+export MFDataset, close
+
+include("cfconventions.jl")
 
 # it is good practise to use the default fill-values, thus we export them
 export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,

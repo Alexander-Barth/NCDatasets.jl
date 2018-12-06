@@ -1,4 +1,4 @@
-using DataArrays
+using Missings
 
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
@@ -14,12 +14,12 @@ data = [Float32(i+j) for i = 1:10, j = 1:11]
 fv = NCDatasets.NC_FILL_FLOAT
 v.attrib["_FillValue"] = fv
 # mask the frist element
-dataa = DataArray(data,data .== 2)
+datam = Array{Union{Float32,Missing}}(data)
+datam[1] = missing
 
-
-v[:,:] = dataa
+v[:,:] = datam
 @test ismissing(v[1,1])
-@test isequal(v[:,:],dataa)
+@test isequal(v[:,:],datam)
 
 # load without transformation
 @test v.var[1,1] == fv
@@ -73,15 +73,45 @@ data = [Float32(i+j) for i = 1:10, j = 1:11]
 fv = NaN32
 v.attrib["_FillValue"] = fv
 # mask the frist element
-dataa = DataArray(data,data .== 2)
+datam = Array{Union{Float32,Missing}}(data)
+datam[1] = missing
 
-v[:,:] = dataa
+v[:,:] = datam
 @test ismissing(v[1,1])
-@test isequal(v[:,:],dataa)
+@test isequal(v[:,:],datam)
 
 # load without transformation
 @test isnan(v.var[1,1])
 
+NCDatasets.close(ds)
+
+# all fill-values
+filename = tempname()
+ds = NCDatasets.Dataset(filename,"c")
+ds.dim["lon"] = 3
+v = NCDatasets.defVar(ds,"var_with_all_missing_data",Float32,("lon",))
+
+data = [missing, missing, missing]
+v.attrib["_FillValue"] = fv
+
+v[:] = data
+@test all(ismissing.(v[:]))
 
 NCDatasets.close(ds)
 
+# test nomissing
+
+data = [missing, Float64(1.), Float64(2.)]
+@test_throws ErrorException NCDatasets.nomissing(data)
+
+dataf = NCDatasets.nomissing(data,-9999.)
+@test eltype(dataf) == Float64
+@test dataf == [-9999., 1., 2.]
+
+
+data = Union{Float64,Missing}[1., 2.]
+dataf = NCDatasets.nomissing(data)
+@test eltype(dataf) == Float64
+@test dataf == [1., 2.]
+
+@test nomissing(Union{Int64,Missing}[]) == []

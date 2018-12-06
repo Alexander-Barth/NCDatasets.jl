@@ -1,4 +1,7 @@
-using Base.Test
+if VERSION >= v"0.7.0-beta.0"
+    using Random
+end
+using Compat
 import NCDatasets
 
 varname = "varname"
@@ -10,33 +13,35 @@ samples = [
 
     # Floats
     [1. 2. 3.; 4. 5. 6.],
-    
+
     # chars
     ['a','b','c'],
     ['a' 'b' 'c'; 'd' 'e' 'f'],
-    
+
     # strings
     ["wieso","weshalb","warum"],
     ["wieso" "weshalb" "warum"; "why" "why" "whyyy"],
-    map(x -> randstring(rand(3:10)), zeros(2,3,4)),    
+    map(x -> randstring(rand(3:10)), zeros(2,3,4)),
 ]
 
 
-for data in samples
+for sampledata in samples
     rm(filename;force=true)
 
     # write data
     ncid = NCDatasets.nc_create(filename,NCDatasets.NC_CLOBBER | NCDatasets.NC_NETCDF4)
 
-    dimids = zeros(Cint,ndims(data))
-    for i = 1:ndims(data)
-        dimids[i] = NCDatasets.nc_def_dim(ncid, "dim-$(i)", size(data,i))
+    dimids = zeros(Cint,ndims(sampledata))
+    for i = 1:ndims(sampledata)
+        dimids[i] = NCDatasets.nc_def_dim(ncid, "dim-$(i)", size(sampledata,i))
     end
 
-    T = eltype(data)
+    T = eltype(sampledata)
     xtype = NCDatasets.ncType[T]
-    varid = NCDatasets.nc_def_var(ncid, varname, xtype, dimids)
-    NCDatasets.nc_put_var(ncid, varid, data)
+    # reverse order
+    varid = NCDatasets.nc_def_var(ncid, varname, xtype, reverse(dimids))
+    NCDatasets.nc_put_att(ncid, varid, "attr-string-list",["one","two"])
+    NCDatasets.nc_put_var(ncid, varid, sampledata)
     NCDatasets.nc_close(ncid)
 
     # load data
@@ -44,12 +49,20 @@ for data in samples
     ncid = NCDatasets.nc_open(filename,NCDatasets.NC_NOWRITE)
     varid = NCDatasets.nc_inq_varid(ncid,varname)
     xtype2 = NCDatasets.nc_inq_vartype(ncid,varid)
-
     @test xtype == xtype
 
-    data2 = Array{T,ndims(data)}(size(data))
-    NCDatasets.nc_get_var!(ncid,varid,data2)
-    @test data == data2
+    attrval = NCDatasets.nc_get_att(ncid, varid, "attr-string-list")
+    @test attrval == ["one","two"]
+
+    sampledata2 = Array{T,ndims(sampledata)}(undef,size(sampledata))
+    NCDatasets.nc_get_var!(ncid,varid,sampledata2)
+    @test sampledata == sampledata2
+
+    # start = [1,1]
+    # count = [size(
+
+    # NCDatasets.nc_get_vara!(ncid,varid,start,count,sampledata2)
+    # @test sampledata == sampledata2
 
     NCDatasets.nc_close(ncid)
 end

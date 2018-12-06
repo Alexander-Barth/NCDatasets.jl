@@ -6,11 +6,13 @@ Documentation for NCDatasets.jl
 
 ```@docs
 Dataset
-keys
+keys(ds::Dataset)
 haskey
+getindex(ds::Dataset,varname::AbstractString)
 variable
 sync
 close
+path
 ```
 
 ## Variables
@@ -22,7 +24,6 @@ name
 chunking
 deflate
 checksum
-Base.start(ds::Dataset)
 ```
 
 Different type of arrays are involved when working with NCDatasets. For instance assume that `test.nc` is a file with a `Float32` variable called `var`. Assume that we open this data set in append mode (`"a"`):
@@ -43,7 +44,7 @@ v_da = v_cf[:,:]
 
 ## Attributes
 
-The NetCDF dataset (as return by `Dataset`) and the NetCDF variables (as returned by `getindex`, `variable` or `defVar`) have the field `attrib` which has the type `NCDatasets.Attributes` and behaves like a julia dictionary.
+The NetCDF dataset (as return by `Dataset` or NetCDF groups) and the NetCDF variables (as returned by `getindex`, `variable` or `defVar`) have the field `attrib` which has the type `NCDatasets.Attributes` and behaves like a julia dictionary.
 
 
 ```@docs
@@ -57,15 +58,83 @@ keys(a::NCDatasets.Attributes)
 ```@docs
 defDim
 setindex!(d::NCDatasets.Dimensions,len,name::AbstractString)
-dimnames(v::Variable)
+dimnames(v::NCDatasets.Variable)
+```
+
+
+## Groups
+
+```@docs
+defGroup(ds::Dataset,groupname)
+getindex(g::NCDatasets.Groups,groupname::AbstractString)
+Base.keys(g::NCDatasets.Groups)
+```
+
+## Common methods
+
+One can iterate over a dataset, attribute list, dimensions and NetCDF groups.
+
+```julia
+for (varname,var) in ds
+    # all variables
+    @show (varname,size(var))
+end
+
+for (dimname,dim) in ds.dims
+    # all dimensions
+    @show (dimname,dim)
+end
+
+for (attribname,attrib) in ds.attrib
+    # all attributes
+    @show (attribname,attrib)
+end
+
+for (groupname,group) in ds.groups
+    # all groups
+    @show (groupname,group)
+end
+```
+
+
+# Time functions
+
+```@docs
+DateTimeStandard
+DateTimeJulian
+DateTimeProlepticGregorian
+DateTimeAllLeap
+DateTimeNoLeap
+DateTime360Day
+Dates.year(dt::AbstractCFDateTime)
+Dates.month(dt::AbstractCFDateTime)
+Dates.day(dt::AbstractCFDateTime)
+Dates.hour(dt::AbstractCFDateTime)
+Dates.minute(dt::AbstractCFDateTime)
+Dates.second(dt::AbstractCFDateTime)
+Dates.millisecond(dt::AbstractCFDateTime)
+convert
+reinterpret
+timedecode
+timeencode
+daysinmonth
+daysinyear
 ```
 
 # Utility functions
 
 ```@docs
-ncgen(fname)
+ncgen
+nomissing
+varbyattrib
 ```
 
+# Experimental functions
+
+```
+NCDatasets.ancillaryvariables
+NCDatasets.filter
+```
 
 # Issues
 
@@ -107,3 +176,17 @@ In fact, `_FillValue` must have the same data type as the corresponding variable
 tempvar.attrib["_FillValue"] = Float32(-9999.)
 ```
 
+
+## Corner cases
+
+
+* An attribute representing a vector with a single value (e.g. `[1]`) will be read back as a scalar (`1`) (same behavior in python netCDF4 1.3.1).
+
+* NetCDF and Julia distinguishes between a vector of chars and a string, but both are returned as string for ease of use, in particular
+an attribute representing a vector of chars `['u','n','i','t','s']` will be read back as the string `"units"`.
+
+* An attribute representing a vector of chars `['u','n','i','t','s','\0']` will also be read back as the string `"units"` (issue #12).
+
+
+<!--  LocalWords:  NCDatasets jl Datasets Dataset netCDF
+ -->
