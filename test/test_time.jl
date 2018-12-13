@@ -362,6 +362,16 @@ for T in [DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
     @test T(Int16(2000),Int32(1),UInt8(1)) == T(2000,1,1)
 end
 
+# time ranges
+
+@test length(DateTimeNoLeap(2000, 01, 01):Day(1):DateTimeNoLeap(2000, 12, 31)) == 365
+@test length(DateTimeNoLeap(2000, 01, 01):Month(1):DateTimeNoLeap(2000, 12, 31)) == 12
+@test length(DateTimeNoLeap(2000, 01, 01):Year(1):DateTimeNoLeap(2001, 1, 1)) == 2
+
+for T in [DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
+          DateTimeAllLeap, DateTimeNoLeap, DateTime360Day]
+
+end
 
 # if @isdefined DataArrays
 
