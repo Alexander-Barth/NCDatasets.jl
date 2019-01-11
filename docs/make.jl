@@ -2,7 +2,7 @@ using Documenter
 using NCDatasets
 
 makedocs(
-    format = :html,
+    format = Documenter.HTML(),
     modules = [NCDatasets],
     sitename = "NCDatasets",
     pages = [
@@ -16,7 +16,6 @@ makedocs(
 deploydocs(
     repo = "github.com/Alexander-Barth/NCDatasets.jl.git",
     target = "build",
-    julia  = "0.6",
     deps = nothing,
     make = nothing,
 )

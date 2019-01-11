@@ -20,6 +20,7 @@ The module `NCDatasets` provides support for the following [netCDF CF convention
 * time variables (recognized by the `units` attribute) are returned as `DateTime` objects.
 * Support of the [CF calendars](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#calendar) (standard, gregorian, proleptic gregorian, julian, all leap, no leap, 360 day)
 * The raw data can also be accessed (without the transformations above).
+* [Contiguous ragged array representation](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#_contiguous_ragged_array_representation)
 
 Other features include:
 * Support for NetCDF 4 compression and variable-length arrays (i.e. arrays of vectors where each vector can have potentailly a different length)
