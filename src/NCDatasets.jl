@@ -1406,12 +1406,17 @@ end
 
 function ncgen(io::IO,fname; newfname = "filename.nc")
     ds = Dataset(fname)
+    unlimited_dims = unlimited(ds.dim)
 
     print(io,"ds = Dataset(\"$(escape(newfname))\",\"c\")\n")
 
     print(io,"# Dimensions\n\n")
     for (d,v) in ds.dim
-        print(io,"ds.dim[\"$d\"] = $v\n")
+        if d in unlimited_dims
+            print(io,"ds.dim[\"$d\"] = Inf # unlimited dimension\n")
+        else
+            print(io,"ds.dim[\"$d\"] = $v\n")
+        end
     end
 
     print(io,"\n# Declare variables\n\n")
