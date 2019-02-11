@@ -6,6 +6,7 @@ else
 end
 
 fname = tempname()
+fname = "test_cont_ragged_array.nc"
 ds = Dataset(fname,"c")
 # Dimensions
 
@@ -67,15 +68,15 @@ ds.attrib["featureType"] = "profile"
 
 # Define variables
 
-# ncprofile[:] = ...
-# nctime[:] = ...
-# nclon[:] = ...
-# nclat[:] = ...
+ncprofile[:] = [1,2,3]
+nctime[:] = [1,1,1]
+nclon[:] = [0,0,0]
+nclat[:] = [0,0,0]
 ncrowSize[:] = [3,2,2]
 ncz[:] = [1.,2.,3.,  10.,20.,  100., 200]
-# ncpressure[:] = ...
-# nctemperature[:] = ...
-# nchumidity[:] = ...
+ncpressure[:] = [1.,2.,3.,  10.,20.,  100., 200]
+nctemperature[:] = [1.,2.,3.,  10.,20.,  100., 200]
+nchumidity[:] = [1.,2.,3.,  10.,20.,  100., 200]
 
 close(ds)
 
@@ -86,4 +87,4 @@ data = loadragged(ncvar,:)
 @test data == [[1.,2.,3.],  [10.,20.],  [100., 200.]]
 close(ds)
 
-rm(fname)
+#rm(fname)
