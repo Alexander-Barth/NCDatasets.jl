@@ -279,6 +279,10 @@ end
 
 const RegTime = Union{Dates.Millisecond,Dates.Second,Dates.Minute,Dates.Hour,Dates.Day}
 
+function validargs(::Type{T},arg...) where T <: AbstractCFDateTime
+    return nothing
+end
+
 
 for (CFDateTime,calendar) in [(:DateTimeStandard,"standard"),
                               (:DateTimeJulian,"julian"),
@@ -318,6 +322,21 @@ The netCDF CF calendars are defined at [1].
             Int64(y), Int64(m), Int64(d), Int64(h), Int64(mi), Int64(s),
             Int64(ms))
 
+        Dates.CONVERSION_TRANSLATIONS[$CFDateTime] = Dates.CONVERSION_TRANSLATIONS[DateTime]
+
+        """
+           $($CFDateTime)(dt::AbstractString, format::AbstractString; locale="english") -> $($CFDateTime)
+
+Construct a $($CFDateTime) by parsing the `dt` date time string following the
+pattern given in the `format` string.
+
+Note: This function is experimental and migth
+be removed in the future. It relies on some internal function of `Dates` for
+parsing the `format`.
+"""
+        $CFDateTime(dt::AbstractString, format::AbstractString; locale="english") =
+            parse($CFDateTime, dt, DateFormat(format, locale))
+
         function datetuple(dt::$CFDateTime)
             time = Dates.value(dt.instant.periods)
             days,h,mi,s,ms = timetuplefrac(time)
@@ -356,6 +375,17 @@ The netCDF CF calendars are defined at [1].
         isless(dt1::$CFDateTime,dt2::$CFDateTime) = dt1.instant.periods < dt2.instant.periods
 
     end
+end
+
+
+
+for CFDateTime in [DateTimeStandard,
+                   DateTimeJulian,
+                   DateTimeProlepticGregorian,
+                   DateTimeAllLeap,
+                   DateTimeNoLeap,
+                   DateTime360Day]
+    Dates.CONVERSION_TRANSLATIONS[CFDateTime] = Dates.CONVERSION_TRANSLATIONS[DateTime]
 end
 
 """
@@ -450,7 +480,18 @@ function parseDT(::Type{DT},str) where DT <: Union{DateTime,AbstractCFDateTime}
         if occursin(" ",str)
             datestr,timestr = split(str,' ')
             y,m,d = parse.(Int64,split(datestr,'-'))
-            h,mi,s = parse.(Int64,split(timestr,':'))
+
+            hour_min_sec = parse.(Int64,split(timestr,':'))
+            s = 0
+            mi = 0
+            if length(hour_min_sec) == 3
+                h,mi,s = hour_min_sec
+            elseif length(hour_min_sec) == 2
+                h,mi = hour_min_sec
+            elseif length(hour_min_sec) == 1
+                h, = hour_min_sec
+            end
+
             (y,m,d,h,mi,s,Int64(0))
         else
             y,m,d = parse.(Int64,split(str,'-'))
