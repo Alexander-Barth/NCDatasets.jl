@@ -334,8 +334,11 @@ Note: This function is experimental and migth
 be removed in the future. It relies on some internal function of `Dates` for
 parsing the `format`.
 """
-        $CFDateTime(dt::AbstractString, format::AbstractString; locale="english") =
-            parse($CFDateTime, dt, DateFormat(format, locale))
+        function $CFDateTime(dt::AbstractString, format::AbstractString; locale="english")
+            # what a hack!
+            Dates.CONVERSION_TRANSLATIONS[$CFDateTime] = Dates.CONVERSION_TRANSLATIONS[DateTime]
+            return parse($CFDateTime, dt, DateFormat(format, locale))
+        end
 
         function datetuple(dt::$CFDateTime)
             time = Dates.value(dt.instant.periods)
