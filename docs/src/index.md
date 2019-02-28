@@ -24,6 +24,7 @@ name
 chunking
 deflate
 checksum
+loadragged
 ```
 
 Different type of arrays are involved when working with NCDatasets. For instance assume that `test.nc` is a file with a `Float32` variable called `var`. Assume that we open this data set in append mode (`"a"`):

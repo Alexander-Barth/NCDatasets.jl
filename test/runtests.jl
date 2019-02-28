@@ -223,7 +223,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     @test occursin("closed",String(take!(buf)))
 
     include("test_cfconventions.jl")
-
+    include("test_cont_ragged_array.jl")
 end
 
 @testset "NetCDF4 groups" begin

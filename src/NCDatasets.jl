@@ -396,19 +396,21 @@ group(ds::Union{Dataset,MFDataset},groupname) = ds.group[groupname]
     Dataset(filename::AbstractString,mode::AbstractString = "r";
                      format::Symbol = :netcdf4, attrib = [])
 
-Create a new NetCDF file if the `mode` is "c". An existing file with the same
-name will be overwritten. If `mode` is "a", then an existing file is open into
+Create a new NetCDF file if the `mode` is `"c"`. An existing file with the same
+name will be overwritten. If `mode` is `"a"`, then an existing file is open into
 append mode (i.e. existing data in the netCDF file is not overwritten and
-a variable can be added). With the mode set to "r", an existing netCDF file or
-OPeNDAP URL can be open in read-only mode.  The default mode is "r".
-The optional parameter `attrib` is an iterable of attribute name and attribute value pairs, for example a `Dict`, `DataStructures.OrderedDict` or simply a vector of pairs (see example below).
+a variable can be added). With the mode set to `"r"`, an existing netCDF file or
+OPeNDAP URL can be open in read-only mode.  The default mode is `"r"`.
+The optional parameter `attrib` is an iterable of attribute name and attribute
+value pairs, for example a `Dict`, `DataStructures.OrderedDict` or simply a
+vector of pairs (see example below).
 
 # Supported formats:
 
-* :netcdf4 (default): HDF5-based NetCDF format.
-* :netcdf4_classic: Only netCDF 3 compatible API features will be used.
-* :netcdf3_classic: classic netCDF format supporting only files smaller than 2GB.
-* :netcdf3_64bit_offset: improved netCDF format supporting files larger than 2GB.
+* `:netcdf4` (default): HDF5-based NetCDF format.
+* `:netcdf4_classic`: Only netCDF 3 compatible API features will be used.
+* `:netcdf3_classic`: classic netCDF format supporting only files smaller than 2GB.
+* `:netcdf3_64bit_offset`: improved netCDF format supporting files larger than 2GB.
 
 Files can also be open and automatically closed with a `do` block.
 
@@ -560,7 +562,7 @@ julia> Dataset("test_file.nc","c") do ds
 
 ```
 
-[1] https://web.archive.org/save/https://www.unidata.ucar.edu/software/netcdf/netcdf-4/newdocs/netcdf-c/nc_005fdef_005fvlen.html
+[1]: https://web.archive.org/save/https://www.unidata.ucar.edu/software/netcdf/netcdf-4/newdocs/netcdf-c/nc_005fdef_005fvlen.html
 """
 function defVar(ds::Dataset,name,vtype::DataType,dimnames; kwargs...)
     # all keyword arguments as dictionary
@@ -1092,6 +1094,49 @@ end
 end
 
 
+"""
+     data = loadragged(ncvar,index::Colon)
+
+Load data from `ncvar` in the contiguous ragged array representation [1] as a
+vector of vectors. It is typically used to load a list of profiles
+or time series of different length each.
+
+The indexed ragged array representation [2] is currently not supported.
+
+[1]: https://web.archive.org/web/20190111092546/http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#_contiguous_ragged_array_representation
+[2]: https://web.archive.org/web/20190111092546/http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#_indexed_ragged_array_representation
+"""
+function loadragged(ncvar,index::Colon)
+    ds = Dataset(ncvar.var.ncid,ncvar.var.isdefmode)
+
+    dimensionnames = dimnames(ncvar)
+    if length(dimensionnames) !== 1
+        throw(NetCDFError(-1, "NetCDF variable $(name(ncvar)) should have only one dimensions"))
+    end
+    dimname = dimensionnames[1]
+
+    ncvarsizes = varbyattrib(ds,sample_dimension = dimname)
+    if length(ncvarsizes) !== 1
+        throw(NetCDFError(-1, "There should be exactly one NetCDF variable with the attribiute sample_dimension equal to '$(dimname)'"))
+    end
+
+    ncvarsize = ncvarsizes[1]
+    varsize = ncvarsize.var[:]
+
+    istart = 0;
+    tmp = ncvar[:]
+
+    T = typeof(view(tmp,1:varsize[1]))
+    data = Vector{T}(undef,length(varsize))
+
+    for i = 1:length(varsize)
+        data[i] = view(tmp,istart+1:istart+varsize[i]);
+        istart += varsize[i]
+    end
+    return data
+end
+
+
 # -----------------------------------------------------
 # Variable (with applied transformations following the CF convention)
 
@@ -1361,12 +1406,17 @@ end
 
 function ncgen(io::IO,fname; newfname = "filename.nc")
     ds = Dataset(fname)
+    unlimited_dims = unlimited(ds.dim)
 
     print(io,"ds = Dataset(\"$(escape(newfname))\",\"c\")\n")
 
     print(io,"# Dimensions\n\n")
     for (d,v) in ds.dim
-        print(io,"ds.dim[\"$d\"] = $v\n")
+        if d in unlimited_dims
+            print(io,"ds.dim[\"$d\"] = Inf # unlimited dimension\n")
+        else
+            print(io,"ds.dim[\"$d\"] = $v\n")
+        end
     end
 
     print(io,"\n# Declare variables\n\n")
@@ -1528,6 +1578,7 @@ export nomissing
 export varbyattrib
 export path
 export defGroup
+export loadragged
 
 include("multifile.jl")
 export MFDataset, close
