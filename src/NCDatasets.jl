@@ -784,7 +784,7 @@ function Base.getindex(ds::Union{Dataset,MFDataset},varname::AbstractString)
 
     # return element type of any index operation
     if eltype(v) <: Number
-        rettype = Union{Missing,Float64}
+        rettype = Union{Missing,Number,DateTime,AbstractCFDateTime}
     else
         rettype = Union{Missing,eltype(v)}
     end
