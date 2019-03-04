@@ -4,12 +4,12 @@ if VERSION >= v"0.7.0-beta.0"
     using Dates
     import Dates: UTInstant, Millisecond
     import Dates: year,  month,  day, hour, minute, second, millisecond
-    import Dates: daysinmonth, daysinyear, yearmonthday, yearmonth, yearmonthdayhour
+    import Dates: daysinmonth, daysinyear, yearmonthday, yearmonth
     import Dates: monthday, len
 else
     import Base.Dates: UTInstant, Millisecond
     import Base.Dates: year,  month,  day, hour, minute, second, millisecond
-    import Base.Dates: daysinmonth, daysinyear, yearmonthday, yearmonth, yearmonthdayhour
+    import Base.Dates: daysinmonth, daysinyear, yearmonthday, yearmonth
     import Base.Dates: monthday, len
 end
 
