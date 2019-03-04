@@ -149,6 +149,19 @@ t0,plength = NCDatasets.timeunits("days since 2000-01-01 0:0:0")
 @test plength == 86400000
 
 
+# issue 24
+t0,plength = NCDatasets.timeunits("hours since 1900-01-01 00:00:00.0")
+@test t0 == DateTimeStandard(1900,1,1)
+@test plength == 86400000 ÷ 24
+
+
+t0,plength = NCDatasets.timeunits("seconds since 1992-10-8 15:15:42.5")
+@test t0 == DateTimeStandard(1992,10,8,15,15,42,500)
+@test plength == 1000
+
+
+
+
 for (calendar,DT) in [
     ("standard",DateTimeStandard),
     ("gregorian",DateTimeStandard),

@@ -450,8 +450,23 @@ function parseDT(::Type{DT},str) where DT <: Union{DateTime,AbstractCFDateTime}
         if occursin(" ",str)
             datestr,timestr = split(str,' ')
             y,m,d = parse.(Int64,split(datestr,'-'))
-            h,mi,s = parse.(Int64,split(timestr,':'))
-            (y,m,d,h,mi,s,Int64(0))
+
+            h_str, mi_str, s_str = split(timestr,':')
+            h = parse(Int64,h_str)
+            mi = parse(Int64,mi_str)
+
+            s,ms =
+                if occursin('.',s_str)
+                    # seconds contain a decimal point, e.g. 00:00:00.0
+                    secfrac = parse(Float64,s_str)
+                    s = floor(Int64,secfrac)
+                    ms = round(Int64,1000*(secfrac - s))
+                    s,ms
+                else
+                    (parse(Int64,s_str),Int64(0))
+                end
+
+            (y,m,d,h,mi,s,ms)
         else
             y,m,d = parse.(Int64,split(str,'-'))
             (y,m,d,Int64(0),Int64(0),Int64(0),Int64(0))
