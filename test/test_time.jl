@@ -356,11 +356,24 @@ for T in [DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
           DateTimeAllLeap, DateTimeNoLeap, DateTime360Day]
     @test Dates.yearmonthday(T(2004,1,2)) == (2004, 1, 2)
     @test Dates.yearmonth(T(2004,1,2)) == (2004, 1)
+    @test Dates.monthday(T(2004,1,2)) == (1, 2)
 
     # test constructor with argument which are not Int64
     @test T(Int16(2000),Int32(1),UInt8(1)) == T(2000,1,1)
 end
 
+# time ranges
+
+@test length(DateTimeNoLeap(2000, 01, 01):Dates.Day(1):DateTimeNoLeap(2000, 12, 31)) == 365
+@test length(DateTimeNoLeap(2000, 01, 01):Dates.Month(1):DateTimeNoLeap(2000, 12, 31)) == 12
+
+for T in [DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
+          DateTimeAllLeap, DateTimeNoLeap, DateTime360Day]
+
+    # end date is inclusive
+    @test length(T(2000, 01, 01):Dates.Month(1):T(2001, 1, 1)) == 13
+    @test length(T(2000, 01, 01):Dates.Year(1):T(2001, 1, 1)) == 2
+end
 
 # if @isdefined DataArrays
 

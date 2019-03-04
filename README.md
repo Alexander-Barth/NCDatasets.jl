@@ -20,6 +20,7 @@ The module `NCDatasets` provides support for the following [netCDF CF convention
 * time variables (recognized by the `units` attribute) are returned as `DateTime` objects.
 * Support of the [CF calendars](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#calendar) (standard, gregorian, proleptic gregorian, julian, all leap, no leap, 360 day)
 * The raw data can also be accessed (without the transformations above).
+* [Contiguous ragged array representation](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#_contiguous_ragged_array_representation)
 
 Other features include:
 * Support for NetCDF 4 compression and variable-length arrays (i.e. arrays of vectors where each vector can have potentailly a different length)
@@ -96,7 +97,7 @@ v.attrib["comments"] = "this is a string attribute with Unicode Ω ∈ ∑ ∫ f
 close(ds)
 ```
 
-An equivalent way to create the previous NetCDF would be the following code:
+An equivalent way to create the previous netCDF would be the following code:
 
 ```julia
 using NCDatasets
@@ -110,6 +111,18 @@ Dataset("/tmp/test2.nc","c",attrib = ["title" => "this is a test file"]) do ds
            "comments" => "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
     ])
 end
+```
+
+## Editing an existing netCDF
+
+When you need to modify the variables or the attributes of a netCDF, you have
+to open it with the `"a"` option. Here of instance we add a global attribute *creator* to the
+file created in the previous step.
+
+```julia
+ds = Dataset("/tmp/test.nc","a")
+ds.attrib["creator"] = "your name"
+close(ds);
 ```
 
 
@@ -244,7 +257,7 @@ variables that have specified value for a given attribute.
 lon = varbyattrib(ds, standard_name="longitude");
 ```
 will return the list of variables of the dataset `ds` that have "longitude"
-as standard name. 
+as standard name.
 
 # Filing an issue
 
