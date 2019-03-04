@@ -4,12 +4,12 @@ if VERSION >= v"0.7.0-beta.0"
     using Dates
     import Dates: UTInstant, Millisecond
     import Dates: year,  month,  day, hour, minute, second, millisecond
-    import Dates: daysinmonth, daysinyear, yearmonthday, yearmonth
+    import Dates: daysinmonth, daysinyear, yearmonthday, yearmonth, yearmonthdayhour
     import Dates: monthday, len
 else
     import Base.Dates: UTInstant, Millisecond
     import Base.Dates: year,  month,  day, hour, minute, second, millisecond
-    import Base.Dates: daysinmonth, daysinyear, yearmonthday, yearmonth
+    import Base.Dates: daysinmonth, daysinyear, yearmonthday, yearmonth, yearmonthdayhour
     import Base.Dates: monthday, len
 end
 
@@ -715,6 +715,11 @@ Simultaneously return the month and day parts of `dt`.
 """
 monthday(dt::AbstractCFDateTime) = (Dates.month(dt),Dates.day(dt))
 
+"""
+    yearmonthdayhour(dt::AbstractCFDateTime) -> (Int64, Int64, Int64, Int64)
+Simultaneously return the year, month, day and hour parts of `dt`.
+"""
+yearmonthdayhour(dt::AbstractCFDateTime) = (Dates.year(dt),Dates.month(dt), Dates.day(dt), Dates.hour(dt))
 
 function Dates.len(first::T, last::T, step::DT) where T <: AbstractCFDateTime where
     DT <: Union{Dates.Day,Dates.Hour,Dates.Minute,Dates.Second,Dates.Millisecond}
