@@ -107,7 +107,6 @@ end
 function Base.getindex(CA::CatArray{T,N},idx...) where {T,N}
 
     ind,squeezedim = normalizeindexes(size(CA),idx)
-    @debug "typeof(ind) ",typeof(ind)
 
     idx_global,idx_local,sz = idx_global_local_(CA,ind)
 
@@ -203,17 +202,15 @@ end
 function Base.setindex!(CA::CatArray{T,N},data,idx...) where {T,N}
     ind,squeezedim = normalizeindexes(size(CA),idx)
     idx_global,idx_local,sz = idx_global_local_(CA,ind);
-    @debug begin
-        @show ind,idx_global,idx_local,sz
-    end
+    @debug ind,idx_global,idx_local,sz
+
     data2 = reshape(data,sz)
     for j = 1:length(CA.arrays)
         # get subset from global array x
         subset = @view data2[idx_global[j]...]
 
-        @debug begin
-            @show idx_local[j]
-        end
+        @debug idx_local[j]
+
         # set subset in j-th array
         CA.arrays[j][idx_local[j]...] = subset;
     end
@@ -223,5 +220,3 @@ end
 
 export CatArray
 end
-
-

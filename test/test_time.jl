@@ -9,10 +9,10 @@ using NCDatasets
 # reference value from Meeus, Jean (1998)
 # launch of Sputnik 1
 
-@test NCDatasets.datetuple_standard(2_436_116 - 2_400_001) == (1957, 10, 4)
-@test NCDatasets.datenum_gregjulian(1957,10,4,true) == 36115
+@test CFTime.datetuple_standard(2_436_116 - 2_400_001) == (1957, 10, 4)
+@test CFTime.datenum_gregjulian(1957,10,4,true) == 36115
 
-@test NCDatasets.datenum_gregjulian(333,1,27,false) == -557288
+@test CFTime.datenum_gregjulian(333,1,27,false) == -557288
 
 
 function datenum_datetuple_all_calendars()
@@ -20,14 +20,14 @@ function datenum_datetuple_all_calendars()
     dayincrement = 11000
 
     for (tonum,totuple) in [
-        (NCDatasets.datenum_standard,NCDatasets.datetuple_standard),
-        (NCDatasets.datenum_julian,NCDatasets.datetuple_julian),
-        (NCDatasets.datenum_prolepticgregorian,NCDatasets.datetuple_prolepticgregorian),
-        (NCDatasets.datenum_allleap,NCDatasets.datetuple_allleap),
-        (NCDatasets.datenum_noleap,NCDatasets.datetuple_noleap),
-        (NCDatasets.datenum_360day,NCDatasets.datetuple_360day),
+        (CFTime.datenum_standard,CFTime.datetuple_standard),
+        (CFTime.datenum_julian,CFTime.datetuple_julian),
+        (CFTime.datenum_prolepticgregorian,CFTime.datetuple_prolepticgregorian),
+        (CFTime.datenum_allleap,CFTime.datetuple_allleap),
+        (CFTime.datenum_noleap,CFTime.datetuple_noleap),
+        (CFTime.datenum_360day,CFTime.datetuple_360day),
     ]
-        for Z = -2_400_000 + NCDatasets.DATENUM_OFFSET : dayincrement : 600_000 + NCDatasets.DATENUM_OFFSET
+        for Z = -2_400_000 + CFTime.DATENUM_OFFSET : dayincrement : 600_000 + CFTime.DATENUM_OFFSET
             y,m,d = totuple(Z)
             @test tonum(y,m,d) == Z
         end
@@ -87,7 +87,7 @@ function stresstest_DateTime(::Type{DT}) where DT
     for n = -800000:11:800000
         #@show n
         t = t0 + Dates.Day(n)
-        y, m, d, h, mi, s, ms = NCDatasets.datetuple(t)
+        y, m, d, h, mi, s, ms = CFTime.datetuple(t)
         @test DT(y, m, d, h, mi, s, ms) == t
     end
 end
@@ -111,7 +111,7 @@ for DT in [
     @test Dates.millisecond(dtime) == 123
 
     @test string(DT(2001,2,20)) == "2001-02-20T00:00:00"
-    @test datetuple(DT(1959,12,30,23,39,59,123)) == (1959,12,30,23,39,59,123)
+    @test CFTime.datetuple(DT(1959,12,30,23,39,59,123)) == (1959,12,30,23,39,59,123)
 
     stresstest_DateTime(DT)
 end
@@ -129,33 +129,33 @@ isempty(findfirst("Julian",String(take!(io)))) == false
 
 # time
 
-t0,plength = NCDatasets.timeunits("days since 1950-01-02T03:04:05Z")
+t0,plength = CFTime.timeunits("days since 1950-01-02T03:04:05Z")
 @test t0 == DateTimeStandard(1950,1,2, 3,4,5)
 @test plength == 86400000
 
 
-t0,plength = NCDatasets.timeunits("days since -4713-01-01T00:00:00Z")
+t0,plength = CFTime.timeunits("days since -4713-01-01T00:00:00Z")
 @test t0 == DateTimeStandard(-4713,1,1)
 @test plength == 86400000
 
 
-t0,plength = NCDatasets.timeunits("days since -4713-01-01")
+t0,plength = CFTime.timeunits("days since -4713-01-01")
 @test t0 == DateTimeStandard(-4713,1,1)
 @test plength == 86400000
 
 
-t0,plength = NCDatasets.timeunits("days since 2000-01-01 0:0:0")
+t0,plength = CFTime.timeunits("days since 2000-01-01 0:0:0")
 @test t0 == DateTimeStandard(2000,1,1)
 @test plength == 86400000
 
 
 # issue 24
-t0,plength = NCDatasets.timeunits("hours since 1900-01-01 00:00:00.0")
+t0,plength = CFTime.timeunits("hours since 1900-01-01 00:00:00.0")
 @test t0 == DateTimeStandard(1900,1,1)
 @test plength == 86400000 ÷ 24
 
 
-t0,plength = NCDatasets.timeunits("seconds since 1992-10-8 15:15:42.5")
+t0,plength = CFTime.timeunits("seconds since 1992-10-8 15:15:42.5")
 @test t0 == DateTimeStandard(1992,10,8,15,15,42,500)
 @test plength == 1000
 
@@ -173,13 +173,13 @@ for (calendar,DT) in [
     ("366_day",DateTimeAllLeap),
     ("360_day",DateTime360Day)]
 
-    calendart0,calendarplength = NCDatasets.timeunits("days since 2000-1-1 0:0:0",calendar)
+    calendart0,calendarplength = CFTime.timeunits("days since 2000-1-1 0:0:0",calendar)
     @test calendart0 == DT(2000,1,1)
     @test calendarplength == 86400000
 end
 
-@test_throws ErrorException NCDatasets.timeunits("fortnights since 2000-01-01")
-@test_throws ErrorException NCDatasets.timeunits("days since 2000-1-1 0:0:0","foo")
+@test_throws ErrorException CFTime.timeunits("fortnights since 2000-01-01")
+@test_throws ErrorException CFTime.timeunits("days since 2000-1-1 0:0:0","foo")
 
 # value from python's cftime
 # print(cftime.DatetimeJulian(-4713,1,1) + datetime.timedelta(2455512,.375 * 24*60*60))
@@ -192,16 +192,16 @@ end
 # https://web.archive.org/web/20180212214229/https://en.wikipedia.org/wiki/Julian_day
 
 # Modified JD
-@test timedecode([58160.6875],"days since 1858-11-17","standard") ==
+@test CFTime.timedecode([58160.6875],"days since 1858-11-17","standard") ==
     [DateTime(2018,2,11,16,30,0)]
 
 # CNES JD
-@test timedecode([24878.6875],"days since 1950-01-01","standard") ==
+@test CFTime.timedecode([24878.6875],"days since 1950-01-01","standard") ==
     [DateTime(2018,2,11,16,30,0)]
 
 # Unix time
 # wikipedia pages reports 1518366603 but it should be 1518366600
-@test timedecode([1518366600],"seconds since 1970-01-01","standard") ==
+@test CFTime.timedecode([1518366600],"seconds since 1970-01-01","standard") ==
     [DateTime(2018,2,11,16,30,0)]
 
 
@@ -215,30 +215,30 @@ end
 # https://web.archive.org/web/20180613200023/https://en.wikipedia.org/wiki/Julian_day
 
 
-@test timedecode(DateTimeStandard,2_451_545,"days since -4713-01-01T12:00:00") ==
+@test CFTime.timedecode(DateTimeStandard,2_451_545,"days since -4713-01-01T12:00:00") ==
     DateTimeStandard(2000,01,01,12,00,00)
 
 # Note for DateTime, 1 BC is the year 0!
 # DateTime(1,1,1)-Dates.Day(1)
 # 0000-12-31T00:00:00
 
-@test timedecode(DateTime,2_451_545,"days since -4713-11-24T12:00:00") ==
+@test CFTime.timedecode(DateTime,2_451_545,"days since -4713-11-24T12:00:00") ==
     DateTime(2000,01,01,12,00,00)
 
-@test timedecode(DateTimeProlepticGregorian,2_451_545,"days since -4714-11-24T12:00:00") ==
+@test CFTime.timedecode(DateTimeProlepticGregorian,2_451_545,"days since -4714-11-24T12:00:00") ==
     DateTimeProlepticGregorian(2000,01,01,12,00,00)
 
 
-@test timedecode([2455512.375],"days since -4713-01-01T00:00:00","julian", prefer_datetime = false) ==
+@test CFTime.timedecode([2455512.375],"days since -4713-01-01T00:00:00","julian", prefer_datetime = false) ==
     [DateTimeJulian(2010,10,29,9,0,0)]
 
-@test timeencode([DateTimeJulian(2010,10,29,9,0,0)],"days since -4713-01-01T00:00:00","julian") ==
+@test CFTime.timeencode([DateTimeJulian(2010,10,29,9,0,0)],"days since -4713-01-01T00:00:00","julian") ==
     [2455512.375]
 
 
-@test timedecode(DateTime,[22280.0f0],"days since 1950-01-01 00:00:00") == [DateTime(2011,1,1)]
+@test CFTime.timedecode(DateTime,[22280.0f0],"days since 1950-01-01 00:00:00") == [DateTime(2011,1,1)]
 
-@test_throws ErrorException timeencode(
+@test_throws ErrorException CFTime.timeencode(
     [DateTimeJulian(2010,10,29,9,0,0)],
     "days since -4713-01-01T00:00:00","360_day")
 
@@ -262,13 +262,13 @@ Out[13]: cftime.DatetimeJulian(1582, 10, 5, 0, 0, 0, 0, -1, 1)
 
 
 
-@test datetuple(timedecode(0,"days since -4713-01-01T12:00:00","julian", prefer_datetime = false)) ==
+@test CFTime.datetuple(CFTime.timedecode(0,"days since -4713-01-01T12:00:00","julian", prefer_datetime = false)) ==
     (-4713, 1, 1, 12, 0, 0, 0)
 
 
 dt = NCDatasets.reinterpret(DateTimeStandard, DateTimeJulian(1900,2,28))
 @test typeof(dt) == DateTimeStandard
-@test datetuple(dt) == (1900,2,28,0, 0, 0, 0)
+@test CFTime.datetuple(dt) == (1900,2,28,0, 0, 0, 0)
 
 dt = NCDatasets.reinterpret(DateTime, DateTimeNoLeap(1900,2,28))
 @test typeof(dt) == DateTime
@@ -284,7 +284,7 @@ dt = NCDatasets.reinterpret(DateTime, DateTimeNoLeap(1900,2,28))
 @test DateTimeStandard(2000,01,03) > DateTimeStandard(2000,01,02)
 @test DateTimeStandard(2000,01,03) ≥ DateTimeStandard(2000,01,01)
 
-import NCDatasets: datetuple
+import NCDatasets.CFTime: datetuple
 datetuple(dt::DateTime) = (Dates.year(dt),Dates.month(dt),Dates.day(dt),
                            Dates.hour(dt),Dates.minute(dt),Dates.second(dt),
                            Dates.millisecond(dt))
@@ -299,7 +299,7 @@ for T1 in [DateTimeProlepticGregorian,DateTimeStandard,DateTime]
         dt1 = T1(2000,01,03)
         dt2 = convert(T2,dt1)
 
-        @test datetuple(dt1) == datetuple(dt2)
+        @test CFTime.datetuple(dt1) == CFTime.datetuple(dt2)
     end
 end
 
@@ -311,7 +311,7 @@ for T1 in [DateTimeStandard,DateTimeJulian]
         dt1 = T1(200,01,03)
         dt2 = convert(T2,dt1)
 
-        @test datetuple(dt1) == datetuple(dt2)
+        @test CFTime.datetuple(dt1) == CFTime.datetuple(dt2)
     end
 end
 
@@ -334,9 +334,9 @@ calendar = "noleap"
 data_orig = [54750.5, 54751.5, 54752.5]
 
 # Decoding
-datacal = timedecode(data_orig, units, calendar)
+datacal = CFTime.timedecode(data_orig, units, calendar)
 # Reencoding
-data_orig_back = timeencode(datacal, units, calendar)
+data_orig_back = CFTime.timeencode(datacal, units, calendar)
 @test data_orig ≈ data_orig_back
 
 
@@ -393,9 +393,9 @@ end
 # # DataArray
 # data_orig = DataArrays.DataArray([54750.5, 54751.5, 54752.5])
 # # Decoding
-# datacal = timedecode(data_orig, units, calendar)
+# datacal = CFTime.timedecode(data_orig, units, calendar)
 # # Reencoding
-# data_orig_back = timeencode(datacal, units, calendar)
+# data_orig_back = CFTime.timeencode(datacal, units, calendar)
 # @test data_orig ≈ data_orig_back
 # end
 

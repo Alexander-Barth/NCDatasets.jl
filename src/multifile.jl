@@ -63,9 +63,7 @@ function variable(mfds::MFDataset,varname::AbstractString)
     vars = variable.(mfds.ds,varname)
 
     dim = findfirst(dimnames(vars[1]) .== mfds.aggdim)
-    @debug begin
-        @show dim
-    end
+    @debug "dim $dim"
 
     if (dim != nothing)
         v = CatArrays.CatArray(dim,vars...)
@@ -75,5 +73,3 @@ function variable(mfds::MFDataset,varname::AbstractString)
         return vars[1]
     end
 end
-
-

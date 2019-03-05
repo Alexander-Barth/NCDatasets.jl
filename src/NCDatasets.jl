@@ -14,6 +14,7 @@ import Compat: @debug, findfirst
 
 import Base: close
 include("time.jl")
+using .CFTime
 
 include("CatArrays.jl")
 export CatArrays
@@ -517,7 +518,7 @@ names of the dimension.  For scalar this parameter is the empty tuple `()`.
 The variable is returned (of the type CFVariable).
 
 Note if `data` is a vector or array of `DateTime` objects, then the dates are
-saved as double-precision floats and units "$(DEFAULT_TIME_UNITS)" (unless a time unit
+saved as double-precision floats and units "$(CFTime.DEFAULT_TIME_UNITS)" (unless a time unit
 is specifed with the `attrib` keyword described below)
 
 ## Keyword arguments
@@ -1233,9 +1234,9 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
         if "units" in attnames
             v.attrib["units"]
         else
-            @debug "set time units to $DEFAULT_TIME_UNITS"
-            v.attrib["units"] = DEFAULT_TIME_UNITS
-            DEFAULT_TIME_UNITS
+            @debug "set time units to $CFTime.DEFAULT_TIME_UNITS"
+            v.attrib["units"] = CFTime.DEFAULT_TIME_UNITS
+            CFTime.DEFAULT_TIME_UNITS
         end
 
     if occursin(" since ",units)
@@ -1255,9 +1256,9 @@ end
             if "units" in attnames
                 v.attrib["units"]
             else
-                @debug "set time units to $DEFAULT_TIME_UNITS"
-                v.attrib["units"] = DEFAULT_TIME_UNITS
-                DEFAULT_TIME_UNITS
+                @debug "set time units to $CFTime.DEFAULT_TIME_UNITS"
+                v.attrib["units"] = CFTime.DEFAULT_TIME_UNITS
+                CFTime.DEFAULT_TIME_UNITS
             end
 
         if occursin(" since ",units)
@@ -1589,5 +1590,12 @@ include("cfconventions.jl")
 export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,
     NC_FILL_DOUBLE, NC_FILL_UBYTE, NC_FILL_USHORT, NC_FILL_UINT, NC_FILL_INT64,
     NC_FILL_UINT64, NC_FILL_STRING
+
+export CFTime
+export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
+
+export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
+    DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
+
 
 end # module

@@ -88,24 +88,26 @@ end
 # issue 23
 # return type using CartesianIndex
 
-filename = tempname()
-ds = Dataset(filename, "c");
-ds.dim["lon"] = 5;
-ds.dim["lat"] = 10;
-ds.dim["time"] = Inf;
+if VERSION >= v"0.7.0-beta.0"
+    filename = tempname()
+    ds = Dataset(filename, "c");
+    ds.dim["lon"] = 5;
+    ds.dim["lat"] = 10;
+    ds.dim["time"] = Inf;
 
-ncvar = defVar(ds, "var", Int64, ("lon", "lat", "time"));
+    ncvar = defVar(ds, "var", Int64, ("lon", "lat", "time"));
 
-nt = 25;
-data = reshape(1:5*10*nt, 5, 10, nt);
-ncvar[:,:,1:nt] = data;
-close(ds);
+    nt = 25;
+    data = reshape(1:5*10*nt, 5, 10, nt);
+    ncvar[:,:,1:nt] = data;
+    close(ds);
 
-ds = Dataset(filename);
-start = 1;
-all(data[CartesianIndex(1, 1), start:end] .== ds["var"][CartesianIndex(1, 1), start:end])
-data11 = ds["var"][CartesianIndex(1, 1), start:end]
-close(ds)
+    ds = Dataset(filename);
+    start = 1;
+    all(data[CartesianIndex(1, 1), start:end] .== ds["var"][CartesianIndex(1, 1), start:end])
+    data11 = ds["var"][CartesianIndex(1, 1), start:end]
+    close(ds)
 
-@test typeof(data11[1]) == Int64
-rm(filename)
+    @test typeof(data11[1]) == Int64
+    rm(filename)
+end

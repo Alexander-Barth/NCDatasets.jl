@@ -10,9 +10,8 @@ using NCDatasets
 
 function example_file(i,array)
     fname = tempname()
-    @debug begin
-        @show fname
-    end
+    @debug "fname $fname"
+
     Dataset(fname,"c") do ds
         # Dimensions
 

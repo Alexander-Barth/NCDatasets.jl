@@ -39,7 +39,7 @@ NCDatasets.Dataset(filename,"c") do ds
                            [DateTime(2000,1,2), DateTime(2000,1,3), DateTime(2000,1,4)],("time",))
 
     @test v2[:] == [DateTime(2000,1,2), DateTime(2000,1,3), DateTime(2000,1,4)]
-    @test v2.attrib["units"] == NCDatasets.DEFAULT_TIME_UNITS
+    @test v2.attrib["units"] == NCDatasets.CFTime.DEFAULT_TIME_UNITS
 end
 
 
@@ -80,4 +80,3 @@ NCDatasets.Dataset(filename,"c") do ds
     @test v[1] == DateTime(2000,1,2)
 end
 rm(filename)
-

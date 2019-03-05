@@ -1,16 +1,19 @@
-#module Time
+module CFTime
 
 if VERSION >= v"0.7.0-beta.0"
+    using Printf
     using Dates
     import Dates: UTInstant, Millisecond
     import Dates: year,  month,  day, hour, minute, second, millisecond
     import Dates: daysinmonth, daysinyear, yearmonthday, yearmonth
     import Dates: monthday, len
 else
+    using Missings
     import Base.Dates: UTInstant, Millisecond
     import Base.Dates: year,  month,  day, hour, minute, second, millisecond
     import Base.Dates: daysinmonth, daysinyear, yearmonthday, yearmonth
     import Base.Dates: monthday, len
+    import Compat: occursin
 end
 
 import Base: +, -, isless, string, show, convert, reinterpret
@@ -803,4 +806,6 @@ function __init__()
                        DateTime360Day]
         Dates.CONVERSION_TRANSLATIONS[CFDateTime] = Dates.CONVERSION_TRANSLATIONS[DateTime]
     end
+end
+
 end
