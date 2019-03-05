@@ -398,3 +398,8 @@ end
 # data_orig_back = timeencode(datacal, units, calendar)
 # @test data_orig ≈ data_orig_back
 # end
+
+# issue 21
+@test parse(DateTimeNoLeap,"1999-12-05", dateformat"yyyy-mm-dd") == DateTimeNoLeap(1999,12,05)
+@test DateTimeNoLeap("1999-12-05", "yyyy-mm-dd") == DateTimeNoLeap(1999,12,05)
+@test DateTimeNoLeap("1999-12-05", dateformat"yyyy-mm-dd") == DateTimeNoLeap(1999,12,05)

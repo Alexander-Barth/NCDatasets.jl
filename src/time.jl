@@ -318,11 +318,9 @@ The netCDF CF calendars are defined at [1].
         end
 
         # Fallback constructors
-        $CFDateTime(y, m=1, d=1, h=0, mi=0, s=0, ms=0) = $CFDateTime(
+        $CFDateTime(y::Number, m=1, d=1, h=0, mi=0, s=0, ms=0) = $CFDateTime(
             Int64(y), Int64(m), Int64(d), Int64(h), Int64(mi), Int64(s),
             Int64(ms))
-
-        Dates.CONVERSION_TRANSLATIONS[$CFDateTime] = Dates.CONVERSION_TRANSLATIONS[DateTime]
 
         """
            $($CFDateTime)(dt::AbstractString, format::AbstractString; locale="english") -> $($CFDateTime)
@@ -335,10 +333,11 @@ be removed in the future. It relies on some internal function of `Dates` for
 parsing the `format`.
 """
         function $CFDateTime(dt::AbstractString, format::AbstractString; locale="english")
-            # what a hack!
-            Dates.CONVERSION_TRANSLATIONS[$CFDateTime] = Dates.CONVERSION_TRANSLATIONS[DateTime]
             return parse($CFDateTime, dt, DateFormat(format, locale))
         end
+
+        $CFDateTime(dt::AbstractString, format::DateFormat) =
+            parse($CFDateTime, dt, format)
 
         function datetuple(dt::$CFDateTime)
             time = Dates.value(dt.instant.periods)
@@ -382,14 +381,6 @@ end
 
 
 
-for CFDateTime in [DateTimeStandard,
-                   DateTimeJulian,
-                   DateTimeProlepticGregorian,
-                   DateTimeAllLeap,
-                   DateTimeNoLeap,
-                   DateTime360Day]
-    Dates.CONVERSION_TRANSLATIONS[CFDateTime] = Dates.CONVERSION_TRANSLATIONS[DateTime]
-end
 
 """
     dt2 = reinterpret(::Type{T}, dt)
@@ -801,3 +792,15 @@ export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
 
 export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
     DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
+
+
+function __init__()
+    for CFDateTime in [DateTimeStandard,
+                       DateTimeJulian,
+                       DateTimeProlepticGregorian,
+                       DateTimeAllLeap,
+                       DateTimeNoLeap,
+                       DateTime360Day]
+        Dates.CONVERSION_TRANSLATIONS[CFDateTime] = Dates.CONVERSION_TRANSLATIONS[DateTime]
+    end
+end
