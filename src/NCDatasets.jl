@@ -13,7 +13,7 @@ import Base.convert
 import Compat: @debug, findfirst
 
 import Base: close
-include("time.jl")
+include("CFTime.jl")
 using .CFTime
 
 include("CatArrays.jl")
