@@ -3,3 +3,4 @@ BinDeps 0.4
 CondaBinDeps
 Missings
 Compat
+DataStructures

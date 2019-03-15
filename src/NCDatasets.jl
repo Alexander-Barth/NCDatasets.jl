@@ -9,6 +9,7 @@ end
 using Base
 using Missings
 using Compat
+using DataStructures: OrderedDict
 import Base.convert
 import Compat: @debug, findfirst
 
@@ -68,6 +69,18 @@ const default_timeunits = "days since 1900-00-00 00:00:00"
 abstract type BaseAttributes
 end
 
+abstract type AbstractDataset
+end
+
+abstract type AbstractVariable{T,N} <: AbstractArray{T,N}
+end
+
+abstract type AbstractDimensions
+end
+
+abstract type AbstractGroups
+end
+
 function Base.get(a::BaseAttributes,name::AbstractString,default)
     if haskey(a,name)
         return a[name]
@@ -87,17 +100,17 @@ mutable struct Attributes <: BaseAttributes
     isdefmode::Vector{Bool}
 end
 
-mutable struct Groups
+mutable struct Groups <: AbstractGroups
     ncid::Cint
     isdefmode::Vector{Bool}
 end
 
-mutable struct Dimensions
+mutable struct Dimensions <: AbstractDimensions
     ncid::Cint
     isdefmode::Vector{Bool}
 end
 
-mutable struct Dataset
+mutable struct Dataset <: AbstractDataset
     ncid::Cint
     # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
     # need to be an array, so that it is copied by reference
@@ -287,17 +300,40 @@ end
 
 Base.keys(a::MFAttributes) = keys(a.as[1])
 
+# -----------------------------------------------------
+
+struct Resource
+    filename::String
+    mode::String
+    metadata::Dict
+end
+
+mutable struct DeferAttributes <: BaseAttributes
+    r::Resource
+    varname::String # "/" for global attributes
+    data::Dict
+end
+
+mutable struct DeferDimensions <: AbstractDimensions
+    r::Resource
+    data::Dict
+end
+
+mutable struct DeferGroups <: AbstractGroups
+    r::Resource
+    data::Dict
+end
 
 
 # -----------------------------------------------------
 
-mutable struct MFDimensions
+mutable struct MFDimensions <: AbstractDimensions
     as::Vector{Dimensions}
     aggdim::String
 end
 
 
-mutable struct MFGroups
+mutable struct MFGroups <: AbstractGroups
     as::Vector{Groups}
     aggdim::String
 end
@@ -332,12 +368,20 @@ function Base.getindex(a::MFGroups,name::AbstractString)
 end
 
 #---
-mutable struct MFDataset{N}
+mutable struct MFDataset{N} <: AbstractDataset
     ds::Array{Dataset,N}
     aggdim::AbstractString
     attrib::MFAttributes
     dim::MFDimensions
     group::MFGroups
+end
+
+
+mutable struct DeferDataset <: AbstractDataset
+    r::Resource
+    attrib::DeferAttributes
+    dim::DeferDimensions
+    group::DeferGroups
 end
 
 
@@ -387,7 +431,7 @@ function defGroup(ds::Dataset,groupname; attrib = [])
     return ds
 end
 
-group(ds::Union{Dataset,MFDataset},groupname) = ds.group[groupname]
+group(ds::AbstractDataset,groupname) = ds.group[groupname]
 
 # -----------------------------------------------------
 # Dataset
@@ -710,7 +754,7 @@ function variable(ds::Dataset,varname::AbstractString)
                                   attrib,ds.isdefmode)
 end
 
-function Base.show(io::IO,ds::Union{Dataset,MFDataset}; indent="")
+function Base.show(io::IO,ds::AbstractDataset; indent="")
     try
         dspath = path(ds)
         printstyled(io, indent, "Dataset: ",dspath,"\n", color=:red)
@@ -781,7 +825,7 @@ as `DateTime` object.
 
 A call `getindex(ds,varname)` is usually written as `ds[varname]`.
 """
-function Base.getindex(ds::Union{Dataset,MFDataset},varname::AbstractString)
+function Base.getindex(ds::AbstractDataset,varname::AbstractString)
     v = variable(ds,varname)
 
     # return element type of any index operation
@@ -800,7 +844,7 @@ end
 # Variable (as stored in NetCDF file, without using
 # add_offset, scale_factor and _FillValue)
 
-mutable struct Variable{NetCDFType,N}  <: AbstractArray{NetCDFType, N}
+mutable struct Variable{NetCDFType,N} <: AbstractVariable{NetCDFType, N}
     ncid::Cint
     varid::Cint
     dimids::NTuple{N,Cint}
@@ -808,11 +852,17 @@ mutable struct Variable{NetCDFType,N}  <: AbstractArray{NetCDFType, N}
     isdefmode::Vector{Bool}
 end
 
-mutable struct MFVariable{T,N,M,TA} <: AbstractArray{T,N}
+mutable struct MFVariable{T,N,M,TA} <: AbstractVariable{T,N}
     var::CatArrays.CatArray{T,N,M,TA}
     attrib::MFAttributes
     dimnames::NTuple{N,String}
     varname::String
+end
+
+mutable struct DeferVariable{T,N} <: AbstractVariable{T,N}
+    r::Resource
+    varname::String
+    attrib::DeferAttributes
 end
 
 # the size of a variable can change, i.e. for a variable with an unlimited
@@ -1316,7 +1366,7 @@ end
 
 
 
-function Base.show(io::IO,v::Union{Variable,MFVariable}; indent="")
+function Base.show(io::IO,v::AbstractVariable; indent="")
     delim = " × "
     dims =
         try
@@ -1354,7 +1404,7 @@ Base.display(v::Union{Variable,CFVariable}) = show(Compat.stdout,v)
 
 # Common methods
 
-const NCIterable = Union{BaseAttributes,Dimensions,MFDimensions,Dataset,Groups,MFGroups}
+const NCIterable = Union{BaseAttributes,AbstractDimensions,AbstractDataset,AbstractGroups}
 
 Base.length(a::NCIterable) = length(keys(a))
 
@@ -1584,6 +1634,9 @@ export loadragged
 
 include("multifile.jl")
 export MFDataset, close
+
+include("defer.jl")
+export DeferDataset
 
 include("cfconventions.jl")
 
