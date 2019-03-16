@@ -18,12 +18,26 @@ do not contain the dimension `aggdim` are assumed constant.
 [1]: https://stackoverflow.com/questions/34588/how-do-i-change-the-number-of-open-files-limit-in-linux
 [2]: https://unix.stackexchange.com/questions/8945/how-can-i-increase-open-files-limit-for-all-processes/8949#8949
 """
-function Dataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing) where N where TS <: AbstractString
+function Dataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, deferopen = false) where N where TS <: AbstractString
     if !(mode == "r" || mode == "a")
         throw(NetCDFError(-1,"""Unsupported mode for multi-file dataset (mode = $(mode)). Mode must be "r" or "a". """))
     end
 
-    ds = Dataset.(fnames,mode);
+    if deferopen
+        master_index = 1
+        ds_master = Dataset(fnames[master_index],mode);
+        data_master = metadata(ds_master)
+        ds = Vector{Union{Dataset,DeferDataset}}(undef,length(fnames))
+        ds[master_index] = ds_master
+        for i = 1:length(fnames)
+            if i !== master_index
+                ds[i] = DeferDataset(fnames[i],mode,data_master)
+            end
+        end
+    else
+        ds = Dataset.(fnames,mode);
+    end
+
     if aggdim == nothing
         # first unlimited dimensions
         aggdim = NCDatasets.unlimited(ds[1].dim)[1]

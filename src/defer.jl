@@ -46,6 +46,17 @@ function metadata(ds::Dataset)
         )
 end
 
+function DeferDataset(filename,mode,info)
+    Dataset(filename,mode) do ds
+        r = Resource(filename,mode,info)
+        groupname = "/"
+        da = DeferAttributes(r,"/",r.metadata["attrib"])
+        dd = DeferDimensions(r,r.metadata["dim"])
+        dg = DeferGroups(r,r.metadata["group"])
+        return DeferDataset(r,groupname,da,dd,dg,info)
+    end
+end
+
 function DeferDataset(filename,mode = "r")
     Dataset(filename,mode) do ds
         info = metadata(ds)

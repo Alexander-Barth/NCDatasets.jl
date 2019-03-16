@@ -283,8 +283,8 @@ Base.keys(a::Attributes) = listAtt(a.ncid,a.varid)
 
 # -----------------------------------------------------
 
-mutable struct MFAttributes <: BaseAttributes
-    as::Vector{Attributes}
+mutable struct MFAttributes{T} <: BaseAttributes where T <: BaseAttributes
+    as::Vector{T}
 end
 
 function Base.getindex(a::MFAttributes,name::AbstractString)
@@ -327,14 +327,14 @@ end
 
 # -----------------------------------------------------
 
-mutable struct MFDimensions <: AbstractDimensions
-    as::Vector{Dimensions}
+mutable struct MFDimensions{T} <: AbstractDimensions where T <: AbstractDimensions
+    as::Vector{T}
     aggdim::String
 end
 
 
-mutable struct MFGroups <: AbstractGroups
-    as::Vector{Groups}
+mutable struct MFGroups{T} <: AbstractGroups where T <: AbstractGroups
+    as::Vector{T}
     aggdim::String
 end
 
@@ -368,12 +368,12 @@ function Base.getindex(a::MFGroups,name::AbstractString)
 end
 
 #---
-mutable struct MFDataset{N} <: AbstractDataset
-    ds::Array{Dataset,N}
+mutable struct MFDataset{T,N,TA,TD,TG} <: AbstractDataset where T <: AbstractDataset
+    ds::Array{T,N}
     aggdim::AbstractString
-    attrib::MFAttributes
-    dim::MFDimensions
-    group::MFGroups
+    attrib::MFAttributes{TA}
+    dim::MFDimensions{TD}
+    group::MFGroups{TG}
 end
 
 
