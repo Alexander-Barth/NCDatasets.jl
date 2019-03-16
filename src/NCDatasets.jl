@@ -311,17 +311,17 @@ end
 mutable struct DeferAttributes <: BaseAttributes
     r::Resource
     varname::String # "/" for global attributes
-    data::Dict
+    data::OrderedDict
 end
 
 mutable struct DeferDimensions <: AbstractDimensions
     r::Resource
-    data::Dict
+    data::OrderedDict
 end
 
 mutable struct DeferGroups <: AbstractGroups
     r::Resource
-    data::Dict
+    data::OrderedDict
 end
 
 
@@ -379,9 +379,11 @@ end
 
 mutable struct DeferDataset <: AbstractDataset
     r::Resource
+    groupname::String
     attrib::DeferAttributes
     dim::DeferDimensions
     group::DeferGroups
+    data::Dict
 end
 
 
@@ -863,6 +865,7 @@ mutable struct DeferVariable{T,N} <: AbstractVariable{T,N}
     r::Resource
     varname::String
     attrib::DeferAttributes
+    data::Dict
 end
 
 # the size of a variable can change, i.e. for a variable with an unlimited

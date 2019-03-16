@@ -48,7 +48,7 @@ function example_file(i,array)
 
         # Define variables
 
-        g = defGroup(ds,"group")
+        g = defGroup(ds,"mygroup")
         ncvarg = defVar(g,"var", Float64, ("lon", "lat", "time"))
         ncvarg.attrib["field"] = "u-wind, scalar, series"
         ncvarg.attrib["units"] = "meter second-1"
@@ -75,29 +75,29 @@ ds = Dataset(fname)
 
 info = NCDatasets.metadata(ds)
 
-@show info
+#@show info
 
 dds = DeferDataset(fname);
 varname = "var"
-var = variable(dds,varname);
-data = var[:,:,:]
+datavar = variable(dds,varname);
+data = datavar[:,:,:]
 
 
-@test A == var[:,:,:]
+@test A == datavar[:,:,:]
 
 @test dds.attrib["history"] == "foo"
-@test var.attrib["units"] == "meter second-1"
+@test datavar.attrib["units"] == "meter second-1"
 
-@test dimnames(var) == ("lon", "lat", "time")
+@test dimnames(datavar) == ("lon", "lat", "time")
 lon = variable(dds,"lon");
 @test lon.attrib["units"] == "degrees_east"
 @test size(lon) == (size(data,1),)
 
 
-var = dds[varname]
-@test A == var[:,:,:]
+datavar = dds[varname]
+@test A == datavar[:,:,:]
 
-@test dimnames(var) == ("lon", "lat", "time")
+@test dimnames(datavar) == ("lon", "lat", "time")
 
 @test dds.dim["lon"] == size(A,1)
 @test dds.dim["lat"] == size(A,2)
@@ -107,18 +107,22 @@ var = dds[varname]
 close(dds)
 
 # show
-buf = IOBuffer()
-show(buf,dds)
-@test occursin("time = 3",String(take!(buf)))
+dds_buf = IOBuffer()
+show(dds_buf,dds)
+
+ds_buf = IOBuffer()
+show(ds_buf,dds)
+
+@test String(take!(dds_buf)) == String(take!(ds_buf))
 
 #=
 # write
 dds = Dataset(fnames,"a");
-dds["var"][2,2,:] = 1:length(fnames)
+dds["datavar"][2,2,:] = 1:length(fnames)
 
 for n = 1:length(fnames)
     Dataset(fnames[n]) do ds
-        @test ds["var"][2,2,1] == n
+        @test ds["datavar"][2,2,1] == n
     end
 end
 
@@ -131,13 +135,13 @@ end
 
 @test_throws NCDatasets.NetCDFError Dataset(fnames,"not-a-mode")
 
-@test keys(dds) == ["var", "lat", "lon", "time"]
+@test keys(dds) == ["datavar", "lat", "lon", "time"]
 @test keys(dds.dim) == ["lon", "lat", "time"]
 @test NCDatasets.groupname(dds) == "/"
 @test size(dds["var"]) == (2, 3, 3)
 @test size(dds["var"].var) == (2, 3, 3)
 @test name(dds["var"].var) == "var"
-@test NCDatasets.groupname(dds.group["group"]) == "group"
+@test NCDatasets.groupname(dds.group["mygroup"]) == "mygroup"
 
 
 # create new dimension in all files
@@ -149,4 +153,3 @@ end
 close(dds)
 =#
 nothing
-
