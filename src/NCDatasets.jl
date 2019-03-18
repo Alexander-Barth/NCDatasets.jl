@@ -305,7 +305,7 @@ Base.keys(a::MFAttributes) = keys(a.as[1])
 struct Resource
     filename::String
     mode::String
-    metadata::Dict
+    metadata::OrderedDict
 end
 
 mutable struct DeferAttributes <: BaseAttributes
@@ -383,7 +383,7 @@ mutable struct DeferDataset <: AbstractDataset
     attrib::DeferAttributes
     dim::DeferDimensions
     group::DeferGroups
-    data::Dict
+    data::OrderedDict
 end
 
 
@@ -865,7 +865,7 @@ mutable struct DeferVariable{T,N} <: AbstractVariable{T,N}
     r::Resource
     varname::String
     attrib::DeferAttributes
-    data::Dict
+    data::OrderedDict
 end
 
 # the size of a variable can change, i.e. for a variable with an unlimited

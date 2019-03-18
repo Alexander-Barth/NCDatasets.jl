@@ -20,7 +20,7 @@ function metadata(ds::Dataset)
         storage,chunksizes = chunking(ncvar.var)
         isshuffled,isdeflated,deflatelevel = deflate(ncvar.var)
 
-        vars[varname] = Dict(
+        vars[varname] = OrderedDict(
             "name" => varname,
             "size" => size(ncvar),
             "eltype" => eltype(ncvar.var),
