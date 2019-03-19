@@ -28,11 +28,11 @@ function Dataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, defer
         ds_master = Dataset(fnames[master_index],mode);
         data_master = metadata(ds_master)
         ds = Vector{Union{Dataset,DeferDataset}}(undef,length(fnames))
-        ds[master_index] = ds_master
+        #ds[master_index] = ds_master
         for i = 1:length(fnames)
-            if i !== master_index
+            #if i !== master_index
                 ds[i] = DeferDataset(fnames[i],mode,data_master)
-            end
+            #end
         end
     else
         ds = Dataset.(fnames,mode);

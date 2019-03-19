@@ -527,7 +527,7 @@ function Dataset(f::Function,args...; kwargs...)
     try
         f(ds)
     finally
-        @debug "closing netCDF Dataset $(NCDatasets.path(ds))"
+        #@debug "closing netCDF Dataset $(NCDatasets.path(ds))"
         close(ds)
     end
 end
