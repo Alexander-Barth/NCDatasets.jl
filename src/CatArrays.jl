@@ -113,10 +113,12 @@ function Base.getindex(CA::CatArray{T,N},idx...) where {T,N}
     B = Array{T,length(sz)}(undef,sz...)
 
     for j=1:length(CA.arrays)
-        # get subset from j-th array
-        subset = CA.arrays[j][idx_local[j]...]
+        if prod(length.(idx_local[j])) > 0
+            # get subset from j-th array
+            subset = CA.arrays[j][idx_local[j]...]
 
-        B[idx_global[j]...] = subset
+            B[idx_global[j]...] = subset
+        end
     end
 
 
