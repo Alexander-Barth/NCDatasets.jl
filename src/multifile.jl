@@ -1,19 +1,20 @@
 
 
 """
-    mfds = Dataset(fnames,mode = "r"; aggdim = nothing)
+    mfds = Dataset(fnames,mode = "r"; aggdim = nothing, deferopen = true)
 
 Opens a multi-file dataset in read-only "r" or append mode "a". `fnames` is a
 vector of file names.
 Variables are aggregated over the first unimited dimension or over
-the dimension `aggdim` if specified.
-
-Note: all files are opened at the same time. However the operating system might
-limit the number of open files. In Linux, the limit can be controled
-with the command `ulimit` [1,2].
+the dimension `aggdim` if specified. The append mode is only implemented when
+`deferopen` is `false`.
 
 All variables containing the dimension `aggdim` are aggerated. The variable who
 do not contain the dimension `aggdim` are assumed constant.
+
+If deferopen is `false`, all files are opened at the same time.
+However the operating system might limit the number of open files. In Linux,
+the limit can be controled with the command `ulimit` [1,2].
 
 [1]: https://stackoverflow.com/questions/34588/how-do-i-change-the-number-of-open-files-limit-in-linux
 [2]: https://unix.stackexchange.com/questions/8945/how-can-i-increase-open-files-limit-for-all-processes/8949#8949
@@ -24,6 +25,7 @@ function Dataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, defer
     end
 
     if deferopen
+        @assert mode == "r"
         master_index = 1
         ds_master = Dataset(fnames[master_index],mode);
         data_master = metadata(ds_master)
