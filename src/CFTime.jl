@@ -19,7 +19,7 @@ end
 import Base: +, -, isless, string, show, convert, reinterpret
 
 
-const DEFAULT_TIME_UNITS = "days since 1900-00-00 00:00:00"
+const DEFAULT_TIME_UNITS = "days since 1900-01-01 00:00:00"
 
 # Introduction of the Gregorian Calendar 1582-10-15
 const GREGORIAN_CALENDAR = (1582,10,15)
