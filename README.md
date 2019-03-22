@@ -31,6 +31,7 @@ Other features include:
 Inside the Julia shell, you can download and install the package by issuing:
 
 ```julia
+using Pkg
 Pkg.add("NCDatasets")
 ```
 
@@ -39,7 +40,8 @@ Pkg.add("NCDatasets")
 If you want to try the latest development version, you can do this with the following commands:
 
 ```julia
-Pkg.clone("https://github.com/Alexander-Barth/NCDatasets.jl")
+using Pkg
+Pkg.add(PackageSpec(url="https://github.com/Alexander-Barth/NCDatasets.jl", rev="master"))
 Pkg.build("NCDatasets")
 ```
 
@@ -59,6 +61,25 @@ The following displays the information just for the variable `varname` and for t
 ```julia
 ds["varname"]
 ds.attrib
+```
+which produces a listing the following:
+
+```
+Dataset: file.nc
+Group: /
+
+Dimensions
+   time = 115
+
+Variables
+  time   (115)
+    Datatype:    Float64
+    Dimensions:  time
+    Attributes:
+     calendar             = gregorian
+     standard_name        = time
+     units                = days since 1950-01-01 00:00:00
+[...]
 ```
 
 ## Create a netCDF file
