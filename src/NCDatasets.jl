@@ -1414,7 +1414,7 @@ Base.length(a::NCIterable) = length(keys(a))
 """
     haskey(ds::Dataset,varname)
 
-Return true of the Dataset `ds` has a variable with the name `varname`.
+Return true if the Dataset `ds` has a variable with the name `varname`.
 For example:
 
 ```julia
