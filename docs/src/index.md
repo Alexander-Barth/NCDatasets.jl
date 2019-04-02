@@ -326,7 +326,8 @@ tempvar.attrib["_FillValue"] = -9999.
 In fact, `_FillValue` must have the same data type as the corresponding variable. In the case above, `tempvar` is a 32-bit float and the number `-9999.` is a 64-bit float (aka double, which is the default floating point type in Julia). It is sufficient to convert the value `-9999.` to a 32-bit float:
 
 ```julia
-tempvar.attrib["_FillValue"] = Float32(-9999.)
+tempvar.attrib["_FillValue"] = Float32(-9999.) # or
+tempvar.attrib["_FillValue"] = -9999.f0
 ```
 
 
@@ -335,11 +336,8 @@ tempvar.attrib["_FillValue"] = Float32(-9999.)
 
 * An attribute representing a vector with a single value (e.g. `[1]`) will be read back as a scalar (`1`) (same behavior in python netCDF4 1.3.1).
 
-* NetCDF and Julia distinguishes between a vector of chars and a string, but both are returned as string for ease of use, in particular
-an attribute representing a vector of chars `['u','n','i','t','s']` will be read back as the string `"units"`.
+* NetCDF and Julia distinguishes between a vector of chars and a string, but both are returned as string for ease of use, in particular an attribute representing a vector of chars `['u','n','i','t','s']` will be read back as the string `"units"`.
 
 * An attribute representing a vector of chars `['u','n','i','t','s','\0']` will also be read back as the string `"units"` (issue #12).
 
 
-<!--  LocalWords:  NCDatasets jl Datasets Dataset netCDF
- -->
