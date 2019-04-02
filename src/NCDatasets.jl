@@ -215,6 +215,7 @@ function unlimited(d::Dimensions)
                   for dimid in nc_inq_unlimdims(d.ncid)]
 end
 
+export unlimited
 
 """
     Base.setindex!(d::Dimensions,len,name::AbstractString)
@@ -727,11 +728,11 @@ to the disk.
 Base.close(ds::Dataset) = nc_close(ds.ncid)
 
 """
-    variable(ds::Dataset,varname::String)
+    v = variable(ds::Dataset,varname::String)
 
 Return the NetCDF variable `varname` in the dataset `ds` as a
-`NCDataset.Variable`. No scaling is applied when this variable is
-indexes.
+`NCDataset.Variable`. No scaling or other transformations are applied when the
+variable `v` is indexed.
 """
 function variable(ds::Dataset,varname::AbstractString)
     varid = nc_inq_varid(ds.ncid,varname)
@@ -822,8 +823,7 @@ Return the NetCDF variable `varname` in the dataset `ds` as a
 variable is indexed:
 * `_FillValue` will be returned as `missing`
 * `scale_factor` and `add_offset` are applied
-* time variables (recognized by the units attribute) are returned
-as `DateTime` object.
+* time variables (recognized by the units attribute) are returned as `DateTime` object.
 
 A call `getindex(ds,varname)` is usually written as `ds[varname]`.
 """
@@ -894,7 +894,7 @@ chunking(v::Variable,storage,chunksizes) = nc_def_var_chunking(v.ncid,v.varid,st
 """
     storage,chunksizes = chunking(v::Variable)
 
-Return the storage type (:contiguous or :chunked) and the chunk sizes
+Return the storage type (`:contiguous` or `:chunked`) and the chunk sizes
 of the varable `v`.
 """
 function chunking(v::Variable)
@@ -1125,7 +1125,7 @@ end
     load!(ncvar::Variable, data, indices)
 
 Loads a NetCDF variables `ncvar` and puts the result in `data` along the
-specified indices.
+specified `indices`.
 
 ```julia
 data = zeros(5,6); # must have the right shape and type

@@ -1,5 +1,5 @@
 """
-    ncvar = ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
+    ncvar = NCDatasets.ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
 
 Return the first ancillary variables from the NetCDF variable `ncv` with the
 standard name modifier `modifier`. It can be used for example to access
@@ -28,7 +28,7 @@ function ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
 end
 
 """
-    data = filter(ncv, indices...; accepted_status_flags = nothing)
+    data = NCDatasets.filter(ncv, indices...; accepted_status_flags = nothing)
 
 Load and filter observations by replacing all variables without an acepted status
 flag to `missing`. It is used the attribute `ancillary_variables` to identify
