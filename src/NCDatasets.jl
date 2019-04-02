@@ -816,7 +816,7 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
 end
 
 """
-    getindex(ds::Dataset,varname::AbstractString)
+    v = getindex(ds::Dataset,varname::AbstractString)
 
 Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The CF convention are honored when the
