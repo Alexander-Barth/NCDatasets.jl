@@ -5,11 +5,11 @@
 
 Opens a multi-file dataset in read-only "r" or append mode "a". `fnames` is a
 vector of file names.
-Variables are aggregated over the first unimited dimension or over
+Variables are aggregated over the first unlimited dimension or over
 the dimension `aggdim` if specified. The append mode is only implemented when
 `deferopen` is `false`.
 
-All variables containing the dimension `aggdim` are aggerated. The variable who
+All variables containing the dimension `aggdim` are aggregated. The variable who
 do not contain the dimension `aggdim` are assumed constant.
 
 If deferopen is `false`, all files are opened at the same time.

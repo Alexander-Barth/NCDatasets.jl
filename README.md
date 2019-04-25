@@ -31,16 +31,8 @@ Other features include:
 Inside the Julia shell, you can download and install the package by issuing:
 
 ```julia
+using Pkg
 Pkg.add("NCDatasets")
-```
-
-### Latest development version
-
-If you want to try the latest development version, you can do this with the following commands:
-
-```julia
-Pkg.clone("https://github.com/Alexander-Barth/NCDatasets.jl")
-Pkg.build("NCDatasets")
 ```
 
 ## Exploring the content of a netCDF file
@@ -59,6 +51,25 @@ The following displays the information just for the variable `varname` and for t
 ```julia
 ds["varname"]
 ds.attrib
+```
+which produces a listing the following:
+
+```
+Dataset: file.nc
+Group: /
+
+Dimensions
+   time = 115
+
+Variables
+  time   (115)
+    Datatype:    Float64
+    Dimensions:  time
+    Attributes:
+     calendar             = gregorian
+     standard_name        = time
+     units                = days since 1950-01-01 00:00:00
+[...]
 ```
 
 ## Create a netCDF file
@@ -126,36 +137,8 @@ close(ds);
 ```
 
 
-## Create a netCDF file from a template
 
-```julia
-# download example file
-ncfile = download("https://www.unidata.ucar.edu/software/netcdf/examples/sresa1b_ncar_ccsm3-example.nc")
-# generate Julia code
-ncgen(ncfile)
-```
-
-The produces the Julia code (only the beginning of the code is shown):
-
-```julia
-ds = Dataset("filename.nc","c")
-# Dimensions
-
-ds.dim["lat"] = 128;
-ds.dim["lon"] = 256;
-ds.dim["bnds"] = 2;
-ds.dim["plev"] = 17;
-ds.dim["time"] = 1;
-
-# Declare variables
-
-ncarea = defVar(ds,"area", Float32, ("lon", "lat"))
-ncarea.attrib["long_name"] = "Surface area";
-ncarea.attrib["units"] = "meter2";
-# ...
-```
-
-## Load a file (with known structure)
+## Load a file
 
 Loading a variable with known structure can be achieved by accessing the variables and attributes directly by their name.
 
@@ -196,68 +179,7 @@ end # ds is closed
 ```
 
 
-## Load a file (with unknown structure)
 
-If the structure of the netCDF file is not known before-hand, the program must check if a variable or attribute exists (with the `in` operator) before loading it or alternatively place the loading in a `try`-`catch` block.
-It is also possible to iterate over all variables or attributes (global attributes or variable attributes) in the same syntax as iterating over a dictionary. However, unlike Julia dictionaries, the order of the attributes and variables is preserved and presented as they are stored in the netCDF file.
-
-
-```julia
-# Open a file as read-only
-ds = Dataset("/tmp/test.nc","r")
-
-# check if a file has a variable with a given name
-if haskey(ds,"temperature")
-    println("The file has a variable 'temperature'")
-end
-
-# get a list of all variable names
-@show keys(ds)
-
-# iterate over all variables
-for (varname,var) in ds
-    @show (varname,size(var))
-end
-
-# query size of a variable (without loading it)
-v = ds["temperature"]
-@show size(v)
-
-# similar for global and variable attributes
-
-if haskey(ds.attrib,"title")
-    println("The file has the global attribute 'title'")
-end
-
-# get an list of all attribute names
-@show keys(ds.attrib)
-
-# iterate over all attributes
-for (attname,attval) in ds.attrib
-    @show (attname,attval)
-end
-
-# get the attribute "units" of the variable v
-# but return the default value (here "adimensional")
-# if the attribute does not exists
-
-units = get(v,"units","adimensional")
-close(ds)
-```
-
-## Get one or several variables by specifying the value of an attribute
-
-The variable name are not always standardized, for example the longitude we can
-find: `lon`, `LON`, `longitude`, ...
-
-The solution implemented in the function `varbyattrib` consists in searching for the
-variables that have specified value for a given attribute.
-
-```julia
-lon = varbyattrib(ds, standard_name="longitude");
-```
-will return the list of variables of the dataset `ds` that have "longitude"
-as standard name.
 
 # Filing an issue
 

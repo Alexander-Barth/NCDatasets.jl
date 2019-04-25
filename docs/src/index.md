@@ -2,6 +2,129 @@
 
 Documentation for NCDatasets.jl
 
+## Installation
+
+Inside the Julia shell, you can download and install the package by issuing:
+
+```julia
+using Pkg
+Pkg.add("NCDatasets")
+```
+
+### Latest development version
+
+If you want to try the latest development version, you can do this with the following commands:
+
+```julia
+using Pkg
+Pkg.add(PackageSpec(url="https://github.com/Alexander-Barth/NCDatasets.jl", rev="master"))
+Pkg.build("NCDatasets")
+```
+
+## Tutorial
+
+### Create a netCDF file using the metadata of an existing netCDF file as template
+
+The utility function [`ncgen`](https://alexander-barth.github.io/NCDatasets.jl/stable/#NCDatasets.ncgen)
+generates the Julia code that would produce a netCDF file with the same metadata as a template netCDF file.
+It is thus similar to the [command line tool `ncgen`](https://www.unidata.ucar.edu/software/netcdf/netcdf/ncgen.html).
+
+```julia
+# download example file
+ncfile = download("https://www.unidata.ucar.edu/software/netcdf/examples/sresa1b_ncar_ccsm3-example.nc")
+# generate Julia code
+ncgen(ncfile)
+```
+
+The produces the Julia code (only the beginning of the code is shown):
+
+```julia
+ds = Dataset("filename.nc","c")
+# Dimensions
+
+ds.dim["lat"] = 128;
+ds.dim["lon"] = 256;
+ds.dim["bnds"] = 2;
+ds.dim["plev"] = 17;
+ds.dim["time"] = 1;
+
+# Declare variables
+
+ncarea = defVar(ds,"area", Float32, ("lon", "lat"))
+ncarea.attrib["long_name"] = "Surface area";
+ncarea.attrib["units"] = "meter2";
+# ...
+```
+
+### Get one or several variables by specifying the value of an attribute
+
+The variable name are not always standardized, for example the longitude we can
+find: `lon`, `LON`, `longitude`, ...
+
+The solution implemented in the function `varbyattrib` consists in searching for the
+variables that have specified value for a given attribute.
+
+```julia
+nclon = varbyattrib(ds, standard_name="longitude");
+```
+will return the list of variables of the dataset `ds` that have "longitude"
+as standard name. To directly load the data of the first variable with the
+attribute `standard_name` equal to `"longitude"` one can the following:
+
+```julia
+data = varbyattrib(ds, standard_name = "longitude")[1][:]
+```
+
+### Load a file (with unknown structure)
+
+If the structure of the netCDF file is not known before-hand, the program must check if a variable or attribute exists (with the `haskey` function) before loading it or alternatively place the loading in a `try`-`catch` block.
+It is also possible to iterate over all variables or attributes (global attributes or variable attributes) in the same syntax as iterating over a dictionary. However, unlike Julia dictionaries, the order of the attributes and variables is preserved and presented as they are stored in the netCDF file.
+
+
+```julia
+# Open a file as read-only
+ds = Dataset("/tmp/test.nc","r")
+
+# check if a file has a variable with a given name
+if haskey(ds,"temperature")
+    println("The file has a variable 'temperature'")
+end
+
+# get a list of all variable names
+@show keys(ds)
+
+# iterate over all variables
+for (varname,var) in ds
+    @show (varname,size(var))
+end
+
+# query size of a variable (without loading it)
+v = ds["temperature"]
+@show size(v)
+
+# similar for global and variable attributes
+
+if haskey(ds.attrib,"title")
+    println("The file has the global attribute 'title'")
+end
+
+# get an list of all attribute names
+@show keys(ds.attrib)
+
+# iterate over all attributes
+for (attname,attval) in ds.attrib
+    @show (attname,attval)
+end
+
+# get the attribute "units" of the variable v
+# but return the default value (here "adimensional")
+# if the attribute does not exists
+
+units = get(v,"units","adimensional")
+close(ds)
+```
+
+
 ## Datasets
 
 ```@docs
@@ -60,6 +183,7 @@ keys(a::NCDatasets.Attributes)
 defDim
 setindex!(d::NCDatasets.Dimensions,len,name::AbstractString)
 dimnames(v::NCDatasets.Variable)
+unlimited(d::NCDatasets.Dimensions)
 ```
 
 
@@ -116,10 +240,13 @@ Dates.second(dt::AbstractCFDateTime)
 Dates.millisecond(dt::AbstractCFDateTime)
 convert
 reinterpret
-timedecode
-timeencode
 daysinmonth
 daysinyear
+yearmonthday
+yearmonth
+monthday
+CFTime.timedecode
+CFTime.timeencode
 ```
 
 # Utility functions
@@ -155,7 +282,7 @@ If there is a network or server issue, you will see an error message like "NetCD
 
 # Experimental functions
 
-```
+```@docs
 NCDatasets.ancillaryvariables
 NCDatasets.filter
 ```
@@ -199,7 +326,8 @@ tempvar.attrib["_FillValue"] = -9999.
 In fact, `_FillValue` must have the same data type as the corresponding variable. In the case above, `tempvar` is a 32-bit float and the number `-9999.` is a 64-bit float (aka double, which is the default floating point type in Julia). It is sufficient to convert the value `-9999.` to a 32-bit float:
 
 ```julia
-tempvar.attrib["_FillValue"] = Float32(-9999.)
+tempvar.attrib["_FillValue"] = Float32(-9999.) # or
+tempvar.attrib["_FillValue"] = -9999.f0
 ```
 
 
@@ -208,11 +336,8 @@ tempvar.attrib["_FillValue"] = Float32(-9999.)
 
 * An attribute representing a vector with a single value (e.g. `[1]`) will be read back as a scalar (`1`) (same behavior in python netCDF4 1.3.1).
 
-* NetCDF and Julia distinguishes between a vector of chars and a string, but both are returned as string for ease of use, in particular
-an attribute representing a vector of chars `['u','n','i','t','s']` will be read back as the string `"units"`.
+* NetCDF and Julia distinguishes between a vector of chars and a string, but both are returned as string for ease of use, in particular an attribute representing a vector of chars `['u','n','i','t','s']` will be read back as the string `"units"`.
 
 * An attribute representing a vector of chars `['u','n','i','t','s','\0']` will also be read back as the string `"units"` (issue #12).
 
 
-<!--  LocalWords:  NCDatasets jl Datasets Dataset netCDF
- -->
