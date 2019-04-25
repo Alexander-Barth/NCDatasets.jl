@@ -625,13 +625,34 @@ function nc_put_var(ncid::Integer,varid::Integer,data)
     dimids = nc_inq_vardimid(ncid,varid)
     ndims = length(dimids)
     ncsize = ntuple(i -> nc_inq_dimlen(ncid,dimids[ndims-i+1]), ndims)
-    if ncsize != size(data)
-        path = nc_inq_path(ncid)
-        varname = nc_inq_varname(ncid,varid)
-        throw(NetCDFError(-1,"wrong size of variable '$varname' (size $ncsize) in file '$path' for an array of size $(size(data))"))
-    end
 
-    nc_unsafe_put_var(ncid::Integer,varid::Integer,data)
+    if isempty(nc_inq_unlimdims(ncid))
+        if ncsize != size(data)
+            path = nc_inq_path(ncid)
+            varname = nc_inq_varname(ncid,varid)
+            throw(NetCDFError(-1,"wrong size of variable '$varname' (size $ncsize) in file '$path' for an array of size $(size(data))"))
+        end
+
+        nc_unsafe_put_var(ncid,varid,data)
+    else
+        # honor this good advice:
+
+        # Take care when using this function with record variables (variables
+        # that use the ::NC_UNLIMITED dimension). If you try to write all the
+        # values of a record variable into a netCDF file that has no record data
+        # yet (hence has 0 records), nothing will be written. Similarly, if you
+        # try to write all the values of a record variable but there are more
+        # records in the file than you assume, more in-memory data will be
+        # accessed than you supply, which may result in a segmentation
+        # violation. To avoid such problems, it is better to use the nc_put_vara
+        # interfaces for variables that use the ::NC_UNLIMITED dimension.
+
+        # https://github.com/Unidata/netcdf-c/blob/48cc56ea3833df455337c37186fa6cd7fac9dc7e/libdispatch/dvarput.c#L895
+
+        startp = zeros(ndims)
+        countp = Int[reverse(size(data))...,]
+        nc_put_vara(ncid,varid,startp,countp,data)
+    end
 end
 
 function nc_get_var!(ncid::Integer,varid::Integer,ip::Array{Char,N}) where N
@@ -696,9 +717,9 @@ function nc_get_var1(::Type{Vector{T}},ncid::Integer,varid::Integer,indexp) wher
     return data
 end
 
-# function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,op)
-#     check(ccall((:nc_put_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,op))
-# end
+function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,op)
+    check(ccall((:nc_put_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,op))
+end
 
 function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip)
      check(ccall((:nc_get_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,ip))
