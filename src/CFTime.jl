@@ -6,13 +6,13 @@ if VERSION >= v"0.7.0-beta.0"
     import Dates: UTInstant, Millisecond
     import Dates: year,  month,  day, hour, minute, second, millisecond
     import Dates: daysinmonth, daysinyear, yearmonthday, yearmonth
-    import Dates: monthday, len
+    import Dates: monthday, len, dayofyear, firstdayofyear
 else
     using Missings
     import Base.Dates: UTInstant, Millisecond
     import Base.Dates: year,  month,  day, hour, minute, second, millisecond
     import Base.Dates: daysinmonth, daysinyear, yearmonthday, yearmonth
-    import Base.Dates: monthday, len
+    import Base.Dates: monthday, len, dayofyear, firstdayofyear
     import Compat: occursin
 end
 
@@ -772,6 +772,24 @@ Simultaneously return the month and day parts of `dt`.
 """
 monthday(dt::AbstractCFDateTime) = (Dates.month(dt),Dates.day(dt))
 
+
+"""
+    firstdayofyear(dt::AbstractCFDateTime) -> Int
+
+Return the first day of the year including the date `dt`
+"""
+firstdayofyear(dt::T) where T <: AbstractCFDateTime = T(Dates.year(dt),1,1,0,0,0)
+
+
+"""
+    dayofyear(dt::AbstractCFDateTime) -> Int
+
+Return the day of the year for dt with January 1st being day 1.
+"""
+function dayofyear(dt::AbstractCFDateTime)
+    t0 = firstdayofyear(dt)
+    return Dates.value(dt - t0) ÷ (24*60*60*1000) + 1
+end
 
 function Dates.len(first::T, last::T, step::DT) where T <: AbstractCFDateTime where
     DT <: Union{Dates.Day,Dates.Hour,Dates.Minute,Dates.Second,Dates.Millisecond}

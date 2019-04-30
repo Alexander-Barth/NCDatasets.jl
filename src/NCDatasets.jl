@@ -1650,6 +1650,7 @@ export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,
 
 export CFTime
 export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
+export dayofyear, firstdayofyear
 
 export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
     DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime

@@ -245,6 +245,8 @@ daysinyear
 yearmonthday
 yearmonth
 monthday
+firstdayofyear
+dayofyear
 CFTime.timedecode
 CFTime.timeencode
 ```

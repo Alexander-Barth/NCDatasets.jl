@@ -403,3 +403,8 @@ end
 @test parse(DateTimeNoLeap,"1999-12-05", dateformat"yyyy-mm-dd") == DateTimeNoLeap(1999,12,05)
 @test DateTimeNoLeap("1999-12-05", "yyyy-mm-dd") == DateTimeNoLeap(1999,12,05)
 @test DateTimeNoLeap("1999-12-05", dateformat"yyyy-mm-dd") == DateTimeNoLeap(1999,12,05)
+
+# issue 29
+@test firstdayofyear(DateTimeNoLeap(2008, 12, 31)) == DateTimeNoLeap(2008, 1, 1)
+@test dayofyear(DateTimeNoLeap(2008, 12, 31)) == 365
+@test dayofmonth(DateTimeAllLeap(2008, 2, 29)) == 29
