@@ -23,6 +23,19 @@ Pkg.build("NCDatasets")
 
 ## Tutorial
 
+### Load a variable from a netCDF file
+
+In the following example, we load the variable with the name `tp` from the NetCDF file `"ECMWF_ERA-40_subset.nc"` and the attribute named `"units"`:.
+
+```julia
+using NCDatasets
+download("https://www.unidata.ucar.edu/software/netcdf/examples/ECMWF_ERA-40_subset.nc","ECMWF_ERA-40_subset.nc");
+ds = Dataset("ECMWF_ERA-40_subset.nc")
+tp = ds["tp"][:];
+tp_units = ds["tp"].attrib["units"]
+close(ds)
+```
+
 ### Create a netCDF file using the metadata of an existing netCDF file as template
 
 The utility function [`ncgen`](https://alexander-barth.github.io/NCDatasets.jl/stable/#NCDatasets.ncgen)
@@ -231,13 +244,13 @@ DateTimeProlepticGregorian
 DateTimeAllLeap
 DateTimeNoLeap
 DateTime360Day
-Dates.year(dt::AbstractCFDateTime)
-Dates.month(dt::AbstractCFDateTime)
-Dates.day(dt::AbstractCFDateTime)
-Dates.hour(dt::AbstractCFDateTime)
-Dates.minute(dt::AbstractCFDateTime)
-Dates.second(dt::AbstractCFDateTime)
-Dates.millisecond(dt::AbstractCFDateTime)
+NCDatasets.year(dt::AbstractCFDateTime)
+NCDatasets.month(dt::AbstractCFDateTime)
+NCDatasets.day(dt::AbstractCFDateTime)
+NCDatasets.hour(dt::AbstractCFDateTime)
+NCDatasets.minute(dt::AbstractCFDateTime)
+NCDatasets.second(dt::AbstractCFDateTime)
+NCDatasets.millisecond(dt::AbstractCFDateTime)
 convert
 reinterpret
 daysinmonth
