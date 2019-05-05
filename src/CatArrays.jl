@@ -105,6 +105,7 @@ end
 
 
 function Base.getindex(CA::CatArray{T,N},idx...) where {T,N}
+    checkbounds(CA,idx...)
 
     ind,squeezedim = normalizeindexes(size(CA),idx)
 

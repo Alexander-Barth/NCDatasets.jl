@@ -104,6 +104,10 @@ var = variable(mfds,varname);
 data = var[:,:,:]
 
 @test C == var[:,:,:]
+
+@test_throws BoundsError var[:,:,end+1]
+@test_throws BoundsError mfds[varname].var[:,:,end+1]
+
 @test mfds.attrib["history"] == "foo"
 @test var.attrib["units"] == "meter second-1"
 
