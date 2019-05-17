@@ -475,31 +475,54 @@ end;
 ```
 
 """
-function Dataset(filename::AbstractString,mode::AbstractString = "r";
-                 format::Symbol = :netcdf4, attrib = [])
+function Dataset(filename::AbstractString,
+                 mode::AbstractString = "r";
+                 format::Symbol = :netcdf4,
+                 diskless = false,
+                 persist = false,
+                 attrib = [])
+
     ncid = -1
     isdefmode = [false]
 
-    if mode == "r"
-        ncid = nc_open(filename,NC_NOWRITE)
-    elseif mode == "a"
-        ncid = nc_open(filename,NC_WRITE)
+    if (mode == "r") || (mode == "a")
+        ncmode =
+            if (mode == "r")
+                NC_NOWRITE
+            else
+                NC_WRITE
+            end
+
+        if diskless
+            ncmode = ncmode | NC_DISKLESS
+        end
+
+        ncid = nc_open(filename,ncmode)
     elseif mode == "c"
-        mode  = NC_CLOBBER
+        ncmode  = NC_CLOBBER
 
         if format == :netcdf3_64bit_offset
-            mode = mode | NC_64BIT_OFFSET
+            ncmode = ncmode | NC_64BIT_OFFSET
         elseif format == :netcdf4_classic
-            mode = mode | NC_NETCDF4 | NC_CLASSIC_MODEL
+            ncmode = ncmode | NC_NETCDF4 | NC_CLASSIC_MODEL
         elseif format == :netcdf4
-            mode = mode | NC_NETCDF4
+            ncmode = ncmode | NC_NETCDF4
         elseif format == :netcdf3_classic
             # do nothing
         else
             throw(NetCDFError(-1, "Unkown format '$(format)' for filename '$(filename)'"))
         end
 
-        ncid = nc_create(filename,mode)
+        if diskless
+            ncmode = ncmode | NC_DISKLESS
+
+            if persist
+                ncmode = ncmode | NC_PERSIST
+            end
+        end
+
+
+        ncid = nc_create(filename,ncmode)
         isdefmode[1] = true
     else
         throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
