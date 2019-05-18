@@ -8,6 +8,7 @@ else
 end
 
 using Compat
+using BenchmarkTools
 
 sz = (400,400)
 data = randn(sz)
