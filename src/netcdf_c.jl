@@ -267,7 +267,7 @@ function nc_open(path,mode::Integer)
 
     code = ccall((:nc_open,libnetcdf),Cint,(Cstring,Cint,Ptr{Cint}),path,mode,ncidp)
 
-    if code == Cint(0)
+    if code == NC_NOERR
         return ncidp[1]
         # otherwise throw an error message
     else
@@ -1181,9 +1181,20 @@ end
 function nc_inq_varid(ncid::Integer,name)
     varidp = zeros(Cint,1)
 
-    check(ccall((:nc_inq_varid,libnetcdf),Cint,(Cint,Cstring,Ptr{Cint}),ncid,name,varidp))
+    code = ccall((:nc_inq_varid,libnetcdf),Cint,(Cint,Cstring,Ptr{Cint}),ncid,name,varidp);
+    if code == NC_NOERR
+        return varidp[1]
+    else
+        # return a more helpful error message (i.e. with the path)
+        path =
+            try
+                nc_inq_path(ncid)
+            catch
+                "<unknown>"
+            end
 
-    return varidp[1]
+        throw(NetCDFError(code, "Variable '$name' not found in file $path"))
+    end
 end
 
 function nc_inq_varname(ncid::Integer,varid::Integer)
