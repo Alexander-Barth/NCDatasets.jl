@@ -171,12 +171,13 @@ ds = Dataset("test.nc","a")
 v_cf = ds["var"]
 ```
 
-The variable `v_cf` has the type `CFVariable`. No data is actually loaded from disk, but you can query its size, number of dimensions, number elements, ... by the functions `size`, `ndims`, `length` as ordinary Julia arrays. Once you index, the variable `v_cf`, then the data is loaded and stored into a `DataArray`:
+The variable `v_cf` has the type `CFVariable`. No data is actually loaded from disk, but you can query its size, number of dimensions, number elements, ... by the functions `size`, `ndims`, `length` as ordinary Julia arrays. Once you index, the variable `v_cf`, then the data is loaded and stored as an `Array`:
 
 ```julia
-v_da = v_cf[:,:]
+v_da = v_cf[:,:] # or v_da = v_cf[:]
 ```
 
+Note that even if the variable `v_cf` has 2 (or more dimension), the index operation `v_cf[:]` preserves its actual shape and does not generate a flat vector of the data (unlike regular Julia arrays). As load operations are very common, it was consired advantageous to have a consice syntax.
 
 
 ## Attributes
@@ -271,6 +272,43 @@ ncgen
 nomissing
 varbyattrib
 ```
+
+# Performance tips
+
+* Reading data from a file is not type-stable, because the type of the output of the read operation does depedent on the type defined in the NetCDF files and the value of various attribute (like `scale_factor`, `add_offset` and `units` for time convertion). All this information cannot be inferred from a static analysis of the source code. It is therefore recommended to use
+[type annotation](https://docs.julialang.org/en/v1/manual/types/index.html#Type-Declarations-1)
+if resulting type of a read operation in known:
+
+```julia
+ds = Dataset("file.nc")
+temperature = ds["temperature"][:] :: Array{Float64,2}
+close(ds)
+```
+
+Alternatively, one can also use so called "[function barriers]"(https://docs.julialang.org/en/v1/manual/performance-tips/index.html#kernel-functions-1) or the in-place `load!` function:
+
+```julia
+ds = Dataset("file.nc")
+
+temperature = zeros(10,20)
+load!(ds["temperature"],temperature,:,:)
+```
+
+* Most julia functions (like `mean`, `sum`,... from the module Statistics) access an array element-wise. It is generally much faster to load the data in memory (if possible) to make the computation.
+
+```
+using NCDatasets, BenchmarkTools, Statistics
+ds = Dataset("file.nc","c")
+data = randn(100,100);
+defVar(ds,"myvar",data,("lon","lat"))
+close(ds)
+
+ds = Dataset("file.nc")
+@btime mean(ds["myvar"]) # takes 107.357 ms
+@btime mean(ds["myvar"][:]) # takes 106.873 μs, 1000 times faster
+close(ds)
+```
+
 
 # Multi-file support (experimental)
 

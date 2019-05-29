@@ -41,6 +41,9 @@ NCDatasets.Dataset(filename,"c") do ds
         v[:,:] = data
         @test v[:,:] == data[:,:]
 
+        # issue #33
+        @test Array(v) == data
+
         @test v[2,:] == data[2,:]
 
         @test v[:,3] == data[:,3]

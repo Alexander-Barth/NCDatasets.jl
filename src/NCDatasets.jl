@@ -14,6 +14,8 @@ import Base.convert
 import Compat: @debug, findfirst
 
 import Base: close
+import Base: Array
+
 include("CFTime.jl")
 using .CFTime
 
@@ -1427,12 +1429,14 @@ Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=inde
 
 Base.display(v::Union{Variable,CFVariable}) = show(Compat.stdout,v)
 
+Base.Array(v::Union{CFVariable,Variable}) = v[:]
 
 # Common methods
 
 const NCIterable = Union{BaseAttributes,AbstractDimensions,AbstractDataset,AbstractGroups}
 
 Base.length(a::NCIterable) = length(keys(a))
+
 
 """
     haskey(ds::Dataset,varname)
