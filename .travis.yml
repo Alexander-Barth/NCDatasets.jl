@@ -41,6 +41,7 @@ jobs:
       os: linux
       script:
         - julia --project=docs/ -e 'using Pkg; Pkg.instantiate();
-                                    Pkg.develop(PackageSpec(path=pwd()))'
+                                    Pkg.develop(PackageSpec(path=pwd()));
+                                    Pkg.build("NCDatasets")'
         - julia --project=docs/ docs/make.jl
       after_success: skip
