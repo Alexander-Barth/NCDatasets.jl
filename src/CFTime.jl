@@ -392,7 +392,7 @@ Convert a variable `dt` of type `DateTime`, `DateTimeStandard`, `DateTimeJulian`
 `DateTimeProlepticGregorian`, `DateTimeAllLeap`, `DateTimeNoLeap` or
 `DateTime360Day` into the date time type `T` using the same values for
 year, month, day, minute, second and millisecond.
-The convertion might fail if a particular date does not exist in the
+The conversion might fail if a particular date does not exist in the
 target calendar.
 """
 function reinterpret(::Type{T1}, dt::T2) where T1 <: Union{AbstractCFDateTime,DateTime} where T2 <: Union{AbstractCFDateTime,DateTime}
@@ -600,7 +600,7 @@ the specified calendar. Valid values for `calendar` are
 
 If `prefer_datetime` is `true` (default), dates are
 converted to the `DateTime` type (for the calendars
-"standard", "gregorian", "proleptic_gregorian" and "julian"). Such convertion is
+"standard", "gregorian", "proleptic_gregorian" and "julian"). Such conversion is
 not possible for the other calendars.
 
 | Calendar            | Type (prefer_datetime=true) | Type (prefer_datetime=false) |

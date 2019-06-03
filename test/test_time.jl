@@ -290,7 +290,7 @@ datetuple(dt::DateTime) = (Dates.year(dt),Dates.month(dt),Dates.day(dt),
                            Dates.millisecond(dt))
 
 
-# check convertion
+# check conversion
 
 for T1 in [DateTimeProlepticGregorian,DateTimeStandard,DateTime]
     for T2 in [DateTimeProlepticGregorian,DateTimeStandard,DateTime]
