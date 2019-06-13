@@ -77,6 +77,13 @@ Dataset(filename,"c") do ds
     @test ds.dim["lon"] == sz[1]
     @test ds.dim["lat"] == sz[2]
 
+    # test Union{Missing,T}
+    defVar(ds,"foo",[missing,1.,2.],("dim",), fillvalue = -9999.)
+    @test isequal(ds["foo"][:], [missing,1.,2.])
+
+    defVar(ds,"scalar",123.)
+    @test ds["scalar"][:] == 123.
+
     # load in-place
     data2 = similar(data)
     NCDatasets.load!(ds["temp"].var,data2,:,:)

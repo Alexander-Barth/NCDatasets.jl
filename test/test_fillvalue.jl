@@ -1,4 +1,10 @@
+using NCDatasets
 using Missings
+if VERSION >= v"0.7.0-beta.0"
+    using Test
+else
+    using Base.Test
+end
 
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
@@ -96,6 +102,16 @@ v.attrib["_FillValue"] = fv
 
 v[:] = data
 @test all(ismissing.(v[:]))
+
+v[1] = 1234.
+@test !ismissing(v[1])
+
+v[1] = missing
+@test ismissing(v[1])
+
+v[1] = 1234.
+v[1:1] .= missing
+@test ismissing(v[1])
 
 NCDatasets.close(ds)
 

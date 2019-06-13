@@ -699,6 +699,20 @@ function defVar(ds::Dataset,name,data,dimnames; kwargs...)
     vtype = eltype(data)
     if vtype == DateTime
         vtype = Float64
+    elseif vtype == Union{Missing, Int8}
+        vtype = Int8
+    elseif vtype == Union{Missing, UInt8}
+        vtype = UInt8
+    elseif vtype == Union{Missing, Int16}
+        vtype = Int16
+    elseif vtype == Union{Missing, Int32}
+        vtype = Int32
+    elseif vtype == Union{Missing, Int64}
+        vtype = Int64
+    elseif vtype == Union{Missing, Float32}
+        vtype = Float32
+    elseif vtype == Union{Missing, Float64}
+        vtype = Float64
     end
 
     # define the dimensions if necessary
@@ -709,6 +723,13 @@ function defVar(ds::Dataset,name,data,dimnames; kwargs...)
     end
 
     v = defVar(ds,name,vtype,dimnames; kwargs...)
+    v[:] = data
+    return v
+end
+
+
+function defVar(ds::Dataset,name,data::T; kwargs...) where T <: Number
+    v = defVar(ds,name,T,(); kwargs...)
     v[:] = data
     return v
 end
@@ -1302,6 +1323,10 @@ end
 
 function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N
     v.var[indexes...] = fill(v.attrib["_FillValue"],size(data))
+end
+
+function Base.setindex!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
+    v.var[indexes...] = v.attrib["_FillValue"]
 end
 
 
