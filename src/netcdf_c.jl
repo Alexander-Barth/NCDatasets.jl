@@ -658,13 +658,18 @@ end
 function nc_get_var!(ncid::Integer,varid::Integer,ip::Array{Char,N}) where N
     tmp = Array{UInt8,N}(undef,size(ip))
     nc_get_var!(ncid,varid,tmp)
-    ip[:] = convert(Array{Char,1},tmp[:])
+    for i in eachindex(tmp)
+        ip[i] = Char(tmp[i])
+    end
 end
 
 function nc_get_var!(ncid::Integer,varid::Integer,ip::Array{String,N}) where N
     tmp = Array{Ptr{UInt8},N}(undef,size(ip))
     nc_get_var!(ncid,varid,tmp)
-    ip[:] = unsafe_string.(tmp)
+    for i in eachindex(tmp)
+        #ip[:] = unsafe_string.(tmp)
+        ip[i] = unsafe_string(tmp[i])
+    end
 end
 
 function nc_get_var!(ncid::Integer,varid::Integer,ip::Array{Vector{T},N}) where {T,N}
@@ -756,13 +761,18 @@ end
 function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{Char,N}) where N
     tmp = Array{UInt8,N}(undef,size(ip))
     nc_get_vars!(ncid,varid,startp,countp,stridep,tmp)
-    ip[:] = convert(Array{Char,1},tmp[:])
+    for i in eachindex(tmp)
+        ip[i] = Char(tmp[i])
+    end
 end
 
 function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{String,N}) where N
     tmp = Array{Ptr{UInt8},N}(undef,size(ip))
     nc_get_vars!(ncid,varid,startp,countp,stridep,tmp)
-    ip[:] = unsafe_string.(tmp)
+    for i in eachindex(tmp)
+        #ip[:] = unsafe_string.(tmp)
+        ip[i] = unsafe_string(tmp[i])
+    end
 end
 
 function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{Vector{T},N}) where {T,N}
