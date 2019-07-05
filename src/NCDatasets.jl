@@ -16,8 +16,7 @@ import Compat: @debug, findfirst
 import Base: close
 import Base: Array
 
-include("CFTime.jl")
-using .CFTime
+using CFTime
 
 include("CatArrays.jl")
 export CatArrays
