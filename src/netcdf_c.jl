@@ -732,8 +732,13 @@ end
 
 function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,
                      op::Array{Char,N}) where N
-    nc_put_vars(ncid,varid,startp,countp,stridep,
-                convert(Array{UInt8,N},op))
+    tmp = Array{UInt8,N}(undef,size(op))
+    for i in eachindex(op)
+        tmp[i] = UInt8(op[i])
+    end
+
+    nc_put_vars(ncid,varid,startp,countp,stridep,tmp)
+                #convert(Array{UInt8,N},op))
 end
 
 function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,
