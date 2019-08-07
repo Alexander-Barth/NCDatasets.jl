@@ -10,6 +10,7 @@ using Base
 using Missings
 using Compat
 using DataStructures: OrderedDict
+using GeoData
 import Base.convert
 import Compat: @debug, findfirst
 
@@ -20,6 +21,9 @@ using CFTime
 
 include("CatArrays.jl")
 export CatArrays
+
+# Are these dimension names actually canonical?
+const dimmap = Dict("lat" => GeoData.Lat, "lon" => GeoData.Lon, "time" => GeoData.Time) 
 
 
 # NetCDFError, error check and netcdf_c.jl from NetCDF.jl (https://github.com/JuliaGeo/NetCDF.jl)
@@ -882,7 +886,20 @@ function Base.getindex(ds::AbstractDataset,varname::AbstractString)
         rettype = Union{Missing,eltype(v)}
     end
 
-    return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib)}(v,v.attrib)
+    # Construct dims from dimnames
+    # retreiving var arrays for each dimension
+    dnames = dimnames(v)
+    dims = []
+    if !(name(v) in dnames)
+        for dname in dnames
+            dimvar = ds[dname]
+            # Wrap a copy of the dimension variable array inthe matching Dim 
+            push!(dims, dimmap[dname]([dimvar...]))
+        end
+    end
+    dims = (dims...,)
+
+    return CFVariable{rettype,ndims(v),typeof(dims),typeof(v),typeof(v.attrib)}(v, dims, v.attrib)
 end
 
 
@@ -1241,12 +1258,23 @@ end
 # Variable (with applied transformations following the CF convention)
 
 
-mutable struct CFVariable{T,N,TV,TA}  <: AbstractArray{T, N}
+mutable struct CFVariable{T,N,D,TV,TA}  <: AbstractGeoArray{T,N,D}
     var::TV
+    dims::D
     attrib::TA
 end
 
+Base.parent(v::CFVariable) = v.var
 Base.size(v::CFVariable) = size(v.var)
+
+GeoData.dims(v::CFVariable) = v.dims
+GeoData.rebuild(v::CFVariable, data, dims, refdims, missingval=missing) = begin
+    metadata = Dict(:name => get(v.attrib, "long_name", ""),
+                :shortname => get(v.attrib, "standard_name", ""),
+                :attrib => Dict(v.attrib))
+    GeoArray(data, dims, refdims, missingval, get(v.attrib, "units", ""), metadata)
+end
+
 dimnames(v::CFVariable)  = dimnames(v.var)
 name(v::CFVariable)  = name(v.var)
 chunking(v::CFVariable,storage,chunksize) = chunking(v.var,storage,chunksize)
@@ -1316,7 +1344,7 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
     else
         datam = Array{Union{eltype(data),Missing}}(data)
         datam[mask] .= missing
-        return datam
+        return GeoData.rebuild(v, datam, GeoData.slicedims(v, indexes)..., missing)
     end
 end
 
