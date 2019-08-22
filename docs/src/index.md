@@ -238,32 +238,7 @@ end
 
 # Time functions
 
-```@docs
-DateTimeStandard
-DateTimeJulian
-DateTimeProlepticGregorian
-DateTimeAllLeap
-DateTimeNoLeap
-DateTime360Day
-NCDatasets.year(dt::AbstractCFDateTime)
-NCDatasets.month(dt::AbstractCFDateTime)
-NCDatasets.day(dt::AbstractCFDateTime)
-NCDatasets.hour(dt::AbstractCFDateTime)
-NCDatasets.minute(dt::AbstractCFDateTime)
-NCDatasets.second(dt::AbstractCFDateTime)
-NCDatasets.millisecond(dt::AbstractCFDateTime)
-convert
-reinterpret
-daysinmonth
-daysinyear
-yearmonthday
-yearmonth
-monthday
-firstdayofyear
-dayofyear
-CFTime.timedecode
-CFTime.timeencode
-```
+See DateTime-structures from [CFTime](http://juliageo.org/CFTime.jl/stable/) are used to represent time for non-standard calendars.
 
 # Utility functions
 
@@ -392,5 +367,3 @@ tempvar.attrib["_FillValue"] = -9999.f0
 * NetCDF and Julia distinguishes between a vector of chars and a string, but both are returned as string for ease of use, in particular an attribute representing a vector of chars `['u','n','i','t','s']` will be read back as the string `"units"`.
 
 * An attribute representing a vector of chars `['u','n','i','t','s','\0']` will also be read back as the string `"units"` (issue #12).
-
-

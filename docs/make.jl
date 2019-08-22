@@ -1,21 +1,7 @@
-using Documenter
-using NCDatasets
+using Documenter, NCDatasets
 
-makedocs(
-    format = Documenter.HTML(),
-    modules = [NCDatasets],
-    sitename = "NCDatasets",
-    pages = [
-        "index.md"]
-)
-
-# Documenter can also automatically deploy documentation to gh-pages.
-# See "Hosting Documentation" and deploydocs() in the Documenter manual
-# for more information.
+makedocs(modules = [NCDatasets], sitename = "NCDatasets.jl")
 
 deploydocs(
     repo = "github.com/Alexander-Barth/NCDatasets.jl.git",
-    target = "build",
-    deps = nothing,
-    make = nothing,
 )
