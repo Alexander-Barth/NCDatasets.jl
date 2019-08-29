@@ -6,7 +6,7 @@ standard name modifier `modifier`. It can be used for example to access
 related variable like status flags.
 """
 function ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
-    ds = Dataset(ncv.var.ncid,ncv.var.isdefmode)
+    ds = Dataset(ncv)
     varname = name(ncv)
 
     if !haskey(ncv.attrib,"ancillary_variables")
@@ -84,3 +84,72 @@ function filter(ncv, indices...; accepted_status_flags = nothing)
     return data
 end
 
+
+"""
+    cv = coord(v::Union{CFVariable,Variable},standard_name)
+
+Find the coordinate of the variable `v` by the standard name `standard_name`
+or some heuristics based on units. If the heuristics fail to detect the coordinate,
+consider to modify the netCDF file to add the `standard_name` attribute.
+All dimensions of the coordinate must also be dimensions of the variable `v`.
+
+## Example
+```julia
+using NCDatasets
+ds = Dataset("file.nc")
+ncv = ds["SST"]
+lon = coord(ncv,"longitude")[:]
+lat = coord(ncv,"latitude")[:]
+v = ncv[:]
+close(ds)
+```
+"""
+
+
+
+function coord(v::Union{CFVariable,Variable},standard_name)
+    matches = Dict(
+    "time" => [r".*since.*"],
+    "longitude" => [r"degree east",r"degrees east"],
+    "latitude" => [r"degree north",r"degrees north"],
+    )
+
+    ds = Dataset(v)
+    dims = Set(dimnames(v))
+
+    # find by standard name
+    for coord in varbyattrib(ds,standard_name = standard_name)
+        if Set(dimnames(coord))  ⊆ dims
+            return coord
+        end
+    end
+
+    # find by units
+    if haskey(matches,standard_name)
+        # prefer e.g. vectors over scalars
+        # this is necessary for ROMS model output
+        coordfound = nothing
+        coordndims = -1
+
+        for (_,coord) in ds
+            units = get(coord.attrib,"units","")
+
+            for re in matches[standard_name]
+                if match(re,units) != nothing
+                    if Set(dimnames(coord)) ⊆ dims
+                        if ndims(coord) > coordndims
+                            coordfound = coord
+                            coordndims = ndims(coord)
+                        end
+                    end
+                end
+            end
+        end
+
+        return coordfound
+    end
+
+    return nothing
+end
+
+export coord

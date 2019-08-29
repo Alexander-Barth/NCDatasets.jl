@@ -558,7 +558,6 @@ function Dataset(f::Function,args...; kwargs...)
 end
 
 
-
 """
     defDim(ds::Dataset,name,len)
 
@@ -913,6 +912,9 @@ mutable struct DeferVariable{T,N} <: AbstractVariable{T,N}
     data::OrderedDict
 end
 
+Dataset(var::Variable) = Dataset(var.ncid,var.isdefmode)
+
+
 # the size of a variable can change, i.e. for a variable with an unlimited
 # dimension
 Base.size(v::Variable) = (Int[nc_inq_dimlen(v.ncid,dimid) for dimid in v.dimids]...,)
@@ -1245,6 +1247,8 @@ mutable struct CFVariable{T,N,TV,TA}  <: AbstractArray{T, N}
     var::TV
     attrib::TA
 end
+
+Dataset(var::CFVariable) = Dataset(var.var)
 
 Base.size(v::CFVariable) = size(v.var)
 dimnames(v::CFVariable)  = dimnames(v.var)
