@@ -161,6 +161,7 @@ chunking
 deflate
 checksum
 loadragged
+NCDatasets.load!
 ```
 
 Different type of arrays are involved when working with NCDatasets. For instance assume that `test.nc` is a file with a `Float32` variable called `var`. Assume that we open this data set in append mode (`"a"`):
@@ -178,6 +179,13 @@ v_da = v_cf[:,:] # or v_da = v_cf[:]
 ```
 
 Note that even if the variable `v_cf` has 2 (or more dimension), the index operation `v_cf[:]` preserves its actual shape and does not generate a flat vector of the data (unlike regular Julia arrays). As load operations are very common, it was consired advantageous to have a consice syntax.
+
+### Coordinate variables
+
+```@docs
+coord
+```
+
 
 
 ## Attributes

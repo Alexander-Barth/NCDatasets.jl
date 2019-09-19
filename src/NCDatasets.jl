@@ -588,9 +588,11 @@ will be used to fill the NetCDF variable. The parameter `dimnames` is a tuple wi
 names of the dimension.  For scalar this parameter is the empty tuple `()`.
 The variable is returned (of the type CFVariable).
 
-Note if `data` is a vector or array of `DateTime` objects, then the dates are
-saved as double-precision floats and units "$(CFTime.DEFAULT_TIME_UNITS)" (unless a time unit
-is specifed with the `attrib` keyword described below)
+!!! note
+
+    Note if `data` is a vector or array of `DateTime` objects, then the dates are
+    saved as double-precision floats and units "$(CFTime.DEFAULT_TIME_UNITS)" (unless a time unit
+    is specifed with the `attrib` keyword as described below)
 
 ## Keyword arguments
 
@@ -601,7 +603,7 @@ is specifed with the `attrib` keyword described below)
 * `shuffle`: If true, the shuffle filter is activated which can improve the compression ratio.
 * `checksum`: The checksum method can be `:fletcher32` or `:nochecksum` (checksumming is disabled, which is the default)
 * `attrib`: An iterable of attribute name and attribute value pairs, for example a `Dict`, `DataStructures.OrderedDict` or simply a vector of pairs (see example below)
-* `typename` (string): The name of the NetCDF type required for vlen arrays [1]
+* `typename` (string): The name of the NetCDF type required for [vlen arrays](https://web.archive.org/save/https://www.unidata.ucar.edu/software/netcdf/netcdf-4/newdocs/netcdf-c/nc_005fdef_005fvlen.html)
 
 `chunksizes`, `deflatelevel`, `shuffle` and `checksum` can only be
 set on NetCDF 4 files.
@@ -633,8 +635,6 @@ julia> Dataset("test_file.nc","c") do ds
        end;
 
 ```
-
-[1]: https://web.archive.org/save/https://www.unidata.ucar.edu/software/netcdf/netcdf-4/newdocs/netcdf-c/nc_005fdef_005fvlen.html
 """
 function defVar(ds::Dataset,name,vtype::DataType,dimnames; kwargs...)
     # all keyword arguments as dictionary
@@ -1199,14 +1199,11 @@ end
 """
      data = loadragged(ncvar,index::Colon)
 
-Load data from `ncvar` in the contiguous ragged array representation [1] as a
+Load data from `ncvar` in the [contiguous ragged array representation](https://web.archive.org/web/20190111092546/http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#_contiguous_ragged_array_representation) as a
 vector of vectors. It is typically used to load a list of profiles
 or time series of different length each.
 
-The indexed ragged array representation [2] is currently not supported.
-
-[1]: https://web.archive.org/web/20190111092546/http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#_contiguous_ragged_array_representation
-[2]: https://web.archive.org/web/20190111092546/http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#_indexed_ragged_array_representation
+The [indexed ragged array representation](https://web.archive.org/web/20190111092546/http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#_indexed_ragged_array_representation) is currently not supported.
 """
 function loadragged(ncvar,index::Colon)
     ds = Dataset(ncvar.var.ncid,ncvar.var.isdefmode)

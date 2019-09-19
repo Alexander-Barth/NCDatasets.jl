@@ -89,7 +89,7 @@ end
     cv = coord(v::Union{CFVariable,Variable},standard_name)
 
 Find the coordinate of the variable `v` by the standard name `standard_name`
-or some heuristics based on units. If the heuristics fail to detect the coordinate,
+or some [standardized heuristics based on units](https://web.archive.org/web/20190918144052/http://cfconventions.org/cf-conventions/cf-conventions.html#latitude-coordinate). If the heuristics fail to detect the coordinate,
 consider to modify the netCDF file to add the `standard_name` attribute.
 All dimensions of the coordinate must also be dimensions of the variable `v`.
 
@@ -106,9 +106,15 @@ close(ds)
 """
 function coord(v::Union{CFVariable,Variable},standard_name)
     matches = Dict(
-    "time" => [r".*since.*"],
-    "longitude" => [r"degree east",r"degrees east"],
-    "latitude" => [r"degree north",r"degrees north"],
+        "time" => [r".*since.*"],
+        # It is great to have choice!
+        # https://web.archive.org/web/20190918144052/http://cfconventions.org/cf-conventions/cf-conventions.html#latitude-coordinate
+        "longitude" => [r"degree east",r"degrees east",r"degrees_east",
+                        r"degree_east", r"degree_E", r"degrees_E",
+                        r"degreeE", r"degreesE"],
+        "latitude" => [r"degree north",r"degrees north",r"degrees_north",
+                       r"degree_north", r"degree_N", r"degrees_N", r"degreeN",
+                       r"degreesN"],
     )
 
     ds = Dataset(v)

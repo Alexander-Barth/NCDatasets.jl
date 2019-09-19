@@ -14,10 +14,7 @@ do not contain the dimension `aggdim` are assumed constant.
 
 If deferopen is `false`, all files are opened at the same time.
 However the operating system might limit the number of open files. In Linux,
-the limit can be controled with the command `ulimit` [1,2].
-
-[1]: https://stackoverflow.com/questions/34588/how-do-i-change-the-number-of-open-files-limit-in-linux
-[2]: https://unix.stackexchange.com/questions/8945/how-can-i-increase-open-files-limit-for-all-processes/8949#8949
+the limit can be controled with the [command `ulimit`](https://stackoverflow.com/questions/34588/how-do-i-change-the-number-of-open-files-limit-in-linux).
 """
 function Dataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, deferopen = false) where N where TS <: AbstractString
     if !(mode == "r" || mode == "a")
