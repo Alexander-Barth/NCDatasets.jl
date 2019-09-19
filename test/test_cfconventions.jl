@@ -1,9 +1,5 @@
 using NCDatasets
-if VERSION >= v"0.7.0-beta.0"
-    using Test
-else
-    using Base.Test
-end
+using Test
 
 fname = tempname()
 
@@ -28,15 +24,13 @@ ncQC_LAT.attrib["_FillValue"] = Int8(10)
 ncQC_LAT.attrib["flag_values"] = Int8[0, 1, 2, 3, 4, 6, 9]
 ncQC_LAT.attrib["flag_meanings"] = "no_qc_performed good_data probably_good_data probably_bad_data bad_data spike missing_value"
 
-ncDEPTH = defVar(ds,"DEPTH", Float64, ()) 
+ncDEPTH = defVar(ds,"DEPTH", Float64, ())
 ncDEPTH.attrib["standard_name"] = "depth"
 ncDEPTH.attrib["long_name"] = "Depth coordinate"
 ncDEPTH.attrib["units"] = "m"
 ncDEPTH.attrib["positive"] = "down"
 ncDEPTH.attrib["axis"] = "Z"
 ncDEPTH.attrib["reference_datum"] = "geographical coordinates, WGS84 projection"
-
-
 
 ncLAT[:] = [1.,2.,3.]
 ncQC_LAT[:] = [1,1,4]

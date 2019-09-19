@@ -277,7 +277,7 @@ function Base.setindex!(a::Attributes,data,name::AbstractString)
 end
 
 """
-   Base.keys(a::Attributes)
+    Base.keys(a::Attributes)
 
 Return a list of the names of all attributes.
 """
