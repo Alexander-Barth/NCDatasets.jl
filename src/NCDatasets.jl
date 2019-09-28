@@ -994,6 +994,7 @@ function Base.getindex(v::Variable,indexes::Int...)
 end
 
 function Base.setindex!(v::Variable{T,N},data,indexes::Int...) where N where T
+    @debug "$(@__LINE__)"
     datamode(v.ncid,v.isdefmode)
     # use zero-based indexes and reversed order
     nc_put_var1(v.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],T(data))
@@ -1016,6 +1017,7 @@ function Base.getindex(v::Variable{T,N},indexes::Colon...) where {T,N}
 end
 
 function Base.setindex!(v::Variable{T,N},data::T,indexes::Colon...) where {T,N}
+    @debug "setindex! colon $data"
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     tmp = fill(data,size(v))
     #@show "here number",indexes,size(v),fill(data,size(v))
@@ -1025,6 +1027,7 @@ end
 
 # call to v .= 123
 function Base.setindex!(v::Variable{T,N},data::Number) where {T,N}
+    @debug "setindex! $data"
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     tmp = fill(convert(T,data),size(v))
     #@show "here number",indexes,size(v),tmp

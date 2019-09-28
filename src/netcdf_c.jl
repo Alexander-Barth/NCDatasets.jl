@@ -691,7 +691,13 @@ function nc_put_var1(ncid::Integer,varid::Integer,indexp,op::Vector{T}) where T
 end
 
 function nc_put_var1(ncid::Integer,varid::Integer,indexp,op::T) where T
+    @debug "nc_put_var1",indexp,op
     check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),ncid,varid,indexp,T[op]))
+end
+
+function nc_put_var1(ncid::Integer,varid::Integer,indexp,op::Char)
+   @debug "nc_put_var1 char",indexp,op
+   check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),ncid,varid,indexp,[UInt8(op)]))
 end
 
 function nc_get_var1(::Type{Char},ncid::Integer,varid::Integer,indexp)

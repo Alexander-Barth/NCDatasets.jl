@@ -1,11 +1,7 @@
 using NCDatasets
-if VERSION >= v"0.7.0-beta.0"
-    using Test
-    using Dates
-    using Printf
-else
-    using Base.Test
-end
+using Test
+using Dates
+using Printf
 
 using Compat
 
@@ -86,8 +82,12 @@ v = defVar(ds,"var-Char",Char,("lon","lat"))
 v.var[:,:] = fill('a',size(v))
 @test all(i -> i == 'a',v.var[:,:][:])
 
+v.var[1,1] = 'x'
+@test v.var[1,1] == 'x'
+@test v.var[1,2] == 'a'
+
 # write scalar
-v.var[:,:] = 'b'
+v.var[:,:] .= 'b'
 @test all(i -> i == 'b',v.var[:,:][:])
 
 # write array (with transformation)
@@ -119,11 +119,8 @@ v[1:end,1:end] = 'h'
 v[:,:] = 'h'
 ref = fill('h',sz)
 
-if VERSION >= v"0.7.0-beta.0"
-    ref[1:2:end,1:2:end] .= Ref('i')
-else
-    ref[1:2:end,1:2:end] = 'i'
-end
+ref[1:2:end,1:2:end] .= Ref('i')
+#ref[1:2:end,1:2:end] .= 'i'
 v[1:2:end,1:2:end] = 'i'
 
 @test v[:,:] == ref

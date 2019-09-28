@@ -1,10 +1,5 @@
 using NCDatasets
-if VERSION >= v"0.7.0-beta.0"
-    using Test
-else
-    using Base.Test
-end
-
+using Test
 
 sz = (4,5)
 filename = tempname()

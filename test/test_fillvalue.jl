@@ -1,10 +1,6 @@
 using NCDatasets
 using Missings
-if VERSION >= v"0.7.0-beta.0"
-    using Test
-else
-    using Base.Test
-end
+using Test
 
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
