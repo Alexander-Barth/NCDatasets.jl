@@ -574,8 +574,11 @@ defDim(ds,"lon",100)
 
 This defines the dimension `lon` with the size 100.
 """
-defDim(ds::Dataset,name,len) = nc_def_dim(ds.ncid,name,
-                                          (isinf(len) ? NC_UNLIMITED : len))
+function defDim(ds::Dataset,name,len)
+    defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
+    dimid = nc_def_dim(ds.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
+    return nothing
+end
 
 """
     defVar(ds::Dataset,name,vtype,dimnames; kwargs...)

@@ -7,7 +7,6 @@ else
 end
 using NCDatasets
 
-
 sz = (4,5)
 filename = tempname()
 #filename = "/tmp/test-6.nc"
@@ -120,4 +119,16 @@ if VERSION >= v"0.7.0-beta.0"
 
     @test typeof(data11[1]) == Int64
     rm(filename)
+end
+
+
+# issue #36
+
+x, y = collect(1:10), collect(10:18)
+
+Dataset("temp1.nc", "c") do ds
+      defDim(ds, "x", length(x))
+      defVar(ds, "x", x, ("x",))
+      defDim(ds, "y", length(y))
+      defVar(ds, "y", y, ("y",))
 end
