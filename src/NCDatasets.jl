@@ -585,11 +585,17 @@ end
     defVar(ds::Dataset,name,data,dimnames; kwargs...)
 
 Define a variable with the name `name` in the dataset `ds`.  `vtype` can be
-Julia types in the table below (with the corresponding NetCDF type). Instead of
-providing the variable type one can directly give also the data `data` which
-will be used to fill the NetCDF variable. The parameter `dimnames` is a tuple with the
-names of the dimension.  For scalar this parameter is the empty tuple `()`.
+Julia types in the table below (with the corresponding NetCDF type). The
+parameter `dimnames` is a tuple with the names of the dimension.  For scalar
+this parameter is the empty tuple `()`.
 The variable is returned (of the type CFVariable).
+
+
+Instead of
+providing the variable type one can directly give also the data `data` which
+will be used to fill the NetCDF variable. In this case, the dimensions with
+the appropriate size will be created as required using the names in `dimnames`.
+
 
 !!! note
 
