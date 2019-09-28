@@ -1,10 +1,6 @@
-VERSION < v"0.7.0-beta2.199" && __precompile__()
-
 module NCDatasets
-if VERSION >= v"0.7.0-beta.0"
-    using Dates
-    using Printf
-end
+using Dates
+using Printf
 
 using Base
 using Missings
@@ -1145,13 +1141,9 @@ function Base.getindex(v::Variable,indexes::Union{Int,Colon,UnitRange{Int},StepR
     ind,squeezedim = normalizeindexes(size(v),indexes)
 
     data = v[ind...]
-    # squeeze any dimension which was indexed with a scalar
+    # drop any dimension which was indexed with a scalar
     if any(squeezedim)
-        return @static if VERSION >= v"0.7.0-beta2.188"
-            dropdims(data,dims=(findall(squeezedim)...,))
-        else
-            squeeze(data,dims=(findall(squeezedim)...,))
-        end
+        return dropdims(data,dims=(findall(squeezedim)...,))
     else
         return data
     end
@@ -1340,8 +1332,6 @@ end
 
 
 function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime}}
-
-    #@show "data-",typeof(data)
     attnames = keys(v.attrib)
     units =
         if "units" in attnames
@@ -1361,28 +1351,6 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
     throw(NetCDFError(-1, "time unit ('$units') of the variable $(name(v)) does not include the word ' since '"))
 end
 
-@static if VERSION < v"0.7"
-    function Base.setindex!(v::CFVariable,data::T,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime}}
-
-        attnames = keys(v.attrib)
-        units =
-            if "units" in attnames
-                v.attrib["units"]
-            else
-                @debug "set time units to $CFTime.DEFAULT_TIME_UNITS"
-                v.attrib["units"] = CFTime.DEFAULT_TIME_UNITS
-                CFTime.DEFAULT_TIME_UNITS
-            end
-
-        if occursin(" since ",units)
-            calendar = get(v.attrib,"calendar","standard")
-            v[indexes...] = timeencode(data,units,calendar)
-            return data
-        end
-
-        throw(NetCDFError(-1, "time unit ('$units') of the variable $(name(v)) does not include the word ' since '"))
-    end
-end
 
 function transform(v,offset,scale)
     if offset !== nothing
@@ -1491,18 +1459,12 @@ name `temperature`.
 Base.haskey(a::NCIterable,name::AbstractString) = name in keys(a)
 Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
 
-@static if VERSION >= v"0.7.0-beta.0"
-    function Base.iterate(a::NCIterable, state = keys(a))
-        if length(state) == 0
-            return nothing
-        end
-
-        return (state[1] => a[popfirst!(state)], state)
+function Base.iterate(a::NCIterable, state = keys(a))
+    if length(state) == 0
+        return nothing
     end
-else
-    Base.start(a::NCIterable) = keys(a)
-    Base.done(a::NCIterable,state) = length(state) == 0
-    Base.next(a::NCIterable,state) = (state[1] => a[popfirst!(state)], state)
+
+    return (state[1] => a[popfirst!(state)], state)
 end
 
 """
@@ -1659,16 +1621,7 @@ function nomissing(da::Array{Union{T,Missing},N}) where {T,N}
         error("arrays contains missing values (values equal to the fill values attribute in the NetCDF file)")
     end
 
-    if VERSION >= v"0.7.0-beta.0"
-         if isempty(da)
-            return Array{T,N}([])
-         else
-            return replace(da, missing => da[1])
-         end
-    else
-        # Illegal instruction (core dumped) in Julia 1.0.1
-        return Array{T,N}(da)
-    end
+    return Array{T,N}(da)
 end
 
 """
@@ -1678,13 +1631,7 @@ Retun the values of the array `da` of type `Array{Union{T,Missing},N}`
 as a regular Julia array `a` by replacing all missing value by `value`.
 """
 function nomissing(da::Array{Union{T,Missing},N},value) where {T,N}
-    if VERSION >= v"0.7.0-beta.0"
-        return replace(da, missing => T(value))
-    else
-        tmp = fill(T(value),size(da))
-        tmp[.!ismissing.(da)] = da[.!ismissing.(da)]
-        return tmp
-    end
+    return replace(da, missing => T(value))
 end
 
 

@@ -1,10 +1,4 @@
 module CatArrays
-
-if VERSION >= v"0.7"
-else
-    using Compat
-    using Compat: dropdims, findall, @debug
-end
 using Base
 
 mutable struct CatArray{T,N,M,TA} <: AbstractArray{T,N} where TA <: AbstractArray
@@ -168,12 +162,7 @@ function idx_global_local_(CA::CatArray,idx::NTuple{N}) where N
         # loop over all dimensions
         for i=1:n
             # rebase subscribt at CA.start[j,i]
-            tmp =
-                @static if VERSION >= v"0.7"
-                    idx[i] .- (CA.start[j,i] - 1)
-                else
-                    idx[i] - (CA.start[j,i] - 1)
-                end
+            tmp = idx[i] .- (CA.start[j,i] - 1)
 
             # only indeces within bounds of the j-th array
             sel = (1 .<= tmp) .& (tmp .<= CA.asize[j,i])
@@ -184,12 +173,7 @@ function idx_global_local_(CA::CatArray,idx::NTuple{N}) where N
             else
                 # index for getting the data from the local j-th array
                 idx_local_tmp[i] = tmp[findfirst(sel):findlast(sel)]
-                idx_global_tmp[i] =
-                    @static if VERSION >= v"0.7"
-                        (1:sum(sel)) .+ (findfirst(sel) - 1)
-                    else
-                        (1:sum(sel)) + (findfirst(sel) - 1)
-                    end
+                idx_global_tmp[i] = (1:sum(sel)) .+ (findfirst(sel) - 1)
             end
         end
 
