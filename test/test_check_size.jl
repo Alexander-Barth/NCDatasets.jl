@@ -2,8 +2,6 @@ using NCDatasets
 using Test
 
 filename = tempname()
-filename = "/tmp/foo.nc"
-rm(filename)
 
 ds = Dataset(filename,"c")
 x = collect(1:10)
