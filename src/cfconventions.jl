@@ -27,6 +27,7 @@ function ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
     return nothing
 end
 
+import Base: filter
 """
     data = NCDatasets.filter(ncv, indices...; accepted_status_flags = nothing)
 
@@ -40,7 +41,7 @@ good_data = NCDatasets.filter(ds["data"],:,:, accepted_status_flags = ["good_dat
 ```
 
 """
-function filter(ncv, indices...; accepted_status_flags = nothing)
+function filter(ncv::Union{Variable,CFVariable}, indices...; accepted_status_flags = nothing)
 #function filter_(ncv, indices...)
 #    accepted_status_flags = ("good_value", "probably_good_value")
     data = ncv[indices...];
