@@ -154,6 +154,9 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_attrib.jl")
 
     include("test_writevar.jl")
+
+    include("test_check_size.jl")
+
     include("test_scaling.jl")
 
     include("test_fillvalue.jl")

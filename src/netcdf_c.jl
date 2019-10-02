@@ -605,6 +605,11 @@ end
 #     check(ccall((:nc_inq_opaque,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{Cint}),ncid,xtype,name,sizep))
 # end
 
+# can the NetCDF variable varid receive the data?
+function _nc_shape_check(ncid,varid,data,start,count,stride)
+    @debug ncid,varid,data,start,count,stride
+end
+
 function nc_put_var(ncid::Integer,varid::Integer,data::Array{Char,N}) where N
     nc_put_var(ncid,varid,convert(Array{UInt8,N},data))
 end
@@ -744,7 +749,6 @@ function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,
     end
 
     nc_put_vars(ncid,varid,startp,countp,stridep,tmp)
-                #convert(Array{UInt8,N},op))
 end
 
 function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,
@@ -759,9 +763,66 @@ function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,
                 convert(Array{nc_vlen_t{T},N},op))
 end
 
+function _nc_check_size_put_vars(ncid,varid,countp,op)
+    # dimension index for NetCDF variable
+    i1 = 1
+    # dimension index of data op
+    i2 = 1
+
+    # not_one(x) = x != 1
+    # if filter(not_one,reverse(countp)) != filter(not_one,[size(op)...])
+    #     path = nc_inq_path(ncid)
+    #     varname = nc_inq_varname(ncid,varid)
+    #     throw(DimensionMismatch("size mismatch for variable '$(varname)' in file '$(path)'. Trying to write $(size(op)) elements while $(countp) are expected"))
+    # end
+
+    unlimdims = nc_inq_unlimdims(ncid)
+    dimids = nc_inq_vardimid(ncid,varid)
+
+    countp = reverse(countp)
+    dimids = reverse(dimids)
+
+    while true
+        if (i2 > ndims(op)) && (i1 > length(countp))
+            break
+        end
+
+        count_i1 =
+            if i1 <= length(countp)
+                countp[i1]
+            else
+                1
+            end
+
+        # ignore dimensions with only one element
+        if (count_i1 == 1) && (i1 <= length(countp))
+            i1 += 1
+            continue
+        end
+        if size(op,i2) == 1
+            i2 += 1
+            continue
+        end
+
+        # no test for unlimited dimensions
+        if (i1 <= length(countp)) && (dimids[i1] in unlimdims)
+            # ok
+        elseif (size(op,i2) !== count_i1)
+            path = nc_inq_path(ncid)
+            varname = nc_inq_varname(ncid,varid)
+
+            throw(NetCDFError(NC_EEDGE,"size mismatch for variable '$(varname)' in file '$(path)'. Trying to write $(size(op)) elements while $(countp) are expected"))
+        end
+
+        i1 += 1
+        i2 += 1
+    end
+end
 
 function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,op)
     @debug "nc_put_vars: $startp,$countp,$stridep"
+    @debug "shape $(size(op))"
+    _nc_check_size_put_vars(ncid,varid,countp,op)
 
     check(ccall((:nc_put_vars,libnetcdf),Cint,
                 (Cint,Cint,Ptr{Cint},Ptr{Cint},
