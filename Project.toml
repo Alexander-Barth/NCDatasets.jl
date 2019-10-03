@@ -3,7 +3,7 @@ uuid = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
 keywords = ["netcdf", "climate and forecast conventions", "oceanography", "meteorology", "climatology", "opendap"]
 license = "MIT"
 desc = "Load and create NetCDF files in Julia"
-version = "0.9.4"
+version = "0.9.5"
 
 [deps]
 BinDeps = "9e28174c-4ba2-5203-b857-d8d62c4213ee"
