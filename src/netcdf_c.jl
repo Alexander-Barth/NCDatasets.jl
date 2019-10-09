@@ -1074,9 +1074,9 @@ function nc_inq_dimlen(ncid::Integer,dimid::Integer)
     return Int(lengthp[1])
 end
 
-# function nc_rename_dim(ncid::Integer,dimid::Integer,name)
-#     check(ccall((:nc_rename_dim,libnetcdf),Cint,(Cint,Cint,Cstring),ncid,dimid,name))
-# end
+function nc_rename_dim(ncid::Integer,dimid::Integer,name)
+    check(ccall((:nc_rename_dim,libnetcdf),Cint,(Cint,Cint,Cstring),ncid,dimid,name))
+end
 
 function nc_inq_att(ncid::Integer,varid::Integer,name)
     xtypep = zeros(nc_type,1)
@@ -1312,9 +1312,9 @@ function nc_inq_varnatts(ncid::Integer,varid::Integer)
     return nattsp[1]
 end
 
-# function nc_rename_var(ncid::Integer,varid::Integer,name)
-#     check(ccall((:nc_rename_var,libnetcdf),Cint,(Cint,Cint,Cstring),ncid,varid,name))
-# end
+function nc_rename_var(ncid::Integer,varid::Integer,name)
+    check(ccall((:nc_rename_var,libnetcdf),Cint,(Cint,Cint,Cstring),ncid,varid,name))
+end
 
 # function nc_copy_var(ncid_in::Integer,varid::Integer,ncid_out::Integer)
 #     check(ccall((:nc_copy_var,libnetcdf),Cint,(Cint,Cint,Cint),ncid_in,varid,ncid_out))

@@ -181,6 +181,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_ncgen.jl")
     include("test_varbyatt.jl")
 
+    include("test_rename.jl")
+
     include("test_corner_cases.jl")
 
     # display

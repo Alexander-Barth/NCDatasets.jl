@@ -576,6 +576,15 @@ function defDim(ds::Dataset,name,len)
     return nothing
 end
 
+
+function renameDim(ds::Dataset,oldname,newname)
+    defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
+    dimid = nc_inq_dimid(ds.ncid,oldname)
+    nc_rename_dim(ds.ncid,dimid,newname)
+    return nothing
+end
+export renameDim
+
 """
     defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
     defVar(ds::Dataset,name,data,dimnames; kwargs...)
@@ -736,6 +745,15 @@ function defVar(ds::Dataset,name,data::T; kwargs...) where T <: Number
     v[:] = data
     return v
 end
+
+
+function renameVar(ds::Dataset,oldname,newname)
+    defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
+    varid = nc_inq_varid(ds.ncid,oldname)
+    nc_rename_var(ds.ncid,varid,newname)
+    return nothing
+end
+export renameVar
 
 """
     keys(ds::Dataset)

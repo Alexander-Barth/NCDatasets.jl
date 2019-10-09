@@ -1,4 +1,4 @@
-    using NCDatasets
+using NCDatasets
 using Test
 
 fname = tempname()
