@@ -1641,8 +1641,18 @@ function nomissing(da::Array{Union{T,Missing},N}) where {T,N}
     if any(ismissing.(da))
         error("arrays contains missing values (values equal to the fill values attribute in the NetCDF file)")
     end
-
-    return Array{T,N}(da)
+    if VERSION >= v"1.2"
+        # Illegal instruction (core dumped) in Julia 1.0.5
+        # but works on Julia 1.2
+        return Array{T,N}(da)
+    else
+        # old
+        if isempty(da)
+            return Array{T,N}([])
+        else
+            return replace(da, missing => da[1])
+        end
+    end
 end
 
 """
