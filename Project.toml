@@ -18,8 +18,13 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
-BinDeps = "≥ 0.4.0"
-julia = "0.7, 1"
+BinDeps = "0.4, 1"
+CFTime = "0.0.1, 1"
+Compat = "2"
+CondaBinDeps = "0.1, 1"
+DataStructures = "0.15, 1"
+Missings = "0.4, 1"
+julia = "1"
 
 [extras]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
