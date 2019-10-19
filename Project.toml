@@ -24,7 +24,7 @@ Compat = "2"
 CondaBinDeps = "0.1"
 DataStructures = "0.15"
 Missings = "0.4"
-julia = "1"
+julia = "0.7, 1"
 
 [extras]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
