@@ -22,7 +22,7 @@ BinDeps = "0.8"
 CFTime = "0.0.3"
 Compat = "2"
 CondaBinDeps = "0.1"
-DataStructures = "0.15"
+DataStructures = "0.17"
 Missings = "0.4"
 julia = "0.7, 1"
 
