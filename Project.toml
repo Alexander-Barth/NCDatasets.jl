@@ -13,7 +13,6 @@ CondaBinDeps = "a9693cdc-2bc8-5703-a9cd-1da358117377"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
-Missings = "e1d29d7a-bbdc-5cf2-9ac0-f12de2c33e28"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
@@ -23,7 +22,6 @@ CFTime = "0.0.3, 0.1, 1"
 Compat = "2"
 CondaBinDeps = "0.1"
 DataStructures = "0.17"
-Missings = "0.4"
 julia = "0.7, 1"
 
 [extras]
