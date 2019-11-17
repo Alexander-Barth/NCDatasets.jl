@@ -74,7 +74,23 @@ Dataset(filename,"c") do ds
 
     # test Union{Missing,T}
     defVar(ds,"foo",[missing,1.,2.],("dim",), fillvalue = -9999.)
+    @test fillvalue(ds["foo"]) == -9999.
     @test isequal(ds["foo"][:], [missing,1.,2.])
+
+    # test Union{Missing,T} and default fill value (issue #38)
+    defVar(ds,"foo_default_fill_value",[missing,1.,2.],("dim",))
+    @test fillvalue(ds["foo_default_fill_value"]) == NC_FILL_DOUBLE
+    @test isequal(ds["foo_default_fill_value"][:], [missing,1.,2.])
+
+    # test DateTime array
+    arr = [DateTime(2000,1,1),DateTime(2000,1,2),DateTime(2000,1,3)]
+    defVar(ds,"foo_datetime",arr,("dim",))
+    @test isequal(ds["foo_datetime"][:], arr)
+
+    # test DateTime with missing array
+    arr = [missing,DateTime(2000,1,2),DateTime(2000,1,3)]
+    defVar(ds,"foo_datetime_with_fill_value",arr,("dim",))
+    @test isequal(ds["foo_datetime_with_fill_value"][:], arr)
 
     defVar(ds,"scalar",123.)
     @test ds["scalar"][:] == 123.

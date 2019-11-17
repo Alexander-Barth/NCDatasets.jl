@@ -136,21 +136,38 @@ end
 
 # Mapping between NetCDF types and Julia types
 const jlType = Dict(
-                    NC_BYTE   => Int8,
-                    NC_UBYTE  => UInt8,
-                    NC_SHORT  => Int16,
-                    NC_USHORT => UInt16,
-                    NC_INT    => Int32,
-                    NC_UINT   => UInt32,
-                    NC_INT64  => Int64,
-                    NC_UINT64 => UInt64,
-                    NC_FLOAT  => Float32,
-                    NC_DOUBLE => Float64,
-                    NC_CHAR   => Char,
-                    NC_STRING => String)
+    NC_BYTE   => Int8,
+    NC_UBYTE  => UInt8,
+    NC_SHORT  => Int16,
+    NC_USHORT => UInt16,
+    NC_INT    => Int32,
+    NC_UINT   => UInt32,
+    NC_INT64  => Int64,
+    NC_UINT64 => UInt64,
+    NC_FLOAT  => Float32,
+    NC_DOUBLE => Float64,
+    NC_CHAR   => Char,
+    NC_STRING => String
+)
 
 # Inverse mapping
 const ncType = Dict(value => key for (key, value) in jlType)
+
+# default fill value per types
+const ncFillValue = Dict(
+    Int8    => NC_FILL_BYTE,
+    UInt8   => NC_FILL_UBYTE,
+    Int16   => NC_FILL_SHORT,
+    UInt16  => NC_FILL_USHORT,
+    Int32   => NC_FILL_INT,
+    UInt32  => NC_FILL_UINT,
+    Int64   => NC_FILL_INT64,
+    UInt64  => NC_FILL_UINT64,
+    Float32 => NC_FILL_FLOAT,
+    Float64 => NC_FILL_DOUBLE,
+    Char    => NC_FILL_CHAR,
+    String  => NC_FILL_STRING
+)
 
 "Return all variable names"
 listVar(ncid) = String[nc_inq_varname(ncid,varid)
@@ -727,6 +744,8 @@ function defVar(ds::Dataset,name,data,dimnames; kwargs...)
     vtype = eltype(data)
     if vtype == DateTime
         vtype = Float64
+    elseif vtype == Union{Missing, DateTime}
+        vtype = Float64
     elseif vtype == Union{Missing, Int8}
         vtype = Int8
     elseif vtype == Union{Missing, UInt8}
@@ -750,7 +769,15 @@ function defVar(ds::Dataset,name,data,dimnames; kwargs...)
         end
     end
 
-    v = defVar(ds,name,vtype,dimnames; kwargs...)
+    v =
+        if Missing <: eltype(data)
+            # make sure a fill value is set (it might be overwritten by kwargs...)
+            defVar(ds,name,vtype,dimnames;
+                   fillvalue = ncFillValue[vtype],
+                   kwargs...)
+        else
+            defVar(ds,name,vtype,dimnames; kwargs...)
+        end
     v[:] = data
     return v
 end
@@ -1342,7 +1369,10 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
         if occursin(" since ",units)
             # type of data changes
             calendar = get(v.attrib,"calendar","standard")
-            data = timedecode(data,units,calendar)
+            # time decode only valid dates
+            tmp = timedecode(data[.!mask],units,calendar)
+            data = similar(tmp,size(data))
+            data[.!mask] = tmp
         end
     end
 
@@ -1702,6 +1732,7 @@ include("cfconventions.jl")
 export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,
     NC_FILL_DOUBLE, NC_FILL_UBYTE, NC_FILL_USHORT, NC_FILL_UINT, NC_FILL_INT64,
     NC_FILL_UINT64, NC_FILL_STRING
+
 
 export CFTime
 export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
