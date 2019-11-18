@@ -637,9 +637,12 @@ the appropriate size will be created as required using the names in `dimnames`.
 
 !!! note
 
-    Note if `data` is a vector or array of `DateTime` objects, then the dates are
-    saved as double-precision floats and units "$(CFTime.DEFAULT_TIME_UNITS)" (unless a time unit
-    is specifed with the `attrib` keyword as described below)
+    Note if `data` is a vector or array of `DateTime` objects, then the dates
+    are saved as double-precision floats and units
+    "$(CFTime.DEFAULT_TIME_UNITS)" (unless a time unit
+    is specifed with the `attrib` keyword as described below). Dates are
+    converted to the default calendar in the CF conversion which is the
+    mixed Julian/Gregorian calendar.
 
 ## Keyword arguments
 
@@ -740,28 +743,32 @@ function defVar(ds::Dataset,name,vtype::DataType,dimnames; kwargs...)
     return ds[name]
 end
 
-function defVar(ds::Dataset,name,data,dimnames; kwargs...)
-    vtype = eltype(data)
-    if vtype == DateTime
-        vtype = Float64
-    elseif vtype == Union{Missing, DateTime}
-        vtype = Float64
-    elseif vtype == Union{Missing, Int8}
-        vtype = Int8
-    elseif vtype == Union{Missing, UInt8}
-        vtype = UInt8
-    elseif vtype == Union{Missing, Int16}
-        vtype = Int16
-    elseif vtype == Union{Missing, Int32}
-        vtype = Int32
-    elseif vtype == Union{Missing, Int64}
-        vtype = Int64
-    elseif vtype == Union{Missing, Float32}
-        vtype = Float32
-    elseif vtype == Union{Missing, Float64}
-        vtype = Float64
-    end
+# data has the type e.g. Array{Union{Missing,Float64},3}
+function defVar(ds::Dataset,
+                name,
+                data::AbstractArray{Union{Missing,nctype},N},
+                dimnames;
+                kwargs...) where nctype <: Union{Int8,UInt8,Int16,Int32,Int64,Float32,Float64} where N
+    _defVar(ds::Dataset,name,data,nctype,dimnames; kwargs...)
+end
 
+# data has the type e.g. Vector{DateTime}, Array{Union{Missing,DateTime},3} or
+# Vector{DateTime360Day}
+# Data is always stored as Float64 in the NetCDF file
+function defVar(ds::Dataset,
+                name,
+                data::AbstractArray{<:Union{Missing,nctype},N},
+                dimnames;
+                kwargs...) where nctype <: Union{DateTime,AbstractCFDateTime} where N
+    _defVar(ds::Dataset,name,data,Float64,dimnames; kwargs...)
+end
+
+function defVar(ds::Dataset,name,data,dimnames; kwargs...)
+    nctype = eltype(data)
+    _defVar(ds::Dataset,name,data,nctype,dimnames; kwargs...)
+end
+
+function _defVar(ds::Dataset,name,data,nctype,dimnames; kwargs...)
     # define the dimensions if necessary
     for i = 1:length(dimnames)
         if !(dimnames[i] in ds.dim)
@@ -772,11 +779,11 @@ function defVar(ds::Dataset,name,data,dimnames; kwargs...)
     v =
         if Missing <: eltype(data)
             # make sure a fill value is set (it might be overwritten by kwargs...)
-            defVar(ds,name,vtype,dimnames;
-                   fillvalue = ncFillValue[vtype],
+            defVar(ds,name,nctype,dimnames;
+                   fillvalue = ncFillValue[nctype],
                    kwargs...)
         else
-            defVar(ds,name,vtype,dimnames; kwargs...)
+            defVar(ds,name,nctype,dimnames; kwargs...)
         end
     v[:] = data
     return v
@@ -933,7 +940,11 @@ Return the NetCDF variable `varname` in the dataset `ds` as a
 variable is indexed:
 * `_FillValue` will be returned as `missing`
 * `scale_factor` and `add_offset` are applied
-* time variables (recognized by the units attribute) are returned as `DateTime` object.
+* time variables (recognized by the units attribute) are returned usually as
+`DateTime` object. Note that `DateTimeAllLeap`, `DateTimeNoLeap` and
+`DateTime360Day` cannot be converted to the proleptic gregorian calendar used in
+julia and are returned as such.
+
 
 A call `getindex(ds,varname)` is usually written as `ds[varname]`.
 """
@@ -1398,7 +1409,7 @@ function Base.setindex!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,Uni
 end
 
 
-function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime}}
+function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
     attnames = keys(v.attrib)
     units =
         if "units" in attnames
@@ -1410,7 +1421,19 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
         end
 
     if occursin(" since ",units)
+        if !("calendar" in attnames)
+            # these dates cannot be converted to the standard calendar
+            if T <: Union{DateTime360Day,Missing}
+                v.attrib["calendar"] = "360_day"
+            elseif T <: Union{DateTimeNoLeap,Missing}
+                v.attrib["calendar"] = "365_day"
+            elseif T <: Union{DateTimeAllLeap,Missing}
+                v.attrib["calendar"] = "366_day"
+            end
+        end
         calendar = get(v.attrib,"calendar","standard")
+        # can throw an convertion error if calendar attribute already exists and
+        # is incompatible with the provided data
         v[indexes...] = timeencode(data,units,calendar)
         return data
     end

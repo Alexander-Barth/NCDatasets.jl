@@ -375,3 +375,5 @@ tempvar.attrib["_FillValue"] = -9999.f0
 * NetCDF and Julia distinguishes between a vector of chars and a string, but both are returned as string for ease of use, in particular an attribute representing a vector of chars `['u','n','i','t','s']` will be read back as the string `"units"`.
 
 * An attribute representing a vector of chars `['u','n','i','t','s','\0']` will also be read back as the string `"units"` (issue #12).
+
+* While reading a NetCDF time variable, the dates are converted using the Julia's `DateTime` (based on the proleptic Gregorian calendar following the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) standard) when possible. When data is written to a NetCDF file (without specifying the calendar), the dates are saved using the default calendar of the NetCDF CF convention (the mixed Julian/Gregorian calendar, called `"standard"`) when possible. It is recommended that the time origin specified by the units is after 15 October 1582 in which case the mixed Julian/Gregorian calendar is identical to the proleptic Gregorian calendar.
