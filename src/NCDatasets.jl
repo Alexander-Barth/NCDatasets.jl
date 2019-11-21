@@ -1355,11 +1355,7 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
 
     if "_FillValue" in attnames
         fillvalue = v.attrib["_FillValue"]
-        if isnan(fillvalue)
-            mask = isnan.(data)
-        else
-            mask = data .== v.attrib["_FillValue"]
-        end
+        mask = isfillvalue(data,fillvalue)
     else
         mask = falses(size(data))
     end
@@ -1408,6 +1404,9 @@ function Base.setindex!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,Uni
     v.var[indexes...] = v.attrib["_FillValue"]
 end
 
+
+isfillvalue(data,fillvalue) = data .== fillvalue
+isfillvalue(data,fillvalue::Number) = (isnan(fillvalue) ? isnan.(data) : data .== fillvalue)
 
 function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
     attnames = keys(v.attrib)
