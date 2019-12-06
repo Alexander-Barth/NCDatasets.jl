@@ -126,3 +126,22 @@ dataf = NCDatasets.nomissing(data)
 @test dataf == [1., 2.]
 
 @test nomissing(Union{Int64,Missing}[]) == []
+
+
+# issue 39
+using NCDatasets
+
+filename = tempname()
+
+Dataset(filename, "c") do ds
+    defDim(ds, "lon", 2)
+    defDim(ds, "lat", 2)
+    v = defVar(ds, "Char variable", Char, ("lon","lat"), fillvalue = ' ')
+    v[:,:] = ['a' 'b'; 'c' 'd']
+end
+
+Dataset(filename, "r") do ds
+    @test ds["Char variable"][:,:] == ['a' 'b'; 'c' 'd']
+end
+
+rm(filename)
