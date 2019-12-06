@@ -1375,7 +1375,7 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
         units = v.attrib["units"]
         if occursin(" since ",units)
             # type of data changes
-            calendar = get(v.attrib,"calendar","standard")
+            calendar = lowercase(get(v.attrib,"calendar","standard"))
             # time decode only valid dates
             tmp = timedecode(data[.!mask],units,calendar)
             data = similar(tmp,size(data))
@@ -1430,7 +1430,7 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
                 v.attrib["calendar"] = "366_day"
             end
         end
-        calendar = get(v.attrib,"calendar","standard")
+        calendar = lowercase(get(v.attrib,"calendar","standard"))
         # can throw an convertion error if calendar attribute already exists and
         # is incompatible with the provided data
         v[indexes...] = timeencode(data,units,calendar)
