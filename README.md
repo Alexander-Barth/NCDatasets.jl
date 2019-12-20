@@ -171,7 +171,7 @@ Dataset("/tmp/test2.nc","c",attrib = ["title" => "this is a test file"]) do ds
 end
 ```
 
-## Edit an existing netCDF
+## Edit an existing netCDF file
 
 When you need to modify the variables or the attributes of a netCDF, you have
 to open it with the `"a"` option. Here of instance we add a global attribute *creator* to the
