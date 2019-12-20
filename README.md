@@ -72,6 +72,46 @@ Variables
 [...]
 ```
 
+## Load a netCDF file
+
+Loading a variable with known structure can be achieved by accessing the variables and attributes directly by their name.
+
+```julia
+# The mode "r" stands for read-only. The mode "r" is the default mode and the parameter can be omitted.
+ds = Dataset("/tmp/test.nc","r")
+v = ds["temperature"]
+
+# load a subset
+subdata = v[10:30,30:5:end]
+
+# load all data
+data = v[:,:]
+
+# load all data ignoring attributes like scale_factor, add_offset, _FillValue and time units
+data2 = v.var[:,:]
+
+
+# load an attribute
+unit = v.attrib["units"]
+close(ds)
+```
+
+In the example above, the subset can also be loaded with:
+
+```julia
+subdata = Dataset("/tmp/test.nc")["temperature"][10:30,30:5:end]
+```
+
+This might be useful in an interactive session. However, the file `test.nc` is not closed, which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
+
+An alternative way to ensure the file has been closed is to use a `do` block: the file will be closed automatically when leaving the block.
+
+```julia
+Dataset(filename,"r") do ds
+    data = ds["temperature"][:,:]
+end # ds is closed
+```
+
 ## Create a netCDF file
 
 The following gives an example of how to create a netCDF file by defining dimensions, variables and attributes.
