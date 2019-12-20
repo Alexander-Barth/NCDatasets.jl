@@ -1736,7 +1736,7 @@ function nomissing(da::Array{Union{T,Missing},N},value) where {T,N}
 end
 
 
-export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
+export defVar, defDim, Dataset, NCDataset, close, sync, variable, dimnames, name,
     deflate, chunking, checksum, fillvalue, fillmode, ncgen
 export nomissing
 export varbyattrib
