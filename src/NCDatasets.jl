@@ -133,6 +133,8 @@ mutable struct Dataset <: AbstractDataset
     group::Groups
 end
 
+"Alias to `Dataset`"
+const NCDataset = Dataset
 
 # Mapping between NetCDF types and Julia types
 const jlType = Dict(
