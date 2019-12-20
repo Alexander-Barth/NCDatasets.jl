@@ -46,20 +46,26 @@ Pkg.add("NCDatasets")
 
 Before reading the data from a netCDF file, it is often useful to explore the list of variables and attributes defined in it.
 
-For interactive use, the following commands (without ending semicolon) display the content of the file similarly to `ncdump -h file.nc`
+For interactive use, the following commands (without ending semicolon) display the content of the file similarly to `ncdump -h file.nc`:
 
 ```julia
 using NCDatasets
 ds = Dataset("file.nc")
 ```
 
-The following displays the information just for the variable `varname` and for the global attributes:
+This creates the central structure of NCDatasets.jl, `Dataset`, which represents the contents of the netCDF file (without immediatelly loading everything in memory). `NCDataset` is an alias for `Dataset`.
+
+The following displays the information just for the variable `varname`:
 
 ```julia
 ds["varname"]
+```
+
+while to get the global attributes you can do:
+```julia
 ds.attrib
 ```
-which produces a listing the following:
+which produces a listing like:
 
 ```
 Dataset: file.nc
