@@ -24,8 +24,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     ds = Dataset(filename)
     ds2 = NCDatasets.NCDataset(filename)
-    @test ds === ds2
     v = ds["var"]
+    @test v[:] == ds2["var"][:]
 
     A = v[:,:]
     @test A == data
