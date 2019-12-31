@@ -3,6 +3,7 @@ using Test
 using Dates
 using Printf
 using Compat
+using Random
 
 println("NetCDF library: ",NCDatasets.libnetcdf)
 println("NetCDF version: ",NCDatasets.nc_inq_libvers())
@@ -11,7 +12,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     global v
 
     sz = (123,145)
-    data = randn(sz)
+    data = randn(MersenneTwister(152), sz)
 
     filename = tempname()
     ds = Dataset(filename,"c") do ds
@@ -22,7 +23,9 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     end
 
     ds = Dataset(filename)
+    ds2 = NCDatasets.NCDataset(filename)
     v = ds["var"]
+    @test v[:] == ds2["var"][:]
 
     A = v[:,:]
     @test A == data

@@ -35,24 +35,37 @@ using Pkg
 Pkg.add("NCDatasets")
 ```
 
-## Exploring the content of a netCDF file
+# Manual
+
+* [Explore the content of a netCDF file](#explore-the-content-of-a-netcdf-file)
+* [Load a netCDF file](#load-a-netcdf-file)
+* [Create a netCDF file](#create-a-netcdf-file)
+* [Edit an existing netCDF file](#edit-an-existing-netcdf-file)
+
+## Explore the content of a netCDF file
 
 Before reading the data from a netCDF file, it is often useful to explore the list of variables and attributes defined in it.
 
-For interactive use, the following commands (without ending semicolon) display the content of the file similarly to `ncdump -h file.nc`
+For interactive use, the following commands (without ending semicolon) display the content of the file similarly to `ncdump -h file.nc`:
 
 ```julia
 using NCDatasets
 ds = Dataset("file.nc")
 ```
 
-The following displays the information just for the variable `varname` and for the global attributes:
+This creates the central structure of NCDatasets.jl, `Dataset`, which represents the contents of the netCDF file (without immediatelly loading everything in memory). `NCDataset` is an alias for `Dataset`.
+
+The following displays the information just for the variable `varname`:
 
 ```julia
 ds["varname"]
+```
+
+while to get the global attributes you can do:
+```julia
 ds.attrib
 ```
-which produces a listing the following:
+which produces a listing like:
 
 ```
 Dataset: file.nc
@@ -70,6 +83,47 @@ Variables
      standard_name        = time
      units                = days since 1950-01-01 00:00:00
 [...]
+```
+
+## Load a netCDF file
+
+Loading a variable with known structure can be achieved by accessing the variables and attributes directly by their name.
+
+```julia
+# The mode "r" stands for read-only. The mode "r" is the default mode and the parameter can be omitted.
+ds = Dataset("/tmp/test.nc","r")
+v = ds["temperature"]
+
+# load a subset
+subdata = v[10:30,30:5:end]
+
+# load all data
+data = v[:,:]
+
+# load all data ignoring attributes like scale_factor, add_offset, _FillValue and time units
+data2 = v.var[:,:]
+
+
+# load an attribute
+unit = v.attrib["units"]
+close(ds)
+```
+
+In the example above, the subset can also be loaded with:
+
+```julia
+subdata = Dataset("/tmp/test.nc")["temperature"][10:30,30:5:end]
+```
+
+This might be useful in an interactive session. However, the file `test.nc` is not closed, which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
+
+An alternative way to ensure the file has been closed is to use a `do` block: the file will be closed automatically when leaving the block.
+
+```julia
+data =
+Dataset(filename,"r") do ds
+    ds["temperature"][:,:]
+end # ds is closed
 ```
 
 ## Create a netCDF file
@@ -124,7 +178,7 @@ Dataset("/tmp/test2.nc","c",attrib = ["title" => "this is a test file"]) do ds
 end
 ```
 
-## Editing an existing netCDF
+## Edit an existing netCDF file
 
 When you need to modify the variables or the attributes of a netCDF, you have
 to open it with the `"a"` option. Here of instance we add a global attribute *creator* to the
@@ -135,50 +189,6 @@ ds = Dataset("/tmp/test.nc","a")
 ds.attrib["creator"] = "your name"
 close(ds);
 ```
-
-
-
-## Load a file
-
-Loading a variable with known structure can be achieved by accessing the variables and attributes directly by their name.
-
-```julia
-# The mode "r" stands for read-only. The mode "r" is the default mode and the parameter can be omitted.
-ds = Dataset("/tmp/test.nc","r")
-v = ds["temperature"]
-
-# load a subset
-subdata = v[10:30,30:5:end]
-
-# load all data
-data = v[:,:]
-
-# load all data ignoring attributes like scale_factor, add_offset, _FillValue and time units
-data2 = v.var[:,:]
-
-
-# load an attribute
-unit = v.attrib["units"]
-close(ds)
-```
-
-In the example above, the subset can also be loaded with:
-
-```julia
-subdata = Dataset("/tmp/test.nc")["temperature"][10:30,30:5:end]
-```
-
-This might be useful in an interactive session. However, the file `test.nc` is not closed, which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
-
-An alternative way to ensure the file has been closed is to use a `do` block: the file will be closed automatically when leaving the block.
-
-```julia
-Dataset(filename,"r") do ds
-    data = ds["temperature"][:,:]
-end # ds is closed
-```
-
-
 
 
 # Filing an issue

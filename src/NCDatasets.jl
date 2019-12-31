@@ -133,6 +133,8 @@ mutable struct Dataset <: AbstractDataset
     group::Groups
 end
 
+"Alias to `Dataset`"
+const NCDataset = Dataset
 
 # Mapping between NetCDF types and Julia types
 const jlType = Dict(
@@ -1734,7 +1736,7 @@ function nomissing(da::Array{Union{T,Missing},N},value) where {T,N}
 end
 
 
-export defVar, defDim, Dataset, close, sync, variable, dimnames, name,
+export defVar, defDim, Dataset, NCDataset, close, sync, variable, dimnames, name,
     deflate, chunking, checksum, fillvalue, fillmode, ncgen
 export nomissing
 export varbyattrib
