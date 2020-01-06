@@ -1001,8 +1001,9 @@ Base.size(v::Variable) = (Int[nc_inq_dimlen(v.ncid,dimid) for dimid in v.dimids]
 
 """
     dimnames(v::Variable)
+    dimnames(v::CFVariable)
 
-Return a tuple of the dimension names of the variable `v`.
+Return a tuple of strings with the dimension names of the variable `v`.
 """
 function dimnames(v::Variable)
     return (String[nc_inq_dimname(v.ncid,dimid) for dimid in v.dimids]...,)
