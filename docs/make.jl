@@ -1,7 +1,23 @@
+using Pkg
+Pkg.activate(@__DIR__)
+CI = get(ENV, "CI", nothing) == "true"
 using Documenter, NCDatasets
 
 makedocs(modules = [NCDatasets], sitename = "NCDatasets.jl")
 
-deploydocs(
-    repo = "github.com/Alexander-Barth/NCDatasets.jl.git",
+makedocs(modules = [NCDatasets],
+sitename= "NCDatasets.jl",
+doctest = false,
+format = Documenter.HTML(
+    prettyurls = CI,
+    ),
+pages = [
+    "Introduction" => "index.md",
+    "Performance tips Setup" => "performance.md",
+    ],
 )
+
+if CI
+    deploydocs(repo = "github.com/Alexander-Barth/NCDatasets.jl.git",
+               target = "build")
+end
