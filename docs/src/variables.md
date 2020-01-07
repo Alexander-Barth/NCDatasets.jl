@@ -31,16 +31,28 @@ loadragged
 NCDatasets.load!
 ```
 
+## Dimensions
+Dimensions are the dependent variables of a dataset (the ones with respect a `Variable` is defined). They are obtained with using [`dimnames`](@ref) on a `Variable`. We have the following functions relevant to them:
+
+```@docs
+setindex!(d::NCDatasets.Dimensions,len,name::AbstractString)
+unlimited(d::NCDatasets.Dimensions)
+```
+
 ## Internals of a variable
 ```@docs
-defVar
 chunking
 deflate
 checksum
 ```
 
-## Coordinate variables
+## Creating a variable/dimension
+```@doc
+defDim
+defVar
+```
 
+## Coordinate variables
 ```@docs
 coord
 ```
