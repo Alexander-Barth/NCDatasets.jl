@@ -13,12 +13,12 @@ format = Documenter.HTML(
     ),
 pages = [
     "Introduction" => "index.md",
-    "Datasets" => "dataaset.md",
+    "Datasets" => "dataset.md",
     "Variables" => "variables.md",
     "Performance tips" => "performance.md",
     "Known issues" => "issues.md",
     "Experimental features" => "experimental.md",
-    
+
     ],
 )
 

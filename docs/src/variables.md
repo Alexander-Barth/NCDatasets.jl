@@ -13,16 +13,18 @@ The variable `v_cf` has the type `CFVariable`. No data is actually loaded from d
 
 To load the variable `v_cf` in memory as numeric data you can convert it into an array (preserving its dimensionality structure) with
 ```julia
-Array(v_cf) # the syntax v_cf[:] does the same, it doesn't make a vector
+Array(v_cf)
 ```
-or, you can only load sub-parts of it in memory via indexing each dimension:
+The syntax `v_cf[:]` is equivalent with the above, it doesn't make a `Vector` (like it does on normal Julia arrays).
+
+You can only load sub-parts of it in memory via indexing each dimension:
 ```julia
 v_cf[1:5, 10:20]
 ```
+(here you must know the number of dimensions of the variable, as you must access all of them).
 
 
 The following functions are convenient for working with variables:
-
 ```@docs
 dimnames
 name
