@@ -22,8 +22,8 @@ add NCDatasets#master
 
 To get started quickly see the [Quickstart](@ref) section. Otherwise see the following pages for details:
 
-* [Datasets](@ref) : reading/writing NetCDF data and examining their contents.
-* [Variables](@ref) : accessing/examining the variables (or dimensions) stored within a dataset.
+* [Datasets](@ref) : reading/writing NetCDF datasets (as a whole) and examining their contents.
+* [Variables](@ref) : accessing/examining the variables (or dimensions) stored within a NetCDF dataset.
 * [Performance tips](@ref), [Known issues](@ref), [Experimental features](@ref): self-explanatory.
 
 ## Quickstart
