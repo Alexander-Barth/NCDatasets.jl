@@ -4,36 +4,180 @@ Documentation for NCDatasets.jl
 
 ## Installation
 
-Inside the Julia shell, you can download and install the package by issuing:
+Inside the Julia shell, you can download and install the package by pressing `]` to go into package manager mode and then simply
 
-```julia
-using Pkg
-Pkg.add("NCDatasets")
+```
+add NCDatasets
 ```
 
 ### Latest development version
 
-If you want to try the latest development version, you can do this with the following commands:
+If you want to try the latest development version, again go into package manager mode and simply type
 
-```julia
-using Pkg
-Pkg.add(PackageSpec(url="https://github.com/Alexander-Barth/NCDatasets.jl", rev="master"))
-Pkg.build("NCDatasets")
+```
+add NCDatasets#master
 ```
 
-## Tutorial
+## Quickstart
 
-### Load a variable from a netCDF file
+This is a quickstart guide that outlines basic loading, reading, etc. usage.
+For more details please see the individual pages of the documentation.
 
-In the following example, we load the variable with the name `tp` from the NetCDF file `"ECMWF_ERA-40_subset.nc"` and the attribute named `"units"`:.
+
+* [Explore the content of a netCDF file](#explore-the-content-of-a-netcdf-file)
+* [Load a netCDF file](#load-a-netcdf-file)
+* [Create a netCDF file](#create-a-netcdf-file)
+* [Edit an existing netCDF file](#edit-an-existing-netcdf-file)
+* [Create a netCDF file using the metadata of an existing netCDF file as template](@ref)
+* [Get one or several variables by specifying the value of an attribute](@ref)
+* [Load a file with unknown structure](@ref)
+
+### Explore the content of a netCDF file
+
+Before reading the data from a netCDF file, it is often useful to explore the list of variables and attributes defined in it.
+
+For interactive use, the following commands (without ending semicolon) display the content of the file similarly to `ncdump -h file.nc`:
 
 ```julia
 using NCDatasets
-download("https://www.unidata.ucar.edu/software/netcdf/examples/ECMWF_ERA-40_subset.nc","ECMWF_ERA-40_subset.nc");
-ds = Dataset("ECMWF_ERA-40_subset.nc")
-tp = ds["tp"][:];
-tp_units = ds["tp"].attrib["units"]
+ds = Dataset("file.nc")
+```
+
+This creates the central structure of NCDatasets.jl, `Dataset`, which represents the contents of the netCDF file (without immediatelly loading everything in memory). `NCDataset` is an alias for `Dataset`.
+
+The following displays the information just for the variable `varname`:
+
+```julia
+ds["varname"]
+```
+
+while to get the global attributes you can do:
+```julia
+ds.attrib
+```
+which produces a listing like:
+
+```
+Dataset: file.nc
+Group: /
+
+Dimensions
+   time = 115
+
+Variables
+  time   (115)
+    Datatype:    Float64
+    Dimensions:  time
+    Attributes:
+     calendar             = gregorian
+     standard_name        = time
+     units                = days since 1950-01-01 00:00:00
+[...]
+```
+
+### Load a netCDF file
+
+Loading a variable with known structure can be achieved by accessing the variables and attributes directly by their name.
+
+```julia
+# The mode "r" stands for read-only. The mode "r" is the default mode and the parameter can be omitted.
+ds = Dataset("/tmp/test.nc","r")
+v = ds["temperature"]
+
+# load a subset
+subdata = v[10:30,30:5:end]
+
+# load all data
+data = v[:,:]
+
+# load all data ignoring attributes like scale_factor, add_offset, _FillValue and time units
+data2 = v.var[:,:]
+
+
+# load an attribute
+unit = v.attrib["units"]
 close(ds)
+```
+
+In the example above, the subset can also be loaded with:
+
+```julia
+subdata = Dataset("/tmp/test.nc")["temperature"][10:30,30:5:end]
+```
+
+This might be useful in an interactive session. However, the file `test.nc` is not closed, which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
+
+An alternative way to ensure the file has been closed is to use a `do` block: the file will be closed automatically when leaving the block.
+
+```julia
+data =
+Dataset(filename,"r") do ds
+    ds["temperature"][:,:]
+end # ds is closed
+```
+
+### Create a netCDF file
+
+The following gives an example of how to create a netCDF file by defining dimensions, variables and attributes.
+
+```julia
+using NCDatasets
+# This creates a new NetCDF file /tmp/test.nc.
+# The mode "c" stands for creating a new file (clobber)
+ds = Dataset("/tmp/test.nc","c")
+
+# Define the dimension "lon" and "lat" with the size 100 and 110 resp.
+defDim(ds,"lon",100)
+defDim(ds,"lat",110)
+
+# Define a global attribute
+ds.attrib["title"] = "this is a test file"
+
+# Define the variables temperature
+v = defVar(ds,"temperature",Float32,("lon","lat"))
+
+# Generate some example data
+data = [Float32(i+j) for i = 1:100, j = 1:110]
+
+# write a single column
+v[:,1] = data[:,1]
+
+# write a the complete data set
+v[:,:] = data
+
+# write attributes
+v.attrib["units"] = "degree Celsius"
+v.attrib["comments"] = "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
+
+close(ds)
+```
+
+An equivalent way to create the previous netCDF would be the following code:
+
+```julia
+using NCDatasets
+data = [Float32(i+j) for i = 1:100, j = 1:110]
+
+Dataset("/tmp/test2.nc","c",attrib = ["title" => "this is a test file"]) do ds
+    # Define the variable temperature. The dimension "lon" and "lat" with the
+    # size 100 and 110 resp are implicetly created
+    defVar(ds,"temperature",data,("lon","lat"), attrib = [
+           "units" => "degree Celsius",
+           "comments" => "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
+    ])
+end
+```
+
+### Edit an existing netCDF file
+
+When you need to modify the variables or the attributes of a netCDF, you have
+to open it with the `"a"` option. Here of instance we add a global attribute *creator* to the
+file created in the previous step.
+
+```julia
+ds = Dataset("/tmp/test.nc","a")
+ds.attrib["creator"] = "your name"
+close(ds);
 ```
 
 ### Create a netCDF file using the metadata of an existing netCDF file as template
@@ -88,7 +232,7 @@ attribute `standard_name` equal to `"longitude"` one can the following:
 data = varbyattrib(ds, standard_name = "longitude")[1][:]
 ```
 
-### Load a file (with unknown structure)
+### Load a file with unknown structure
 
 If the structure of the netCDF file is not known before-hand, the program must check if a variable or attribute exists (with the `haskey` function) before loading it or alternatively place the loading in a `try`-`catch` block.
 It is also possible to iterate over all variables or attributes (global attributes or variable attributes) in the same syntax as iterating over a dictionary. However, unlike Julia dictionaries, the order of the attributes and variables is preserved and presented as they are stored in the netCDF file.
@@ -157,6 +301,7 @@ path
 defVar
 dimnames
 name
+nsize
 chunking
 deflate
 checksum
