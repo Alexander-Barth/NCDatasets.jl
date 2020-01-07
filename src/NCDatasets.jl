@@ -473,19 +473,26 @@ group(ds::AbstractDataset,groupname) = ds.group[groupname]
 
 
 """
-    Dataset(filename::AbstractString,mode::AbstractString = "r";
-                     format::Symbol = :netcdf4, attrib = [])
+    Dataset(filename::AbstractString, mode = "r";
+            format::Symbol = :netcdf4, attrib = [])
 
-Create a new NetCDF file if the `mode` is `"c"`. An existing file with the same
-name will be overwritten. If `mode` is `"a"`, then an existing file is open into
-append mode (i.e. existing data in the netCDF file is not overwritten and
-a variable can be added). With the mode set to `"r"`, an existing netCDF file or
-OPeNDAP URL can be open in read-only mode.  The default mode is `"r"`.
+Load, create, or even overwrite a NetCDF file at `filename`, depending on `mode`:
+
+* `"r"` (default) : open an existing netCDF file or OPeNDAP URL
+   in read-only mode.
+* `"c"` : create a new NetCDF file at `filename` (an existing file with the same
+  name will be overwritten).
+* `"a"` : open `filename` into append mode (i.e. existing data in the netCDF
+  file is not overwritten and a variable can be added).
+
+Notice that this does not close the dataset, use `close` on the
+result (or see below the `do`-block).
+
 The optional parameter `attrib` is an iterable of attribute name and attribute
 value pairs, for example a `Dict`, `DataStructures.OrderedDict` or simply a
 vector of pairs (see example below).
 
-# Supported formats:
+# Supported `format` values:
 
 * `:netcdf4` (default): HDF5-based NetCDF format.
 * `:netcdf4_classic`: Only netCDF 3 compatible API features will be used.
@@ -500,12 +507,14 @@ Dataset("file.nc") do ds
 end
 ```
 
+Here is an attribute example:
 ```julia
 Dataset("file.nc", "c", attrib = ["title" => "my first netCDF file"]) do ds
    defVar(ds,"temp",[10.,20.,30.],("time",))
 end;
 ```
 
+`NCDataset` is an alias to `Dataset`.
 """
 function Dataset(filename::AbstractString,
                  mode::AbstractString = "r";
@@ -943,9 +952,9 @@ variable is indexed:
 * `_FillValue` will be returned as `missing`
 * `scale_factor` and `add_offset` are applied
 * time variables (recognized by the units attribute) are returned usually as
-`DateTime` object. Note that `DateTimeAllLeap`, `DateTimeNoLeap` and
-`DateTime360Day` cannot be converted to the proleptic gregorian calendar used in
-julia and are returned as such.
+  `DateTime` object. Note that `DateTimeAllLeap`, `DateTimeNoLeap` and
+  `DateTime360Day` cannot be converted to the proleptic gregorian calendar used in
+  julia and are returned as such.
 
 
 A call `getindex(ds,varname)` is usually written as `ds[varname]`.
