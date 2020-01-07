@@ -1328,6 +1328,18 @@ Dataset(var::CFVariable) = Dataset(var.var)
 
 Base.size(v::CFVariable) = size(v.var)
 dimnames(v::CFVariable)  = dimnames(v.var)
+
+"""
+    nsize(v::CFVariable)
+Get the size of a `CFVariable` as a named tuple of dimension → length.
+"""
+function nsize(v::CFVariable)
+    s = size(v)
+    names = Symbol.(dimnames(v))
+    return NamedTuple{names}(s)
+end
+export nsize
+
 name(v::CFVariable)  = name(v.var)
 chunking(v::CFVariable,storage,chunksize) = chunking(v.var,storage,chunksize)
 chunking(v::CFVariable) = chunking(v.var)
