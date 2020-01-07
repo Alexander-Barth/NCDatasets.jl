@@ -13,6 +13,8 @@ variable
 sync
 close
 path
+ncgen
+varbyattrib
 ```
 
 Notice that DateTime-structures from [CFTime](http://juliageo.org/CFTime.jl/stable/) are used to represent time for non-standard calendars.
@@ -34,4 +36,30 @@ keys(a::NCDatasets.Attributes)
 defGroup(ds::Dataset,groupname)
 getindex(g::NCDatasets.Groups,groupname::AbstractString)
 Base.keys(g::NCDatasets.Groups)
+```
+
+## Common methods
+
+One can iterate over a dataset, attribute list, dimensions and NetCDF groups.
+
+```julia
+for (varname,var) in ds
+    # all variables
+    @show (varname,size(var))
+end
+
+for (dimname,dim) in ds.dims
+    # all dimensions
+    @show (dimname,dim)
+end
+
+for (attribname,attrib) in ds.attrib
+    # all attributes
+    @show (attribname,attrib)
+end
+
+for (groupname,group) in ds.groups
+    # all groups
+    @show (groupname,group)
+end
 ```

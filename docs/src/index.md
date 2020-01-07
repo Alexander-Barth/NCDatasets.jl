@@ -288,11 +288,3 @@ end
 units = get(v,"units","adimensional")
 close(ds)
 ```
-
-# Utility functions
-
-```@docs
-ncgen
-nomissing
-varbyattrib
-```

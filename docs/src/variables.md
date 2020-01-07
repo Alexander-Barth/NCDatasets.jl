@@ -11,7 +11,7 @@ v_cf = ds["var"]
 
 The variable `v_cf` has the type `CFVariable`. No data is actually loaded from disk, but you can query its size, number of dimensions, number elements, etc., using the functions `size`, `ndims`, `length` as if `v_cf` was an ordinary Julia array.
 
-To load the variable `v_cf` in memory as numeric data you can convert it into an array with e.g.
+To load the variable `v_cf` in memory as numeric data you can convert it into an array (preserving its dimensionality structure) with
 ```julia
 Array(v_cf) # the syntax v_cf[:] does the same, it doesn't make a vector
 ```
@@ -27,6 +27,10 @@ The following functions are convenient for working with variables:
 dimnames
 name
 nsize
+nomissing
+```
+
+```@docs
 loadragged
 NCDatasets.load!
 ```
