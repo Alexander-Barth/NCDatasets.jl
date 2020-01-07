@@ -1,6 +1,6 @@
 # NCDatasets.jl
 
-Documentation for NCDatasets.jl
+Documentation for NCDatasets.jl, a Julia package for loading/writing NetCDF data, as well as doing basic numerics with them.
 
 ## Installation
 
@@ -17,6 +17,14 @@ If you want to try the latest development version, again go into package manager
 ```
 add NCDatasets#master
 ```
+
+## Contents
+
+To get started quickly see the [Quickstart](@ref) section. Otherwise see the following pages for details:
+
+* [Datasets](@ref) : reading/writing NetCDF data and examining their contents.
+* [Variables](@ref) : examining the variables (or dimensions) stored within a dataset.
+* [Performance tips](@ref), [Known issues](@ref) : self-explanatory.
 
 ## Quickstart
 
@@ -281,14 +289,6 @@ units = get(v,"units","adimensional")
 close(ds)
 ```
 
-## Groups
-
-```@docs
-defGroup(ds::Dataset,groupname)
-getindex(g::NCDatasets.Groups,groupname::AbstractString)
-Base.keys(g::NCDatasets.Groups)
-```
-
 ## Common methods
 
 One can iterate over a dataset, attribute list, dimensions and NetCDF groups.
@@ -314,11 +314,6 @@ for (groupname,group) in ds.groups
     @show (groupname,group)
 end
 ```
-
-
-# Time functions
-
-See DateTime-structures from [CFTime](http://juliageo.org/CFTime.jl/stable/) are used to represent time for non-standard calendars.
 
 # Utility functions
 
