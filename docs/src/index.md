@@ -157,6 +157,7 @@ path
 defVar
 dimnames
 name
+nsize
 chunking
 deflate
 checksum
