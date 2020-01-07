@@ -16,7 +16,9 @@ pages = [
     "Datasets" => "dataaset.md",
     "Variables" => "variables.md",
     "Performance tips" => "performance.md",
-    "Known issues" => "issues.md"
+    "Known issues" => "issues.md",
+    "Experimental features" => "experimental.md",
+    
     ],
 )
 
