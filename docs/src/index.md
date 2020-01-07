@@ -1,39 +1,191 @@
 # NCDatasets.jl
 
-Documentation for NCDatasets.jl
+Documentation for NCDatasets.jl, a Julia package for loading/writing NetCDF data, as well as doing basic numerics with them.
 
 ## Installation
 
-Inside the Julia shell, you can download and install the package by issuing:
+Inside the Julia shell, you can download and install the package by pressing `]` to go into package manager mode and then simply
 
-```julia
-using Pkg
-Pkg.add("NCDatasets")
+```
+add NCDatasets
 ```
 
 ### Latest development version
 
-If you want to try the latest development version, you can do this with the following commands:
+If you want to try the latest development version, again go into package manager mode and simply type
 
-```julia
-using Pkg
-Pkg.add(PackageSpec(url="https://github.com/Alexander-Barth/NCDatasets.jl", rev="master"))
-Pkg.build("NCDatasets")
+```
+add NCDatasets#master
 ```
 
-## Tutorial
+## Contents
 
-### Load a variable from a netCDF file
+To get started quickly see the [Quickstart](@ref) section. Otherwise see the following pages for details:
 
-In the following example, we load the variable with the name `tp` from the NetCDF file `"ECMWF_ERA-40_subset.nc"` and the attribute named `"units"`:.
+* [Datasets](@ref) : reading/writing NetCDF datasets (as a whole) and examining their contents.
+* [Variables](@ref) : accessing/examining the variables (or dimensions) stored within a NetCDF dataset.
+* [Performance tips](@ref), [Known issues](@ref), [Experimental features](@ref): self-explanatory.
+
+## Quickstart
+
+This is a quickstart guide that outlines basic loading, reading, etc. usage.
+For more details please see the individual pages of the documentation.
+
+
+* [Explore the content of a netCDF file](#explore-the-content-of-a-netcdf-file)
+* [Load a netCDF file](#load-a-netcdf-file)
+* [Create a netCDF file](#create-a-netcdf-file)
+* [Edit an existing netCDF file](#edit-an-existing-netcdf-file)
+* [Create a netCDF file using the metadata of an existing netCDF file as template](@ref)
+* [Get one or several variables by specifying the value of an attribute](@ref)
+* [Load a file with unknown structure](@ref)
+
+### Explore the content of a netCDF file
+
+Before reading the data from a netCDF file, it is often useful to explore the list of variables and attributes defined in it.
+
+For interactive use, the following commands (without ending semicolon) display the content of the file similarly to `ncdump -h file.nc`:
 
 ```julia
 using NCDatasets
-download("https://www.unidata.ucar.edu/software/netcdf/examples/ECMWF_ERA-40_subset.nc","ECMWF_ERA-40_subset.nc");
-ds = Dataset("ECMWF_ERA-40_subset.nc")
-tp = ds["tp"][:];
-tp_units = ds["tp"].attrib["units"]
+ds = Dataset("file.nc")
+```
+
+This creates the central structure of NCDatasets.jl, `Dataset`, which represents the contents of the netCDF file (without immediatelly loading everything in memory). `NCDataset` is an alias for `Dataset`.
+
+The following displays the information just for the variable `varname`:
+
+```julia
+ds["varname"]
+```
+
+while to get the global attributes you can do:
+```julia
+ds.attrib
+```
+which produces a listing like:
+
+```
+Dataset: file.nc
+Group: /
+
+Dimensions
+   time = 115
+
+Variables
+  time   (115)
+    Datatype:    Float64
+    Dimensions:  time
+    Attributes:
+     calendar             = gregorian
+     standard_name        = time
+     units                = days since 1950-01-01 00:00:00
+[...]
+```
+
+### Load a netCDF file
+
+Loading a variable with known structure can be achieved by accessing the variables and attributes directly by their name.
+
+```julia
+# The mode "r" stands for read-only. The mode "r" is the default mode and the parameter can be omitted.
+ds = Dataset("/tmp/test.nc","r")
+v = ds["temperature"]
+
+# load a subset
+subdata = v[10:30,30:5:end]
+
+# load all data
+data = v[:,:]
+
+# load all data ignoring attributes like scale_factor, add_offset, _FillValue and time units
+data2 = v.var[:,:]
+
+
+# load an attribute
+unit = v.attrib["units"]
 close(ds)
+```
+
+In the example above, the subset can also be loaded with:
+
+```julia
+subdata = Dataset("/tmp/test.nc")["temperature"][10:30,30:5:end]
+```
+
+This might be useful in an interactive session. However, the file `test.nc` is not closed, which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
+
+An alternative way to ensure the file has been closed is to use a `do` block: the file will be closed automatically when leaving the block.
+
+```julia
+data =
+Dataset(filename,"r") do ds
+    ds["temperature"][:,:]
+end # ds is closed
+```
+
+### Create a netCDF file
+
+The following gives an example of how to create a netCDF file by defining dimensions, variables and attributes.
+
+```julia
+using NCDatasets
+# This creates a new NetCDF file /tmp/test.nc.
+# The mode "c" stands for creating a new file (clobber)
+ds = Dataset("/tmp/test.nc","c")
+
+# Define the dimension "lon" and "lat" with the size 100 and 110 resp.
+defDim(ds,"lon",100)
+defDim(ds,"lat",110)
+
+# Define a global attribute
+ds.attrib["title"] = "this is a test file"
+
+# Define the variables temperature
+v = defVar(ds,"temperature",Float32,("lon","lat"))
+
+# Generate some example data
+data = [Float32(i+j) for i = 1:100, j = 1:110]
+
+# write a single column
+v[:,1] = data[:,1]
+
+# write a the complete data set
+v[:,:] = data
+
+# write attributes
+v.attrib["units"] = "degree Celsius"
+v.attrib["comments"] = "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
+
+close(ds)
+```
+
+An equivalent way to create the previous netCDF would be the following code:
+
+```julia
+using NCDatasets
+data = [Float32(i+j) for i = 1:100, j = 1:110]
+
+Dataset("/tmp/test2.nc","c",attrib = ["title" => "this is a test file"]) do ds
+    # Define the variable temperature. The dimension "lon" and "lat" with the
+    # size 100 and 110 resp are implicetly created
+    defVar(ds,"temperature",data,("lon","lat"), attrib = [
+           "units" => "degree Celsius",
+           "comments" => "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
+    ])
+end
+```
+
+### Edit an existing netCDF file
+
+When you need to modify the variables or the attributes of a netCDF, you have
+to open it with the `"a"` option. Here of instance we add a global attribute *creator* to the
+file created in the previous step.
+
+```julia
+ds = Dataset("/tmp/test.nc","a")
+ds.attrib["creator"] = "your name"
+close(ds);
 ```
 
 ### Create a netCDF file using the metadata of an existing netCDF file as template
@@ -88,7 +240,7 @@ attribute `standard_name` equal to `"longitude"` one can the following:
 data = varbyattrib(ds, standard_name = "longitude")[1][:]
 ```
 
-### Load a file (with unknown structure)
+### Load a file with unknown structure
 
 If the structure of the netCDF file is not known before-hand, the program must check if a variable or attribute exists (with the `haskey` function) before loading it or alternatively place the loading in a `try`-`catch` block.
 It is also possible to iterate over all variables or attributes (global attributes or variable attributes) in the same syntax as iterating over a dictionary. However, unlike Julia dictionaries, the order of the attributes and variables is preserved and presented as they are stored in the netCDF file.
@@ -136,245 +288,3 @@ end
 units = get(v,"units","adimensional")
 close(ds)
 ```
-
-
-## Datasets
-
-```@docs
-Dataset
-keys(ds::Dataset)
-haskey
-getindex(ds::Dataset,varname::AbstractString)
-variable
-sync
-close
-path
-```
-
-## Variables
-
-```@docs
-defVar
-dimnames
-name
-dimsize
-chunking
-deflate
-checksum
-loadragged
-NCDatasets.load!
-```
-
-Different type of arrays are involved when working with NCDatasets. For instance assume that `test.nc` is a file with a `Float32` variable called `var`. Assume that we open this data set in append mode (`"a"`):
-
-```julia
-using NCDatasets
-ds = Dataset("test.nc","a")
-v_cf = ds["var"]
-```
-
-The variable `v_cf` has the type `CFVariable`. No data is actually loaded from disk, but you can query its size, number of dimensions, number elements, ... by the functions `size`, `ndims`, `length` as ordinary Julia arrays. Once you index, the variable `v_cf`, then the data is loaded and stored as an `Array`:
-
-```julia
-v_da = v_cf[:,:] # or v_da = v_cf[:]
-```
-
-Note that even if the variable `v_cf` has 2 (or more dimension), the index operation `v_cf[:]` preserves its actual shape and does not generate a flat vector of the data (unlike regular Julia arrays). As load operations are very common, it was consired advantageous to have a consice syntax.
-
-### Coordinate variables
-
-```@docs
-coord
-```
-
-
-
-## Attributes
-
-The NetCDF dataset (as return by `Dataset` or NetCDF groups) and the NetCDF variables (as returned by `getindex`, `variable` or `defVar`) have the field `attrib` which has the type `NCDatasets.Attributes` and behaves like a julia dictionary.
-
-
-```@docs
-getindex(a::NCDatasets.Attributes,name::AbstractString)
-setindex!(a::NCDatasets.Attributes,data,name::AbstractString)
-keys(a::NCDatasets.Attributes)
-```
-
-## Dimensions
-
-```@docs
-defDim
-setindex!(d::NCDatasets.Dimensions,len,name::AbstractString)
-dimnames(v::NCDatasets.Variable)
-unlimited(d::NCDatasets.Dimensions)
-```
-
-
-## Groups
-
-```@docs
-defGroup(ds::Dataset,groupname)
-getindex(g::NCDatasets.Groups,groupname::AbstractString)
-Base.keys(g::NCDatasets.Groups)
-```
-
-## Common methods
-
-One can iterate over a dataset, attribute list, dimensions and NetCDF groups.
-
-```julia
-for (varname,var) in ds
-    # all variables
-    @show (varname,size(var))
-end
-
-for (dimname,dim) in ds.dims
-    # all dimensions
-    @show (dimname,dim)
-end
-
-for (attribname,attrib) in ds.attrib
-    # all attributes
-    @show (attribname,attrib)
-end
-
-for (groupname,group) in ds.groups
-    # all groups
-    @show (groupname,group)
-end
-```
-
-
-# Time functions
-
-See DateTime-structures from [CFTime](http://juliageo.org/CFTime.jl/stable/) are used to represent time for non-standard calendars.
-
-# Utility functions
-
-```@docs
-ncgen
-nomissing
-varbyattrib
-```
-
-# Performance tips
-
-* Reading data from a file is not type-stable, because the type of the output of the read operation does depedent on the type defined in the NetCDF files and the value of various attribute (like `scale_factor`, `add_offset` and `units` for time conversion). All this information cannot be inferred from a static analysis of the source code. It is therefore recommended to use
-[type annotation](https://docs.julialang.org/en/v1/manual/types/index.html#Type-Declarations-1)
-if resulting type of a read operation in known:
-
-```julia
-ds = Dataset("file.nc")
-temperature = ds["temperature"][:] :: Array{Float64,2}
-close(ds)
-```
-
-Alternatively, one can also use so called "[function barriers]"(https://docs.julialang.org/en/v1/manual/performance-tips/index.html#kernel-functions-1) or the in-place `load!` function:
-
-```julia
-ds = Dataset("file.nc")
-
-temperature = zeros(10,20)
-load!(ds["temperature"],temperature,:,:)
-```
-
-* Most julia functions (like `mean`, `sum`,... from the module Statistics) access an array element-wise. It is generally much faster to load the data in memory (if possible) to make the computation.
-
-```
-using NCDatasets, BenchmarkTools, Statistics
-ds = Dataset("file.nc","c")
-data = randn(100,100);
-defVar(ds,"myvar",data,("lon","lat"))
-close(ds)
-
-ds = Dataset("file.nc")
-@btime mean(ds["myvar"]) # takes 107.357 ms
-@btime mean(ds["myvar"][:]) # takes 106.873 μs, 1000 times faster
-close(ds)
-```
-
-
-# Multi-file support (experimental)
-
-Multiple files can also be aggregated over a given dimensions (or the record dimension). In this example, 3 sea surface temperature fields from the
-1992-01-01 to 1992-01-03 are aggregated using the OpenDAP service from PODAAC.
-
-```
-using NCDatasets, Printf, Dates
-
-function url(dt)
-  doy = @sprintf("%03d",Dates.dayofyear(dt))
-  y = @sprintf("%04d",Dates.year(dt))
-  yyyymmdd = Dates.format(dt,"yyyymmdd")
-  return "https://podaac-opendap.jpl.nasa.gov:443/opendap/allData/ghrsst/data/GDS2/L4/GLOB/CMC/CMC0.2deg/v2/$y/$doy/$(yyyymmdd)120000-CMC-L4_GHRSST-SSTfnd-CMC0.2deg-GLOB-v02.0-fv02.0.nc"
-end
-
-ds = Dataset(url.(DateTime(1992,1,1):Dates.Day(1):DateTime(1992,1,3)),aggdim = "time");
-SST2 = ds["analysed_sst"][:,:,:];
-close(ds)
-```
-
-If there is a network or server issue, you will see an error message like "NetCDF: I/O failure".
-
-
-# Experimental functions
-
-```@docs
-NCDatasets.ancillaryvariables
-NCDatasets.filter
-```
-
-
-
-# Issues
-
-## libnetcdf not properly installed
-
-If you see the following error,
-
-```
-ERROR: LoadError: LoadError: libnetcdf not properly installed. Please run Pkg.build("NCDatasets")
-```
-
-you can try to install netcdf explicitly with Conda:
-
-```julia
-using Conda
-Conda.add("libnetcdf")
-```
-
-## NetCDF: Not a valid data type or _FillValue type mismatch
-
-Trying to define the `_FillValue`, procudes the following error:
-
-```
-ERROR: LoadError: NCDatasets.NetCDFError(-45, "NetCDF: Not a valid data type or _FillValue type mismatch")
-```
-
-The error could be generated by a code like this:
-
-```julia
-using NCDatasets
-# ...
-tempvar = defVar(ds,"temp",Float32,("lonc","latc","time"))
-tempvar.attrib["_FillValue"] = -9999.
-```
-
-In fact, `_FillValue` must have the same data type as the corresponding variable. In the case above, `tempvar` is a 32-bit float and the number `-9999.` is a 64-bit float (aka double, which is the default floating point type in Julia). It is sufficient to convert the value `-9999.` to a 32-bit float:
-
-```julia
-tempvar.attrib["_FillValue"] = Float32(-9999.) # or
-tempvar.attrib["_FillValue"] = -9999.f0
-```
-
-
-## Corner cases
-
-
-* An attribute representing a vector with a single value (e.g. `[1]`) will be read back as a scalar (`1`) (same behavior in python netCDF4 1.3.1).
-
-* NetCDF and Julia distinguishes between a vector of chars and a string, but both are returned as string for ease of use, in particular an attribute representing a vector of chars `['u','n','i','t','s']` will be read back as the string `"units"`.
-
-* An attribute representing a vector of chars `['u','n','i','t','s','\0']` will also be read back as the string `"units"` (issue #12).
-
-* While reading a NetCDF time variable, the dates are converted using the Julia's `DateTime` (based on the proleptic Gregorian calendar following the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) standard) when possible. When data is written to a NetCDF file (without specifying the calendar), the dates are saved using the default calendar of the NetCDF CF convention (the mixed Julian/Gregorian calendar, called `"standard"`) when possible. It is recommended that the time origin specified by the units is after 15 October 1582 in which case the mixed Julian/Gregorian calendar is identical to the proleptic Gregorian calendar.
