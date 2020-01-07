@@ -39,7 +39,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     v[1,1] == data[1,1]
     @test v[end,end] == data[end,end]
 
-    @test nsize(v) == (lon = 123, lat = 145)
+    @test dimsize(v) == (lon = 123, lat = 145)
     close(ds)
 
 
