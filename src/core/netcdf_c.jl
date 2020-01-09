@@ -3,6 +3,7 @@
 # MIT
 
 # Several calls are commented out because they are not captured by tests
+# TODO: Then why keep the commented code here?
 
 const depfile = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
 if isfile(depfile)
