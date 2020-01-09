@@ -45,9 +45,10 @@ include("core/prettyprinting.jl")
 
 include("multifile/types.jl")
 include("multifile/functions.jl")
+export MFDataset
 
 export defVar, defDim, Dataset, NCDataset, close, sync, variable, dimnames, name,
-    deflate, chunking, checksum, fillvalue, fillmode, ncgen
+    deflate, chunking, checksum, fillvalue, fillmode, ncgen, close
 export nomissing
 export varbyattrib
 export path
@@ -55,9 +56,6 @@ export defGroup
 export loadragged
 
 include("ncgen.jl")
-
-include("multifile.jl")
-export MFDataset, close
 
 include("defer.jl")
 export DeferDataset
