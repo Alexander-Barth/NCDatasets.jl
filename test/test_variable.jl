@@ -160,3 +160,4 @@ Dataset("temp1.nc", "c") do ds
       defVar(ds, "y", y, ("y",))
 end
 
+rm("temp1.nc")
