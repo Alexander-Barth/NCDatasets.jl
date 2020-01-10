@@ -1,7 +1,6 @@
 using NCDatasets
 using Test
 
-fname = tempname()
 fname = "test_cont_ragged_array.nc"
 ds = Dataset(fname,"c")
 # Dimensions
@@ -83,4 +82,4 @@ data = loadragged(ncvar,:)
 @test data == [[1.,2.,3.],  [10.,20.],  [100., 200.]]
 close(ds)
 
-#rm(fname)
+rm(fname)

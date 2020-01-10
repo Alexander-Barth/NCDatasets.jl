@@ -1,4 +1,46 @@
 
+struct Resource
+    filename::String
+    mode::String
+    metadata::OrderedDict
+end
+
+mutable struct DeferAttributes <: BaseAttributes
+    r::Resource
+    varname::String # "/" for global attributes
+    data::OrderedDict
+end
+
+mutable struct DeferDimensions <: AbstractDimensions
+    r::Resource
+    data::OrderedDict
+end
+
+mutable struct DeferGroups <: AbstractGroups
+    r::Resource
+    data::OrderedDict
+end
+
+
+# -----------------------------------------------------
+
+
+mutable struct DeferDataset <: AbstractDataset
+    r::Resource
+    groupname::String
+    attrib::DeferAttributes
+    dim::DeferDimensions
+    group::DeferGroups
+    data::OrderedDict
+end
+
+mutable struct DeferVariable{T,N} <: AbstractVariable{T,N}
+    r::Resource
+    varname::String
+    attrib::DeferAttributes
+    data::OrderedDict
+end
+
 function metadata(ds::Dataset)
     # dimensions
 
