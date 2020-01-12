@@ -115,4 +115,4 @@ end
 
 Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=indent)
 
-Base.display(v::Union{Variable,CFVariable}) = show(Compat.stdout,v)
+Base.display(v::Union{Variable,CFVariable}) = show(stdout,v)
