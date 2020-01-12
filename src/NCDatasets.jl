@@ -20,10 +20,8 @@ using Dates
 using Printf
 
 using Base
-using Compat
 using DataStructures: OrderedDict
 import Base.convert
-import Compat: @debug, findfirst
 
 import Base: close
 import Base: Array

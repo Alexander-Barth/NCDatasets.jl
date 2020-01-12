@@ -2,7 +2,6 @@ using NCDatasets
 using Test
 using Dates
 using Printf
-using Compat
 using BenchmarkTools
 
 sz = (400,400)

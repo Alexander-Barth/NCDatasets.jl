@@ -3,8 +3,6 @@ using Test
 using Dates
 using Printf
 
-using Compat
-
 sz = (4,5)
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)

@@ -1,5 +1,4 @@
 using Random
-using Compat
 import NCDatasets
 
 varname = "varname"

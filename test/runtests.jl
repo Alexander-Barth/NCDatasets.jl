@@ -3,7 +3,6 @@ using Test
 using Dates
 using Printf
 using Random
-using Compat
 
 println("NetCDF library: ",NCDatasets.libnetcdf)
 println("NetCDF version: ",NCDatasets.nc_inq_libvers())

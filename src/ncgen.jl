@@ -58,7 +58,7 @@ as the NetCDF file `fname`. The code is placed in the file `jlname` or printed
 to the standard output. By default the new NetCDF file is called `filename.nc`.
 This can be changed with the optional parameter `newfname`.
 """
-ncgen(fname; kwargs...)  = ncgen(Compat.stdout,fname; kwargs...)
+ncgen(fname; kwargs...)  = ncgen(stdout,fname; kwargs...)
 
 function ncgen(fname,jlname; kwargs...)
     open(jlname,"w") do io
