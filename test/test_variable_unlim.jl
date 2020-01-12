@@ -3,7 +3,7 @@ filename = tempname()
 #filename = "/tmp/test-6.nc"
 # The mode "c" stands for creating a new file (clobber)
 
-NCDatasets.Dataset(filename,"c") do ds
+NCDatasets.NCDataset(filename,"c") do ds
 
     # define the dimension "lon" and "lat"
     #NCDatasets.defDim(ds,"lon",sz[1])
@@ -34,7 +34,7 @@ rm(filename)
 # issue #28
 
 filename = tempname()
-ds = Dataset(filename,"c")
+ds = NCDataset(filename,"c")
 defDim(ds,"lon",Inf)
 defDim(ds,"lat",110)
 v = defVar(ds,"temperature",Float32,("lon","lat"))

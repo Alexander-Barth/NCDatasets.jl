@@ -5,7 +5,7 @@
 if resulting type of a read operation in known:
 
 ```julia
-ds = Dataset("file.nc")
+ds = NCDataset("file.nc")
 temperature = ds["temperature"][:] :: Array{Float64,2}
 close(ds)
 ```
@@ -13,7 +13,7 @@ close(ds)
 Alternatively, one can also use so called "[function barriers]"(https://docs.julialang.org/en/v1/manual/performance-tips/index.html#kernel-functions-1) or the in-place `load!` function:
 
 ```julia
-ds = Dataset("file.nc")
+ds = NCDataset("file.nc")
 
 temperature = zeros(10,20)
 load!(ds["temperature"],temperature,:,:)
@@ -23,12 +23,12 @@ load!(ds["temperature"],temperature,:,:)
 
 ```
 using NCDatasets, BenchmarkTools, Statistics
-ds = Dataset("file.nc","c")
+ds = NCDataset("file.nc","c")
 data = randn(100,100);
 defVar(ds,"myvar",data,("lon","lat"))
 close(ds)
 
-ds = Dataset("file.nc")
+ds = NCDataset("file.nc")
 @btime mean(ds["myvar"]) # takes 107.357 ms
 @btime mean(ds["myvar"][:]) # takes 106.873 μs, 1000 times faster
 close(ds)

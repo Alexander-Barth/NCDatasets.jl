@@ -6,7 +6,7 @@ using Printf
 sz = (4,5)
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
-ds = Dataset(filename,"c")
+ds = NCDataset(filename,"c")
 
 # define the dimension "lon" and "lat"
 defDim(ds,"lon",sz[1])

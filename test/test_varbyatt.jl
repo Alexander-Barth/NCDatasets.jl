@@ -2,7 +2,7 @@ sz = (4,5)
 filename = tempname()
 
 # Create a simple dataset with some attributes to the variables
-ds = NCDatasets.Dataset(filename,"c")
+ds = NCDatasets.NCDataset(filename,"c")
 
 nlon = 120;
 nlat = 50;
@@ -26,7 +26,7 @@ vort2.attrib["standard_name"] = "ocean_relative_vorticity"
 
 close(ds)
 
-ds = NCDatasets.Dataset(filename,"r")
+ds = NCDatasets.NCDataset(filename,"r")
 
 # Single variables by standard name or units
 @test NCDatasets.name.(NCDatasets.varbyattrib(ds, standard_name = "longitude")) == ["lon"]

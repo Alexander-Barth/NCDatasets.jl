@@ -1,7 +1,7 @@
 
 
 """
-    mfds = Dataset(fnames,mode = "r"; aggdim = nothing, deferopen = true)
+    mfds = NCDataset(fnames,mode = "r"; aggdim = nothing, deferopen = true)
 
 Opens a multi-file dataset in read-only "r" or append mode "a". `fnames` is a
 vector of file names.
@@ -16,7 +16,7 @@ If deferopen is `false`, all files are opened at the same time.
 However the operating system might limit the number of open files. In Linux,
 the limit can be controled with the [command `ulimit`](https://stackoverflow.com/questions/34588/how-do-i-change-the-number-of-open-files-limit-in-linux).
 """
-function Dataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, deferopen = false) where N where TS <: AbstractString
+function NCDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, deferopen = false) where N where TS <: AbstractString
     if !(mode == "r" || mode == "a")
         throw(NetCDFError(-1,"""Unsupported mode for multi-file dataset (mode = $(mode)). Mode must be "r" or "a". """))
     end
@@ -24,9 +24,9 @@ function Dataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, defer
     if deferopen
         @assert mode == "r"
         master_index = 1
-        ds_master = Dataset(fnames[master_index],mode);
+        ds_master = NCDataset(fnames[master_index],mode);
         data_master = metadata(ds_master)
-        ds = Vector{Union{Dataset,DeferDataset}}(undef,length(fnames))
+        ds = Vector{Union{NCDataset,DeferDataset}}(undef,length(fnames))
         #ds[master_index] = ds_master
         for i = 1:length(fnames)
             #if i !== master_index
@@ -34,7 +34,7 @@ function Dataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, defer
             #end
         end
     else
-        ds = Dataset.(fnames,mode);
+        ds = NCDataset.(fnames,mode);
     end
 
     if aggdim == nothing

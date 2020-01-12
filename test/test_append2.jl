@@ -7,7 +7,7 @@ times = 0:10
 
 # generate a NetCDF file
 
-NCDatasets.Dataset(filename,"c") do ds
+NCDatasets.NCDataset(filename,"c") do ds
     NCDatasets.defDim(ds,"lonc",length(lons))
     NCDatasets.defDim(ds,"latc",length(lats))
     NCDatasets.defDim(ds,"time",Inf)
@@ -23,7 +23,7 @@ end
 
 # append data
 
-NCDatasets.Dataset(filename,"a") do ds
+NCDatasets.NCDataset(filename,"a") do ds
     tempvar = ds["temp"]
 
     for itime = 1:length(times)

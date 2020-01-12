@@ -3,7 +3,7 @@ using Test
 
 filename = tempname()
 
-ds = Dataset(filename,"c")
+ds = NCDataset(filename,"c")
 x = collect(1:10)
 defVar(ds, "x", x, ("x",))
 defDim(ds, "Time", Inf)

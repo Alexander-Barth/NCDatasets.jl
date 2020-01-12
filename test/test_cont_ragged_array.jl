@@ -2,7 +2,7 @@ using NCDatasets
 using Test
 
 fname = "test_cont_ragged_array.nc"
-ds = Dataset(fname,"c")
+ds = NCDataset(fname,"c")
 # Dimensions
 
 ds.dim["obs"] = 7
@@ -76,7 +76,7 @@ nchumidity[:] = [1.,2.,3.,  10.,20.,  100., 200]
 close(ds)
 
 
-ds = Dataset(fname);
+ds = NCDataset(fname);
 ncvar = ds["z"]
 data = loadragged(ncvar,:)
 @test data == [[1.,2.,3.],  [10.,20.],  [100., 200.]]

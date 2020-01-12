@@ -25,11 +25,11 @@ end
 function Base.show(io::IO,ds::AbstractDataset; indent="")
     try
         dspath = path(ds)
-        printstyled(io, indent, "Dataset: ",dspath,"\n", color=:red)
+        printstyled(io, indent, "NCDataset: ",dspath,"\n", color=:red)
     catch err
         if isa(err,NetCDFError)
             if err.code == NC_EBADID
-                print(io,"closed NetCDF Dataset")
+                print(io,"closed NetCDF NCDataset")
                 return
             end
         end

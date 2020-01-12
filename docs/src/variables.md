@@ -5,7 +5,7 @@ Different type of arrays are involved when working with NCDatasets. For instance
 
 ```julia
 using NCDatasets
-ds = Dataset("test.nc","a")
+ds = NCDataset("test.nc","a")
 v_cf = ds["var"]
 ```
 

@@ -6,7 +6,7 @@ filename = tempname()
 #filename = "/tmp/test-10.nc"
 # The mode "c" stands for creating a new file (clobber)
 
-NCDatasets.Dataset(filename,"c", attrib = [
+NCDatasets.NCDataset(filename,"c", attrib = [
     "title" => "NetCDF variable with grous"]) do ds
 
     # define the dimension "lon" and "lat"
@@ -19,7 +19,7 @@ NCDatasets.Dataset(filename,"c", attrib = [
     v[:,:] = fill(Float64(123),size(v))
 end
 
-NCDatasets.Dataset(filename) do ds
+NCDatasets.NCDataset(filename) do ds
    forecast = NCDatasets.group(ds,"forecast")
    @test all(forecast["var"][:,:] .== 123)
 
@@ -29,5 +29,5 @@ NCDatasets.Dataset(filename) do ds
 
 end
 
-#@show NCDatasets.Dataset(filename)
+#@show NCDatasets.NCDataset(filename)
 

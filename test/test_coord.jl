@@ -5,7 +5,7 @@ fname = tempname()
 
 for define_standard_name in [false,true]
 
-    Dataset(fname,"c") do ds
+    NCDataset(fname,"c") do ds
         # Dimensions
 
         ds.dim["xi_rho"] = 6
@@ -66,7 +66,7 @@ for define_standard_name in [false,true]
     end
 
 
-    ds = Dataset(fname)
+    ds = NCDataset(fname)
     @test name(coord(ds["zeta"],"longitude")) == "lon_rho"
     @test name(coord(ds["ubar"],"longitude")) == "lon_u"
     @test coord(ds["ubar"],"foobar") == nothing

@@ -5,7 +5,7 @@ filename = tempname()
 #filename = "/tmp/test-7.nc"
 # The mode "c" stands for creating a new file (clobber)
 
-Dataset(filename,"c") do ds
+NCDataset(filename,"c") do ds
 
     # define the dimension "lon" and "lat"
     defDim(ds,"lon",sz[1])

@@ -4,7 +4,7 @@ sz = (4,5)
 
 for format in [:netcdf4, :netcdf4_classic, :netcdf3_classic, :netcdf3_64bit_offset]
     filenamefmt = tempname()
-    NCDatasets.Dataset(filenamefmt,"c"; format = format) do ds
+    NCDatasets.NCDataset(filenamefmt,"c"; format = format) do ds
 
         # define the dimension "lon" and "lat"
         NCDatasets.defDim(ds,"lon",sz[1])
@@ -22,6 +22,6 @@ for format in [:netcdf4, :netcdf4_classic, :netcdf3_classic, :netcdf3_64bit_offs
     rm(filenamefmt)
 end
 
-@test_throws NCDatasets.NetCDFError NCDatasets.Dataset(
+@test_throws NCDatasets.NetCDFError NCDatasets.NCDataset(
     tempname(),"c";
     format = :netcdf3000_perfect_format)

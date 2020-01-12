@@ -2,7 +2,7 @@ sz = (4,5)
 filename = tempname()
 #filename = "/tmp/mytest.nc"
 
-NCDatasets.Dataset(filename,"c") do ds
+NCDatasets.NCDataset(filename,"c") do ds
 
     ds.dim["lon"] = sz[1]
     ds.dim["lat"] = sz[2]

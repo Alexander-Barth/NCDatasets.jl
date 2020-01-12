@@ -4,7 +4,7 @@ using Test
 fname = tempname()
 
 
-Dataset(fname,"c") do ds
+NCDataset(fname,"c") do ds
     # Dimensions
 
     ds.dim["xi_rho"] = 6
@@ -26,7 +26,7 @@ Dataset(fname,"c") do ds
 end
 
 
-ds = Dataset(fname,"a")
+ds = NCDataset(fname,"a")
 @test ds.dim["N"] == 30
 NCDatasets.renameDim(ds,"N","NNN")
 @test ds.dim["NNN"] == 30

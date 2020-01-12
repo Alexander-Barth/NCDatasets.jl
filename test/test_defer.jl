@@ -6,7 +6,7 @@ function example_file(i,array)
     fname = tempname()
     @debug "fname $fname"
 
-    Dataset(fname,"c") do ds
+    NCDataset(fname,"c") do ds
         # Dimensions
 
         ds.dim["lon"] = size(array,1)
@@ -64,7 +64,7 @@ A = randn(2,3,1)
 fname = example_file(1,A)
 
 
-ds = Dataset(fname)
+ds = NCDataset(fname)
 
 info = NCDatasets.metadata(ds)
 
@@ -110,11 +110,11 @@ show(ds_buf,dds)
 
 #=
 # write
-dds = Dataset(fnames,"a");
+dds = NCDataset(fnames,"a");
 dds["datavar"][2,2,:] = 1:length(fnames)
 
 for n = 1:length(fnames)
-    Dataset(fnames[n]) do ds
+    NCDataset(fnames[n]) do ds
         @test ds["datavar"][2,2,1] == n
     end
 end
@@ -122,11 +122,11 @@ end
 dds.attrib["history"] = "foo2"
 sync(dds)
 
-Dataset(fnames[1]) do ds
+NCDataset(fnames[1]) do ds
     @test ds.attrib["history"] == "foo2"
 end
 
-@test_throws NCDatasets.NetCDFError Dataset(fnames,"not-a-mode")
+@test_throws NCDatasets.NetCDFError NCDataset(fnames,"not-a-mode")
 
 @test keys(dds) == ["datavar", "lat", "lon", "time"]
 @test keys(dds.dim) == ["lon", "lat", "time"]
@@ -140,7 +140,7 @@ end
 # create new dimension in all files
 dds.dim["newdim"] = 123;
 sync(dds);
-Dataset(fnames[1]) do ds
+NCDataset(fnames[1]) do ds
     @test ds.dim["newdim"] == 123
 end
 close(dds)

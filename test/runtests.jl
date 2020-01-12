@@ -14,14 +14,14 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     data = randn(MersenneTwister(152), sz)
 
     filename = tempname()
-    ds = Dataset(filename,"c") do ds
+    ds = NCDataset(filename,"c") do ds
         defDim(ds,"lon",sz[1])
         defDim(ds,"lat",sz[2])
         v = defVar(ds,"var",Float64,("lon","lat"))
         v[:,:] = data
     end
 
-    ds = Dataset(filename)
+    ds = NCDataset(filename)
     ds2 = NCDatasets.NCDataset(filename)
     v = ds["var"]
     @test v[:] == ds2["var"][:]
@@ -49,7 +49,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     filename = tempname()
     #filename = "/tmp/test-2.nc"
     # The mode "c" stands for creating a new file (clobber)
-    ds = NCDatasets.Dataset(filename,"c")
+    ds = NCDatasets.NCDataset(filename,"c")
 
     # define the dimension "lon" and "lat"
     ds.dim["lon"] = sz[1]
@@ -88,7 +88,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     # Load a file (with unknown structure)
 
-    ds = NCDatasets.Dataset(filename,"r")
+    ds = NCDatasets.NCDataset(filename,"r")
 
     # check if a file has a variable with a given name
     @test NCDatasets.haskey(ds,"temperature")
@@ -113,10 +113,10 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     close(ds)
 
-    # when opening a Dataset with a do block, it will be closed automatically
+    # when opening a NCDataset with a do block, it will be closed automatically
     # when leaving the do block.
 
-    NCDatasets.Dataset(filename,"r") do ds
+    NCDatasets.NCDataset(filename,"r") do ds
         data = ds["temperature"][:,:]
     end
 
@@ -124,12 +124,12 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     # define scalar
     filename = tempname()
-    NCDatasets.Dataset(filename,"c") do ds
+    NCDatasets.NCDataset(filename,"c") do ds
         v = NCDatasets.defVar(ds,"scalar",Float32,())
         v[:] = 123.f0
     end
 
-    NCDatasets.Dataset(filename,"r") do ds
+    NCDatasets.NCDataset(filename,"r") do ds
         v2 = ds["scalar"][:]
         @test typeof(v2) == Float32
         @test v2 == 123.f0
@@ -138,13 +138,13 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     # define scalar with .=
     filename = tempname()
-    NCDatasets.Dataset(filename,"c") do ds
+    NCDatasets.NCDataset(filename,"c") do ds
         v = NCDatasets.defVar(ds,"scalar",Float32,())
         v .= 1234.f0
         nothing
     end
 
-    NCDatasets.Dataset(filename,"r") do ds
+    NCDatasets.NCDataset(filename,"r") do ds
         v2 = ds["scalar"][:]
         @test v2 == 1234
     end
@@ -171,8 +171,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_bitarray.jl")
 
     # error handling
-    @test_throws NCDatasets.NetCDFError Dataset("file","not-a-mode")
-    @test_throws NCDatasets.NetCDFError Dataset(":/does/not/exist")
+    @test_throws NCDatasets.NetCDFError NCDataset("file","not-a-mode")
+    @test_throws NCDatasets.NetCDFError NCDataset(":/does/not/exist")
 
     include("test_variable.jl")
 
@@ -191,7 +191,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     # display
     buf = IOBuffer()
     filename = tempname()
-    closedvar = NCDatasets.Dataset(filename,"c") do ds
+    closedvar = NCDatasets.NCDataset(filename,"c") do ds
         # define the dimension "lon" and "lat" with the size 100 and 110 resp.
         NCDatasets.defDim(ds,"lon",100)
         NCDatasets.defDim(ds,"lat",110)

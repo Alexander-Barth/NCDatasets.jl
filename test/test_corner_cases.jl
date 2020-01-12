@@ -2,7 +2,7 @@ fname = tempname()
 
 # known quirks
 
-NCDatasets.Dataset(fname,"c") do ds
+NCDatasets.NCDataset(fname,"c") do ds
     
     ds.attrib["single_element"] = [1]
 
@@ -18,7 +18,7 @@ NCDatasets.Dataset(fname,"c") do ds
     
 end
 
-NCDatasets.Dataset(fname,"r") do ds
+NCDatasets.NCDataset(fname,"r") do ds
     # same behaviour in python netCDF4 1.3.1
     @test ds.attrib["single_element"] == 1
 

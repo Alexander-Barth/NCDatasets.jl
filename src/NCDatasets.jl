@@ -3,8 +3,9 @@ NCDatasets is a module to read and write NetCDF files.
 This is minimal example how to read a NetCDF file.
 
 ```julia
+using NCDatasets
 # open the file and show its metadata (if called in the REPL without ending semicolon)
-ds = Dataset("filename.nc","r")
+ds = NCDataset("filename.nc","r")
 # load all data of the variable temperature
 v = ds["temperature"][:,:]
 # load the attribute units
@@ -45,7 +46,7 @@ include("multifile/types.jl")
 include("multifile/functions.jl")
 export MFDataset
 
-export defVar, defDim, Dataset, NCDataset, close, sync, variable, dimnames, name,
+export defVar, defDim, NCDataset, Dataset, close, sync, variable, dimnames, name,
     deflate, chunking, checksum, fillvalue, fillmode, ncgen, close
 export nomissing
 export varbyattrib

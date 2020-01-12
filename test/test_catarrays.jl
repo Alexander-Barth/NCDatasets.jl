@@ -5,7 +5,7 @@ function example_file(i,array)
     fname = tempname()
     @debug "fname $fname"
 
-    Dataset(fname,"c") do ds
+    NCDataset(fname,"c") do ds
         # Dimensions
 
         ds.dim["lon"] = size(array,1)
@@ -91,7 +91,7 @@ C = cat(A...; dims = 3)
 fnames = example_file.(1:3,A)
 
 
-mfds = Dataset(fnames);
+mfds = NCDataset(fnames);
 varname = "var"
 var = variable(mfds,varname);
 data = var[:,:,:]
@@ -127,11 +127,11 @@ show(buf,mfds)
 occursin("time = 3",String(take!(buf)))
 
 # write
-mfds = Dataset(fnames,"a");
+mfds = NCDataset(fnames,"a");
 mfds["var"][2,2,:] = 1:length(fnames)
 
 for n = 1:length(fnames)
-    Dataset(fnames[n]) do ds
+    NCDataset(fnames[n]) do ds
         @test ds["var"][2,2,1] == n
     end
 end
@@ -139,11 +139,11 @@ end
 mfds.attrib["history"] = "foo2"
 sync(mfds)
 
-Dataset(fnames[1]) do ds
+NCDataset(fnames[1]) do ds
     @test ds.attrib["history"] == "foo2"
 end
 
-@test_throws NCDatasets.NetCDFError Dataset(fnames,"not-a-mode")
+@test_throws NCDatasets.NetCDFError NCDataset(fnames,"not-a-mode")
 
 @test keys(mfds) == ["var", "lat", "lon", "time"]
 @test keys(mfds.dim) == ["lon", "lat", "time"]
@@ -157,7 +157,7 @@ end
 # create new dimension in all files
 mfds.dim["newdim"] = 123;
 sync(mfds);
-Dataset(fnames[1]) do ds
+NCDataset(fnames[1]) do ds
     @test ds.dim["newdim"] == 123
 end
 close(mfds)

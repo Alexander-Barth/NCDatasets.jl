@@ -5,10 +5,10 @@ This page is about loading/writing, examining and operating directly on entire N
 Both variables and datasets share the functionality of the [Attributes](@ref) section.
 
 ```@docs
-Dataset
-keys(ds::Dataset)
+NCDataset
+keys(ds::NCDataset)
 haskey
-getindex(ds::Dataset,varname::AbstractString)
+getindex(ds::NCDataset,varname::AbstractString)
 variable
 sync
 close
@@ -22,7 +22,7 @@ Otherwise, we attempt to use standard structures from the Julia standard library
 
 ## Attributes
 
-The NetCDF dataset (as returned by `Dataset` or NetCDF groups) and the NetCDF variables (as returned by `getindex`, `variable` or `defVar`) have the field `attrib` which has the type `NCDatasets.Attributes` and behaves like a julia dictionary.
+The NetCDF dataset (as returned by `NCDataset` or NetCDF groups) and the NetCDF variables (as returned by `getindex`, `variable` or `defVar`) have the field `attrib` which has the type `NCDatasets.Attributes` and behaves like a julia dictionary.
 
 ```@docs
 getindex(a::NCDatasets.Attributes,name::AbstractString)
@@ -33,7 +33,7 @@ keys(a::NCDatasets.Attributes)
 ## Groups
 
 ```@docs
-defGroup(ds::Dataset,groupname)
+defGroup(ds::NCDataset,groupname)
 getindex(g::NCDatasets.Groups,groupname::AbstractString)
 Base.keys(g::NCDatasets.Groups)
 ```

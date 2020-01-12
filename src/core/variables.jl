@@ -25,12 +25,12 @@ mutable struct CFVariable{T,N,TV,TA}  <: AbstractArray{T, N}
     attrib::TA
 end
 
-Dataset(var::CFVariable) = Dataset(var.var)
+NCDataset(var::CFVariable) = NCDataset(var.var)
 
 Base.size(v::CFVariable) = size(v.var)
 dimnames(v::CFVariable)  = dimnames(v.var)
 
-Dataset(var::Variable) = Dataset(var.ncid,var.isdefmode)
+NCDataset(var::Variable) = NCDataset(var.ncid,var.isdefmode)
 
 # the size of a variable can change, i.e. for a variable with an unlimited
 # dimension
@@ -41,8 +41,8 @@ Base.size(v::Variable) = (Int[nc_inq_dimlen(v.ncid,dimid) for dimid in v.dimids]
 ############################################################
 
 """
-    defVar(ds::Dataset,name,vtype,dimnames; kwargs...)
-    defVar(ds::Dataset,name,data,dimnames; kwargs...)
+    defVar(ds::NCDataset,name,vtype,dimnames; kwargs...)
+    defVar(ds::NCDataset,name,data,dimnames; kwargs...)
 
 Define a variable with the name `name` in the dataset `ds`.  `vtype` can be
 Julia types in the table below (with the corresponding NetCDF type). The
@@ -99,7 +99,7 @@ set on NetCDF 4 files.
 
 ```julia-repl
 julia> data = randn(3,5)
-julia> Dataset("test_file.nc","c") do ds
+julia> NCDataset("test_file.nc","c") do ds
           defVar(ds,"temp",data,("lon","lat"), attrib = [
              "units" => "degree_Celsius",
              "long_name" => "Temperature"
@@ -108,7 +108,7 @@ julia> Dataset("test_file.nc","c") do ds
 
 ```
 """
-function defVar(ds::Dataset,name,vtype::DataType,dimnames; kwargs...)
+function defVar(ds::NCDataset,name,vtype::DataType,dimnames; kwargs...)
     # all keyword arguments as dictionary
     kw = Dict(k => v for (k,v) in kwargs)
 
@@ -166,31 +166,31 @@ function defVar(ds::Dataset,name,vtype::DataType,dimnames; kwargs...)
 end
 
 # data has the type e.g. Array{Union{Missing,Float64},3}
-function defVar(ds::Dataset,
+function defVar(ds::NCDataset,
                 name,
                 data::AbstractArray{Union{Missing,nctype},N},
                 dimnames;
                 kwargs...) where nctype <: Union{Int8,UInt8,Int16,Int32,Int64,Float32,Float64} where N
-    _defVar(ds::Dataset,name,data,nctype,dimnames; kwargs...)
+    _defVar(ds::NCDataset,name,data,nctype,dimnames; kwargs...)
 end
 
 # data has the type e.g. Vector{DateTime}, Array{Union{Missing,DateTime},3} or
 # Vector{DateTime360Day}
 # Data is always stored as Float64 in the NetCDF file
-function defVar(ds::Dataset,
+function defVar(ds::NCDataset,
                 name,
                 data::AbstractArray{<:Union{Missing,nctype},N},
                 dimnames;
                 kwargs...) where nctype <: Union{DateTime,AbstractCFDateTime} where N
-    _defVar(ds::Dataset,name,data,Float64,dimnames; kwargs...)
+    _defVar(ds::NCDataset,name,data,Float64,dimnames; kwargs...)
 end
 
-function defVar(ds::Dataset,name,data,dimnames; kwargs...)
+function defVar(ds::NCDataset,name,data,dimnames; kwargs...)
     nctype = eltype(data)
-    _defVar(ds::Dataset,name,data,nctype,dimnames; kwargs...)
+    _defVar(ds::NCDataset,name,data,nctype,dimnames; kwargs...)
 end
 
-function _defVar(ds::Dataset,name,data,nctype,dimnames; kwargs...)
+function _defVar(ds::NCDataset,name,data,nctype,dimnames; kwargs...)
     # define the dimensions if necessary
     for i = 1:length(dimnames)
         if !(dimnames[i] in ds.dim)
@@ -212,14 +212,14 @@ function _defVar(ds::Dataset,name,data,nctype,dimnames; kwargs...)
 end
 
 
-function defVar(ds::Dataset,name,data::T; kwargs...) where T <: Number
+function defVar(ds::NCDataset,name,data::T; kwargs...) where T <: Number
     v = defVar(ds,name,T,(); kwargs...)
     v[:] = data
     return v
 end
 
 
-function renameVar(ds::Dataset,oldname,newname)
+function renameVar(ds::NCDataset,oldname,newname)
     defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
     varid = nc_inq_varid(ds.ncid,oldname)
     nc_rename_var(ds.ncid,varid,newname)
@@ -233,13 +233,13 @@ export renameVar
 ############################################################
 
 """
-    v = variable(ds::Dataset,varname::String)
+    v = variable(ds::NCDataset,varname::String)
 
 Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.Variable`. No scaling or other transformations are applied when the
 variable `v` is indexed.
 """
-function variable(ds::Dataset,varname::AbstractString)
+function variable(ds::NCDataset,varname::AbstractString)
     varid = nc_inq_varid(ds.ncid,varname)
     name,nctype,dimids,nattr = nc_inq_var(ds.ncid,varid)
     ndims = length(dimids)
@@ -263,7 +263,7 @@ function variable(ds::Dataset,varname::AbstractString)
 end
 
 """
-    v = getindex(ds::Dataset,varname::AbstractString)
+    v = getindex(ds::NCDataset,varname::AbstractString)
 
 Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The CF convention are honored when the
@@ -330,7 +330,7 @@ or time series of different length each.
 The [indexed ragged array representation](https://web.archive.org/web/20190111092546/http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#_indexed_ragged_array_representation) is currently not supported.
 """
 function loadragged(ncvar,index::Colon)
-    ds = Dataset(ncvar.var.ncid,ncvar.var.isdefmode)
+    ds = NCDataset(ncvar.var.ncid,ncvar.var.isdefmode)
 
     dimensionnames = dimnames(ncvar)
     if length(dimensionnames) !== 1

@@ -3,7 +3,7 @@ using Test
 
 fname = tempname()
 
-ds = Dataset(fname,"c")
+ds = NCDataset(fname,"c")
 # Dimensions
 
 ds.dim["time"] = 3
@@ -38,7 +38,7 @@ ncQC_LAT[:] = [1,1,4]
 close(ds)
 
 
-ds = Dataset(fname,"r")
+ds = NCDataset(fname,"r")
 
 @test name(NCDatasets.ancillaryvariables(ds["LAT"],"status_flag")) == "QC_LAT"
 @test isequal(NCDatasets.filter(ds["LAT"],:,accepted_status_flags = ["good_data","probably_good_data"]),

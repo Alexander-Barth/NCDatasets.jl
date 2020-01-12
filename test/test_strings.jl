@@ -2,7 +2,7 @@ import NCDatasets
 
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
-ds = NCDatasets.Dataset(filename,"c")
+ds = NCDatasets.NCDataset(filename,"c")
 
 # define the dimension "lon" and "lat" with the size 10 and 11 resp.
 ds.dim["lon"] = 26
@@ -17,7 +17,7 @@ v[:] = data
 NCDatasets.close(ds)
 
 
-ds = NCDatasets.Dataset(filename)
+ds = NCDatasets.NCDataset(filename)
 vs = ds["var_string"].var
 
 @test vs[:] == data

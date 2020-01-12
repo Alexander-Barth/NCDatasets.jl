@@ -9,7 +9,7 @@ data = randn(sz)
 
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
-ds = Dataset(filename,"c")
+ds = NCDataset(filename,"c")
 
 # define the dimension "lon" and "lat"
 defDim(ds,"lon",sz[1])
@@ -23,7 +23,7 @@ close(ds)
 
 function sequential_access!(filename,diskless,d)
     sz = size(d)
-    ds = Dataset(filename,"r", diskless = true)
+    ds = NCDataset(filename,"r", diskless = true)
     v = ds["var-Float64"]
 
     for j = 1:sz[2]
@@ -38,7 +38,7 @@ end
 
 function random_access!(filename,diskless,d)
     sz = size(d)
-    ds = Dataset(filename,"r", diskless = diskless)
+    ds = NCDataset(filename,"r", diskless = diskless)
     v = ds["var-Float64"]
 
     for I in Random.shuffle(CartesianIndices(sz)[:])

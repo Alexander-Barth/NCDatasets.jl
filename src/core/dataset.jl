@@ -1,5 +1,5 @@
 #=
-Core type definitions for the `Dataset` struct,
+Core type definitions for the `NCDataset` struct,
 the `Attributes` and `Group` parts as well.
 and the `Attributes` part of it.
 Helper functions defined for these as well.
@@ -58,7 +58,7 @@ mutable struct Dimensions <: AbstractDimensions
     isdefmode::Vector{Bool}
 end
 
-mutable struct Dataset <: AbstractDataset
+mutable struct NCDataset <: AbstractDataset
     ncid::Cint
     # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
     # need to be an array, so that it is copied by reference
@@ -68,8 +68,8 @@ mutable struct Dataset <: AbstractDataset
     group::Groups
 end
 
-"Alias to `Dataset`"
-const NCDataset = Dataset
+"Alias to `NCDataset`"
+const Dataset = NCDataset
 
 const NCIterable = Union{BaseAttributes,AbstractDimensions,AbstractDataset,AbstractGroups}
 Base.length(a::NCIterable) = length(keys(a))
@@ -170,7 +170,7 @@ Return the NetCDF `group` with the name `groupname`.
 For example:
 
 ```julia-repl
-julia> ds = Dataset("results.nc", "r");
+julia> ds = NCDataset("results.nc", "r");
 julia> forecast_group = ds.group["forecast"]
 julia> forecast_temp = forecast_group["temperature"]
 ```
@@ -178,18 +178,18 @@ julia> forecast_temp = forecast_group["temperature"]
 """
 function Base.getindex(g::Groups,groupname::AbstractString)
     grp_ncid = nc_inq_grp_ncid(g.ncid,groupname)
-    return Dataset(grp_ncid,g.isdefmode)
+    return NCDataset(grp_ncid,g.isdefmode)
 end
 
 """
-    defGroup(ds::Dataset,groupname, attrib = []))
+    defGroup(ds::NCDataset,groupname, attrib = []))
 
 Create the group with the name `groupname` in the dataset `ds`.
-`attrib` is a list of attribute name and attribute value pairs (see `Dataset`).
+`attrib` is a list of attribute name and attribute value pairs (see `NCDataset`).
 """
-function defGroup(ds::Dataset,groupname; attrib = [])
+function defGroup(ds::NCDataset,groupname; attrib = [])
     grp_ncid = nc_def_grp(ds.ncid,groupname)
-    ds = Dataset(grp_ncid,ds.isdefmode)
+    ds = NCDataset(grp_ncid,ds.isdefmode)
 
     # set global attributes for group
     for (attname,attval) in attrib
@@ -206,7 +206,7 @@ group(ds::AbstractDataset,groupname) = ds.group[groupname]
 ############################################################
 
 """
-    Dataset(filename::AbstractString, mode = "r";
+    NCDataset(filename::AbstractString, mode = "r";
             format::Symbol = :netcdf4, attrib = [])
 
 Load, create, or even overwrite a NetCDF file at `filename`, depending on `mode`:
@@ -235,21 +235,21 @@ vector of pairs (see example below).
 Files can also be open and automatically closed with a `do` block.
 
 ```julia
-Dataset("file.nc") do ds
+NCDataset("file.nc") do ds
     data = ds["temperature"][:,:]
 end
 ```
 
 Here is an attribute example:
 ```julia
-Dataset("file.nc", "c", attrib = ["title" => "my first netCDF file"]) do ds
+NCDataset("file.nc", "c", attrib = ["title" => "my first netCDF file"]) do ds
    defVar(ds,"temp",[10.,20.,30.],("time",))
 end;
 ```
 
-`NCDataset` is an alias to `Dataset`.
+`NCDataset` is an alias to `NCDataset`.
 """
-function Dataset(filename::AbstractString,
+function NCDataset(filename::AbstractString,
                  mode::AbstractString = "r";
                  format::Symbol = :netcdf4,
                  diskless = false,
@@ -302,7 +302,7 @@ function Dataset(filename::AbstractString,
         throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
     end
 
-    ds = Dataset(ncid,isdefmode)
+    ds = NCDataset(ncid,isdefmode)
 
     # set global attributes
     for (attname,attval) in attrib
@@ -312,20 +312,20 @@ function Dataset(filename::AbstractString,
     return ds
 end
 
-function Dataset(ncid::Integer,
+function NCDataset(ncid::Integer,
                  isdefmode::Vector{Bool})
     attrib = Attributes(ncid,NC_GLOBAL,isdefmode)
     dim = Dimensions(ncid,isdefmode)
     group = Groups(ncid,isdefmode)
-    return Dataset(ncid,isdefmode,attrib,dim,group)
+    return NCDataset(ncid,isdefmode,attrib,dim,group)
 end
 
-function Dataset(f::Function,args...; kwargs...)
-    ds = Dataset(args...; kwargs...)
+function NCDataset(f::Function,args...; kwargs...)
+    ds = NCDataset(args...; kwargs...)
     try
         f(ds)
     finally
-        #@debug "closing netCDF Dataset $(NCDatasets.path(ds))"
+        #@debug "closing netCDF NCDataset $(NCDatasets.path(ds))"
         close(ds)
     end
 end
@@ -339,7 +339,7 @@ attribute list `a`. Generally the attributes are loaded by
 indexing, for example:
 
 ```julia
-ds = Dataset("file.nc")
+ds = NCDataset("file.nc")
 title = ds.attrib["title"]
 ```
 """
@@ -356,7 +356,7 @@ attribute list `a`. Generally the attributes are defined by
 indexing, for example:
 
 ```julia
-ds = Dataset("file.nc","c")
+ds = NCDataset("file.nc","c")
 ds.attrib["title"] = "my title"
 ```
 """
@@ -376,43 +376,43 @@ Base.keys(a::Attributes) = listAtt(a.ncid,a.varid)
 # High-level: user convenience
 ############################################################
 """
-    keys(ds::Dataset)
+    keys(ds::NCDataset)
 
-Return a list of all variables names in Dataset `ds`.
+Return a list of all variables names in NCDataset `ds`.
 """
-Base.keys(ds::Dataset) = listVar(ds.ncid)
-
-"""
-    path(ds::Dataset)
-Return the file path (or the opendap URL) of the Dataset `ds`
-"""
-path(ds::Dataset) = nc_inq_path(ds.ncid)
-
+Base.keys(ds::NCDataset) = listVar(ds.ncid)
 
 """
-    groupname(ds::Dataset)
-Return the group name of the Dataset `ds`
+    path(ds::NCDataset)
+Return the file path (or the opendap URL) of the NCDataset `ds`
 """
-groupname(ds::Dataset) = nc_inq_grpname(ds.ncid)
+path(ds::NCDataset) = nc_inq_path(ds.ncid)
 
 
 """
-    sync(ds::Dataset)
-
-Write all changes in Dataset `ds` to the disk.
+    groupname(ds::NCDataset)
+Return the group name of the NCDataset `ds`
 """
-function sync(ds::Dataset)
+groupname(ds::NCDataset) = nc_inq_grpname(ds.ncid)
+
+
+"""
+    sync(ds::NCDataset)
+
+Write all changes in NCDataset `ds` to the disk.
+"""
+function sync(ds::NCDataset)
     datamode(ds.ncid,ds.isdefmode)
     nc_sync(ds.ncid)
 end
 
 """
-    close(ds::Dataset)
+    close(ds::NCDataset)
 
-Close the Dataset `ds`. All pending changes will be written
+Close the NCDataset `ds`. All pending changes will be written
 to the disk.
 """
-Base.close(ds::Dataset) = nc_close(ds.ncid)
+Base.close(ds::NCDataset) = nc_close(ds.ncid)
 
 ############################################################
 # Dimensions
@@ -446,7 +446,7 @@ Defines the dimension called `name` to the length `len`.
 Generally dimension are defined by indexing, for example:
 
 ```julia
-ds = Dataset("file.nc","c")
+ds = NCDataset("file.nc","c")
 ds.dim["longitude"] = 100
 ```
 
@@ -460,7 +460,7 @@ function Base.setindex!(d::Dimensions,len,name::AbstractString)
 end
 
 """
-    defDim(ds::Dataset,name,len)
+    defDim(ds::NCDataset,name,len)
 
 Define a dimension in the data set `ds` with the given `name` and length `len`.
 If `len` is the special value `Inf`, then the dimension is considered as
@@ -469,20 +469,20 @@ If `len` is the special value `Inf`, then the dimension is considered as
 For example:
 
 ```julia
-ds = Dataset("/tmp/test.nc","c")
+ds = NCDataset("/tmp/test.nc","c")
 defDim(ds,"lon",100)
 ```
 
 This defines the dimension `lon` with the size 100.
 """
-function defDim(ds::Dataset,name,len)
+function defDim(ds::NCDataset,name,len)
     defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
     dimid = nc_def_dim(ds.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
     return nothing
 end
 
 
-function renameDim(ds::Dataset,oldname,newname)
+function renameDim(ds::NCDataset,oldname,newname)
     defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
     dimid = nc_inq_dimid(ds.ncid,oldname)
     nc_rename_dim(ds.ncid,dimid,newname)
@@ -515,12 +515,12 @@ Load all the data of the first variable with standard name "longitude" from the
 NetCDF file `results.nc`.
 
 ```julia-repl
-julia> ds = Dataset("results.nc", "r");
+julia> ds = NCDataset("results.nc", "r");
 julia> data = varbyattrib(ds, standard_name = "longitude")[1][:]
 ```
 
 """
-function varbyattrib(ds::Dataset; kwargs...)
+function varbyattrib(ds::NCDataset; kwargs...)
     # Start with an empty list of variables
     varlist = []
 
@@ -555,13 +555,13 @@ function varbyattrib(ds::Dataset; kwargs...)
 end
 
 """
-    haskey(ds::Dataset,varname)
+    haskey(ds::NCDataset,varname)
 
-Return true if the Dataset `ds` has a variable with the name `varname`.
+Return true if the NCDataset `ds` has a variable with the name `varname`.
 For example:
 
 ```julia
-ds = Dataset("/tmp/test.nc","r")
+ds = NCDataset("/tmp/test.nc","r")
 if haskey(ds,"temperature")
     println("The file has a variable 'temperature'")
 end

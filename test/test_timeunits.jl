@@ -5,7 +5,7 @@ filename = tempname()
 
 for (timeunit,factor) in [("days",1),("hours",24),("minutes",24*60),("seconds",24*60*60)]
 
-    NCDatasets.Dataset(filename,"c") do ds
+    NCDatasets.NCDataset(filename,"c") do ds
         NCDatasets.defDim(ds,"time",3)
         v = NCDatasets.defVar(ds,"time",Float64,("time",))
         v.attrib["units"] = "$(timeunit) since 2000-01-01 00:00:00"
@@ -21,7 +21,7 @@ for (timeunit,factor) in [("days",1),("hours",24),("minutes",24*60),("seconds",2
         @test v[3] == DateTime(2000,1,1)
     end
 
-    NCDatasets.Dataset(filename,"r") do ds
+    NCDatasets.NCDataset(filename,"r") do ds
         v2 = ds["time"].var[:]
         @test v2[1] == 1. * factor
 
@@ -32,7 +32,7 @@ for (timeunit,factor) in [("days",1),("hours",24),("minutes",24*60),("seconds",2
     rm(filename)
 end
 
-NCDatasets.Dataset(filename,"c") do ds
+NCDatasets.NCDataset(filename,"c") do ds
     NCDatasets.defDim(ds,"time",3)
 
     v2 = NCDatasets.defVar(ds,"time2",
@@ -45,7 +45,7 @@ end
 
 # test fill-value in time axis
 filename = tempname()
-NCDatasets.Dataset(filename,"c") do ds
+NCDatasets.NCDataset(filename,"c") do ds
     NCDatasets.defDim(ds,"time",3)
     v = NCDatasets.defVar(ds,"time",Float64,("time",))
     v.attrib["units"] = "days since 2000-01-01 00:00:00"
@@ -58,7 +58,7 @@ rm(filename)
 
 # test time axis with no explicit unit
 filename = tempname()
-Dataset(filename,"c") do ds
+NCDataset(filename,"c") do ds
     defDim(ds,"time",3)
     v = defVar(ds,"time",Float64,("time",))
     v[:] = [DateTime(2000,1,2), DateTime(2000,1,3), DateTime(2000,1,4)]
@@ -70,7 +70,7 @@ rm(filename)
 
 # test fill-value in time axis
 filename = tempname()
-NCDatasets.Dataset(filename,"c") do ds
+NCDatasets.NCDataset(filename,"c") do ds
     NCDatasets.defDim(ds,"time",3)
     v = NCDatasets.defVar(ds,"time",Float64,("time",))
     v.attrib["units"] = "days since 2000-01-01 00:00:00"

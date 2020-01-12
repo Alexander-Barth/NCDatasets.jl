@@ -17,7 +17,7 @@ vlentypename = "name-vlen"
 
 # write data
 
-ds = NCDatasets.Dataset(filename,"c",format=:netcdf4)
+ds = NCDatasets.NCDataset(filename,"c",format=:netcdf4)
 ds.dim["casts"] = dimlen
 v = NCDatasets.defVar(ds,varname,Vector{T},("casts",); typename = vlentypename)
 @test eltype(v.var) == Vector{T}
@@ -34,7 +34,7 @@ close(ds)
 
 # load data
 
-ds = NCDatasets.Dataset(filename)
+ds = NCDatasets.NCDataset(filename)
 vv = NCDatasets.variable(ds,"varname")
 @test eltype(vv) == Vector{T}
 data2 = vv[:]

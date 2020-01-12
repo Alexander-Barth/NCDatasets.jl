@@ -3,7 +3,7 @@ using Test
 
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
-ds = NCDatasets.Dataset(filename,"c")
+ds = NCDatasets.NCDataset(filename,"c")
 
 # define the dimension "lon" and "lat" with the size 10 and 11 resp.
 ds.dim["lon"] = 10
@@ -37,7 +37,7 @@ filename = tempname()
 #filename = "/tmp/test-6.nc"
 # The mode "c" stands for creating a new file (clobber)
 
-NCDatasets.Dataset(filename,"c") do ds
+NCDatasets.NCDataset(filename,"c") do ds
 
     # define the dimension "lon" and "lat" 
     ds.dim["lon"] = sz[1]
@@ -62,7 +62,7 @@ end
 
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
-ds = NCDatasets.Dataset(filename,"c")
+ds = NCDatasets.NCDataset(filename,"c")
 
 # define the dimension "lon" and "lat" with the size 10 and 11 resp.
 ds.dim["lon"] = 10
@@ -88,7 +88,7 @@ NCDatasets.close(ds)
 
 # all fill-values
 filename = tempname()
-ds = NCDatasets.Dataset(filename,"c")
+ds = NCDatasets.NCDataset(filename,"c")
 ds.dim["lon"] = 3
 v = NCDatasets.defVar(ds,"var_with_all_missing_data",Float32,("lon",))
 
@@ -133,14 +133,14 @@ using NCDatasets
 
 filename = tempname()
 
-Dataset(filename, "c") do ds
+NCDataset(filename, "c") do ds
     defDim(ds, "lon", 2)
     defDim(ds, "lat", 2)
     v = defVar(ds, "Char variable", Char, ("lon","lat"), fillvalue = ' ')
     v[:,:] = ['a' 'b'; 'c' 'd']
 end
 
-Dataset(filename, "r") do ds
+NCDataset(filename, "r") do ds
     @test ds["Char variable"][:,:] == ['a' 'b'; 'c' 'd']
 end
 

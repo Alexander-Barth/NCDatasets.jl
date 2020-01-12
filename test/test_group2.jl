@@ -3,7 +3,7 @@ filename = tempname()
 #filename = "/tmp/test-10.nc"
 # The mode "c" stands for creating a new file (clobber)
 
-NCDatasets.Dataset(filename,"c") do ds    
+NCDatasets.NCDataset(filename,"c") do ds    
     # define the dimension "lon" and "lat" 
     ds.dim["lon"] = sz[1]
     ds.dim["lat"] = sz[2]
@@ -17,7 +17,7 @@ NCDatasets.Dataset(filename,"c") do ds
     v[:,:] = fill(Float64(123),size(v))
 end
 
-NCDatasets.Dataset(filename) do ds
+NCDatasets.NCDataset(filename) do ds
     @test haskey(ds.group,"forecast")
     
     forecast = ds.group["forecast"]
@@ -30,5 +30,5 @@ NCDatasets.Dataset(filename) do ds
 
 end
 
-#@show NCDatasets.Dataset(filename)
+#@show NCDatasets.NCDataset(filename)
 

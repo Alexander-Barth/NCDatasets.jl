@@ -6,7 +6,7 @@ standard name modifier `modifier`. It can be used for example to access
 related variable like status flags.
 """
 function ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
-    ds = Dataset(ncv)
+    ds = NCDataset(ncv)
     varname = name(ncv)
 
     if !haskey(ncv.attrib,"ancillary_variables")
@@ -97,7 +97,7 @@ All dimensions of the coordinate must also be dimensions of the variable `v`.
 ## Example
 ```julia
 using NCDatasets
-ds = Dataset("file.nc")
+ds = NCDataset("file.nc")
 ncv = ds["SST"]
 lon = coord(ncv,"longitude")[:]
 lat = coord(ncv,"latitude")[:]
@@ -118,7 +118,7 @@ function coord(v::Union{CFVariable,Variable},standard_name)
                        r"degreesN"],
     )
 
-    ds = Dataset(v)
+    ds = NCDataset(v)
     dims = Set(dimnames(v))
 
     # find by standard name

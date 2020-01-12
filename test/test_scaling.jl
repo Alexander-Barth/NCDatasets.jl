@@ -1,6 +1,6 @@
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
-ds = NCDatasets.Dataset(filename,"c")
+ds = NCDatasets.NCDataset(filename,"c")
 
 # define the dimension "lon" and "lat" with the size 10 and 11 resp.
 NCDatasets.defDim(ds,"lon",10)

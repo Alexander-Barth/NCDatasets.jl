@@ -5,7 +5,7 @@ ncfile2 = tempname()
 jlfile = tempname()
 #jlfile = "/tmp/out.jl"
 
-ds = NCDatasets.Dataset(ncfile1,"c")
+ds = NCDatasets.NCDataset(ncfile1,"c")
 ds.dim["lon"] = 3; 
 ds.dim["unlimited"] = Inf;
 nclon = NCDatasets.defVar(ds,"lon", Float32, ("lon",)) 

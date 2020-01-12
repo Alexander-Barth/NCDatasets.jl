@@ -41,7 +41,7 @@ mutable struct DeferVariable{T,N} <: AbstractVariable{T,N}
     data::OrderedDict
 end
 
-function metadata(ds::Dataset)
+function metadata(ds::NCDataset)
     # dimensions
 
     dim = OrderedDict()
@@ -89,7 +89,7 @@ function metadata(ds::Dataset)
 end
 
 function DeferDataset(filename,mode,info)
-    Dataset(filename,mode) do ds
+    NCDataset(filename,mode) do ds
         r = Resource(filename,mode,info)
         groupname = "/"
         da = DeferAttributes(r,"/",r.metadata["attrib"])
@@ -100,7 +100,7 @@ function DeferDataset(filename,mode,info)
 end
 
 function DeferDataset(filename,mode = "r")
-    Dataset(filename,mode) do ds
+    NCDataset(filename,mode) do ds
         info = metadata(ds)
         r = Resource(filename,mode,info)
         groupname = "/"
@@ -116,20 +116,20 @@ groupname(dds::DeferDataset) = dds.groupname
 path(dds::DeferDataset) = dds.r.filename
 Base.keys(dds::DeferDataset) = collect(keys(dds.data["var"]))
 
-function Dataset(f::Function, r::Resource)
-    Dataset(r.filename,r.mode) do ds
+function NCDataset(f::Function, r::Resource)
+    NCDataset(r.filename,r.mode) do ds
         f(ds)
     end
 end
 
-function Dataset(f::Function, dds::DeferDataset)
-    Dataset(dds.r.filename,dds.r.mode) do ds
+function NCDataset(f::Function, dds::DeferDataset)
+    NCDataset(dds.r.filename,dds.r.mode) do ds
         f(ds)
     end
 end
 
 function Variable(f::Function, dv::DeferVariable)
-    Dataset(dv.r.filename,dv.r.mode) do ds
+    NCDataset(dv.r.filename,dv.r.mode) do ds
         f(variable(ds,dv.varname))
     end
 end

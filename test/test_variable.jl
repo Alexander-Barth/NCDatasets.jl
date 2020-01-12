@@ -11,7 +11,7 @@ filename = tempname()
 #end
 
 # The mode "c" stands for creating a new file (clobber)
-NCDatasets.Dataset(filename,"c") do ds
+NCDatasets.NCDataset(filename,"c") do ds
 
     # define the dimension "lon" and "lat"
     ds.dim["lon"] = sz[1]
@@ -64,7 +64,7 @@ NCDatasets.Dataset(filename,"c") do ds
 end
 
 # quick interface
-Dataset(filename,"c") do ds
+NCDataset(filename,"c") do ds
     data = Int32[i+3*j for i = 1:sz[1], j = 1:sz[2]]
     defVar(ds,"temp",data,("lon","lat"), attrib = [
         "units" => "degree_Celsius",
@@ -128,7 +128,7 @@ end
 # return type using CartesianIndex
 
 filename = tempname()
-ds = Dataset(filename, "c");
+ds = NCDataset(filename, "c");
 ds.dim["lon"] = 5;
 ds.dim["lat"] = 10;
 ds.dim["time"] = Inf;
@@ -140,7 +140,7 @@ data = reshape(1:5*10*nt, 5, 10, nt);
 ncvar[:,:,1:nt] = data;
 close(ds);
 
-ds = Dataset(filename);
+ds = NCDataset(filename);
 start = 1;
 all(data[CartesianIndex(1, 1), start:end] .== ds["var"][CartesianIndex(1, 1), start:end])
 data11 = ds["var"][CartesianIndex(1, 1), start:end]
@@ -153,7 +153,7 @@ rm(filename)
 
 x, y = collect(1:10), collect(10:18)
 
-Dataset("temp1.nc", "c") do ds
+NCDataset("temp1.nc", "c") do ds
       defDim(ds, "x", length(x))
       defVar(ds, "x", x, ("x",))
       defDim(ds, "y", length(y))
