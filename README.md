@@ -145,8 +145,12 @@ defDim(ds,"lat",110)
 # Define a global attribute
 ds.attrib["title"] = "this is a test file"
 
-# Define the variables temperature
-v = defVar(ds,"temperature",Float32,("lon","lat"))
+# Define the variables temperature with the attribute units
+v = defVar(ds,"temperature",Float32,("lon","lat"), attrib = [
+    "units" => "degree Celsius"])
+
+# add additional attributes
+v.attrib["comments"] = "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
 
 # Generate some example data
 data = [Float32(i+j) for i = 1:100, j = 1:110]
@@ -156,10 +160,6 @@ v[:,1] = data[:,1]
 
 # write a the complete data set
 v[:,:] = data
-
-# write attributes
-v.attrib["units"] = "degree Celsius"
-v.attrib["comments"] = "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
 
 close(ds)
 ```
