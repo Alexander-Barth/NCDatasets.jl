@@ -454,9 +454,9 @@ checksum(v::CFVariable) = checksum(v.var)
 """
     a = nomissing(da)
 
-Retun the values of the array `da` of type `Array{Union{T,Missing},N}`
+Return the values of the array `da` of type `Array{Union{T,Missing},N}`
 (potentially containing missing values) as a regular Julia array `a` of the same
-element type and checks that no missing values are present.
+element type. It raises an error if the array contains at least one missing value.
 
 """
 function nomissing(da::Array{Union{T,Missing},N}) where {T,N}
@@ -481,7 +481,16 @@ end
     a = nomissing(da,value)
 
 Retun the values of the array `da` of type `Array{Union{T,Missing},N}`
-as a regular Julia array `a` by replacing all missing value by `value`.
+as a regular Julia array `a` by replacing all missing value by `value`
+(converted to type `T`).
+This function is identical to `coalesce.(da,T(value))` where T is the element
+tyoe of `da`.
+## Example:
+
+```julia-repl
+julia> nomissing([missing,1.,2.],NaN)
+# returns [NaN, 1.0, 2.0]
+```
 """
 function nomissing(da::Array{Union{T,Missing},N},value) where {T,N}
     return replace(da, missing => T(value))
