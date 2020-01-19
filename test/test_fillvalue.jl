@@ -90,10 +90,9 @@ NCDatasets.close(ds)
 filename = tempname()
 ds = NCDatasets.NCDataset(filename,"c")
 ds.dim["lon"] = 3
-v = NCDatasets.defVar(ds,"var_with_all_missing_data",Float32,("lon",))
 
+v = NCDatasets.defVar(ds,"var_with_all_missing_data",Float32,("lon",), fillvalue = fv)
 data = [missing, missing, missing]
-v.attrib["_FillValue"] = fv
 
 v[:] = data
 @test all(ismissing.(v[:]))

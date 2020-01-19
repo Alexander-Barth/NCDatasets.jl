@@ -262,6 +262,52 @@ function variable(ds::NCDataset,varname::AbstractString)
                                   attrib,ds.isdefmode)
 end
 
+
+function compute_element_type(v)
+    attnames = keys(v.attrib)
+
+
+    if "units" in attnames
+        units = v.attrib["units"]
+        if occursin(" since ",units)
+            # type of data changes
+            calendar = lowercase(get(v.attrib,"calendar","standard"))
+            DT = CFTime.timetype(calendar)
+            # this is the only supported option for NCDatasets
+            prefer_datetime = true
+
+            if prefer_datetime &&
+                (DT in [DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian])
+                return DateTime
+            else
+                return DT
+            end
+        end
+    end
+
+    rettype = eltype(v)
+
+    if eltype(v) <: Number
+        scale_factor = get(v.attrib,"scale_factor",nothing)
+        if scale_factor != nothing
+            rettype = promote_type(rettype, typeof(scale_factor))
+            @show rettype
+        end
+
+        add_offset = get(v.attrib,"add_offset",nothing)
+        if add_offset != nothing
+            rettype = promote_type(rettype, typeof(add_offset))
+            @show rettype
+        end
+    end
+
+    if "_FillValue" in attnames
+        rettype = Union{Missing,rettype}
+    end
+
+    return rettype
+end
+
 """
     v = getindex(ds::NCDataset,varname::AbstractString)
 
@@ -281,13 +327,13 @@ A call `getindex(ds,varname)` is usually written as `ds[varname]`.
 function Base.getindex(ds::AbstractDataset,varname::AbstractString)
     v = variable(ds,varname)
 
-    # return element type of any index operation
-    if eltype(v) <: Number
-        rettype = Union{Missing,Number,DateTime,AbstractCFDateTime}
-    else
-        rettype = Union{Missing,eltype(v)}
-    end
-
+    #return element type of any index operation
+    # if eltype(v) <: Number
+    #     rettype = Union{Missing,Number,DateTime,AbstractCFDateTime}
+    # else
+    #     rettype = Union{Missing,eltype(v)}
+    # end
+    rettype = compute_element_type(v)
     return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib)}(v,v.attrib)
 end
 
