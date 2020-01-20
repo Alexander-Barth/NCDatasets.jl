@@ -24,6 +24,10 @@ v_cf[1:5, 10:20]
 ```
 (here you must know the number of dimensions of the variable, as you must access all of them).
 
+**Important** : for convenience, `CFVariable` implements the interface of `AbstractArray`. This means that you can access index it, and query its size as mentioned above. As a result, this also means that you can access it with single integer indices element by element, `v[1], v[2]` etc.. This means that functions like e.g. `mean` work directly with `CFVariable`, but this **should be avoided** as it is very inefficient to read element-by-element a large field from disk. You should instead convert a `CFVariable` to a standard Julia `Array` and then do computations with it.
+
+
+## Convenience functions
 
 The following functions are convenient for working with variables:
 ```@docs
