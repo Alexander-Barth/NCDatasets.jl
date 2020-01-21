@@ -477,6 +477,8 @@ function nomissing(da::AbstractArray{Union{T,Missing},N}) where {T,N}
     end
 end
 
+nomissing(a::AbstractArray{T,N}) where {T<:Union{Number, String, AbstractDate}, N} = a
+
 """
     a = nomissing(da,value)
 
