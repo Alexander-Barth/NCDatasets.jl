@@ -34,7 +34,7 @@ NCDataset(var::Variable) = NCDataset(var.ncid,var.isdefmode)
 
 # the size of a variable can change, i.e. for a variable with an unlimited
 # dimension
-Base.size(v::Variable) = (Int[nc_inq_dimlen(v.ncid,dimid) for dimid in v.dimids]...,)
+Base.size(v::Variable{T,N}) where {T,N} = ntuple(i -> nc_inq_dimlen(v.ncid,v.dimids[i]),Val(N))
 
 ############################################################
 # Creating variables
