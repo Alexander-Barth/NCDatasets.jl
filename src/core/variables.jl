@@ -459,8 +459,8 @@ Return the values of the array `da` of type `Array{Union{T,Missing},N}`
 element type. It raises an error if the array contains at least one missing value.
 
 """
-function nomissing(da::Array{Union{T,Missing},N}) where {T,N}
-    if any(ismissing.(da))
+function nomissing(da::AbstractArray{Union{T,Missing},N}) where {T,N}
+    if any(ismissing, da)
         error("arrays contains missing values (values equal to the fill values attribute in the NetCDF file)")
     end
     if VERSION >= v"1.2"
