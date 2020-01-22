@@ -181,11 +181,53 @@ end
 
 fillmode(v::CFVariable) = fillmode(v.var)
 fillvalue(v::CFVariable) = fillvalue(v.var)
+scale_factor(v::CFVariable) = v.scale_factor
+add_offset(v::CFVariable) = v.add_offset
 
-function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
+# fv can be NaN
+@inline function CFtransform_missing(data::AbstractFloat,fv::AbstractFloat)
+    if !isnan(fv)
+        return (data == fv ? missing : data)
+    else
+        return (isnan(data) ? missing : data)
+    end
+end
+@inline CFtransform_missing(data,fv) = (data == fv ? missing : data)
+@inline CFtransform_missing(data,fv::Nothing) = data
+
+@inline CFtransform_scale(data,scale_factor) = data*scale_factor
+@inline CFtransform_scale(data,scale_factor::Nothing) = data
+@inline CFtransform_scale(data::T,scale_factor) where T <: Union{Char,String} = data
+@inline CFtransform_scale(data::T,scale_factor::Nothing) where T <: Union{Char,String} = data
+
+@inline CFtransform_offset(data,add_offset) = data + add_offset
+@inline CFtransform_offset(data,add_offset::Nothing) = data
+@inline CFtransform_offset(data::T,add_factor) where T <: Union{Char,String} = data
+@inline CFtransform_offset(data::T,add_factor::Nothing) where T <: Union{Char,String} = data
+
+
+@inline asdate(data::Missing,time_origin,plength,DTcast) = data
+@inline asdate(data,time_origin::Nothing,plength,DTcast) = data
+@inline asdate(data::Missing,time_origin::Nothing,plength,DTcast) = data
+@inline asdate(data,time_origin,plength,DTcast) =
+    convert(DTcast,time_origin + Dates.Millisecond(round(Int64,plength * data)))
+
+@inline function CFtransform(data,fv,scale_factor,add_offset,time_origin,plength,DTcast)
+    return asdate(CFtransform_offset(CFtransform_scale(CFtransform_missing(data,fv),scale_factor),add_offset),time_origin,plength,DTcast)
+    #return CFtransform_offset(CFtransform_scale(CFtransform_missing(data,fv),scale_factor),add_offset)
+end
+
+function Base.getindex(v::CFVariable,
+                       indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     attnames = keys(v.attrib)
 
     data = v.var[indexes...]
+#    @show data
+#    @show CFtransform_missing.(data,v.fillvalue)
+    time_origin,plength = v.time_units
+    DTcast = eltype(v)
+    return CFtransform.(data,v.fillvalue,v.scale_factor,v.add_offset,time_origin,plength,DTcast)
+#=
     isscalar =
         if typeof(data) == String || typeof(data) == DateTime
             true
@@ -238,6 +280,7 @@ function Base.getindex(v::CFVariable,indexes::Union{Int,Colon,UnitRange{Int},Ste
         datam[mask] .= missing
         return datam
     end
+=#
 end
 
 function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N

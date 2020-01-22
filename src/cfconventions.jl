@@ -27,6 +27,9 @@ function ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
     return nothing
 end
 
+
+allowmissing(x::AbstractArray{T}) where {T} = convert(AbstractArray{Union{T, Missing}}, x)
+
 import Base: filter
 """
     data = NCDatasets.filter(ncv, indices...; accepted_status_flags = nothing)
@@ -44,7 +47,7 @@ good_data = NCDatasets.filter(ds["data"],:,:, accepted_status_flags = ["good_dat
 function filter(ncv::Union{Variable,CFVariable}, indices...; accepted_status_flags = nothing)
 #function filter_(ncv, indices...)
 #    accepted_status_flags = ("good_value", "probably_good_value")
-    data = ncv[indices...];
+    data = allowmissing(ncv[indices...])
 
     if (accepted_status_flags != nothing)
         ncv_ancillary = ancillaryvariables(ncv,"status_flag");

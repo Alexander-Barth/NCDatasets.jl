@@ -9,11 +9,11 @@ ds = NCDatasets.NCDataset(filename,"c")
 ds.dim["lon"] = 10
 ds.dim["lat"] = 11
 
-v = NCDatasets.defVar(ds,"var_with_missing_data",Float32,("lon","lat"))
+fv = NCDatasets.NC_FILL_FLOAT
+
+v = NCDatasets.defVar(ds,"var_with_missing_data",Float32,("lon","lat"), fillvalue = fv)
 
 data = [Float32(i+j) for i = 1:10, j = 1:11]
-fv = NCDatasets.NC_FILL_FLOAT
-v.attrib["_FillValue"] = fv
 # mask the frist element
 datam = Array{Union{Float32,Missing}}(data)
 datam[1] = missing
@@ -68,11 +68,10 @@ ds = NCDatasets.NCDataset(filename,"c")
 ds.dim["lon"] = 10
 ds.dim["lat"] = 11
 
-v = NCDatasets.defVar(ds,"var_with_missing_data",Float32,("lon","lat"))
+fv = NaN32
+v = NCDatasets.defVar(ds,"var_with_missing_data",Float32,("lon","lat"), fillvalue = fv)
 
 data = [Float32(i+j) for i = 1:10, j = 1:11]
-fv = NaN32
-v.attrib["_FillValue"] = fv
 # mask the frist element
 datam = Array{Union{Float32,Missing}}(data)
 datam[1] = missing
@@ -144,3 +143,4 @@ NCDataset(filename, "r") do ds
 end
 
 rm(filename)
+

@@ -67,8 +67,9 @@ function ncgen(fname,jlname; kwargs...)
 end
 
 litteral(val::String) = "\"$(escape(val))\""
-litteral(val::Float32) = "$(eltype(val))($(val))"
-litteral(val) = val
+litteral(val::Float64) = val
+litteral(val::Number) = "$(eltype(val))($(val))"
+litteral(val) = "$(val)" # for arrays
 
 function ncgen_setattrib(io,attrib)
     for (d,val) in attrib

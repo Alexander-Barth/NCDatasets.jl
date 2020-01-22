@@ -20,9 +20,15 @@ mutable struct Variable{NetCDFType,N} <: AbstractVariable{NetCDFType, N}
 end
 
 # Variable (with applied transformations following the CF convention)
-mutable struct CFVariable{T,N,TV,TA}  <: AbstractArray{T, N}
+mutable struct CFVariable{T,N,TV,TA,Tscaled,Tfillvalue,Tscale_factor,Tadd_offset,Ttime_units}  <: AbstractArray{T, N}
     var::TV # this var is a `Variable` type
     attrib::TA
+    # all these attribute can also be nothing
+    fillvalue::Tfillvalue
+    scale_factor::Tscale_factor
+    add_offset::Tadd_offset
+    # a tuple of factor and time_origin
+    time_units::Ttime_units
 end
 
 NCDataset(var::CFVariable) = NCDataset(var.var)
@@ -266,6 +272,21 @@ end
 function compute_element_type(v)
     attnames = keys(v.attrib)
 
+    scaledtype = eltype(v)
+
+    if eltype(v) <: Number
+        scale_factor = get(v.attrib,"scale_factor",nothing)
+        if scale_factor != nothing
+            scaledtype = promote_type(scaledtype, typeof(scale_factor))
+        end
+
+        add_offset = get(v.attrib,"add_offset",nothing)
+        if add_offset != nothing
+            scaledtype = promote_type(scaledtype, typeof(add_offset))
+        end
+    end
+
+    rettype = scaledtype
 
     if "units" in attnames
         units = v.attrib["units"]
@@ -278,26 +299,10 @@ function compute_element_type(v)
 
             if prefer_datetime &&
                 (DT in [DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian])
-                return DateTime
+                rettype = DateTime
             else
-                return DT
+                rettype = DT
             end
-        end
-    end
-
-    rettype = eltype(v)
-
-    if eltype(v) <: Number
-        scale_factor = get(v.attrib,"scale_factor",nothing)
-        if scale_factor != nothing
-            rettype = promote_type(rettype, typeof(scale_factor))
-            @show rettype
-        end
-
-        add_offset = get(v.attrib,"add_offset",nothing)
-        if add_offset != nothing
-            rettype = promote_type(rettype, typeof(add_offset))
-            @show rettype
         end
     end
 
@@ -305,7 +310,7 @@ function compute_element_type(v)
         rettype = Union{Missing,rettype}
     end
 
-    return rettype
+    return rettype,scaledtype
 end
 
 """
@@ -333,8 +338,25 @@ function Base.getindex(ds::AbstractDataset,varname::AbstractString)
     # else
     #     rettype = Union{Missing,eltype(v)}
     # end
-    rettype = compute_element_type(v)
-    return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib)}(v,v.attrib)
+    rettype,scaledtype = compute_element_type(v)
+    fillvalue = get(v.attrib,"_FillValue",nothing)
+    scale_factor = get(v.attrib,"scale_factor",nothing)
+    add_offset = get(v.attrib,"add_offset",nothing)
+
+    time_units = (nothing,nothing)
+    if haskey(v.attrib,"units")
+        units = v.attrib["units"]
+        if occursin(" since ",units)
+            calendar = lowercase(get(v.attrib,"calendar","standard"))
+            time_units = CFTime.timeunits(units, calendar)
+        end
+    end
+
+    return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib),scaledtype,
+                      typeof(fillvalue),typeof(scale_factor),typeof(add_offset),
+                      typeof(time_units)
+                      }(
+        v,v.attrib,fillvalue,scale_factor,add_offset,time_units)
 end
 
 
@@ -478,9 +500,9 @@ function fillmode(v::Variable)
     return no_fill,fv
 end
 
-function fillvalue(v::Variable)
+function fillvalue(v::Variable{NetCDFType,N}) where {NetCDFType,N}
     no_fill,fv = nc_inq_var_fill(v.ncid, v.varid)
-    return fv
+    return fv::NetCDFType
 end
 
 name(v::CFVariable) = name(v.var)
