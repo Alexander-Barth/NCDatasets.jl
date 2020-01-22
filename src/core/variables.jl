@@ -23,6 +23,7 @@ end
 mutable struct CFVariable{T,N,TV,TA,TSA,Tscaled,Tfillvalue,Tscale_factor,Tadd_offset,Ttime_units}  <: AbstractArray{T, N}
     var::TV # this var is a `Variable` type
     attrib::TA
+    # a named tuple with fill value, scale factor, offset,...
     _storage_attrib::TSA
     # all these attribute can also be nothing
     fillvalue::Tfillvalue
@@ -294,49 +295,6 @@ function variable(ds::NCDataset,varname::AbstractString)
 end
 
 
-function compute_element_type(v)
-    attnames = keys(v.attrib)
-
-    scaledtype = eltype(v)
-
-    if eltype(v) <: Number
-        scale_factor = get(v.attrib,"scale_factor",nothing)
-        if scale_factor != nothing
-            scaledtype = promote_type(scaledtype, typeof(scale_factor))
-        end
-
-        add_offset = get(v.attrib,"add_offset",nothing)
-        if add_offset != nothing
-            scaledtype = promote_type(scaledtype, typeof(add_offset))
-        end
-    end
-
-    rettype = scaledtype
-
-    if "units" in attnames
-        units = v.attrib["units"]
-        if occursin(" since ",units)
-            # type of data changes
-            calendar = lowercase(get(v.attrib,"calendar","standard"))
-            DT = CFTime.timetype(calendar)
-            # this is the only supported option for NCDatasets
-            prefer_datetime = true
-
-            if prefer_datetime &&
-                (DT in [DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian])
-                rettype = DateTime
-            else
-                rettype = DT
-            end
-        end
-    end
-
-    if "_FillValue" in attnames
-        rettype = Union{Missing,rettype}
-    end
-
-    return rettype,scaledtype
-end
 
 """
     v = getindex(ds::NCDataset,varname::AbstractString)
@@ -357,33 +315,67 @@ A call `getindex(ds,varname)` is usually written as `ds[varname]`.
 function Base.getindex(ds::AbstractDataset,varname::AbstractString)
     v = variable(ds,varname)
 
-    #return element type of any index operation
-    # if eltype(v) <: Number
-    #     rettype = Union{Missing,Number,DateTime,AbstractCFDateTime}
-    # else
-    #     rettype = Union{Missing,eltype(v)}
-    # end
-    rettype,scaledtype = compute_element_type(v)
     fillvalue = get(v.attrib,"_FillValue",nothing)
     scale_factor = get(v.attrib,"scale_factor",nothing)
     add_offset = get(v.attrib,"add_offset",nothing)
 
-    time_units = (nothing,nothing)
+    calendar = nothing
+    time_origin = nothing
+    time_factor = nothing
     if haskey(v.attrib,"units")
         units = v.attrib["units"]
         if occursin(" since ",units)
             calendar = lowercase(get(v.attrib,"calendar","standard"))
-            time_units = CFTime.timeunits(units, calendar)
+            time_origin,time_factor = CFTime.timeunits(units, calendar)
         end
     end
+
+    scaledtype = eltype(v)
+
+    if eltype(v) <: Number
+        if scale_factor != nothing
+            scaledtype = promote_type(scaledtype, typeof(scale_factor))
+        end
+
+        if add_offset != nothing
+            scaledtype = promote_type(scaledtype, typeof(add_offset))
+        end
+    end
+
+    rettype = scaledtype
+
+    if calendar != nothing
+        units = get(v.attrib,"units","")
+        if occursin(" since ",units)
+            # type of data changes
+            calendar = lowercase(get(v.attrib,"calendar","standard"))
+            DT = CFTime.timetype(calendar)
+            # this is the only supported option for NCDatasets
+            prefer_datetime = true
+
+            if prefer_datetime &&
+                (DT in [DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian])
+                rettype = DateTime
+            else
+                rettype = DT
+            end
+        end
+    end
+
+    if fillvalue != nothing
+        rettype = Union{Missing,rettype}
+    end
+
     storage_attrib = (
-      fillvalue = get(v.attrib,"_FillValue",nothing),
-      scale_factor = get(v.attrib,"scale_factor",nothing),
-      add_offset = get(v.attrib,"add_offset",nothing),
-      time_origin = time_units[1],
-      time_factor = time_units[2],
+        fillvalue = fillvalue,
+        scale_factor = scale_factor,
+        add_offset = add_offset,
+        calendar = calendar,
+        time_origin = time_origin,
+        time_factor = time_factor,
     )
 
+    time_units = (time_origin,time_factor)
     return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib),typeof(storage_attrib),scaledtype,
                       typeof(fillvalue),typeof(scale_factor),typeof(add_offset),
                       typeof(time_units)

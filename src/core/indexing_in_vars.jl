@@ -180,6 +180,7 @@ end
 ############################################################
 
 fillmode(v::CFVariable) = fillmode(v.var)
+
 fillvalue(v::CFVariable) = v._storage_attrib.fillvalue
 scale_factor(v::CFVariable) = v._storage_attrib.scale_factor
 add_offset(v::CFVariable) = v._storage_attrib.add_offset
@@ -190,6 +191,7 @@ time_origin(v::CFVariable) = v._storage_attrib.time_origin
 Time unit in milliseconds. E.g. seconds would be 1000., days would be 86400000.
 """
 time_factor(v::CFVariable) = v._storage_attrib.time_factor
+
 
 # fillvaue can be NaN (unfortunately)
 @inline isfillvalue(data,fillvalue) = data .== fillvalue
