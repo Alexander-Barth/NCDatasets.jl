@@ -77,17 +77,18 @@ function Base.setindex!(v::Variable{T,N},data::AbstractArray{T2,N},indexes::Colo
     return data
 end
 
-function ncsub(indexes)
+function ncsub(indexes::NTuple{N,T}) where N where T
     rindexes = reverse(indexes)
     count  = Int[length(i)  for i in rindexes]
     start  = Int[first(i)-1 for i in rindexes]     # use zero-based indexes
     stride = Int[step(i)    for i in rindexes]
-    jlshape = length.(indexes)
+    jlshape = length.(indexes)::NTuple{N,Int}
     return start,count,stride,jlshape
 end
 
 function Base.getindex(v::Variable{T,N},indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
-    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
+    start,count,stride,jlshape = ncsub(indexes[1:N])
+
     data = Array{T,N}(undef,jlshape)
     nc_get_vars!(v.ncid,v.varid,start,count,stride,data)
     return data
@@ -131,60 +132,43 @@ function Base.setindex!(v::Variable{T,N},data::AbstractArray,indexes::StepRange{
     return data
 end
 
+
+_normalizeindex(n,ind::Colon) = 1:1:n
+_normalizeindex(n,ind::Int) = ind:1:ind
+_normalizeindex(n,ind::UnitRange) = StepRange(ind)
+_normalizeindex(n,ind::StepRange) = ind
+_normalizeindex(n,ind) = error("unsupported index")
+
+_dropindex(ind::Int) = 1
+_dropindex(ind) = Colon()
+
+# indexes can be longer than sz
 function normalizeindexes(sz,indexes)
-    ndims = length(sz)
-    ind = Vector{StepRange}(undef,ndims)
-    squeezedim = falses(ndims)
-
-    # normalize indexes
-    for i = 1:ndims
-        indT = typeof(indexes[i])
-        # :
-        if indT == Colon
-            ind[i] = 1:1:sz[i]
-            # just a number
-        elseif indT == Int
-            ind[i] = indexes[i]:1:indexes[i]
-            squeezedim[i] = true
-            # range with a step equal to 1
-        elseif indT == UnitRange{Int}
-            ind[i] = first(indexes[i]):1:last(indexes[i])
-        elseif indT == StepRange{Int,Int}
-            ind[i] = indexes[i]
-        else
-            #@show indT
-            error("unsupported index")
-        end
-    end
-
-    return ind,squeezedim
+    return ntuple(i -> _normalizeindex(sz[i],indexes[i]), length(sz))
 end
 
 function Base.getindex(v::Variable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     #    @show "any",indexes
-    ind,squeezedim = normalizeindexes(size(v),indexes)
-
-    data = v[ind...]
+    ind = normalizeindexes(size(v),indexes)
+    drop_index = _dropindex.(indexes)
     # drop any dimension which was indexed with a scalar
-    if any(squeezedim)
-        return dropdims(data,dims=(findall(squeezedim)...,))
-    else
-        return data
-    end
+    # TODO: avoid copy
+    data = v[ind...][drop_index...]
+    return data
 end
 
 
 function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     #@show "any",indexes
-    ind,squeezedim = normalizeindexes(size(v),indexes)
+    ind = normalizeindexes(size(v),indexes)
 
     # make arrays out of scalars
     if ndims(data) == 0
-        data = fill(data,([length(i) for i in ind]...,))
+        data = fill(data,length.(ind))
     end
 
     if ndims(data) == 1 && size(data,1) == 1
-        data = fill(data[1],([length(i) for i in ind]...,))
+        data = fill(data[1],length.(i))
     end
 
     # return data
