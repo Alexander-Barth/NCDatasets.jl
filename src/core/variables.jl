@@ -20,9 +20,10 @@ mutable struct Variable{NetCDFType,N} <: AbstractVariable{NetCDFType, N}
 end
 
 # Variable (with applied transformations following the CF convention)
-mutable struct CFVariable{T,N,TV,TA,Tscaled,Tfillvalue,Tscale_factor,Tadd_offset,Ttime_units}  <: AbstractArray{T, N}
+mutable struct CFVariable{T,N,TV,TA,TSA,Tscaled,Tfillvalue,Tscale_factor,Tadd_offset,Ttime_units}  <: AbstractArray{T, N}
     var::TV # this var is a `Variable` type
     attrib::TA
+    _storage_attrib::TSA
     # all these attribute can also be nothing
     fillvalue::Tfillvalue
     scale_factor::Tscale_factor
@@ -196,7 +197,7 @@ function defVar(ds::NCDataset,name,data,dimnames; kwargs...)
     _defVar(ds::NCDataset,name,data,nctype,dimnames; kwargs...)
 end
 
-function _defVar(ds::NCDataset,name,data,nctype,dimnames; kwargs...)
+function _defVar(ds::NCDataset,name,data,nctype,dimnames; attrib = [], kwargs...)
     # define the dimensions if necessary
     for i = 1:length(dimnames)
         if !(dimnames[i] in ds.dim)
@@ -204,15 +205,39 @@ function _defVar(ds::NCDataset,name,data,nctype,dimnames; kwargs...)
         end
     end
 
+    T = eltype(data)
+    attrib = collect(attrib)
+
+    if T <: TimeType
+        dattrib = Dict(attrib)
+        if !haskey(dattrib,"units")
+            push!(attrib,"units" => CFTime.DEFAULT_TIME_UNITS)
+        end
+        if !haskey(dattrib,"calendar")
+            # these dates cannot be converted to the standard calendar
+            if T <: Union{DateTime360Day,Missing}
+                push!(attrib,"calendar" => "360_day")
+            elseif T <: Union{DateTimeNoLeap,Missing}
+                push!(attrib,"calendar" => "365_day")
+            elseif T <: Union{DateTimeAllLeap,Missing}
+                push!(attrib,"calendar" => "366_day")
+            end
+        end
+    end
+
     v =
-        if Missing <: eltype(data)
+        if Missing <: T
             # make sure a fill value is set (it might be overwritten by kwargs...)
             defVar(ds,name,nctype,dimnames;
                    fillvalue = ncFillValue[nctype],
+                   attrib = attrib,
                    kwargs...)
         else
-            defVar(ds,name,nctype,dimnames; kwargs...)
+            defVar(ds,name,nctype,dimnames;
+                   attrib = attrib,
+                   kwargs...)
         end
+
     v[:] = data
     return v
 end
@@ -351,12 +376,19 @@ function Base.getindex(ds::AbstractDataset,varname::AbstractString)
             time_units = CFTime.timeunits(units, calendar)
         end
     end
+    storage_attrib = (
+      fillvalue = get(v.attrib,"_FillValue",nothing),
+      scale_factor = get(v.attrib,"scale_factor",nothing),
+      add_offset = get(v.attrib,"add_offset",nothing),
+      time_origin = time_units[1],
+      time_factor = time_units[2],
+    )
 
-    return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib),scaledtype,
+    return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib),typeof(storage_attrib),scaledtype,
                       typeof(fillvalue),typeof(scale_factor),typeof(add_offset),
                       typeof(time_units)
                       }(
-        v,v.attrib,fillvalue,scale_factor,add_offset,time_units)
+        v,v.attrib,storage_attrib,fillvalue,scale_factor,add_offset,time_units)
 end
 
 

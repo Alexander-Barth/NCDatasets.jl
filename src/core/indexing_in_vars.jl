@@ -180,20 +180,26 @@ end
 ############################################################
 
 fillmode(v::CFVariable) = fillmode(v.var)
-fillvalue(v::CFVariable) = fillvalue(v.var)
-scale_factor(v::CFVariable) = v.scale_factor
-add_offset(v::CFVariable) = v.add_offset
+fillvalue(v::CFVariable) = v._storage_attrib.fillvalue
+scale_factor(v::CFVariable) = v._storage_attrib.scale_factor
+add_offset(v::CFVariable) = v._storage_attrib.add_offset
+time_origin(v::CFVariable) = v._storage_attrib.time_origin
+""""
+    tf = time_factor(v::CFVariable)
 
-# fv can be NaN
-@inline function CFtransform_missing(data::AbstractFloat,fv::AbstractFloat)
-    if !isnan(fv)
-        return (data == fv ? missing : data)
-    else
-        return (isnan(data) ? missing : data)
-    end
-end
-@inline CFtransform_missing(data,fv) = (data == fv ? missing : data)
+Time unit in milliseconds. E.g. seconds would be 1000., days would be 86400000.
+"""
+time_factor(v::CFVariable) = v._storage_attrib.time_factor
+
+# fillvaue can be NaN (unfortunately)
+@inline isfillvalue(data,fillvalue) = data .== fillvalue
+@inline isfillvalue(data,fillvalue::AbstractFloat) = (isnan(fillvalue) ? isnan(data) : data == fillvalue)
+
+@inline CFtransform_missing(data,fv) = (isfillvalue(data,fv) ? missing : data)
 @inline CFtransform_missing(data,fv::Nothing) = data
+
+@inline CFtransform_replace_missing(data,fv) = (ismissing(data) ? fv : data)
+@inline CFtransform_replace_missing(data,fv::Nothing) = data
 
 @inline CFtransform_scale(data,scale_factor) = data*scale_factor
 @inline CFtransform_scale(data,scale_factor::Nothing) = data
@@ -206,94 +212,63 @@ end
 @inline CFtransform_offset(data::T,add_factor::Nothing) where T <: Union{Char,String} = data
 
 
-@inline asdate(data::Missing,time_origin,plength,DTcast) = data
-@inline asdate(data,time_origin::Nothing,plength,DTcast) = data
-@inline asdate(data::Missing,time_origin::Nothing,plength,DTcast) = data
-@inline asdate(data,time_origin,plength,DTcast) =
-    convert(DTcast,time_origin + Dates.Millisecond(round(Int64,plength * data)))
+@inline asdate(data::Missing,time_origin,time_factor,DTcast) = data
+@inline asdate(data,time_origin::Nothing,time_factor,DTcast) = data
+@inline asdate(data::Missing,time_origin::Nothing,time_factor,DTcast) = data
+@inline asdate(data,time_origin,time_factor,DTcast) =
+    convert(DTcast,time_origin + Dates.Millisecond(round(Int64,time_factor * data)))
 
-@inline function CFtransform(data,fv,scale_factor,add_offset,time_origin,plength,DTcast)
-    return asdate(CFtransform_offset(CFtransform_scale(CFtransform_missing(data,fv),scale_factor),add_offset),time_origin,plength,DTcast)
-    #return CFtransform_offset(CFtransform_scale(CFtransform_missing(data,fv),scale_factor),add_offset)
+
+@inline fromdate(data::TimeType,time_origin,inv_time_factor,DTcast) =
+    Dates.value(DTcast(data) - time_origin) * inv_time_factor
+@inline fromdate(data,time_origin,time_factor,DTcast) = data
+
+@inline function CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
+    return asdate(CFtransform_offset(CFtransform_scale(CFtransform_missing(data,fv),scale_factor),add_offset),time_origin,time_factor,DTcast)
+end
+
+
+@inline function CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DTcast)
+    #    return asdate(CFtransform_offset(CFtransform_scale(CFtransform_missing(data,fv),scale_factor),add_offset),time_origin,time_factor,DTcast)
+    return CFtransform_replace_missing(CFtransform_scale(CFtransform_offset(data,minus_offset),inv_scale_factor),fv)
+end
+
+
+@inline CFtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) =
+    # in boardcasting we trust...
+    CFtransform.(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
+
+# this function is necessary to avoid "iterating" over a single character in Julia 1.0 (fixed Julia 1.3)
+# https://discourse.julialang.org/t/broadcasting-and-single-characters/16836
+@inline CFtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) = data
+
+
+@inline _inv(x::Nothing) = nothing
+@inline _inv(x) = 1/x
+@inline _minus(x::Nothing) = nothing
+@inline _minus(x) = -x
+
+@inline function CFinvtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
+    inv_scale_factor = _inv(scale_factor)
+    minus_offset = _minus(add_offset)
+    inv_time_factor = _inv(time_factor)
+    return CFinvtransform.(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DTcast)
 end
 
 function Base.getindex(v::CFVariable,
                        indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
-    attnames = keys(v.attrib)
-
     data = v.var[indexes...]
-#    @show data
-#    @show CFtransform_missing.(data,v.fillvalue)
-    time_origin,plength = v.time_units
-    DTcast = eltype(v)
-    return CFtransform.(data,v.fillvalue,v.scale_factor,v.add_offset,time_origin,plength,DTcast)
-#=
-    isscalar =
-        if typeof(data) == String || typeof(data) == DateTime
-            true
-        else
-            ndims(data) == 0
-        end
-
-    if isscalar
-        data = [data]
-    end
-
-    if "_FillValue" in attnames
-        fillvalue = v.attrib["_FillValue"]
-        mask = isfillvalue(data,fillvalue)
-    else
-        mask = falses(size(data))
-    end
-
-    # do not scale characters and strings
-    if eltype(v.var) != Char
-        if "scale_factor" in attnames
-            data = v.attrib["scale_factor"] * data
-        end
-
-        if "add_offset" in attnames
-            data = data .+ v.attrib["add_offset"]
-        end
-    end
-
-    if "units" in attnames
-        units = v.attrib["units"]
-        if occursin(" since ",units)
-            # type of data changes
-            calendar = lowercase(get(v.attrib,"calendar","standard"))
-            # time decode only valid dates
-            tmp = timedecode(data[.!mask],units,calendar)
-            data = similar(tmp,size(data))
-            data[.!mask] = tmp
-        end
-    end
-
-    if isscalar
-        if mask[1]
-            missing
-        else
-            data[1]
-        end
-    else
-        datam = Array{Union{eltype(data),Missing}}(data)
-        datam[mask] .= missing
-        return datam
-    end
-=#
+    return CFtransformdata(data,fillvalue(v),scale_factor(v),add_offset(v),
+                           time_origin(v),time_factor(v),eltype(v))
 end
 
 function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N
-    v.var[indexes...] = fill(v.attrib["_FillValue"],size(data))
+    v.var[indexes...] = fill(fillvalue(v),size(data))
 end
 
 function Base.setindex!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
-    v.var[indexes...] = v.attrib["_FillValue"]
+    v.var[indexes...] = fillvalue(v)
 end
-
-
-isfillvalue(data,fillvalue) = data .== fillvalue
-isfillvalue(data,fillvalue::Number) = (isnan(fillvalue) ? isnan.(data) : data .== fillvalue)
 
 function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
     attnames = keys(v.attrib)
@@ -328,45 +303,12 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
 end
 
 
-function transform(v,offset,scale)
-    if offset !== nothing
-        if scale !== nothing
-            return (v - offset) / scale
-        else
-            return v - offset
-        end
-    else
-        if scale !== nothing
-            return v / scale
-        else
-            return v
-        end
-    end
-end
-
-# the transformv function is necessary to avoid "iterating" over a single character
-# https://discourse.julialang.org/t/broadcasting-and-single-characters/16836
-transformv(data,offset,scale) = transform.(data,offset,scale)
-transformv(data::Char,offset,scale) = data
-
 function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
-    offset,scale =
-        if eltype(v.var) == Char
-            (nothing,nothing)
-        else
-            (get(v.attrib,"add_offset",nothing),
-             get(v.attrib,"scale_factor",nothing))
-        end
+    tmp = CFinvtransformdata(
+        data,fillvalue(v),scale_factor(v),add_offset(v),
+        time_origin(v),time_factor(v),eltype(v))
 
-    fillvalue = get(v.attrib,"_FillValue",nothing)
-
-    v.var[indexes...] =
-        if fillvalue == nothing
-            transformv(data,offset,scale)
-        else
-            coalesce.(transformv(data,offset,scale),fillvalue)
-        end
-
+    v.var[indexes...] = tmp
     return data
 end
 
