@@ -78,10 +78,11 @@ function Base.setindex!(v::Variable{T,N},data::AbstractArray{T2,N},indexes::Colo
 end
 
 function ncsub(indexes)
-    count = [length(i) for i in indexes[end:-1:1]]
-    start = [first(i)-1 for i in indexes[end:-1:1]]     # use zero-based indexes
-    stride = [step(i) for i in indexes[end:-1:1]]
-    jlshape = (count[end:-1:1]...,)
+    rindexes = reverse(indexes)
+    count  = Int[length(i)  for i in rindexes]
+    start  = Int[first(i)-1 for i in rindexes]     # use zero-based indexes
+    stride = Int[step(i)    for i in rindexes]
+    jlshape = length.(indexes)
     return start,count,stride,jlshape
 end
 
