@@ -20,17 +20,11 @@ mutable struct Variable{NetCDFType,N} <: AbstractVariable{NetCDFType, N}
 end
 
 # Variable (with applied transformations following the CF convention)
-mutable struct CFVariable{T,N,TV,TA,TSA,Tscaled,Tfillvalue,Tscale_factor,Tadd_offset,Ttime_units}  <: AbstractArray{T, N}
+mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractArray{T, N}
     var::TV # this var is a `Variable` type
     attrib::TA
     # a named tuple with fill value, scale factor, offset,...
     _storage_attrib::TSA
-    # all these attribute can also be nothing
-    fillvalue::Tfillvalue
-    scale_factor::Tscale_factor
-    add_offset::Tadd_offset
-    # a tuple of factor and time_origin
-    time_units::Ttime_units
 end
 
 NCDataset(var::CFVariable) = NCDataset(var.var)
@@ -209,7 +203,7 @@ function _defVar(ds::NCDataset,name,data,nctype,dimnames; attrib = [], kwargs...
     T = eltype(data)
     attrib = collect(attrib)
 
-    if T <: TimeType
+    if T <: Union{TimeType,Missing}
         dattrib = Dict(attrib)
         if !haskey(dattrib,"units")
             push!(attrib,"units" => CFTime.DEFAULT_TIME_UNITS)
@@ -375,12 +369,8 @@ function Base.getindex(ds::AbstractDataset,varname::AbstractString)
         time_factor = time_factor,
     )
 
-    time_units = (time_origin,time_factor)
-    return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib),typeof(storage_attrib),scaledtype,
-                      typeof(fillvalue),typeof(scale_factor),typeof(add_offset),
-                      typeof(time_units)
-                      }(
-        v,v.attrib,storage_attrib,fillvalue,scale_factor,add_offset,time_units)
+    return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib),typeof(storage_attrib)}(
+        v,v.attrib,storage_attrib)
 end
 
 
@@ -540,6 +530,20 @@ checksum(v::CFVariable,checksummethod) = checksum(v.var,checksummethod)
 checksum(v::CFVariable) = checksum(v.var)
 
 
+fillmode(v::CFVariable) = fillmode(v.var)
+
+fillvalue(v::CFVariable) = v._storage_attrib.fillvalue
+scale_factor(v::CFVariable) = v._storage_attrib.scale_factor
+add_offset(v::CFVariable) = v._storage_attrib.add_offset
+time_origin(v::CFVariable) = v._storage_attrib.time_origin
+calendar(v::CFVariable) = v._storage_attrib.calendar
+""""
+    tf = time_factor(v::CFVariable)
+
+The time unit in milliseconds. E.g. seconds would be 1000., days would be 86400000.
+The result can also be `nothing` if the variable has no time units.
+"""
+time_factor(v::CFVariable) = v._storage_attrib.time_factor
 
 
 

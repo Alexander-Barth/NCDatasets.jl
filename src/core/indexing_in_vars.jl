@@ -179,18 +179,6 @@ end
 # CFVariable
 ############################################################
 
-fillmode(v::CFVariable) = fillmode(v.var)
-
-fillvalue(v::CFVariable) = v._storage_attrib.fillvalue
-scale_factor(v::CFVariable) = v._storage_attrib.scale_factor
-add_offset(v::CFVariable) = v._storage_attrib.add_offset
-time_origin(v::CFVariable) = v._storage_attrib.time_origin
-""""
-    tf = time_factor(v::CFVariable)
-
-Time unit in milliseconds. E.g. seconds would be 1000., days would be 86400000.
-"""
-time_factor(v::CFVariable) = v._storage_attrib.time_factor
 
 
 # fillvaue can be NaN (unfortunately)
@@ -273,31 +261,12 @@ function Base.setindex!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,Uni
 end
 
 function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
-    attnames = keys(v.attrib)
-    units =
-        if "units" in attnames
-            v.attrib["units"]
-        else
-            @debug "set time units to $CFTime.DEFAULT_TIME_UNITS"
-            v.attrib["units"] = CFTime.DEFAULT_TIME_UNITS
-            CFTime.DEFAULT_TIME_UNITS
-        end
 
-    if occursin(" since ",units)
-        if !("calendar" in attnames)
-            # these dates cannot be converted to the standard calendar
-            if T <: Union{DateTime360Day,Missing}
-                v.attrib["calendar"] = "360_day"
-            elseif T <: Union{DateTimeNoLeap,Missing}
-                v.attrib["calendar"] = "365_day"
-            elseif T <: Union{DateTimeAllLeap,Missing}
-                v.attrib["calendar"] = "366_day"
-            end
-        end
-        calendar = lowercase(get(v.attrib,"calendar","standard"))
+    units = get(v.attrib,"units",nothing)
+    if calendar(v) !== nothing
         # can throw an convertion error if calendar attribute already exists and
         # is incompatible with the provided data
-        v[indexes...] = timeencode(data,units,calendar)
+        v[indexes...] = timeencode(data,units,calendar(v))
         return data
     end
 
