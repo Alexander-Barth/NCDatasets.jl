@@ -58,19 +58,6 @@ NCDatasets.NCDataset(filename,"c") do ds
 end
 rm(filename)
 
-# test time axis with no explicit unit
-filename = tempname()
-NCDataset(filename,"c") do ds
-    defDim(ds,"time",3)
-    v = defVar(ds,"time",Float64,("time",))
-    v[:] = [DateTime(2000,1,2), DateTime(2000,1,3), DateTime(2000,1,4)]
-    # re-load
-    v = ds["time"]
-    @test v[1] == DateTime(2000,1,2)
-    @test haskey(v.attrib,"units")
-end
-rm(filename)
-
 
 # test fill-value in time axis
 filename = tempname()
