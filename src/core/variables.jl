@@ -593,3 +593,5 @@ julia> nomissing([missing,1.,2.],NaN)
 function nomissing(da::Array{Union{T,Missing},N},value) where {T,N}
     return replace(da, missing => T(value))
 end
+
+nomissing(a::AbstractArray,value) = a

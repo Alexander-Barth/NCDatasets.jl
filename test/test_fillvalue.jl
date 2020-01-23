@@ -126,6 +126,9 @@ dataf = NCDatasets.nomissing(data)
 @test nomissing(Union{Int64,Missing}[]) == []
 
 
+@test nomissing([1,2,3,4],-9999) == [1,2,3,4]
+@test nomissing([missing,2,3,4],-9999) == [-9999,2,3,4]
+
 # issue 39
 using NCDatasets
 
