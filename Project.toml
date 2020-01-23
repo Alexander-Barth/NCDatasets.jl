@@ -18,7 +18,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 [compat]
 BinDeps = "0.8, 1"
 CFTime = "0.0.3, 0.1, 1"
-CondaBinDeps = "0.1"
+CondaBinDeps = "0.1, 0.2"
 DataStructures = "0.17"
 julia = "0.7, 1"
 
