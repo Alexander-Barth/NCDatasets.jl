@@ -4,7 +4,11 @@
 
 ```julia
 ds = NCDataset("file.nc")
-temperature = ds["temperature"][:] :: Array{Float64,2}
+nctemp = ds["temp"]
+temp = nctemp[:,:] :: Array{Float64,2}
+# or
+# call_barrier_function(nctemp)
+# call_barrier_function(temp)
 close(ds)
 ```
 
@@ -13,8 +17,8 @@ Alternatively, one can also use so called "[function barriers](https://docs.juli
 ```julia
 ds = NCDataset("file.nc")
 
-temperature = zeros(10,20)
-load!(ds["temperature"],temperature,:,:)
+temp = zeros(10,20)
+load!(ds["temp"],temp,:,:)
 ```
 
 * Most julia functions (like `mean`, `sum`,... from the module Statistics) access an array element-wise. It is generally much faster to load the data in memory (if possible) to make the computation.
