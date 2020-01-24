@@ -52,21 +52,16 @@ parameter `dimnames` is a tuple with the names of the dimension.  For scalar
 this parameter is the empty tuple `()`.
 The variable is returned (of the type CFVariable).
 
-
-Instead of
-providing the variable type one can directly give also the data `data` which
+Instead of providing the variable type one can directly give also the data `data` which
 will be used to fill the NetCDF variable. In this case, the dimensions with
 the appropriate size will be created as required using the names in `dimnames`.
 
-
-!!! note
-
-    Note if `data` is a vector or array of `DateTime` objects, then the dates
-    are saved as double-precision floats and units
-    "$(CFTime.DEFAULT_TIME_UNITS)" (unless a time unit
-    is specifed with the `attrib` keyword as described below). Dates are
-    converted to the default calendar in the CF conversion which is the
-    mixed Julian/Gregorian calendar.
+If `data` is a vector or array of `DateTime` objects, then the dates
+are saved as double-precision floats and units
+"$(CFTime.DEFAULT_TIME_UNITS)" (unless a time unit
+is specifed with the `attrib` keyword as described below). Dates are
+converted to the default calendar in the CF conversion which is the
+mixed Julian/Gregorian calendar.
 
 ## Keyword arguments
 
@@ -104,11 +99,18 @@ julia> data = randn(3,5)
 julia> NCDataset("test_file.nc","c") do ds
           defVar(ds,"temp",data,("lon","lat"), attrib = [
              "units" => "degree_Celsius",
+             "add_offet" => -273.15,
+             "scale_factor" => 0.1,
              "long_name" => "Temperature"
           ])
        end;
-
 ```
+
+!!! note
+
+    If the attributes `_FillValue`, `add_offset`, `scale_factor`, `units` and
+    `calendar` are used, they should defined when calling `defVar` by using the
+    parameter `attrib` as shown in the example above.
 """
 function defVar(ds::NCDataset,name,vtype::DataType,dimnames; kwargs...)
     # all keyword arguments as dictionary

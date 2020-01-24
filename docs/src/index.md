@@ -4,10 +4,11 @@ Documentation for NCDatasets.jl, a Julia package for loading/writing NetCDF data
 
 ## Installation
 
-Inside the Julia shell, you can download and install the package by pressing `]` to go into package manager mode and then simply
+Inside the Julia shell, you can download and install using the following commands:
 
-```
-add NCDatasets
+```julia
+using Pkg
+Pkg.add("NCDatasets")
 ```
 
 ### Latest development version
@@ -15,16 +16,19 @@ add NCDatasets
 If you want to try the latest development version, again go into package manager mode and simply type
 
 ```
-add NCDatasets#master
+using Pkg
+Pkg.add(PackageSpec(name="NCDatasets", rev="master"))
 ```
 
 ## Contents
 
 To get started quickly see the [Quickstart](@ref) section. Otherwise see the following pages for details:
 
-* [Datasets](@ref) : reading/writing NetCDF datasets (as a whole) and examining their contents.
+* [Datasets](@ref) : reading/writing NetCDF datasets (including NetCDF groups) and examining their contents.
+* [Dimensions](@ref) : accessing/creating NetCDF dimensions
 * [Variables](@ref) : accessing/examining the variables (or dimensions) stored within a NetCDF dataset.
-* [Performance tips](@ref), [Known issues](@ref), [Experimental features](@ref): self-explanatory.
+* [Attributes](@ref) : accessing/creating NetCDF attributes
+* See [Performance tips](@ref), [Known issues](@ref), [Experimental features](@ref) for more information.
 
 ## Quickstart
 

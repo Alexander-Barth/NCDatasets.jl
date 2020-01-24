@@ -20,16 +20,6 @@ varbyattrib
 Notice that DateTime-structures from [CFTime](http://juliageo.org/CFTime.jl/stable/) are used to represent time for non-standard calendars.
 Otherwise, we attempt to use standard structures from the Julia standard library `Dates`.
 
-## Attributes
-
-The NetCDF dataset (as returned by `NCDataset` or NetCDF groups) and the NetCDF variables (as returned by `getindex`, `variable` or `defVar`) have the field `attrib` which has the type `NCDatasets.Attributes` and behaves like a julia dictionary.
-
-```@docs
-getindex(a::NCDatasets.Attributes,name::AbstractString)
-setindex!(a::NCDatasets.Attributes,data,name::AbstractString)
-keys(a::NCDatasets.Attributes)
-```
-
 ## Groups
 
 ```@docs
@@ -46,11 +36,6 @@ One can iterate over a dataset, attribute list, dimensions and NetCDF groups.
 for (varname,var) in ds
     # all variables
     @show (varname,size(var))
-end
-
-for (dimname,dim) in ds.dims
-    # all dimensions
-    @show (dimname,dim)
 end
 
 for (attribname,attrib) in ds.attrib

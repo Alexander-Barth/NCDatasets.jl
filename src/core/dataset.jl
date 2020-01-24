@@ -417,6 +417,20 @@ Base.close(ds::NCDataset) = nc_close(ds.ncid)
 ############################################################
 # Dimensions
 ############################################################
+
+
+"""
+    keys(d::Dimensions)
+
+Return a list of all dimension names in NCDataset `ds`.
+
+# Examples
+
+```julia-repl
+julia> ds = NCDataset("results.nc", "r");
+julia> dimnames = keys(ds.dim)
+```
+"""
 function Base.keys(d::Dimensions)
     return String[nc_inq_dimname(d.ncid,dimid)
                   for dimid in nc_inq_dimids(d.ncid,false)]
@@ -555,9 +569,11 @@ function varbyattrib(ds::NCDataset; kwargs...)
 end
 
 """
-    haskey(ds::NCDataset,varname)
+    haskey(ds::NCDataset,name)
+    haskey(d::Dimensions,name)
+    haskey(ds::Attributes,name)
 
-Return true if the NCDataset `ds` has a variable with the name `varname`.
+Return true if the NCDataset `ds` (or dimension/attribute list) has a variable (dimension/attribute) with the name `name`.
 For example:
 
 ```julia
@@ -565,10 +581,14 @@ ds = NCDataset("/tmp/test.nc","r")
 if haskey(ds,"temperature")
     println("The file has a variable 'temperature'")
 end
+
+if haskey(ds.dim,"lon")
+    println("The file has a dimension 'lon'")
+end
 ```
 
 This example checks if the file `/tmp/test.nc` has a variable with the
-name `temperature`.
+name `temperature` and a dimension with the name `lon`.
 """
 Base.haskey(a::NCIterable,name::AbstractString) = name in keys(a)
 Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
