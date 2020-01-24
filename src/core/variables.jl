@@ -20,9 +20,11 @@ mutable struct Variable{NetCDFType,N} <: AbstractVariable{NetCDFType, N}
 end
 
 # Variable (with applied transformations following the CF convention)
-mutable struct CFVariable{T,N,TV,TA}  <: AbstractArray{T, N}
+mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractArray{T, N}
     var::TV # this var is a `Variable` type
     attrib::TA
+    # a named tuple with fill value, scale factor, offset,...
+    _storage_attrib::TSA
 end
 
 NCDataset(var::CFVariable) = NCDataset(var.var)
@@ -34,7 +36,7 @@ NCDataset(var::Variable) = NCDataset(var.ncid,var.isdefmode)
 
 # the size of a variable can change, i.e. for a variable with an unlimited
 # dimension
-Base.size(v::Variable) = (Int[nc_inq_dimlen(v.ncid,dimid) for dimid in v.dimids]...,)
+Base.size(v::Variable{T,N}) where {T,N} = ntuple(i -> nc_inq_dimlen(v.ncid,v.dimids[i]),Val(N))
 
 ############################################################
 # Creating variables
@@ -190,7 +192,7 @@ function defVar(ds::NCDataset,name,data,dimnames; kwargs...)
     _defVar(ds::NCDataset,name,data,nctype,dimnames; kwargs...)
 end
 
-function _defVar(ds::NCDataset,name,data,nctype,dimnames; kwargs...)
+function _defVar(ds::NCDataset,name,data,nctype,dimnames; attrib = [], kwargs...)
     # define the dimensions if necessary
     for i = 1:length(dimnames)
         if !(dimnames[i] in ds.dim)
@@ -198,15 +200,39 @@ function _defVar(ds::NCDataset,name,data,nctype,dimnames; kwargs...)
         end
     end
 
+    T = eltype(data)
+    attrib = collect(attrib)
+
+    if T <: Union{TimeType,Missing}
+        dattrib = Dict(attrib)
+        if !haskey(dattrib,"units")
+            push!(attrib,"units" => CFTime.DEFAULT_TIME_UNITS)
+        end
+        if !haskey(dattrib,"calendar")
+            # these dates cannot be converted to the standard calendar
+            if T <: Union{DateTime360Day,Missing}
+                push!(attrib,"calendar" => "360_day")
+            elseif T <: Union{DateTimeNoLeap,Missing}
+                push!(attrib,"calendar" => "365_day")
+            elseif T <: Union{DateTimeAllLeap,Missing}
+                push!(attrib,"calendar" => "366_day")
+            end
+        end
+    end
+
     v =
-        if Missing <: eltype(data)
+        if Missing <: T
             # make sure a fill value is set (it might be overwritten by kwargs...)
             defVar(ds,name,nctype,dimnames;
                    fillvalue = ncFillValue[nctype],
+                   attrib = attrib,
                    kwargs...)
         else
-            defVar(ds,name,nctype,dimnames; kwargs...)
+            defVar(ds,name,nctype,dimnames;
+                   attrib = attrib,
+                   kwargs...)
         end
+
     v[:] = data
     return v
 end
@@ -262,6 +288,8 @@ function variable(ds::NCDataset,varname::AbstractString)
                                   attrib,ds.isdefmode)
 end
 
+
+
 """
     v = getindex(ds::NCDataset,varname::AbstractString)
 
@@ -281,14 +309,68 @@ A call `getindex(ds,varname)` is usually written as `ds[varname]`.
 function Base.getindex(ds::AbstractDataset,varname::AbstractString)
     v = variable(ds,varname)
 
-    # return element type of any index operation
-    if eltype(v) <: Number
-        rettype = Union{Missing,Number,DateTime,AbstractCFDateTime}
-    else
-        rettype = Union{Missing,eltype(v)}
+    fillvalue = get(v.attrib,"_FillValue",nothing)
+    scale_factor = get(v.attrib,"scale_factor",nothing)
+    add_offset = get(v.attrib,"add_offset",nothing)
+
+    calendar = nothing
+    time_origin = nothing
+    time_factor = nothing
+    if haskey(v.attrib,"units")
+        units = v.attrib["units"]
+        if occursin(" since ",units)
+            calendar = lowercase(get(v.attrib,"calendar","standard"))
+            time_origin,time_factor = CFTime.timeunits(units, calendar)
+        end
     end
 
-    return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib)}(v,v.attrib)
+    scaledtype = eltype(v)
+
+    if eltype(v) <: Number
+        if scale_factor != nothing
+            scaledtype = promote_type(scaledtype, typeof(scale_factor))
+        end
+
+        if add_offset != nothing
+            scaledtype = promote_type(scaledtype, typeof(add_offset))
+        end
+    end
+
+    rettype = scaledtype
+
+    if calendar != nothing
+        units = get(v.attrib,"units","")
+        if occursin(" since ",units)
+            # type of data changes
+            calendar = lowercase(get(v.attrib,"calendar","standard"))
+            DT = CFTime.timetype(calendar)
+            # this is the only supported option for NCDatasets
+            prefer_datetime = true
+
+            if prefer_datetime &&
+                (DT in [DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian])
+                rettype = DateTime
+            else
+                rettype = DT
+            end
+        end
+    end
+
+    if fillvalue != nothing
+        rettype = Union{Missing,rettype}
+    end
+
+    storage_attrib = (
+        fillvalue = fillvalue,
+        scale_factor = scale_factor,
+        add_offset = add_offset,
+        calendar = calendar,
+        time_origin = time_origin,
+        time_factor = time_factor,
+    )
+
+    return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib),typeof(storage_attrib)}(
+        v,v.attrib,storage_attrib)
 end
 
 
@@ -432,9 +514,9 @@ function fillmode(v::Variable)
     return no_fill,fv
 end
 
-function fillvalue(v::Variable)
+function fillvalue(v::Variable{NetCDFType,N}) where {NetCDFType,N}
     no_fill,fv = nc_inq_var_fill(v.ncid, v.varid)
-    return fv
+    return fv::NetCDFType
 end
 
 name(v::CFVariable) = name(v.var)
@@ -448,6 +530,20 @@ checksum(v::CFVariable,checksummethod) = checksum(v.var,checksummethod)
 checksum(v::CFVariable) = checksum(v.var)
 
 
+fillmode(v::CFVariable) = fillmode(v.var)
+
+fillvalue(v::CFVariable) = v._storage_attrib.fillvalue
+scale_factor(v::CFVariable) = v._storage_attrib.scale_factor
+add_offset(v::CFVariable) = v._storage_attrib.add_offset
+time_origin(v::CFVariable) = v._storage_attrib.time_origin
+calendar(v::CFVariable) = v._storage_attrib.calendar
+""""
+    tf = time_factor(v::CFVariable)
+
+The time unit in milliseconds. E.g. seconds would be 1000., days would be 86400000.
+The result can also be `nothing` if the variable has no time units.
+"""
+time_factor(v::CFVariable) = v._storage_attrib.time_factor
 
 
 
@@ -459,8 +555,8 @@ Return the values of the array `da` of type `Array{Union{T,Missing},N}`
 element type. It raises an error if the array contains at least one missing value.
 
 """
-function nomissing(da::Array{Union{T,Missing},N}) where {T,N}
-    if any(ismissing.(da))
+function nomissing(da::AbstractArray{Union{T,Missing},N}) where {T,N}
+    if any(ismissing, da)
         error("arrays contains missing values (values equal to the fill values attribute in the NetCDF file)")
     end
     if VERSION >= v"1.2"
@@ -476,6 +572,8 @@ function nomissing(da::Array{Union{T,Missing},N}) where {T,N}
         end
     end
 end
+
+nomissing(a::AbstractArray) = a
 
 """
     a = nomissing(da,value)
@@ -495,3 +593,5 @@ julia> nomissing([missing,1.,2.],NaN)
 function nomissing(da::Array{Union{T,Missing},N},value) where {T,N}
     return replace(da, missing => T(value))
 end
+
+nomissing(a::AbstractArray,value) = a
