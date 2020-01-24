@@ -35,3 +35,14 @@ ds = NCDataset("file.nc")
 @btime mean(ds["myvar"][:,:]) # takes 106.873 μs, 1000 times faster
 close(ds)
 ```
+
+* Avoid when possible indexing with arrays and `CartesianIndex` as they also result in loading the data element-wise.
+
+```julia
+ds = NCDataset("dataset.nc");
+v = ds["v1"][:,[1,2,3],:]; # slow
+v = ds["v1"][:,1:3,:]; # fast
+v = ds["v1"][:,:,CartesianIndex(1)] # slow
+v = ds["v1"][:,:,1] # fast
+close(ds)
+```
