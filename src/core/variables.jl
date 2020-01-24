@@ -27,16 +27,30 @@ mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractArray{T, N}
     _storage_attrib::TSA
 end
 
+"""
+    ds = NCDataset(var::CFVariable)
+    ds = NCDataset(var::Variable)
+
+Return the `NCDataset` contain the variable `var`.
+"""
 NCDataset(var::CFVariable) = NCDataset(var.var)
-
-Base.size(v::CFVariable) = size(v.var)
-dimnames(v::CFVariable)  = dimnames(v.var)
-
 NCDataset(var::Variable) = NCDataset(var.ncid,var.isdefmode)
 
-# the size of a variable can change, i.e. for a variable with an unlimited
-# dimension
+"""
+    sz = size(var::CFVariable)
+
+Return a tuple of integers with the size of the variable `var`.
+
+!!! note
+
+    Note that the size of a variable can change, i.e. for a variable with an
+    unlimited dimension.
+"""
+Base.size(v::CFVariable) = size(v.var)
 Base.size(v::Variable{T,N}) where {T,N} = ntuple(i -> nc_inq_dimlen(v.ncid,v.dimids[i]),Val(N))
+
+
+
 
 ############################################################
 # Creating variables
@@ -454,8 +468,8 @@ end
 
 Return a tuple of strings with the dimension names of the variable `v`.
 """
-function dimnames(v::Variable)
-    return (String[nc_inq_dimname(v.ncid,dimid) for dimid in v.dimids]...,)
+function dimnames(v::Variable{T,N}) where {T,N}
+    return ntuple(i -> nc_inq_dimname(v.ncid,dimids[i]),Val(N))
 end
 
 """
