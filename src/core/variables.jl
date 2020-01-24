@@ -31,7 +31,7 @@ end
     ds = NCDataset(var::CFVariable)
     ds = NCDataset(var::Variable)
 
-Return the `NCDataset` contain the variable `var`.
+Return the `NCDataset` containing the variable `var`.
 """
 NCDataset(var::CFVariable) = NCDataset(var.var)
 NCDataset(var::Variable) = NCDataset(var.ncid,var.isdefmode)
