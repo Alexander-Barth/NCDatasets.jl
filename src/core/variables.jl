@@ -469,8 +469,9 @@ end
 Return a tuple of strings with the dimension names of the variable `v`.
 """
 function dimnames(v::Variable{T,N}) where {T,N}
-    return ntuple(i -> nc_inq_dimname(v.ncid,dimids[i]),Val(N))
+    return ntuple(i -> nc_inq_dimname(v.ncid,v.dimids[i]),Val(N))
 end
+dimnames(v::CFVariable)  = dimnames(v.var)
 
 """
     name(v::Variable)
