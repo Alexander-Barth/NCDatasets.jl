@@ -11,3 +11,5 @@ Manifest.toml
 /res/
 /test/perf/*.err
 /test/perf/*.out
+/test/perf/*.txt
+/test/perf/*.nc
