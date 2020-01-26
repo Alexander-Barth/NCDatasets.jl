@@ -273,13 +273,16 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
     throw(NetCDFError(-1, "time unit ('$units') of the variable $(name(v)) does not include the word ' since '"))
 end
 
+# round float to integers
+_approximate(::Type{T},data) where T <: Integer = round(T,data)
+_approximate(::Type,data) = data
 
 function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     tmp = CFinvtransformdata(
         data,fillvalue(v),scale_factor(v),add_offset(v),
         time_origin(v),time_factor(v),eltype(v))
 
-    v.var[indexes...] = tmp
+    v.var[indexes...] = _approximate.(eltype(v.var),tmp)
     return data
 end
 
