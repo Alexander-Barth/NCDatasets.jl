@@ -224,9 +224,22 @@ end
 end
 
 
+#@inline CFtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) =
+#    # in boardcasting we trust..., or not
+#    CFtransform.(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
+
+# for scalars
 @inline CFtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) =
-    # in boardcasting we trust...
-    CFtransform.(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
+    CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
+
+# for arrays
+@inline function CFtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,DTcast) where {T,N}
+    out = Array{DTcast,N}(undef,size(data))
+    @inbounds @simd for i in eachindex(data)
+        out[i] = CFtransform(data[i],fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
+    end
+    return out
+end
 
 # this function is necessary to avoid "iterating" over a single character in Julia 1.0 (fixed Julia 1.3)
 # https://discourse.julialang.org/t/broadcasting-and-single-characters/16836
