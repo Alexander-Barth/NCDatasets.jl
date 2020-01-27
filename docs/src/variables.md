@@ -35,6 +35,7 @@ Base.size(v::CFVariable)
 dimnames
 dimsize
 name
+renameVar
 NCDataset(var::CFVariable)
 nomissing
 ```

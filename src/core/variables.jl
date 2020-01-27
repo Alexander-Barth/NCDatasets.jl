@@ -21,9 +21,12 @@ end
 
 # Variable (with applied transformations following the CF convention)
 mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractArray{T, N}
-    var::TV # this var is a `Variable` type
+    # this var is generally a `Variable` type
+    var::TV
+    # Dict-like object for all attributes read from disk
     attrib::TA
     # a named tuple with fill value, scale factor, offset,...
+    # immutable for type-stability
     _storage_attrib::TSA
 end
 
@@ -123,7 +126,7 @@ julia> NCDataset("test_file.nc","c") do ds
 !!! note
 
     If the attributes `_FillValue`, `add_offset`, `scale_factor`, `units` and
-    `calendar` are used, they should defined when calling `defVar` by using the
+    `calendar` are used, they should be defined when calling `defVar` by using the
     parameter `attrib` as shown in the example above.
 """
 function defVar(ds::NCDataset,name,vtype::DataType,dimnames; kwargs...)
@@ -260,9 +263,14 @@ function defVar(ds::NCDataset,name,data::T; kwargs...) where T <: Number
     return v
 end
 
+"""
+    renameVar(ds::NCDataset,oldname,newname)
 
-function renameVar(ds::NCDataset,oldname,newname)
-    defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
+Rename the variable called `oldname` to `newname`.
+"""
+function renameVar(ds::NCDataset,oldname::AbstractString,newname::AbstractString)
+    # make sure that the file is in define mode
+    defmode(ds.ncid,ds.isdefmode)
     varid = nc_inq_varid(ds.ncid,oldname)
     nc_rename_var(ds.ncid,varid,newname)
     return nothing
@@ -285,21 +293,16 @@ function variable(ds::NCDataset,varname::AbstractString)
     varid = nc_inq_varid(ds.ncid,varname)
     name,nctype,dimids,nattr = nc_inq_var(ds.ncid,varid)
     ndims = length(dimids)
-    #@show ndims
     shape = zeros(Int,ndims)
-    #@show typeof(shape),typeof(Int(1))
 
     for i = 1:ndims
         shape[ndims-i+1] = nc_inq_dimlen(ds.ncid,dimids[i])
     end
-    #@show shape
-    #@show typeof(shape)
 
     attrib = Attributes(ds.ncid,varid,ds.isdefmode)
 
     # reverse dimids to have the dimension order in Fortran style
     return Variable{nctype,ndims}(ds.ncid,varid,
-                                  #(shape...),
                                   (reverse(dimids)...,),
                                   attrib,ds.isdefmode)
 end
