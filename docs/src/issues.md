@@ -32,6 +32,14 @@ tempvar = defVar(ds,"temp",Float32,("lonc","latc","time"), attrib = [
     "_FillValue" => -9999.])
 ```
 
+or
+
+```julia
+using NCDatasets
+# ...
+tempvar = defVar(ds,"temp",Float32,("lonc","latc","time"), fillvalue = -9999.)
+```
+
 In fact, `_FillValue` must have the same data type as the corresponding variable. In the case above, `tempvar` is a 32-bit float and the number `-9999.` is a 64-bit float (aka double, which is the default floating point type in Julia). It is sufficient to convert the value `-9999.` to a 32-bit float `-9999.f0` (or `Float32(-9999.)`).
 
 
@@ -63,8 +71,11 @@ Stacktrace:
 One should use define the `_FillValue` (and similar attributes like `add_offset`, `scale_factor`, `units` and `calendar` affecting the type of the data) in the call of `defVar`:
 
 ```julia
-v = defVar(ds,"var_with_all_missing_data",Float32,("lon",), attrib = [
-    "_FillValue" => fv])
+using DataStructures
+v = defVar(ds,"var_with_all_missing_data",Int32,("lon",), fillvalue = fv, attrib = OrderedDict(
+    "scale_factor" => 0.1,
+    "add_offset" => 0.1
+    ))
 ```
 
 This change was introduced in `NCDatasets` version 0.10

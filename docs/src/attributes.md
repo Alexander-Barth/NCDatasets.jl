@@ -20,6 +20,8 @@ typeof(attributes_as_dictionary)
 ```
 
 
+## Possible type promotion in Julia
+
 There is a subtile problem with the following code:
 
 ```julia
