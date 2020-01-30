@@ -31,12 +31,12 @@ v_cf[1:5, 10:20]
 The following functions are convenient for working with variables:
 
 ```@docs
-Base.size(v::CFVariable)
+Base.size(v::NCDatasets.CFVariable)
 dimnames
 dimsize
 name
 renameVar
-NCDataset(var::CFVariable)
+NCDataset(var::NCDatasets.CFVariable)
 nomissing
 ```
 

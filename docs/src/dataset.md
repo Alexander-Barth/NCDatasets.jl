@@ -26,6 +26,7 @@ Otherwise, we attempt to use standard structures from the Julia standard library
 defGroup(ds::NCDataset,groupname)
 getindex(g::NCDatasets.Groups,groupname::AbstractString)
 Base.keys(g::NCDatasets.Groups)
+    groupname(ds::NCDataset)
 ```
 
 ## Common methods
