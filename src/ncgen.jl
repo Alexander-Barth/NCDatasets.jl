@@ -16,10 +16,10 @@ end
 function ncgen(io::IO,fname; newfname = "filename.nc")
     ds = NCDataset(fname)
     unlimited_dims = unlimited(ds.dim)
-
-    print(io,"ds = NCDataset(\"$(escape(newfname))\",\"c\", attrib = [\n")
+    print(io,"using NCDatasets, DataStructures")
+    print(io,"ds = NCDataset(\"$(escape(newfname))\",\"c\"")
     ncgen_setattrib(io,ds.attrib)
-    print(io,"])\n\n")
+    print(io,")\n\n")
 
     print(io,"# Dimensions\n\n")
     for (d,v) in ds.dim
@@ -33,9 +33,9 @@ function ncgen(io::IO,fname; newfname = "filename.nc")
     print(io,"\n# Declare variables\n\n")
 
     for (d,v) in ds
-        print(io,"nc$d = defVar(ds,\"$d\", $(eltype(v.var)), $(dimnames(v)), attrib = [\n")
+        print(io,"nc$d = defVar(ds,\"$d\", $(eltype(v.var)), $(dimnames(v))")
         ncgen_setattrib(io,v.attrib)
-        print(io,"])\n\n")
+        print(io,")\n\n")
     end
 
     print(io,"\n# Define variables\n\n")
@@ -72,9 +72,17 @@ litteral(val::Number) = "$(eltype(val))($(val))"
 litteral(val) = "$(val)" # for arrays
 
 function ncgen_setattrib(io,attrib)
+    if length(attrib) == 0
+        return
+    end
+
+    print(io,", attrib = OrderedDict(\n")
+
     for (d,val) in attrib
         litval = litteral(val)
         print(io,"    \"$d\"" * (" "^max(0,(25-length(d)))) * " => $litval,\n");
     end
+    print(io,")")
+
 end
 

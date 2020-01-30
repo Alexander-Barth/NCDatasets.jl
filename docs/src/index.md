@@ -168,15 +168,16 @@ An equivalent way to create the previous netCDF would be the following code:
 
 ```julia
 using NCDatasets
+using DataStructures
 data = [Float32(i+j) for i = 1:100, j = 1:110]
 
-NCDataset("/tmp/test2.nc","c",attrib = ["title" => "this is a test file"]) do ds
+Dataset("/tmp/test2.nc","c",attrib = OrderedDict("title" => "this is a test file")) do ds
     # Define the variable temperature. The dimension "lon" and "lat" with the
     # size 100 and 110 resp are implicetly created
-    defVar(ds,"temperature",data,("lon","lat"), attrib = [
+    defVar(ds,"temperature",data,("lon","lat"), attrib = OrderedDict(
            "units" => "degree Celsius",
            "comments" => "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
-    ])
+    ))
 end
 ```
 

@@ -242,7 +242,8 @@ end
 
 Here is an attribute example:
 ```julia
-NCDataset("file.nc", "c", attrib = ["title" => "my first netCDF file"]) do ds
+using DataStructures
+NCDataset("file.nc", "c", attrib = OrderedDict("title" => "my first netCDF file")) do ds
    defVar(ds,"temp",[10.,20.,30.],("time",))
 end;
 ```

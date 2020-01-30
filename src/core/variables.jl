@@ -112,14 +112,15 @@ set on NetCDF 4 files.
 ## Example:
 
 ```julia-repl
+julia> using DataStructures
 julia> data = randn(3,5)
 julia> NCDataset("test_file.nc","c") do ds
-          defVar(ds,"temp",data,("lon","lat"), attrib = [
+          defVar(ds,"temp",data,("lon","lat"), attrib = OrderedDict(
              "units" => "degree_Celsius",
              "add_offet" => -273.15,
              "scale_factor" => 0.1,
              "long_name" => "Temperature"
-          ])
+          ))
        end;
 ```
 

@@ -134,6 +134,7 @@ The following gives an example of how to create a netCDF file by defining dimens
 
 ```julia
 using NCDatasets
+using DataStructures
 # This creates a new NetCDF file /tmp/test.nc.
 # The mode "c" stands for creating a new file (clobber)
 ds = Dataset("/tmp/test.nc","c")
@@ -146,8 +147,8 @@ defDim(ds,"lat",110)
 ds.attrib["title"] = "this is a test file"
 
 # Define the variables temperature with the attribute units
-v = defVar(ds,"temperature",Float32,("lon","lat"), attrib = [
-    "units" => "degree Celsius"])
+v = defVar(ds,"temperature",Float32,("lon","lat"), attrib = OrderedDict(
+    "units" => "degree Celsius"))
 
 # add additional attributes
 v.attrib["comments"] = "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
@@ -164,21 +165,6 @@ v[:,:] = data
 close(ds)
 ```
 
-An equivalent way to create the previous netCDF would be the following code:
-
-```julia
-using NCDatasets
-data = [Float32(i+j) for i = 1:100, j = 1:110]
-
-Dataset("/tmp/test2.nc","c",attrib = ["title" => "this is a test file"]) do ds
-    # Define the variable temperature. The dimension "lon" and "lat" with the
-    # size 100 and 110 resp are implicetly created
-    defVar(ds,"temperature",data,("lon","lat"), attrib = [
-           "units" => "degree Celsius",
-           "comments" => "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
-    ])
-end
-```
 
 ## Edit an existing netCDF file
 
