@@ -80,6 +80,10 @@ v = defVar(ds,"var_with_all_missing_data",Int32,("lon",), fillvalue = fv, attrib
 
 This change was introduced in `NCDatasets` version 0.10
 
+## Mutiple versions of HDF5 or NetCDF libraries
+
+Having outdated versions of HDF5 or NetCDF libraries installed can be an issue on Windows if they are included in the system `PATH` environement variable. It is advised to adapt the system `PATH` to remove the locations containing these libraries.
+
 ## Corner cases
 
 
