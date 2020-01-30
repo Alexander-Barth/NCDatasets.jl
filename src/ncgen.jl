@@ -16,7 +16,7 @@ end
 function ncgen(io::IO,fname; newfname = "filename.nc")
     ds = NCDataset(fname)
     unlimited_dims = unlimited(ds.dim)
-    print(io,"using NCDatasets, DataStructures")
+    print(io,"using NCDatasets, DataStructures\n")
     print(io,"ds = NCDataset(\"$(escape(newfname))\",\"c\"")
     ncgen_setattrib(io,ds.attrib)
     print(io,")\n\n")
