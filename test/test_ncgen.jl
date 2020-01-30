@@ -1,4 +1,5 @@
 import NCDatasets
+using Test
 
 ncfile1 = tempname()
 ncfile2 = tempname()
@@ -6,19 +7,19 @@ jlfile = tempname()
 #jlfile = "/tmp/out.jl"
 
 ds = NCDatasets.NCDataset(ncfile1,"c")
-ds.dim["lon"] = 3; 
+ds.dim["lon"] = 3;
 ds.dim["unlimited"] = Inf;
-nclon = NCDatasets.defVar(ds,"lon", Float32, ("lon",)) 
-nclon.attrib["string"] = "degrees_east"; 
+nclon = NCDatasets.defVar(ds,"lon", Float32, ("lon",))
+nclon.attrib["string"] = "degrees_east";
 nclon.attrib["float32"] = Float32(1.)
 nclon.attrib["float64"] = 1.
 nclon.attrib["float32_vector"] = Float32[1.,2.,3.]
 nclon.attrib["float64_vector"] = [1.,2.,3.]
 nclon.attrib["int32_vector"] = Int32[1,2,3]
 
-ds.attrib["dollar"] = "a dollar \$ stop"; 
-ds.attrib["backslash"] = "a backslash \\ stop"; 
-ds.attrib["doublequote"] = "a doublequote \" stop"; 
+ds.attrib["dollar"] = "a dollar \$ stop";
+ds.attrib["backslash"] = "a backslash \\ stop";
+ds.attrib["doublequote"] = "a doublequote \" stop";
 
 close(ds)
 
