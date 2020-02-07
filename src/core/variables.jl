@@ -111,13 +111,16 @@ set on NetCDF 4 files.
 
 ## Example:
 
+In this example, `scale_factor` and `add_offset` are applied when the `data`
+is saved.
+
 ```julia-repl
 julia> using DataStructures
 julia> data = randn(3,5)
 julia> NCDataset("test_file.nc","c") do ds
           defVar(ds,"temp",data,("lon","lat"), attrib = OrderedDict(
              "units" => "degree_Celsius",
-             "add_offet" => -273.15,
+             "add_offset" => -273.15,
              "scale_factor" => 0.1,
              "long_name" => "Temperature"
           ))
