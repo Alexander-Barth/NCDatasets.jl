@@ -181,7 +181,9 @@ close(ds);
 
 # Benchmark
 
-The benchmark loads a variable of the size 1000x500x100 in slices of 1000x500 and compute the maximum of each slice and the average of each maximum over all slices.
+The benchmark loads a variable of the size 1000x500x100 in slices of 1000x500
+(applying the scaling of the CF conventions)
+and computes the maximum of each slice and the average of each maximum over all slices.
 This operation is repeated 100 times.
 The code is available at https://github.com/Alexander-Barth/NCDatasets.jl/tree/master/test/perf .
 
