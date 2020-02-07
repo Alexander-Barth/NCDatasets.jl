@@ -14,7 +14,8 @@ A description of what you expected to happen.
 
  - operating system: [e.g. Ubuntu XX.YY]
  - Julia version: [e.g. julia 1.1.1, official binaries from https://julialang.org/downloads/]
-
+ - NCDatasets version:
+ 
 **Full output**
 
 In case of an error, please paste the full error message and stack trace.
