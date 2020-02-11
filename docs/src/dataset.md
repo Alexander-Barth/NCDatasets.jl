@@ -27,7 +27,7 @@ Otherwise, we attempt to use standard structures from the Julia standard library
 ## Merging
 You can merge two datasets with the function `merge`:
 ```@docs
-merge(::NCDataset, ::NCdataset)
+merge!(::NCDataset, ::NCdataset)
 ```
 
 ## Groups

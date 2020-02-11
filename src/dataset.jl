@@ -461,10 +461,10 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
 end
 
 """
-    merge(a::NCDataset, b::NCDataset)
+    merge!(a::NCDataset, b::NCDataset)
 Merge the variables of `b` into `a` (which must be opened in append mode `"a"`).
 """
-function Base.merge(a::NCDataset, b::NCDataset)
+function Base.merge!(a::NCDataset, b::NCDataset)
     z = keys(b)
     for x in keys(b)
         x ∈ keys(a) && continue
