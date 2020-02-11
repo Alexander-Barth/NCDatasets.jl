@@ -19,6 +19,15 @@ mutable struct Variable{NetCDFType,N} <: AbstractVariable{NetCDFType, N}
     isdefmode::Vector{Bool}
 end
 
+
+############################################################
+# Helper functions (internal)
+############################################################
+"Return all variable names"
+listVar(ncid) = String[nc_inq_varname(ncid,varid)
+                       for varid in nc_inq_varids(ncid)]
+
+
 """
     ds = NCDataset(var::CFVariable)
     ds = NCDataset(var::Variable)
@@ -229,6 +238,12 @@ function fillmode(v::Variable)
 end
 export fillmode
 
+"""
+    fv = fillvalue(v::Variable)
+    fv = fillvalue(v::CFVariable)
+
+Return the fill-value of the variable `v`.
+"""
 function fillvalue(v::Variable{NetCDFType,N}) where {NetCDFType,N}
     no_fill,fv = nc_inq_var_fill(v.ncid, v.varid)
     return fv::NetCDFType

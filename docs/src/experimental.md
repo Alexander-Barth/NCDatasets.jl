@@ -5,7 +5,7 @@
 Multiple files can also be aggregated over a given dimensions (or the record dimension). In this example, 3 sea surface temperature fields from the
 1992-01-01 to 1992-01-03 are aggregated using the OpenDAP service from PODAAC.
 
-```
+```julia
 using NCDatasets, Printf, Dates
 
 function url(dt)
@@ -20,7 +20,7 @@ SST2 = ds["analysed_sst"][:,:,:];
 close(ds)
 ```
 
-If there is a network or server issue, you will see an error message like "NetCDF: I/O failure".
+If there is a network or server issue, you will see an error message like `NetCDF: I/O failure`.
 
 
 ## Experimental functions

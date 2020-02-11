@@ -25,7 +25,7 @@ v_cf[1:5, 10:20]
 (here you must know the number of dimensions of the variable, as you must access all of them).
 
 !!! note
-    `NCDatasets.Variable` and `NCDatasets.CFVariable` implement the interface of `AbstractArray`. It is thus possible to call any function that accepts an `AbstractArray`. But functions like `mean`, `sum` (and many more) would load every element individually which is very inefficient for large fields read from disk. You should instead convert such a variable to a standard Julia `Array` and then do computations with it. See also the [performance tips](performance.html) for more information.
+    `NCDatasets.Variable` and `NCDatasets.CFVariable` implement the interface of `AbstractArray`. It is thus possible to call any function that accepts an `AbstractArray`. But functions like `mean`, `sum` (and many more) would load every element individually which is very inefficient for large fields read from disk. You should instead convert such a variable to a standard Julia `Array` and then do computations with it. See also the [performance tips](performance/) for more information.
 
 
 The following functions are convenient for working with variables:
@@ -38,6 +38,7 @@ name
 renameVar
 NCDataset(var::NCDatasets.CFVariable)
 nomissing
+fillvalue
 ```
 
 ```@docs

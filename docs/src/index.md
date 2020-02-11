@@ -235,7 +235,7 @@ The solution implemented in the function `varbyattrib` consists in searching for
 variables that have specified value for a given attribute.
 
 ```julia
-nclon = varbyattrib(ds, standard_name="longitude");
+nclon = varbyattrib(ds, standard_name = "longitude");
 ```
 will return the list of variables of the dataset `ds` that have "longitude"
 as standard name. To directly load the data of the first variable with the

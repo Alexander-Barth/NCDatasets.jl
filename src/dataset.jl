@@ -91,28 +91,35 @@ const jlType = Dict(
 # Inverse mapping
 const ncType = Dict(value => key for (key, value) in jlType)
 
-# default fill value per types
-const ncFillValue = Dict(
-    Int8    => NC_FILL_BYTE,
-    UInt8   => NC_FILL_UBYTE,
-    Int16   => NC_FILL_SHORT,
-    UInt16  => NC_FILL_USHORT,
-    Int32   => NC_FILL_INT,
-    UInt32  => NC_FILL_UINT,
-    Int64   => NC_FILL_INT64,
-    UInt64  => NC_FILL_UINT64,
-    Float32 => NC_FILL_FLOAT,
-    Float64 => NC_FILL_DOUBLE,
-    Char    => NC_FILL_CHAR,
-    String  => NC_FILL_STRING
-)
+"""
+    fillvalue(::Type{Int8})
+    fillvalue(::Type{UInt8})
+    fillvalue(::Type{Int16})
+    fillvalue(::Type{UInt16})
+    fillvalue(::Type{Int32})
+    fillvalue(::Type{UInt32})
+    fillvalue(::Type{Int64})
+    fillvalue(::Type{UInt64})
+    fillvalue(::Type{Float32})
+    fillvalue(::Type{Float64})
+    fillvalue(::Type{Char})
+    fillvalue(::Type{String})
 
-############################################################
-# Helper functions (internal)
-############################################################
-"Return all variable names"
-listVar(ncid) = String[nc_inq_varname(ncid,varid)
-                       for varid in nc_inq_varids(ncid)]
+Default fill-value for the given type.
+"""
+@inline fillvalue(::Type{Int8})    = NC_FILL_BYTE
+@inline fillvalue(::Type{UInt8})   = NC_FILL_UBYTE
+@inline fillvalue(::Type{Int16})   = NC_FILL_SHORT
+@inline fillvalue(::Type{UInt16})  = NC_FILL_USHORT
+@inline fillvalue(::Type{Int32})   = NC_FILL_INT
+@inline fillvalue(::Type{UInt32})  = NC_FILL_UINT
+@inline fillvalue(::Type{Int64})   = NC_FILL_INT64
+@inline fillvalue(::Type{UInt64})  = NC_FILL_UINT64
+@inline fillvalue(::Type{Float32}) = NC_FILL_FLOAT
+@inline fillvalue(::Type{Float64}) = NC_FILL_DOUBLE
+@inline fillvalue(::Type{Char})    = NC_FILL_CHAR
+@inline fillvalue(::Type{String})  = NC_FILL_STRING
+
 
 
 "Make sure that a dataset is in data mode"
