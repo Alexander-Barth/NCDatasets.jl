@@ -461,13 +461,15 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
 end
 
 """
-    merge!(a::NCDataset, b::NCDataset)
+    merge!(a::NCDataset, b::NCDataset; include, exclude)
 Merge the variables of `b` into `a` (which must be opened in append mode `"a"`).
+The keywords `include` and `exclude` configure which keys of `b` should be included
+(by default all), or which should be `excluded` (by default none).
 """
-function Base.merge!(a::NCDataset, b::NCDataset)
-    z = keys(b)
-    for x in keys(b)
-        x ∈ keys(a) && continue
+function Base.merge!(a::NCDataset, b::NCDataset;
+    include = keys(b), exclude = String[])
+    for x in include
+        (x ∈ keys(a) || x ∈ exclude) && continue
         println("Porting variable $x...")
         cfvar = b[x]
         defVar(a, x, Array(cfvar), dimnames(cfvar); attrib = Dict(cfvar.attrib))

@@ -17,6 +17,9 @@ merge!(a, b)
 
 @test sort!(keys(a)) == ["ampl", "lat", "lon", "time", "vel"]
 
+x = Array(a["ampl"])
+@test x == ampl
+
 close(a)
 close(b)
 
