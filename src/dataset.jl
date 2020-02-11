@@ -459,3 +459,18 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
     end
 
 end
+
+"""
+    merge(a::NCDataset, b::NCDataset)
+Merge the variables of `b` into `a` (which must be opened in append mode `"a"`).
+"""
+function Base.merge(a::NCDataset, b::NCDataset)
+    z = keys(b)
+    for x in keys(b)
+        x ∈ keys(a) && continue
+        println("Porting variable $x...")
+        cfvar = b[x]
+        defVar(a, x, Array(cfvar), dimnames(cfvar); attrib = Dict(cfvar.attrib))
+    end
+    return a
+end
