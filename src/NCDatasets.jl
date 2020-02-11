@@ -32,15 +32,15 @@ using CFTime
 include("CatArrays.jl")
 export CatArrays
 
-include("core/errorhandling.jl") # error checking from NetCDF.jl
-include("core/netcdf_c.jl") # writting files from NetCDF.jl
+include("errorhandling.jl") # error checking from NetCDF.jl
+include("netcdf_c.jl") # writting files from NetCDF.jl
 
 const default_timeunits = "days since 1900-00-00 00:00:00"
 
-include("core/dataset.jl")
-include("core/variables.jl")
-include("core/indexing_in_vars.jl")
-include("core/prettyprinting.jl")
+include("dataset.jl")
+include("attribute.jl")
+include("variable.jl")
+include("cfvariable.jl")
 
 include("multifile/types.jl")
 include("multifile/functions.jl")

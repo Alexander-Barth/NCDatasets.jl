@@ -593,3 +593,63 @@ name `temperature` and a dimension with the name `lon`.
 """
 Base.haskey(a::NCIterable,name::AbstractString) = name in keys(a)
 Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
+
+
+
+function Base.show(io::IO,ds::AbstractDataset; indent="")
+    try
+        dspath = path(ds)
+        printstyled(io, indent, "NCDataset: ",dspath,"\n", color=:red)
+    catch err
+        if isa(err,NetCDFError)
+            if err.code == NC_EBADID
+                print(io,"closed NetCDF NCDataset")
+                return
+            end
+        end
+        rethrow
+    end
+
+    print(io,indent,"Group: ",groupname(ds),"\n")
+    print(io,"\n")
+
+    dims = collect(ds.dim)
+
+    if length(dims) > 0
+        printstyled(io, indent, "Dimensions\n",color=:red)
+
+        for (dimname,dimlen) in dims
+            print(io,indent,"   $(dimname) = $(dimlen)\n")
+        end
+        print(io,"\n")
+    end
+
+    varnames = keys(ds)
+
+    if length(varnames) > 0
+
+        printstyled(io, indent, "Variables\n",color=:red)
+
+        for name in varnames
+            show(io,variable(ds,name); indent = "$(indent)  ")
+            print(io,"\n")
+        end
+    end
+
+    # global attribues
+    if length(ds.attrib) > 0
+        printstyled(io, indent, "Global attributes\n",color=:red)
+        show(io,ds.attrib; indent = "$(indent)  ");
+    end
+
+    # groups
+    groupnames = keys(ds.group)
+
+    if length(groupnames) > 0
+        printstyled(io, indent, "Groups\n",color = :red)
+        for groupname in groupnames
+            show(io,group(ds,groupname); indent = "  ")
+        end
+    end
+
+end
