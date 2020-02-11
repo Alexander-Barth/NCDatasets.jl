@@ -9,7 +9,7 @@ ds = NCDatasets.NCDataset(filename,"c")
 ds.dim["lon"] = 10
 ds.dim["lat"] = 11
 
-fv = NCDatasets.NC_FILL_FLOAT
+fv = fillvalue(Float32)
 
 v = NCDatasets.defVar(ds,"var_with_missing_data",Float32,("lon","lat"), fillvalue = fv)
 
@@ -39,7 +39,7 @@ filename = tempname()
 
 NCDatasets.NCDataset(filename,"c") do ds
 
-    # define the dimension "lon" and "lat" 
+    # define the dimension "lon" and "lat"
     ds.dim["lon"] = sz[1]
     ds.dim["lat"] = sz[2]
 
@@ -146,4 +146,3 @@ NCDataset(filename, "r") do ds
 end
 
 rm(filename)
-

@@ -91,7 +91,7 @@ NCDataset(filename,"c") do ds
 
     # test Union{Missing,T} and default fill value (issue #38)
     defVar(ds,"foo_default_fill_value",[missing,1.,2.],("dim",))
-    @test fillvalue(ds["foo_default_fill_value"]) == NC_FILL_DOUBLE
+    @test fillvalue(ds["foo_default_fill_value"]) == fillvalue(Float64)
     @test isequal(ds["foo_default_fill_value"][:], [missing,1.,2.])
 
 
