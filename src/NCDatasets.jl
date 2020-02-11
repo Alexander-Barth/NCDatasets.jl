@@ -47,11 +47,10 @@ include("dimensions.jl")
 include("groupes.jl")
 include("variable.jl")
 include("cfvariable.jl")
-include("multifile/types.jl")
-include("multifile/functions.jl")
-include("ncgen.jl")
-include("defer.jl")
 include("cfconventions.jl")
+include("defer.jl")
+include("multifile.jl")
+include("ncgen.jl")
 
 # it is good practise to use the default fill-values, thus we export them
 export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,
