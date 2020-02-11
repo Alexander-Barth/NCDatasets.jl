@@ -1,7 +1,7 @@
 using Test
 using NCDatasets
 
-function example_file(i,array)
+function example_file(i,array; varname = "var")
     fname = tempname()
     @debug "fname $fname"
 
@@ -14,7 +14,7 @@ function example_file(i,array)
 
         # Declare variables
 
-        ncvar = defVar(ds,"var", Float64, ("lon", "lat", "time"))
+        ncvar = defVar(ds,varname, Float64, ("lon", "lat", "time"))
         ncvar.attrib["field"] = "u-wind, scalar, series"
         ncvar.attrib["units"] = "meter second-1"
         ncvar.attrib["long_name"] = "surface u-wind component"
@@ -41,7 +41,7 @@ function example_file(i,array)
         # Define variables
 
         g = defGroup(ds,"group")
-        ncvarg = defVar(g,"var", Float64, ("lon", "lat", "time"))
+        ncvarg = defVar(g,varname, Float64, ("lon", "lat", "time"))
         ncvarg.attrib["field"] = "u-wind, scalar, series"
         ncvarg.attrib["units"] = "meter second-1"
         ncvarg.attrib["long_name"] = "surface u-wind component"
@@ -162,4 +162,22 @@ NCDataset(fnames[1]) do ds
 end
 close(mfds)
 
+
+
+# multi-file merge
+
+ampl = rand(50,50)
+vel = rand(50,50)
+
+fnames = [example_file(1, vel; varname = "vel"),
+          example_file(1, ampl; varname = "ampl")]
+
+ds = NCDataset(fnames,aggdim = "");
+
+@test ds["ampl"][:,:,1] == ampl
+@test ds["vel"][:,:,1] == vel
+
+@test sort(keys(ds)) == ["ampl", "lat", "lon", "time", "vel"]
+
+close(ds)
 nothing
