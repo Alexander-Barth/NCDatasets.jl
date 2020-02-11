@@ -398,18 +398,24 @@ end
 
 
 """
-    load!(ncvar::Variable, data, indices)
+    NCDatasets.load!(ncvar::Variable, data, indices)
 
-Loads a NetCDF variables `ncvar` and puts the result in `data` along the
+Loads a NetCDF variables `ncvar` in-place and puts the result in `data` along the
 specified `indices`.
 
 ```julia
-data = zeros(5,6); # must have the right shape and type
-load!(ds["temp"].var,data,:,:) # loads all data
+ds = Dataset("file.nc")
+ncv = ds["vgos"].var;
+# data must have the right shape and type
+data = zeros(eltype(ncv),size(ncv));
+NCDatasets.load!(ncv,data,:,:,:)
+close(ds)
 
+# loading a subset
 data = zeros(5); # must have the right shape and type
 load!(ds["temp"].var,data,:,1) # loads the 1st column
 ```
+
 """
 @inline function load!(ncvar::NCDatasets.Variable{T,N}, data, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
     ind = to_indices(ncvar,indices)
