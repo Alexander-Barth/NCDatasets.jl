@@ -3,13 +3,19 @@ using NCDatasets
 
 cd(@__DIR__)
 
-fname = example_file(1,rand(50,50), "test.nc"; varname = "vel")
-fname = example_file(1,rand(50,50), "test2.nc"; varname = "ampl")
+ampl = rand(50,50)
 
-a = NCDataset(fname)
-b = NCDataset(fname)
+example_file(1,rand(50,50), "test.nc"; varname = "vel")
+example_file(1, ampl, "test2.nc"; varname = "ampl")
+
+a = NCDataset("test.nc", "a")
+b = NCDataset("test2.nc")
+
+@test sort!(keys(a)) == ["lat", "lon", "time", "vel"]
 
 merge!(a, b)
+
+@test sort!(keys(a)) == ["ampl", "lat", "lon", "time", "vel"]
 
 close(a)
 close(b)
