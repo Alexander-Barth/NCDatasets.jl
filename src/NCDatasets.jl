@@ -28,37 +28,29 @@ import Base: close
 import Base: Array
 
 using CFTime
+export CFTime
+export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
+export dayofyear, firstdayofyear
+export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
+    DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
+
+const default_timeunits = "days since 1900-00-00 00:00:00"
 
 include("CatArrays.jl")
 export CatArrays
 
 include("errorhandling.jl") # error checking from NetCDF.jl
 include("netcdf_c.jl") # writting files from NetCDF.jl
-
-const default_timeunits = "days since 1900-00-00 00:00:00"
-
 include("dataset.jl")
-include("attribute.jl")
+include("attributes.jl")
+include("dimensions.jl")
+include("groupes.jl")
 include("variable.jl")
 include("cfvariable.jl")
-
 include("multifile/types.jl")
 include("multifile/functions.jl")
-export MFDataset
-
-export defVar, defDim, NCDataset, Dataset, close, sync, variable, dimnames, name,
-    deflate, chunking, checksum, fillvalue, fillmode, ncgen, close
-export nomissing
-export varbyattrib
-export path
-export defGroup
-export loadragged
-
 include("ncgen.jl")
-
 include("defer.jl")
-export DeferDataset
-
 include("cfconventions.jl")
 
 # it is good practise to use the default fill-values, thus we export them
@@ -67,12 +59,6 @@ export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,
     NC_FILL_UINT64, NC_FILL_STRING
 
 
-export CFTime
-export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
-export dayofyear, firstdayofyear
-
-export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
-    DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
 
 
 end # module

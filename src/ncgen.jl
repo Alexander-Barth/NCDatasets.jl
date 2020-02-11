@@ -65,6 +65,7 @@ function ncgen(fname,jlname; kwargs...)
         ncgen(io, fname; kwargs...)
     end
 end
+export ncgen
 
 litteral(val::String) = "\"$(escape(val))\""
 litteral(val::Float64) = val
@@ -85,4 +86,3 @@ function ncgen_setattrib(io,attrib)
     print(io,")")
 
 end
-

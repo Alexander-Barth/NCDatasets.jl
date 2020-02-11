@@ -110,6 +110,7 @@ function DeferDataset(filename,mode = "r")
         return DeferDataset(r,groupname,da,dd,dg,info)
     end
 end
+export DeferDataset
 
 close(dds::DeferDataset) = nothing
 groupname(dds::DeferDataset) = dds.groupname

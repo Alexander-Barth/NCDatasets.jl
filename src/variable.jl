@@ -85,7 +85,7 @@ function variable(ds::NCDataset,varname::AbstractString)
                                   attrib,ds.isdefmode)
 end
 
-
+export variable
 
 
 """
@@ -160,6 +160,7 @@ function loadragged(ncvar,index::Colon)
     end
     return data
 end
+export loadragged
 
 
 
@@ -174,6 +175,7 @@ Return a tuple of strings with the dimension names of the variable `v`.
 function dimnames(v::Variable{T,N}) where {T,N}
     return ntuple(i -> nc_inq_dimname(v.ncid,v.dimids[i]),Val(N))
 end
+export dimnames
 
 """
     name(v::Variable)
@@ -181,9 +183,9 @@ end
 Return the name of the NetCDF variable `v`.
 """
 name(v::Variable) = nc_inq_varname(v.ncid,v.varid)
+export name
 
 chunking(v::Variable,storage,chunksizes) = nc_def_var_chunking(v.ncid,v.varid,storage,reverse(chunksizes))
-
 
 """
     storage,chunksizes = chunking(v::Variable)
@@ -195,6 +197,7 @@ function chunking(v::Variable)
     storage,chunksizes = nc_inq_var_chunking(v.ncid,v.varid)
     return storage,reverse(chunksizes)
 end
+export chunking
 
 """
     isshuffled,isdeflated,deflate_level = deflate(v::Variable)
@@ -207,6 +210,7 @@ compressed using the compression level `deflate_level`
 """
 deflate(v::Variable,shuffle,deflate,deflate_level) = nc_def_var_deflate(v.ncid,v.varid,shuffle,deflate,deflate_level)
 deflate(v::Variable) = nc_inq_var_deflate(v.ncid,v.varid)
+export deflate
 
 checksum(v::Variable,checksummethod) = nc_def_var_fletcher32(v.ncid,v.varid,checksummethod)
 
@@ -217,17 +221,19 @@ Return the checksum method of the variable `v` which can be either
 be `:fletcher32` or `:nochecksum`.
 """
 checksum(v::Variable) = nc_inq_var_fletcher32(v.ncid,v.varid)
+export checksum
 
 function fillmode(v::Variable)
     no_fill,fv = nc_inq_var_fill(v.ncid, v.varid)
     return no_fill,fv
 end
+export fillmode
 
 function fillvalue(v::Variable{NetCDFType,N}) where {NetCDFType,N}
     no_fill,fv = nc_inq_var_fill(v.ncid, v.varid)
     return fv::NetCDFType
 end
-
+export fillvalue
 
 
 """
@@ -278,6 +284,7 @@ function nomissing(da::Array{Union{T,Missing},N},value) where {T,N}
 end
 
 nomissing(a::AbstractArray,value) = a
+export nomissing
 
 
 function Base.getindex(v::Variable,indexes::Int...)

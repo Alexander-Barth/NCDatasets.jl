@@ -29,13 +29,6 @@ end
 abstract type AbstractGroups
 end
 
-function Base.get(a::BaseAttributes, name::AbstractString,default)
-    if haskey(a,name)
-        return a[name]
-    else
-        return default
-    end
-end
 
 
 # -----------------------------------------------------
@@ -121,17 +114,6 @@ const ncFillValue = Dict(
 listVar(ncid) = String[nc_inq_varname(ncid,varid)
                        for varid in nc_inq_varids(ncid)]
 
-"Return all attribute names"
-function listAtt(ncid,varid)
-    natts = nc_inq_varnatts(ncid,varid)
-    names = Vector{String}(undef,natts)
-
-    for attnum = 0:natts-1
-        names[attnum+1] = nc_inq_attname(ncid,varid,attnum)
-    end
-
-    return names
-end
 
 "Make sure that a dataset is in data mode"
 function datamode(ncid,isdefmode::Vector{Bool})
@@ -149,57 +131,6 @@ function defmode(ncid,isdefmode::Vector{Bool})
     end
 end
 
-############################################################
-# Groups
-############################################################
-"""
-    Base.keys(g::NCDatasets.Groups)
-
-Return the names of all subgroubs of the group `g`.
-"""
-function Base.keys(g::Groups)
-    return String[nc_inq_grpname(ncid)
-                  for ncid in nc_inq_grps(g.ncid)]
-end
-
-
-"""
-    group = getindex(g::NCDatasets.Groups,groupname::AbstractString)
-
-Return the NetCDF `group` with the name `groupname`.
-For example:
-
-```julia-repl
-julia> ds = NCDataset("results.nc", "r");
-julia> forecast_group = ds.group["forecast"]
-julia> forecast_temp = forecast_group["temperature"]
-```
-
-"""
-function Base.getindex(g::Groups,groupname::AbstractString)
-    grp_ncid = nc_inq_grp_ncid(g.ncid,groupname)
-    return NCDataset(grp_ncid,g.isdefmode)
-end
-
-"""
-    defGroup(ds::NCDataset,groupname, attrib = []))
-
-Create the group with the name `groupname` in the dataset `ds`.
-`attrib` is a list of attribute name and attribute value pairs (see `NCDataset`).
-"""
-function defGroup(ds::NCDataset,groupname; attrib = [])
-    grp_ncid = nc_def_grp(ds.ncid,groupname)
-    ds = NCDataset(grp_ncid,ds.isdefmode)
-
-    # set global attributes for group
-    for (attname,attval) in attrib
-        ds.attrib[attname] = attval
-    end
-
-    return ds
-end
-
-group(ds::AbstractDataset,groupname) = ds.group[groupname]
 
 ############################################################
 # High-level
@@ -331,47 +262,7 @@ function NCDataset(f::Function,args...; kwargs...)
     end
 end
 
-
-"""
-    getindex(a::Attributes,name::AbstractString)
-
-Return the value of the attribute called `name` from the
-attribute list `a`. Generally the attributes are loaded by
-indexing, for example:
-
-```julia
-ds = NCDataset("file.nc")
-title = ds.attrib["title"]
-```
-"""
-function Base.getindex(a::Attributes,name::AbstractString)
-    return nc_get_att(a.ncid,a.varid,name)
-end
-
-
-"""
-    Base.setindex!(a::Attributes,data,name::AbstractString)
-
-Set the attribute called `name` to the value `data` in the
-attribute list `a`. Generally the attributes are defined by
-indexing, for example:
-
-```julia
-ds = NCDataset("file.nc","c")
-ds.attrib["title"] = "my title"
-```
-"""
-function Base.setindex!(a::Attributes,data,name::AbstractString)
-    defmode(a.ncid,a.isdefmode) # make sure that the file is in define mode
-    return nc_put_att(a.ncid,a.varid,name,data)
-end
-
-"""
-    Base.keys(a::Attributes)
-
-Return a list of the names of all attributes.
-"""
-Base.keys(a::Attributes) = listAtt(a.ncid,a.varid)
+export NCDataset, Dataset
 
 ############################################################
 # High-level: user convenience
@@ -388,13 +279,7 @@ Base.keys(ds::NCDataset) = listVar(ds.ncid)
 Return the file path (or the opendap URL) of the NCDataset `ds`
 """
 path(ds::NCDataset) = nc_inq_path(ds.ncid)
-
-
-"""
-    groupname(ds::NCDataset)
-Return the group name of the NCDataset `ds`
-"""
-groupname(ds::NCDataset) = nc_inq_grpname(ds.ncid)
+export path
 
 
 """
@@ -406,6 +291,7 @@ function sync(ds::NCDataset)
     datamode(ds.ncid,ds.isdefmode)
     nc_sync(ds.ncid)
 end
+export sync
 
 """
     close(ds::NCDataset)
@@ -414,96 +300,7 @@ Close the NCDataset `ds`. All pending changes will be written
 to the disk.
 """
 Base.close(ds::NCDataset) = nc_close(ds.ncid)
-
-############################################################
-# Dimensions
-############################################################
-
-
-"""
-    keys(d::Dimensions)
-
-Return a list of all dimension names in NCDataset `ds`.
-
-# Examples
-
-```julia-repl
-julia> ds = NCDataset("results.nc", "r");
-julia> dimnames = keys(ds.dim)
-```
-"""
-function Base.keys(d::Dimensions)
-    return String[nc_inq_dimname(d.ncid,dimid)
-                  for dimid in nc_inq_dimids(d.ncid,false)]
-end
-
-function Base.getindex(a::Dimensions,name::AbstractString)
-    dimid = nc_inq_dimid(a.ncid,name)
-    return nc_inq_dimlen(a.ncid,dimid)
-end
-
-"""
-    unlimited(d::Dimensions)
-
-Return the names of all unlimited dimensions.
-"""
-function unlimited(d::Dimensions)
-    return String[nc_inq_dimname(d.ncid,dimid)
-                  for dimid in nc_inq_unlimdims(d.ncid)]
-end
-
-export unlimited
-
-"""
-    Base.setindex!(d::Dimensions,len,name::AbstractString)
-
-Defines the dimension called `name` to the length `len`.
-Generally dimension are defined by indexing, for example:
-
-```julia
-ds = NCDataset("file.nc","c")
-ds.dim["longitude"] = 100
-```
-
-If `len` is the special value `Inf`, then the dimension is considered as
-`unlimited`, i.e. it will grow as data is added to the NetCDF file.
-"""
-function Base.setindex!(d::Dimensions,len,name::AbstractString)
-    defmode(d.ncid,d.isdefmode) # make sure that the file is in define mode
-    dimid = nc_def_dim(d.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
-    return len
-end
-
-"""
-    defDim(ds::NCDataset,name,len)
-
-Define a dimension in the data set `ds` with the given `name` and length `len`.
-If `len` is the special value `Inf`, then the dimension is considered as
-`unlimited`, i.e. it will grow as data is added to the NetCDF file.
-
-For example:
-
-```julia
-ds = NCDataset("/tmp/test.nc","c")
-defDim(ds,"lon",100)
-```
-
-This defines the dimension `lon` with the size 100.
-"""
-function defDim(ds::NCDataset,name,len)
-    defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
-    dimid = nc_def_dim(ds.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
-    return nothing
-end
-
-
-function renameDim(ds::NCDataset,oldname,newname)
-    defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
-    dimid = nc_inq_dimid(ds.ncid,oldname)
-    nc_rename_dim(ds.ncid,dimid,newname)
-    return nothing
-end
-export renameDim
+export close
 
 ############################################################
 # Common methods
@@ -568,6 +365,8 @@ function varbyattrib(ds::NCDataset; kwargs...)
 
     return varlist
 end
+export varbyattrib
+
 
 """
     haskey(ds::NCDataset,name)
