@@ -1,3 +1,6 @@
+# DeferDataset are Dataset which are open only when there are accessed and
+# closed directly after. This is necessary to work with a large number
+# of NetCDF files (e.g. more than 1000).
 
 struct Resource
     filename::String

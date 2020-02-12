@@ -123,6 +123,15 @@ NCDataset(filename,"c") do ds
     defVar(ds,"scalar",123.)
     @test ds["scalar"][:] == 123.
 end
+rm(filename)
+
+# check error
+filename = tempname()
+NCDataset(filename,"c") do ds
+    defVar(ds,"temp",randn(10,11),("lon","lat"))
+    @test_throws NCDatasets.NetCDFError defVar(ds,"salt",randn(10,12),("lon","lat"))
+end
+rm(filename)
 
 # issue 23
 # return type using CartesianIndex
