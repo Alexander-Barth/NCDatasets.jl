@@ -461,17 +461,20 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
 end
 
 """
-    merge!(a::NCDataset, b::NCDataset; include, exclude)
-Merge the variables of `b` into `a` (which must be opened in append mode `"a"`).
+    merge!(a::NCDataset, b::AbstractDataset; include, exclude)
+Merge the variables of `b` into `a` (which must be opened in mode `"a"` or `"c"`).
 The keywords `include` and `exclude` configure which keys of `b` should be included
 (by default all), or which should be `excluded` (by default none).
 """
-function Base.merge!(a::NCDataset, b::NCDataset;
+function Base.merge!(a::NCDataset, b::AbstractDataset;
     include = keys(b), exclude = String[])
     for x in include
         (x ∈ keys(a) || x ∈ exclude) && continue
         println("Porting variable $x...")
         cfvar = b[x]
+        if x ∈ keys(b.dim) # this is a dimension
+            defDim(a, x, length(cfvar))
+        end
         defVar(a, x, Array(cfvar), dimnames(cfvar); attrib = Dict(cfvar.attrib))
     end
     return a
