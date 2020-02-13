@@ -465,6 +465,9 @@ end
 Merge the variables of `b` into `a` (which must be opened in mode `"a"` or `"c"`).
 The keywords `include` and `exclude` configure which keys of `b` should be included
 (by default all), or which should be `excluded` (by default none).
+
+This function is useful when you want to e.g. combine variables of several different
+`.nc` files into a new one.
 """
 function Base.merge!(a::NCDataset, b::AbstractDataset;
     include = keys(b), exclude = String[])
