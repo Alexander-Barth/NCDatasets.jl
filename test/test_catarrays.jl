@@ -162,4 +162,22 @@ NCDataset(fnames[1]) do ds
 end
 close(mfds)
 
+
+
+# multi-file merge
+
+ampl = rand(50,50)
+vel = rand(50,50)
+
+fnames = [example_file(1, vel; varname = "vel"),
+          example_file(1, ampl; varname = "ampl")]
+
+ds = NCDataset(fnames,aggdim = "");
+
+@test ds["ampl"][:,:,1] == ampl
+@test ds["vel"][:,:,1] == vel
+
+@test sort(keys(ds)) == ["ampl", "lat", "lon", "time", "vel"]
+
+close(ds)
 nothing

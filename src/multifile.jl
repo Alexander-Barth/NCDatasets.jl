@@ -142,7 +142,14 @@ function path(mfds::MFDataset)
     path(mfds.ds[1]) * "…" * path(mfds.ds[end])
 end
 groupname(mfds::MFDataset) = groupname(mfds.ds[1])
-Base.keys(mfds::MFDataset) = keys(mfds.ds[1])
+
+function Base.keys(mfds::MFDataset)
+    if mfds.aggdim == ""
+        return unique(Iterators.flatten(keys.(mfds.ds)))
+    else
+        keys(mfds.ds[1])
+    end
+end
 
 Base.getindex(v::MFVariable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) = getindex(v.var,indexes...)
 Base.setindex!(v::MFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) = setindex!(v.var,data,indexes...)
@@ -152,16 +159,28 @@ name(v::MFVariable) = v.varname
 
 
 function variable(mfds::MFDataset,varname::AbstractString)
-    vars = variable.(mfds.ds,varname)
+    if mfds.aggdim == ""
+        # merge all variables
 
-    dim = findfirst(dimnames(vars[1]) .== mfds.aggdim)
-    @debug "dim $dim"
-
-    if (dim != nothing)
-        v = CatArrays.CatArray(dim,vars...)
-        return MFVariable(v,MFAttributes([var.attrib for var in vars]),
-                          dimnames(vars[1]),varname)
+        # the latest dataset should be used if a variable name is present multiple times
+        for ds in reverse(mfds.ds)
+            if haskey(ds,varname)
+                return variable(ds,varname)
+            end
+        end
     else
-        return vars[1]
+        # aggregated along a given dimension
+        vars = variable.(mfds.ds,varname)
+
+        dim = findfirst(dimnames(vars[1]) .== mfds.aggdim)
+        @debug "dim $dim"
+
+        if (dim != nothing)
+            v = CatArrays.CatArray(dim,vars...)
+            return MFVariable(v,MFAttributes([var.attrib for var in vars]),
+                          dimnames(vars[1]),varname)
+        else
+            return vars[1]
+        end
     end
 end
