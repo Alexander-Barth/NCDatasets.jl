@@ -305,24 +305,24 @@ export nomissing
 # Implement the DiskArrays interface
 
 function readblock!(v::Variable, data, r...)
+    @show "read ",r
     start = [first(i)-1 for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
     nc_get_vara!(v.ncid,v.varid,start,count,data)
 end
 
 function writeblock!(v::Variable, a, r...)
-    @show r
+    @show "write ",r
     start = [first(i)-1 for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
     nc_put_vara(v.ncid,v.varid,start,count,a)
-    #putvar(v,a,start = [first(i) for i in r], count = [length(i) for i in r])
 end
 
 getchunksize(v::Variable) = getchunksize(haschunks(v),v)
-getchunksize(::Chunked, v::Variable) = map(Int64,v.chunksize)
-getchunksize(::Unchunked, v::Variable) = estimate_chunksize(v)
+getchunksize(::DiskArrays.Chunked, v::Variable) = chunking(v)[2]
+getchunksize(::DiskArrays.Unchunked, v::Variable) = estimate_chunksize(v)
 eachchunk(v::Variable) = GridChunks(v, getchunksize(v))
-haschunks(v::Variable) = all(iszero,v.chunksize) ? Unchunked() : Chunked()
+haschunks(v::Variable) = (chunking(v)[1] == :contiguous ? DiskArrays.Unchunked() : DiskArrays.Chunked())
 
 #=
 

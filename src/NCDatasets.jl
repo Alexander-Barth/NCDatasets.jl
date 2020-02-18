@@ -18,7 +18,6 @@ More information is available at https://github.com/Alexander-Barth/NCDatasets.j
 """
 module NCDatasets
 
-using AbstractDiskArray
 using Base
 import Base.convert
 import Base: close
@@ -26,6 +25,9 @@ import Base: Array
 using CFTime
 using Dates
 using DataStructures: OrderedDict
+using DiskArrays
+import DiskArrays: readblock!, writeblock!, AbstractDiskArray, eachchunk, GridChunks,
+       estimate_chunksize, haschunks, Chunked, Unchunked
 using Printf
 
 export CFTime

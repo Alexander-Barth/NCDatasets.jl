@@ -508,6 +508,7 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
 
         v.var[indexes...] = _approximatedata(eltype(v.var),tmp)
     else
+        @show indexes
         v.var[indexes...] = _approximate.(eltype(v.var),tmp)
     end
     return data
