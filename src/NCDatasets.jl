@@ -17,17 +17,17 @@ close(ds)
 More information is available at https://github.com/Alexander-Barth/NCDatasets.jl .
 """
 module NCDatasets
-using Dates
-using Printf
 
+using AbstractDiskArray
 using Base
-using DataStructures: OrderedDict
 import Base.convert
-
 import Base: close
 import Base: Array
-
 using CFTime
+using Dates
+using DataStructures: OrderedDict
+using Printf
+
 export CFTime
 export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
 export dayofyear, firstdayofyear

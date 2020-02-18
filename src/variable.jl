@@ -7,7 +7,7 @@ related with the `Variables` types/subtypes
 # Types and subtypes
 ############################################################
 
-abstract type AbstractVariable{T,N} <: AbstractArray{T,N} end
+abstract type AbstractVariable{T,N} <: AbstractDiskArray{T,N} end
 
 # Variable (as stored in NetCDF file, without using
 # add_offset, scale_factor and _FillValue)
@@ -302,6 +302,30 @@ nomissing(a::AbstractArray,value) = a
 export nomissing
 
 
+# Implement the DiskArrays interface
+
+function readblock!(v::Variable, data, r...)
+    start = [first(i)-1 for i in reverse(r)]
+    count = [length(i) for i in reverse(r)]
+    nc_get_vara!(v.ncid,v.varid,start,count,data)
+end
+
+function writeblock!(v::Variable, a, r...)
+    @show r
+    start = [first(i)-1 for i in reverse(r)]
+    count = [length(i) for i in reverse(r)]
+    nc_put_vara(v.ncid,v.varid,start,count,a)
+    #putvar(v,a,start = [first(i) for i in r], count = [length(i) for i in r])
+end
+
+getchunksize(v::Variable) = getchunksize(haschunks(v),v)
+getchunksize(::Chunked, v::Variable) = map(Int64,v.chunksize)
+getchunksize(::Unchunked, v::Variable) = estimate_chunksize(v)
+eachchunk(v::Variable) = GridChunks(v, getchunksize(v))
+haschunks(v::Variable) = all(iszero,v.chunksize) ? Unchunked() : Chunked()
+
+#=
+
 function Base.getindex(v::Variable,indexes::Int...)
     #    @show "ind",indexes
     return nc_get_var1(eltype(v),v.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
@@ -370,6 +394,7 @@ function Base.setindex!(v::Variable{T,N},data::AbstractArray{T2,N},indexes::Colo
     nc_put_var(v.ncid,v.varid,tmp)
     return data
 end
+=#
 
 function ncsub(indexes::NTuple{N,T}) where N where T
     rindexes = reverse(indexes)
@@ -380,6 +405,7 @@ function ncsub(indexes::NTuple{N,T}) where N where T
     return start,count,stride,jlshape
 end
 
+#=
 function Base.getindex(v::Variable{T,N},indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
     start,count,stride,jlshape = ncsub(indexes[1:N])
 
@@ -425,7 +451,7 @@ function Base.setindex!(v::Variable{T,N},data::AbstractArray,indexes::StepRange{
 
     return data
 end
-
+=#
 
 _normalizeindex(n,ind::Colon) = 1:1:n
 _normalizeindex(n,ind::Int) = ind:1:ind
@@ -441,6 +467,7 @@ function normalizeindexes(sz,indexes)
     return ntuple(i -> _normalizeindex(sz[i],indexes[i]), length(sz))
 end
 
+#=
 function Base.getindex(v::Variable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     #    @show "any",indexes
     ind = normalizeindexes(size(v),indexes)
@@ -463,7 +490,7 @@ function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int}
 
     return v[ind...] = data
 end
-
+=#
 
 function Base.show(io::IO,v::AbstractVariable; indent="")
     delim = " × "
