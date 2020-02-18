@@ -386,7 +386,7 @@ time_factor(v::CFVariable) = v._storage_attrib.time_factor
 
 
 # fillvaue can be NaN (unfortunately)
-@inline isfillvalue(data,fillvalue) = data .== fillvalue
+@inline isfillvalue(data,fillvalue) = data == fillvalue
 @inline isfillvalue(data,fillvalue::AbstractFloat) = (isnan(fillvalue) ? isnan(data) : data == fillvalue)
 
 @inline CFtransform_missing(data,fv) = (isfillvalue(data,fv) ? missing : data)
@@ -448,6 +448,7 @@ end
 # this function is necessary to avoid "iterating" over a single character in Julia 1.0 (fixed Julia 1.3)
 # https://discourse.julialang.org/t/broadcasting-and-single-characters/16836
 @inline CFtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) = data
+@inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) = data
 
 
 @inline _inv(x::Nothing) = nothing
@@ -500,7 +501,15 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
         data,fillvalue(v),scale_factor(v),add_offset(v),
         time_origin(v),time_factor(v),eltype(v))
 
-    v.var[indexes...] = _approximate.(eltype(v.var),tmp)
+    # https://discourse.julialang.org/t/broadcasting-and-single-characters/16836
+    @static if VERSION < v"1.1"
+        _approximatedata(T,x) = _approximate.(T,x)
+        _approximatedata(T,x::Char) = x
+
+        v.var[indexes...] = _approximatedata(eltype(v.var),tmp)
+    else
+        v.var[indexes...] = _approximate.(eltype(v.var),tmp)
+    end
     return data
 end
 

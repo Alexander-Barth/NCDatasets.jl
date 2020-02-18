@@ -416,7 +416,7 @@ end
 
 # data can be Array{T2,N} or BitArray{N}
 function Base.setindex!(v::Variable{T,N},data::AbstractArray,indexes::StepRange{Int,Int}...) where {T,N}
-    #@show "sr2",indexes
+    #@show "sr2",indexes,data
     datamode(v.ncid,v.isdefmode) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
 
@@ -461,10 +461,12 @@ function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int}
         data = fill(data,length.(ind))
     end
 
+    # check if this is necessary
     if ndims(data) == 1 && size(data,1) == 1
-        data = fill(data[1],length.(i))
+         data = fill(data[1],length.(ind))
     end
 
+    #@show data
     # return data
     return v[ind...] = data
 end
