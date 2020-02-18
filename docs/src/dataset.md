@@ -19,7 +19,7 @@ close
 path
 ncgen
 varbyattrib
-write(::AbstractString, ::NCDataset)
+write
 ```
 
 Notice that DateTime-structures from [CFTime](http://juliageo.org/CFTime.jl/stable/) are used to represent time for non-standard calendars.
