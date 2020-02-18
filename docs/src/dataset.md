@@ -6,6 +6,10 @@ Both variables and datasets share the functionality of the [Attributes](@ref) se
 
 ```@docs
 NCDataset
+```
+
+Useful functions that operate on datasets are:
+```@docs
 keys(ds::NCDataset)
 haskey
 getindex(ds::NCDataset,varname::AbstractString)
@@ -19,6 +23,12 @@ varbyattrib
 
 Notice that DateTime-structures from [CFTime](http://juliageo.org/CFTime.jl/stable/) are used to represent time for non-standard calendars.
 Otherwise, we attempt to use standard structures from the Julia standard library `Dates`.
+
+## Merging
+You can merge two datasets with the function `merge`:
+```@docs
+merge!(::NCDataset, ::NCdataset)
+```
 
 ## Groups
 

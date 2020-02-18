@@ -1,8 +1,8 @@
 using Test
 using NCDatasets
 
-function example_file(i,array; varname = "var")
-    fname = tempname()
+function example_file(i,array, fname = tempname();
+    varname = varname)
     @debug "fname $fname"
 
     NCDataset(fname,"c") do ds
@@ -92,7 +92,7 @@ fnames = example_file.(1:3,A)
 
 
 mfds = NCDataset(fnames);
-varname = "var"
+varname = varname
 var = variable(mfds,varname);
 data = var[:,:,:]
 
@@ -128,11 +128,11 @@ occursin("time = 3",String(take!(buf)))
 
 # write
 mfds = NCDataset(fnames,"a");
-mfds["var"][2,2,:] = 1:length(fnames)
+mfds[varname][2,2,:] = 1:length(fnames)
 
 for n = 1:length(fnames)
     NCDataset(fnames[n]) do ds
-        @test ds["var"][2,2,1] == n
+        @test ds[varname][2,2,1] == n
     end
 end
 
@@ -145,12 +145,12 @@ end
 
 @test_throws NCDatasets.NetCDFError NCDataset(fnames,"not-a-mode")
 
-@test keys(mfds) == ["var", "lat", "lon", "time"]
+@test keys(mfds) == [varname, "lat", "lon", "time"]
 @test keys(mfds.dim) == ["lon", "lat", "time"]
 @test NCDatasets.groupname(mfds) == "/"
-@test size(mfds["var"]) == (2, 3, 3)
-@test size(mfds["var"].var) == (2, 3, 3)
-@test name(mfds["var"].var) == "var"
+@test size(mfds[varname]) == (2, 3, 3)
+@test size(mfds[varname].var) == (2, 3, 3)
+@test name(mfds[varname].var) == varname
 @test NCDatasets.groupname(mfds.group["group"]) == "group"
 
 
