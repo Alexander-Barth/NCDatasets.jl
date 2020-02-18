@@ -205,5 +205,8 @@ function Base.setindex!(CA::CatArray{T,N},data,idx...) where {T,N}
     return data
 end
 
+# load all the data at once
+Base.Array(CA::CatArray{T,N}) where {T,N}  = CA[ntuple(i -> :, Val(N))...]
+
 export CatArray
 end

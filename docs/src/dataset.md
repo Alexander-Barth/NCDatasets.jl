@@ -19,16 +19,12 @@ close
 path
 ncgen
 varbyattrib
+write(::AbstractString, ::NCDataset)
 ```
 
 Notice that DateTime-structures from [CFTime](http://juliageo.org/CFTime.jl/stable/) are used to represent time for non-standard calendars.
 Otherwise, we attempt to use standard structures from the Julia standard library `Dates`.
 
-## Merging
-You can merge two datasets with the function `merge`:
-```@docs
-merge!(::NCDataset, ::NCdataset)
-```
 
 ## Groups
 

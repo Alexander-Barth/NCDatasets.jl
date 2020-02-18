@@ -119,6 +119,16 @@ var = mfds[varname]
 @test mfds.dim["time"] == size(C,3)
 
 @test mfds.dim["time"] == size(C,3)
+
+# save a aggregated file
+fname_merged = tempname()
+write(fname_merged,mfds)
+
+ds_merged = NCDataset(fname_merged)
+@test mfds.dim["time"] == size(C,3)
+close(ds_merged)
+
+
 close(mfds)
 
 # show
@@ -179,5 +189,16 @@ ds = NCDataset(fnames,aggdim = "");
 
 @test sort(keys(ds)) == ["ampl", "lat", "lon", "time", "vel"]
 
+
+# save a merged file
+fname_merged = tempname()
+write(fname_merged,ds)
 close(ds)
+
+ds_merged = NCDataset(fname_merged)
+@test sort(keys(ds_merged)) == ["ampl", "lat", "lon", "time", "vel"]
+@test ds_merged["ampl"][:,:,1] == ampl
+@test ds_merged["vel"][:,:,1] == vel
+close(ds_merged)
+rm(fname_merged)
 nothing

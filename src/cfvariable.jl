@@ -507,7 +507,7 @@ end
 ############################################################
 # Convertion to array
 ############################################################
-Base.Array(v::Union{CFVariable,Variable}) = v[:]
+Base.Array(v::Union{CFVariable{T,N},Variable{T,N}}) where {T,N} = v[ntuple(i -> :, Val(N))...]
 
 
 Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=indent)

@@ -461,24 +461,62 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
 end
 
 """
-    merge!(a::NCDataset, b::AbstractDataset; include, exclude)
-Merge the variables of `b` into `a` (which must be opened in mode `"a"` or `"c"`).
-The keywords `include` and `exclude` configure which keys of `b` should be included
+    write(dest_filename::AbstractString, src::AbstractDataset; include = keys(src), exclude = [])
+    write(dest::NCDataset, src::AbstractDataset; include = keys(src), exclude = [])
+
+Write the variables of `src` dataset into an empty `dest` dataset (which must be opened in mode `"a"` or `"c"`).
+The keywords `include` and `exclude` configure which variable of `src` should be included
 (by default all), or which should be `excluded` (by default none).
 
-This function is useful when you want to e.g. combine variables of several different
-`.nc` files into a new one.
+If the first argument is a file name, then the dataset is open in create mode (`c`).
+This function is useful when you want to save the dataset from a multi-file dataset.
 """
-function Base.merge!(dest::NCDataset, src::AbstractDataset;
-    include = keys(src), exclude = String[])
-    for x in include
-        (x ∈ keys(dest) || x ∈ exclude) && continue
-        @debug "Porting variable $x..."
-        cfvar = src[x]
-        if x ∈ keys(src.dim) # this is a dimension
-            defDim(dest, x, length(cfvar))
-        end
-        defVar(dest, x, Array(cfvar), dimnames(cfvar); attrib = cfvar.attrib)
+function Base.write(dest::NCDataset, src::AbstractDataset;
+                     include = keys(src), exclude = String[])
+
+    unlimited_dims = unlimited(src.dim)
+
+    for (dimname,dimlength) in src.dim
+        isunlimited = dimname in unlimited_dims
+
+        # if haskey(dest.dim,dimname)
+        #     # check length
+        #     if (dest.dim[dimname] !== src.dim[dimname]) && !isunlimited
+        #         throw(DimensionMismatch("length of the dimensions $dimname are inconstitent in files $(path(dest)) and $(path(src))"))
+        #     end
+        # else
+            if isunlimited
+                defDim(dest, dimname, Inf)
+            else
+                defDim(dest, dimname, dimlength)
+            end
+        # end
+    end
+
+    # loop over variables
+    for varname in include
+        (varname ∈ exclude) && continue
+        @debug "Writing variable $varname..."
+        cfvar = src[varname]
+        defVar(dest, varname, Array(cfvar), dimnames(cfvar); attrib = cfvar.attrib)
+    end
+
+    # loop over all global attributes
+    for (attribname,attribval) in src.attrib
+        dest.attrib[attribname] = attribval
+    end
+
+    # loop over all groups
+    for (groupname,groupsrc) in src.group
+        groupdest = defGroup(dest,groupname)
+        write(groupdest,groupsrc)
     end
     return dest
+end
+
+function Base.write(dest_filename::AbstractString, src::AbstractDataset; kwargs...)
+    NCDataset(dest_filename,"c") do dest
+        write(dest,src, kwargs...)
+    end
+    return nothing
 end

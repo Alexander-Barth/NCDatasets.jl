@@ -50,6 +50,7 @@ end
 
 Base.keys(a::Union{MFDimensions,MFGroups}) = keys(a.as[1])
 
+unlimited(a::MFDimensions) = unique(reduce(hcat,unlimited.(a.as)))
 
 function Base.getindex(a::MFGroups,name::AbstractString)
     ds = getindex.(a.as,name)
@@ -76,7 +77,7 @@ mutable struct MFVariable{T,N,M,TA} <: AbstractVariable{T,N}
     varname::String
 end
 
-
+Base.Array(v::MFVariable) = Array(v.var)
 
 
 """
