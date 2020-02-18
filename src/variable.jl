@@ -461,13 +461,6 @@ function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int}
         data = fill(data,length.(ind))
     end
 
-    # check if this is necessary
-    if ndims(data) == 1 && size(data,1) == 1
-         data = fill(data[1],length.(ind))
-    end
-
-    #@show data
-    # return data
     return v[ind...] = data
 end
 
