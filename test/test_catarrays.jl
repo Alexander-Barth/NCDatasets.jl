@@ -2,7 +2,7 @@ using Test
 using NCDatasets
 
 function example_file(i,array, fname = tempname();
-    varname = varname)
+    varname = "var")
     @debug "fname $fname"
 
     NCDataset(fname,"c") do ds
@@ -92,7 +92,7 @@ fnames = example_file.(1:3,A)
 
 
 mfds = NCDataset(fnames);
-varname = varname
+varname = "var"
 var = variable(mfds,varname);
 data = var[:,:,:]
 

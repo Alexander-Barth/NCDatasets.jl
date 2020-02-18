@@ -469,16 +469,16 @@ The keywords `include` and `exclude` configure which keys of `b` should be inclu
 This function is useful when you want to e.g. combine variables of several different
 `.nc` files into a new one.
 """
-function Base.merge!(a::NCDataset, b::AbstractDataset;
-    include = keys(b), exclude = String[])
+function Base.merge!(dest::NCDataset, src::AbstractDataset;
+    include = keys(src), exclude = String[])
     for x in include
-        (x ∈ keys(a) || x ∈ exclude) && continue
-        println("Porting variable $x...")
-        cfvar = b[x]
-        if x ∈ keys(b.dim) # this is a dimension
-            defDim(a, x, length(cfvar))
+        (x ∈ keys(dest) || x ∈ exclude) && continue
+        @debug "Porting variable $x..."
+        cfvar = src[x]
+        if x ∈ keys(src.dim) # this is a dimension
+            defDim(dest, x, length(cfvar))
         end
-        defVar(a, x, Array(cfvar), dimnames(cfvar); attrib = Dict(cfvar.attrib))
+        defVar(dest, x, Array(cfvar), dimnames(cfvar); attrib = cfvar.attrib)
     end
-    return a
+    return dest
 end

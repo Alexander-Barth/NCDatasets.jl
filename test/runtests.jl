@@ -247,6 +247,7 @@ end
 
 @testset "Multi-file datasets" begin
     include("test_catarrays.jl")
+    include("test_merge.jl")
 end
 
 @testset "Deferred datasets" begin

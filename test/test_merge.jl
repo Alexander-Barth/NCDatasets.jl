@@ -1,27 +1,26 @@
 using Test
 using NCDatasets
 
-cd(@__DIR__)
-
 ampl = rand(50,50)
+vel = rand(50,50)
 
-example_file(1,rand(50,50), "test.nc"; varname = "vel")
-example_file(1, ampl, "test2.nc"; varname = "ampl")
+fnames = [example_file(1, vel; varname = "vel"),
+          example_file(1, ampl; varname = "ampl")]
 
-a = NCDataset("test.nc", "a")
-b = NCDataset("test2.nc")
 
-@test sort!(keys(a)) == ["lat", "lon", "time", "vel"]
+dest = NCDataset(fnames[1], "a")
+src = NCDataset(fnames[2])
 
-merge!(a, b)
+@test sort!(keys(dest)) == ["lat", "lon", "time", "vel"]
 
-@test sort!(keys(a)) == ["ampl", "lat", "lon", "time", "vel"]
+merge!(dest, src)
 
-x = Array(a["ampl"])
-@test x == ampl
+@test sort!(keys(dest)) == ["ampl", "lat", "lon", "time", "vel"]
 
-close(a)
-close(b)
+x = Array(dest["ampl"])
+@test x[:,:,1] == ampl
 
-rm("test.nc")
-rm("test2.nc")
+close(dest)
+close(src)
+
+rm.(fnames)
