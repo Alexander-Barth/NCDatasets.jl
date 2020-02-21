@@ -195,7 +195,7 @@ The code is available at https://github.com/Alexander-Barth/NCDatasets.jl/tree/m
 | julia-NCDatasets |  0.233 |   0.210 | 0.235 |     0.012 |
 
 All runtimes are in seconds.
-Julia 1.3.1 (with NCDatasets 0667438), R 3.4.4 (with ncdf4 1.17) and python 3.6.9 (with netCDF4 1.4.2)
+Julia 1.3.1 (with NCDatasets 0667438), R 3.4.4 (with ncdf4 1.17) and python 3.6.9 (with netCDF4 1.4.2).
 This CPU is a i7-7700.
 
 
