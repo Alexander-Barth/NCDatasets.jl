@@ -385,7 +385,7 @@ time_factor(v::CFVariable) = v._storage_attrib.time_factor
 
 
 
-# fillvaue can be NaN (unfortunately)
+# fillvalue can be NaN (unfortunately)
 @inline isfillvalue(data,fillvalue) = data == fillvalue
 @inline isfillvalue(data,fillvalue::AbstractFloat) = (isnan(fillvalue) ? isnan(data) : data == fillvalue)
 
@@ -421,13 +421,20 @@ time_factor(v::CFVariable) = v._storage_attrib.time_factor
     return asdate(CFtransform_offset(CFtransform_scale(CFtransform_missing(data,fv),scale_factor),add_offset),time_origin,time_factor,DTcast)
 end
 
+# round float to integers
+_approximate(::Type{T},data) where T <: Integer = round(T,data)
+_approximate(::Type,data) = data
 
-@inline function CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DTcast)
-    #    return asdate(CFtransform_offset(CFtransform_scale(CFtransform_missing(data,fv),scale_factor),add_offset),time_origin,time_factor,DTcast)
-    return CFtransform_replace_missing(CFtransform_scale(CFtransform_offset(data,minus_offset),inv_scale_factor),fv)
+
+@inline function CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DT)
+    return _approximate(DT,CFtransform_replace_missing(
+        CFtransform_scale(CFtransform_offset(data,minus_offset),
+                          inv_scale_factor),fv))
 end
 
 
+# this is really slow
+# https://github.com/JuliaLang/julia/issues/28126
 #@inline CFtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) =
 #    # in boardcasting we trust..., or not
 #    CFtransform.(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
@@ -448,7 +455,7 @@ end
 # this function is necessary to avoid "iterating" over a single character in Julia 1.0 (fixed Julia 1.3)
 # https://discourse.julialang.org/t/broadcasting-and-single-characters/16836
 @inline CFtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) = data
-@inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) = data
+@inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = data
 
 
 @inline _inv(x::Nothing) = nothing
@@ -456,11 +463,35 @@ end
 @inline _minus(x::Nothing) = nothing
 @inline _minus(x) = -x
 
-@inline function CFinvtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
+
+# # so slow
+# @inline function CFinvtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,DT)
+#     inv_scale_factor = _inv(scale_factor)
+#     minus_offset = _minus(add_offset)
+#     inv_time_factor = _inv(time_factor)
+#     return CFinvtransform.(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DT)
+# end
+
+# for arrays
+@inline function CFinvtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,DT) where {T,N}
     inv_scale_factor = _inv(scale_factor)
     minus_offset = _minus(add_offset)
     inv_time_factor = _inv(time_factor)
-    return CFinvtransform.(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DTcast)
+
+    out = Array{DT,N}(undef,size(data))
+    @inbounds @simd for i in eachindex(data)
+        out[i] = CFinvtransform(data[i],fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DT)
+    end
+    return out
+end
+
+# for scalar
+@inline function CFinvtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,DT)
+    inv_scale_factor = _inv(scale_factor)
+    minus_offset = _minus(add_offset)
+    inv_time_factor = _inv(time_factor)
+
+    return CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DT)
 end
 
 function Base.getindex(v::CFVariable,
@@ -492,33 +523,20 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
     throw(NetCDFError(-1, "Time units and calendar must be defined during defVar and cannot change"))
 end
 
-# round float to integers
-_approximate(::Type{T},data) where T <: Integer = round(T,data)
-_approximate(::Type,data) = data
 
 function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
-    tmp = CFinvtransformdata(
+    v.var[indexes...] = CFinvtransformdata(
         data,fillvalue(v),scale_factor(v),add_offset(v),
-        time_origin(v),time_factor(v),eltype(v))
+        time_origin(v),time_factor(v),eltype(v.var))
 
-    # https://discourse.julialang.org/t/broadcasting-and-single-characters/16836
-    @static if VERSION < v"1.1"
-        _approximatedata(T,x) = _approximate.(T,x)
-        _approximatedata(T,x::Char) = x
-
-        v.var[indexes...] = _approximatedata(eltype(v.var),tmp)
-    else
-        @show indexes
-        v.var[indexes...] = _approximate.(eltype(v.var),tmp)
-    end
     return data
 end
 
 ############################################################
 # Convertion to array
 ############################################################
-Base.Array(v::Union{CFVariable{T,N},Variable{T,N}}) where {T,N} = v[ntuple(i -> :, Val(N))...]
 
+Base.Array(v::Union{CFVariable{T,N},Variable{T,N}}) where {T,N} = v[ntuple(i -> :, Val(N))...]
 
 Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=indent)
 

@@ -328,6 +328,7 @@ haschunks(v::Variable) = (chunking(v)[1] == :contiguous ? DiskArrays.Unchunked()
 
 function Base.getindex(v::Variable,indexes::Int...)
     #    @show "ind",indexes
+    datamode(v.ncid,v.isdefmode)
     return nc_get_var1(eltype(v),v.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
 end
 
@@ -340,6 +341,7 @@ function Base.setindex!(v::Variable{T,N},data,indexes::Int...) where N where T
 end
 
 function Base.getindex(v::Variable{T,N},indexes::Colon...) where {T,N}
+    datamode(v.ncid,v.isdefmode)
     # special case for scalar NetCDF variable
     if N == 0
         data = Vector{T}(undef,1)
@@ -408,8 +410,9 @@ end
 #=
 function Base.getindex(v::Variable{T,N},indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
     start,count,stride,jlshape = ncsub(indexes[1:N])
-
     data = Array{T,N}(undef,jlshape)
+
+    datamode(v.ncid,v.isdefmode)
     nc_get_vars!(v.ncid,v.varid,start,count,stride,data)
     return data
 end
