@@ -304,18 +304,34 @@ export nomissing
 
 # Implement the DiskArrays interface
 
-function readblock!(v::Variable, data, r...)
+function readblock!(v::Variable, data, r::AbstractUnitRange...)
     @show "read ",r
     start = [first(i)-1 for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
     nc_get_vara!(v.ncid,v.varid,start,count,data)
 end
 
-function writeblock!(v::Variable, a, r...)
+function readblock!(v::Variable, data, r::StepRange...)
+    @show "read strided",r
+    start = [first(i)-1 for i in reverse(r)]
+    stride = [step(i) for i in reverse(r)]
+    count = [length(i) for i in reverse(r)]
+    nc_get_vars!(v.ncid,v.varid,start,count,stride,data)
+end
+
+function writeblock!(v::Variable, a, r::AbstractUnitRange...)
     @show "write ",r
     start = [first(i)-1 for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
     nc_put_vara(v.ncid,v.varid,start,count,a)
+end
+
+function writeblock!(v::Variable, a, r::StepRange...)
+    @show "write strided",r
+    start = [first(i)-1 for i in reverse(r)]
+    stride = [step(i) for i in reverse(r)]
+    count = [length(i) for i in reverse(r)]
+    nc_put_vars(v.ncid,v.varid,start,count,stride,a)
 end
 
 getchunksize(v::Variable) = getchunksize(haschunks(v),v)
