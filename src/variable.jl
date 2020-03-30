@@ -308,6 +308,7 @@ function readblock!(v::Variable, data, r::AbstractUnitRange...)
     @show "read ",r
     start = [first(i)-1 for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
+    datamode(v.ncid,v.isdefmode)
     nc_get_vara!(v.ncid,v.varid,start,count,data)
 end
 
@@ -316,6 +317,7 @@ function readblock!(v::Variable, data, r::StepRange...)
     start = [first(i)-1 for i in reverse(r)]
     stride = [step(i) for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
+    datamode(v.ncid,v.isdefmode)
     nc_get_vars!(v.ncid,v.varid,start,count,stride,data)
 end
 
@@ -323,6 +325,7 @@ function writeblock!(v::Variable, a, r::AbstractUnitRange...)
     @show "write ",r
     start = [first(i)-1 for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
+    datamode(v.ncid,v.isdefmode)
     nc_put_vara(v.ncid,v.varid,start,count,a)
 end
 
@@ -331,7 +334,14 @@ function writeblock!(v::Variable, a, r::StepRange...)
     start = [first(i)-1 for i in reverse(r)]
     stride = [step(i) for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
+    datamode(v.ncid,v.isdefmode)
     nc_put_vars(v.ncid,v.varid,start,count,stride,a)
+end
+
+function writeblock!(v::Variable, a)
+    @show "write ",size(a)
+    datamode(v.ncid,v.isdefmode)
+    nc_put_var(v.ncid,v.varid,[a])
 end
 
 getchunksize(v::Variable) = getchunksize(haschunks(v),v)
