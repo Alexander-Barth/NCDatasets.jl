@@ -126,11 +126,11 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     filename = tempname()
     NCDatasets.NCDataset(filename,"c") do ds
         v = NCDatasets.defVar(ds,"scalar",Float32,())
-        v[:] = 123.f0
+        v[] .= 123.f0
     end
 
     NCDatasets.NCDataset(filename,"r") do ds
-        v2 = ds["scalar"][:]
+        v2 = ds["scalar"][]
         @test typeof(v2) == Float32
         @test v2 == 123.f0
     end
@@ -145,7 +145,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     end
 
     NCDatasets.NCDataset(filename,"r") do ds
-        v2 = ds["scalar"][:]
+        v2 = ds["scalar"][]
         @test v2 == 1234
     end
     rm(filename)

@@ -305,7 +305,7 @@ export nomissing
 # Implement the DiskArrays interface
 
 function readblock!(v::Variable, data, r::AbstractUnitRange...)
-    @show "read ",r
+#    @show "read "
     start = [first(i)-1 for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
     datamode(v.ncid,v.isdefmode)
@@ -313,7 +313,7 @@ function readblock!(v::Variable, data, r::AbstractUnitRange...)
 end
 
 function readblock!(v::Variable, data, r::StepRange...)
-    @show "read strided",r
+#    @show "read strided"
     start = [first(i)-1 for i in reverse(r)]
     stride = [step(i) for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
@@ -321,16 +321,25 @@ function readblock!(v::Variable, data, r::StepRange...)
     nc_get_vars!(v.ncid,v.varid,start,count,stride,data)
 end
 
-function writeblock!(v::Variable, a, r::AbstractUnitRange...)
-    @show "write ",r
+# for scalars
+function readblock!(v::Variable, data)
+    @show typeof(data)
+    @show "read no index",size(data),data
+    datamode(v.ncid,v.isdefmode)
+    nc_get_var!(v.ncid,v.varid,data)
+    @show typeof(data)
+end
+
+function writeblock!(v::Variable{T,N}, a, r::AbstractUnitRange...) where {T,N}
+#    @show "write ",r,size(a),a
     start = [first(i)-1 for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
     datamode(v.ncid,v.isdefmode)
     nc_put_vara(v.ncid,v.varid,start,count,a)
 end
 
-function writeblock!(v::Variable, a, r::StepRange...)
-    @show "write strided",r
+function writeblock!(v::Variable{T,N}, a, r::StepRange...) where {T,N}
+#    @show "write strided",r
     start = [first(i)-1 for i in reverse(r)]
     stride = [step(i) for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
@@ -338,10 +347,11 @@ function writeblock!(v::Variable, a, r::StepRange...)
     nc_put_vars(v.ncid,v.varid,start,count,stride,a)
 end
 
-function writeblock!(v::Variable, a)
-    @show "write ",size(a)
+# for scalars
+function writeblock!(v::Variable{T,N}, a) where {T,N}
+    @show "write ",size(a),a
     datamode(v.ncid,v.isdefmode)
-    nc_put_var(v.ncid,v.varid,[a])
+    nc_put_var(v.ncid,v.varid,a)
 end
 
 getchunksize(v::Variable) = getchunksize(haschunks(v),v)
@@ -349,6 +359,13 @@ getchunksize(::DiskArrays.Chunked, v::Variable) = chunking(v)[2]
 getchunksize(::DiskArrays.Unchunked, v::Variable) = estimate_chunksize(v)
 eachchunk(v::Variable) = GridChunks(v, getchunksize(v))
 haschunks(v::Variable) = (chunking(v)[1] == :contiguous ? DiskArrays.Unchunked() : DiskArrays.Chunked())
+
+
+function read(v::Variable)
+    data = Array{eltype(v)}(undef, size(v))
+    readblock!(v, data)
+    return data
+end
 
 #=
 

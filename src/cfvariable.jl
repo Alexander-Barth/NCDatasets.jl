@@ -497,6 +497,7 @@ end
 function Base.getindex(v::CFVariable,
                        indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     data = v.var[indexes...]
+
     return CFtransformdata(data,fillvalue(v),scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v),eltype(v))
 end
