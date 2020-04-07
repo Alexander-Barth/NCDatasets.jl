@@ -93,7 +93,7 @@ v[:,:] = fill('c',size(v))
 @test all(i -> i == 'c',v.var[:,:][:])
 
 # write scalar
-v[:,:] = 'd'
+v[:,:] .= 'd'
 @test all(i -> i == 'd',v.var[:,:][:])
 
 # using StepRange as index
@@ -102,7 +102,7 @@ v.var[1:end,1:end] = fill('e',size(v))
 @test all(i -> i == 'e',v.var[:,:][:])
 
 # write scalar
-v.var[1:end,1:end] = 'f'
+v.var[1:end,1:end] .= 'f'
 @test all(i -> i == 'f',v.var[:,:][:])
 
 # write array (with transformation)
@@ -110,16 +110,16 @@ v[1:end,1:end] = fill('g',size(v))
 @test all(i -> i == 'g',v.var[:,:][:])
 
 # write scalar
-v[1:end,1:end] = 'h'
+v[1:end,1:end] .= 'h'
 @test all(i -> i == 'h',v.var[:,:][:])
 
 # write with StepRange
-v[:,:] = 'h'
+v[:,:] .= 'h'
 ref = fill('h',sz)
 
 ref[1:2:end,1:2:end] .= Ref('i')
 #ref[1:2:end,1:2:end] .= 'i'
-v[1:2:end,1:2:end] = 'i'
+v[1:2:end,1:2:end] .= 'i'
 
 @test v[:,:] == ref
 
