@@ -744,9 +744,24 @@ function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,op)
     check(ccall((:nc_put_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,op))
 end
 
+function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,op::Array{Char,N}) where N
+    tmp = convert(Array{UInt8,N},op)
+    nc_put_vara(ncid,varid,startp,countp,tmp)
+end
+
 function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip)
      check(ccall((:nc_get_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,ip))
 end
+
+# do we need nc_put_vara/nc_get_vara! for Array{String,N} ?
+function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip::Array{Char,N}) where N
+    tmp = Array{UInt8,N}(undef,size(ip))
+    nc_get_vara!(ncid,varid,startp,countp,tmp)
+    for i in eachindex(tmp)
+        ip[i] = Char(tmp[i])
+    end
+end
+
 
 function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,
                      op::Array{Char,N}) where N
