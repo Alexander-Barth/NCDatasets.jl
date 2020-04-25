@@ -1018,6 +1018,10 @@ function nc_close(ncid::Integer)
     check(ccall((:nc_close,libnetcdf),Cint,(Cint,),ncid))
 end
 
+function nc_try_close(ncid::Integer)
+    ccall((:nc_close,libnetcdf),Cint,(Cint,),ncid)
+end
+
 # function nc_inq(ncid::Integer,ndimsp,nvarsp,nattsp,unlimdimidp)
 #     check(ccall((:nc_inq,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint},Ptr{Cint}),ncid,ndimsp,nvarsp,nattsp,unlimdimidp))
 # end

@@ -30,26 +30,29 @@ abstract type AbstractGroups
 end
 
 
-
 # -----------------------------------------------------
 # List of attributes (for a single NetCDF file)
 # all ids should be Cint
 
 mutable struct Attributes <: BaseAttributes
+    ds::Any # Union{AbstractDataset,
     ncid::Cint
     varid::Cint
     isdefmode::Vector{Bool}
 end
 
 mutable struct Groups <: AbstractGroups
+    ds::AbstractDataset
     ncid::Cint
     isdefmode::Vector{Bool}
 end
 
 mutable struct Dimensions <: AbstractDimensions
+    ds::AbstractDataset
     ncid::Cint
     isdefmode::Vector{Bool}
 end
+
 
 mutable struct NCDataset <: AbstractDataset
     ncid::Cint
@@ -59,10 +62,38 @@ mutable struct NCDataset <: AbstractDataset
     attrib::Attributes
     dim::Dimensions
     group::Groups
+
+    #=
+    function NCDataset(ncid, isdefmode, attrib, dim, group)
+        ds = new(ncid, isdefmode, attrib, dim, group)
+        finalizer(close, ds)
+        ds
+    end
+    =#
+    function NCDataset(ncid::Integer,
+                       isdefmode::Vector{Bool})
+        ds = new()
+        ds.ncid = ncid
+        ds.isdefmode = isdefmode
+        ds.attrib = Attributes(ds,ncid,NC_GLOBAL,isdefmode)
+        ds.dim = Dimensions(ds,ncid,isdefmode)
+        ds.group = Groups(ds,ncid,isdefmode)
+        #finalizer(close, ds)
+        @show "add finalizer $ncid"
+        finalizer(ds -> begin
+                  # do not raise Exception if file is already explictely closed
+                  #@debug begin
+                  ccall(:jl_, Cvoid, (Any,), "finalize $ncid")
+                  #end
+                  nc_try_close(ds.ncid)
+                  end, ds)
+        return ds
+    end
 end
 
 "Alias to `NCDataset`"
 const Dataset = NCDataset
+
 
 const NCIterable = Union{BaseAttributes,AbstractDimensions,AbstractDataset,AbstractGroups}
 Base.length(a::NCIterable) = length(keys(a))
@@ -251,20 +282,13 @@ function NCDataset(filename::AbstractString,
     return ds
 end
 
-function NCDataset(ncid::Integer,
-                 isdefmode::Vector{Bool})
-    attrib = Attributes(ncid,NC_GLOBAL,isdefmode)
-    dim = Dimensions(ncid,isdefmode)
-    group = Groups(ncid,isdefmode)
-    return NCDataset(ncid,isdefmode,attrib,dim,group)
-end
 
 function NCDataset(f::Function,args...; kwargs...)
     ds = NCDataset(args...; kwargs...)
     try
         f(ds)
     finally
-        #@debug "closing netCDF NCDataset $(NCDatasets.path(ds))"
+        @debug "closing netCDF NCDataset $(ds.ncid) $(NCDatasets.path(ds))"
         close(ds)
     end
 end
@@ -306,7 +330,10 @@ export sync
 Close the NCDataset `ds`. All pending changes will be written
 to the disk.
 """
-Base.close(ds::NCDataset) = nc_close(ds.ncid)
+function Base.close(ds::NCDataset)
+    @debug "closing netCDF NCDataset $(NCDatasets.path(ds))"
+    nc_close(ds.ncid)
+end
 export close
 
 ############################################################

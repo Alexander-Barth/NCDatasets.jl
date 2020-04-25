@@ -86,7 +86,7 @@ function variable(ds::NCDataset,varname::AbstractString)
         shape[ndims-i+1] = nc_inq_dimlen(ds.ncid,dimids[i])
     end
 
-    attrib = Attributes(ds.ncid,varid,ds.isdefmode)
+    attrib = Attributes(ds,ds.ncid,varid,ds.isdefmode)
 
     # reverse dimids to have the dimension order in Fortran style
     return Variable{nctype,ndims}(ds.ncid,varid,
