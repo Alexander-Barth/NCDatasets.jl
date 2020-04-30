@@ -55,6 +55,8 @@ end
 
 
 mutable struct NCDataset <: AbstractDataset
+    # parent_dataset is nothing for the root dataset
+    parentdataset::Union{AbstractDataset,Nothing}
     ncid::Cint
     # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
     # need to be an array, so that it is copied by reference
@@ -71,21 +73,29 @@ mutable struct NCDataset <: AbstractDataset
     end
     =#
     function NCDataset(ncid::Integer,
-                       isdefmode::Vector{Bool})
+                       isdefmode::Vector{Bool},
+                       toclose = true;
+                       parentdataset = nothing,
+                       )
         ds = new()
+        ds.parentdataset = parentdataset
         ds.ncid = ncid
         ds.isdefmode = isdefmode
         ds.attrib = Attributes(ds,ncid,NC_GLOBAL,isdefmode)
         ds.dim = Dimensions(ds,ncid,isdefmode)
         ds.group = Groups(ds,ncid,isdefmode)
         #finalizer(close, ds)
-        @show "add finalizer $ncid"
+        timeid = Dates.now()
+        @debug "add finalizer $ncid $timeid"
         finalizer(ds -> begin
+                  @debug begin
+                     ccall(:jl_, Cvoid, (Any,), "finalize $ncid $timeid \n")
+                  end
                   # do not raise Exception if file is already explictely closed
-                  #@debug begin
-                  ccall(:jl_, Cvoid, (Any,), "finalize $ncid")
-                  #end
-                  nc_try_close(ds.ncid)
+                  if (ds.ncid != -1) && toclose && (ds.parentdataset == nothing)
+                  nc_close(ds.ncid)
+                  ds.ncid = -1
+                  end
                   end, ds)
         return ds
     end
@@ -331,8 +341,11 @@ Close the NCDataset `ds`. All pending changes will be written
 to the disk.
 """
 function Base.close(ds::NCDataset)
-    @debug "closing netCDF NCDataset $(NCDatasets.path(ds))"
+    @debug "closing netCDF NCDataset $(ds.ncid) $(NCDatasets.path(ds))"
     nc_close(ds.ncid)
+    # prevent finalize to close file as ncid can reused for future files
+    ds.ncid = -1
+    return ds
 end
 export close
 

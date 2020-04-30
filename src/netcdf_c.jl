@@ -1015,7 +1015,9 @@ end
 # end
 
 function nc_close(ncid::Integer)
+    @debug("closing $ncid")
     check(ccall((:nc_close,libnetcdf),Cint,(Cint,),ncid))
+    @debug("end close $ncid")
 end
 
 function nc_try_close(ncid::Integer)

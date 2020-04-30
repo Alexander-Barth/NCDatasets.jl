@@ -11,7 +11,8 @@ abstract type AbstractVariable{T,N} <: AbstractArray{T,N} end
 
 # Variable (as stored in NetCDF file, without using
 # add_offset, scale_factor and _FillValue)
-mutable struct Variable{NetCDFType,N} <: AbstractVariable{NetCDFType, N}
+mutable struct Variable{NetCDFType,N,TDS<:AbstractDataset} <: AbstractVariable{NetCDFType, N}
+    ds::TDS
     ncid::Cint
     varid::Cint
     dimids::NTuple{N,Cint}
@@ -34,7 +35,7 @@ listVar(ncid) = String[nc_inq_varname(ncid,varid)
 
 Return the `NCDataset` containing the variable `var`.
 """
-NCDataset(var::Variable) = NCDataset(var.ncid,var.isdefmode)
+NCDataset(var::Variable) = var.ds
 
 """
     sz = size(var::Variable)
@@ -89,7 +90,7 @@ function variable(ds::NCDataset,varname::AbstractString)
     attrib = Attributes(ds,ds.ncid,varid,ds.isdefmode)
 
     # reverse dimids to have the dimension order in Fortran style
-    return Variable{nctype,ndims}(ds.ncid,varid,
+    return Variable{nctype,ndims,NCDataset}(ds,ds.ncid,varid,
                                   (reverse(dimids)...,),
                                   attrib,ds.isdefmode)
 end
@@ -141,7 +142,7 @@ or time series of different length each.
 The [indexed ragged array representation](https://web.archive.org/web/20190111092546/http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#_indexed_ragged_array_representation) is currently not supported.
 """
 function loadragged(ncvar,index::Colon)
-    ds = NCDataset(ncvar.var.ncid,ncvar.var.isdefmode)
+    ds = NCDataset(ncvar)
 
     dimensionnames = dimnames(ncvar)
     if length(dimensionnames) !== 1
