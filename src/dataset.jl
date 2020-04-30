@@ -34,29 +34,29 @@ end
 # List of attributes (for a single NetCDF file)
 # all ids should be Cint
 
-mutable struct Attributes <: BaseAttributes
-    ds::Any # Union{AbstractDataset,
+mutable struct Attributes{TDS<:AbstractDataset} <: BaseAttributes
+    ds::TDS
     ncid::Cint
     varid::Cint
     isdefmode::Vector{Bool}
 end
 
-mutable struct Groups <: AbstractGroups
-    ds::AbstractDataset
+mutable struct Groups{TDS<:AbstractDataset} <: AbstractGroups
+    ds::TDS
     ncid::Cint
     isdefmode::Vector{Bool}
 end
 
-mutable struct Dimensions <: AbstractDimensions
-    ds::AbstractDataset
+mutable struct Dimensions{TDS<:AbstractDataset} <: AbstractDimensions
+    ds::TDS
     ncid::Cint
     isdefmode::Vector{Bool}
 end
 
 
-mutable struct NCDataset <: AbstractDataset
+mutable struct NCDataset{TDS} <: AbstractDataset where TDS <: Union{AbstractDataset,Nothing}
     # parent_dataset is nothing for the root dataset
-    parentdataset::Union{AbstractDataset,Nothing}
+    parentdataset::TDS
     ncid::Cint
     # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
     # need to be an array, so that it is copied by reference
@@ -65,38 +65,31 @@ mutable struct NCDataset <: AbstractDataset
     dim::Dimensions
     group::Groups
 
-    #=
-    function NCDataset(ncid, isdefmode, attrib, dim, group)
-        ds = new(ncid, isdefmode, attrib, dim, group)
-        finalizer(close, ds)
-        ds
-    end
-    =#
     function NCDataset(ncid::Integer,
-                       isdefmode::Vector{Bool},
-                       toclose = true;
+                       isdefmode::Vector{Bool};
                        parentdataset = nothing,
                        )
-        ds = new()
+
+        function _finalize(ds)
+            @debug begin
+                ccall(:jl_, Cvoid, (Any,), "finalize $ncid $timeid \n")
+            end
+            # only close open root group
+            if (ds.ncid != -1) && (ds.parentdataset == nothing)
+                close(ds)
+            end
+        end
+        ds = new{typeof(parentdataset)}()
         ds.parentdataset = parentdataset
         ds.ncid = ncid
         ds.isdefmode = isdefmode
         ds.attrib = Attributes(ds,ncid,NC_GLOBAL,isdefmode)
         ds.dim = Dimensions(ds,ncid,isdefmode)
         ds.group = Groups(ds,ncid,isdefmode)
-        #finalizer(close, ds)
+
         timeid = Dates.now()
         @debug "add finalizer $ncid $timeid"
-        finalizer(ds -> begin
-                  @debug begin
-                     ccall(:jl_, Cvoid, (Any,), "finalize $ncid $timeid \n")
-                  end
-                  # do not raise Exception if file is already explictely closed
-                  if (ds.ncid != -1) && toclose && (ds.parentdataset == nothing)
-                  nc_close(ds.ncid)
-                  ds.ncid = -1
-                  end
-                  end, ds)
+        finalizer(_finalize, ds)
         return ds
     end
 end
