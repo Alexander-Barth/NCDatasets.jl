@@ -151,13 +151,6 @@ Default fill-value for the given type.
 
 
 "Make sure that a dataset is in data mode"
-function datamode(ncid,isdefmode::Vector{Bool})
-    if isdefmode[1]
-        nc_enddef(ncid)
-        isdefmode[1] = false
-    end
-end
-
 function datamode(ds)
     if ds.isdefmode[1]
         nc_enddef(ds.ncid)
@@ -166,13 +159,6 @@ function datamode(ds)
 end
 
 "Make sure that a dataset is in define mode"
-function defmode(ncid,isdefmode::Vector{Bool})
-    if !isdefmode[1]
-        nc_redef(ncid)
-        isdefmode[1] = true
-    end
-end
-
 function defmode(ds)
     if !ds.isdefmode[1]
         nc_redef(ds.ncid)
@@ -330,7 +316,7 @@ export path
 Write all changes in NCDataset `ds` to the disk.
 """
 function sync(ds::NCDataset)
-    datamode(ds.ncid,ds.isdefmode)
+    datamode(ds)
     nc_sync(ds.ncid)
 end
 export sync

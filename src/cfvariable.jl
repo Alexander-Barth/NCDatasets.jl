@@ -109,7 +109,7 @@ function defVar(ds::NCDataset,name,vtype::DataType,dimnames; kwargs...)
     # all keyword arguments as dictionary
     kw = Dict(k => v for (k,v) in kwargs)
 
-    defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
+    defmode(ds) # make sure that the file is in define mode
     dimids = Cint[nc_inq_dimid(ds.ncid,dimname) for dimname in dimnames[end:-1:1]]
 
     typeid =

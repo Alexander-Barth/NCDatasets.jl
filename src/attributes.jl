@@ -53,7 +53,7 @@ ds.attrib["title"] = "my title"
 ```
 """
 function Base.setindex!(a::Attributes,data,name::AbstractString)
-    defmode(a.ds.ncid,a.ds.isdefmode) # make sure that the file is in define mode
+    defmode(a.ds) # make sure that the file is in define mode
     return nc_put_att(a.ds.ncid,a.varid,name,data)
 end
 

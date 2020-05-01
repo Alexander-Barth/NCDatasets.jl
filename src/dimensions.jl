@@ -50,7 +50,7 @@ If `len` is the special value `Inf`, then the dimension is considered as
 `unlimited`, i.e. it will grow as data is added to the NetCDF file.
 """
 function Base.setindex!(d::Dimensions,len,name::AbstractString)
-    defmode(d.ds.ncid,d.ds.isdefmode) # make sure that the file is in define mode
+    defmode(d.ds) # make sure that the file is in define mode
     dimid = nc_def_dim(d.ds.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
     return len
 end
@@ -72,14 +72,14 @@ defDim(ds,"lon",100)
 This defines the dimension `lon` with the size 100.
 """
 function defDim(ds::NCDataset,name,len)
-    defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
+    defmode(ds) # make sure that the file is in define mode
     dimid = nc_def_dim(ds.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
     return nothing
 end
 export defDim
 
 function renameDim(ds::NCDataset,oldname,newname)
-    defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
+    defmode(ds) # make sure that the file is in define mode
     dimid = nc_inq_dimid(ds.ncid,oldname)
     nc_rename_dim(ds.ncid,dimid,newname)
     return nothing

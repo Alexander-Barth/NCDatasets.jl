@@ -56,7 +56,7 @@ Rename the variable called `oldname` to `newname`.
 """
 function renameVar(ds::NCDataset,oldname::AbstractString,newname::AbstractString)
     # make sure that the file is in define mode
-    defmode(ds.ncid,ds.isdefmode)
+    defmode(ds)
     varid = nc_inq_varid(ds.ncid,oldname)
     nc_rename_var(ds.ncid,varid,newname)
     return nothing
@@ -302,29 +302,26 @@ export nomissing
 
 
 function Base.getindex(v::Variable,indexes::Int...)
-    #    @show "ind",indexes
-    datamode(v.ds.ncid,v.ds.isdefmode)
+    datamode(v.ds)
     return nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
 end
 
 function Base.setindex!(v::Variable{T,N},data,indexes::Int...) where N where T
     @debug "$(@__LINE__)"
-    datamode(v.ds.ncid,v.ds.isdefmode)
+    datamode(v.ds)
     # use zero-based indexes and reversed order
     nc_put_var1(v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],T(data))
     return data
 end
 
 function Base.getindex(v::Variable{T,N},indexes::Colon...) where {T,N}
-    datamode(v.ds.ncid,v.ds.isdefmode)
+    datamode(v.ds)
     # special case for scalar NetCDF variable
     if N == 0
         data = Vector{T}(undef,1)
         nc_get_var!(v.ds.ncid,v.varid,data)
         return data[1]
     else
-        #@show v.shape,typeof(v.shape),T,N
-        #@show v.ds.ncid,v.varid
         data = Array{T,N}(undef,size(v))
         nc_get_var!(v.ds.ncid,v.varid,data)
         return data
@@ -333,9 +330,9 @@ end
 
 function Base.setindex!(v::Variable{T,N},data::T,indexes::Colon...) where {T,N}
     @debug "setindex! colon $data"
-    datamode(v.ds.ncid,v.ds.isdefmode) # make sure that the file is in data mode
+    datamode(v.ds) # make sure that the file is in data mode
     tmp = fill(data,size(v))
-    #@show "here number",indexes,size(v),fill(data,size(v))
+
     nc_put_var(v.ds.ncid,v.varid,tmp)
     return data
 end
@@ -343,9 +340,9 @@ end
 # call to v .= 123
 function Base.setindex!(v::Variable{T,N},data::Number) where {T,N}
     @debug "setindex! $data"
-    datamode(v.ds.ncid,v.ds.isdefmode) # make sure that the file is in data mode
+    datamode(v.ds) # make sure that the file is in data mode
     tmp = fill(convert(T,data),size(v))
-    #@show "here number",indexes,size(v),tmp
+
     nc_put_var(v.ds.ncid,v.varid,tmp)
     return data
 end
@@ -353,14 +350,14 @@ end
 Base.setindex!(v::Variable,data::Number,indexes::Colon...) = setindex!(v::Variable,data)
 
 function Base.setindex!(v::Variable{T,N},data::AbstractArray{T,N},indexes::Colon...) where {T,N}
-    datamode(v.ds.ncid,v.ds.isdefmode) # make sure that the file is in data mode
-    #@show @__LINE__,@__FILE__
+    datamode(v.ds) # make sure that the file is in data mode
+
     nc_put_var(v.ds.ncid,v.varid,data)
     return data
 end
 
 function Base.setindex!(v::Variable{T,N},data::AbstractArray{T2,N},indexes::Colon...) where {T,T2,N}
-    datamode(v.ds.ncid,v.ds.isdefmode) # make sure that the file is in data mode
+    datamode(v.ds) # make sure that the file is in data mode
     tmp =
         if T <: Integer
             round.(T,data)
@@ -385,14 +382,13 @@ function Base.getindex(v::Variable{T,N},indexes::TR...) where {T,N} where TR <: 
     start,count,stride,jlshape = ncsub(indexes[1:N])
     data = Array{T,N}(undef,jlshape)
 
-    datamode(v.ds.ncid,v.ds.isdefmode)
+    datamode(v.ds)
     nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
     return data
 end
 
 function Base.setindex!(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...) where {T,N}
-    #@show @__FILE__,@__LINE__,indexes
-    datamode(v.ds.ncid,v.ds.isdefmode) # make sure that the file is in data mode
+    datamode(v.ds) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
     tmp = fill(data,jlshape)
     nc_put_vars(v.ds.ncid,v.varid,start,count,stride,tmp)
@@ -400,8 +396,7 @@ function Base.setindex!(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...)
 end
 
 function Base.setindex!(v::Variable{T,N},data::Number,indexes::StepRange{Int,Int}...) where {T,N}
-    #@show @__FILE__,@__LINE__,indexes
-    datamode(v.ds.ncid,v.ds.isdefmode) # make sure that the file is in data mode
+    datamode(v.ds) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
     tmp = fill(convert(T,data),jlshape)
     nc_put_vars(v.ds.ncid,v.varid,start,count,stride,tmp)
@@ -409,8 +404,7 @@ function Base.setindex!(v::Variable{T,N},data::Number,indexes::StepRange{Int,Int
 end
 
 function Base.setindex!(v::Variable{T,N},data::Array{T,N},indexes::StepRange{Int,Int}...) where {T,N}
-    #@show "sr",indexes
-    datamode(v.ds.ncid,v.ds.isdefmode) # make sure that the file is in data mode
+    datamode(v.ds) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
     nc_put_vars(v.ds.ncid,v.varid,start,count,stride,data)
     return data
@@ -418,8 +412,7 @@ end
 
 # data can be Array{T2,N} or BitArray{N}
 function Base.setindex!(v::Variable{T,N},data::AbstractArray,indexes::StepRange{Int,Int}...) where {T,N}
-    #@show "sr2",indexes,data
-    datamode(v.ds.ncid,v.ds.isdefmode) # make sure that the file is in data mode
+    datamode(v.ds) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
 
     tmp = convert(Array{T,ndims(data)},data)
@@ -444,7 +437,6 @@ function normalizeindexes(sz,indexes)
 end
 
 function Base.getindex(v::Variable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
-    #    @show "any",indexes
     ind = normalizeindexes(size(v),indexes)
     drop_index = _dropindex.(indexes)
     # drop any dimension which was indexed with a scalar
@@ -455,7 +447,6 @@ end
 
 
 function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
-    #@show "any",indexes
     ind = normalizeindexes(size(v),indexes)
 
     # make arrays out of scalars
