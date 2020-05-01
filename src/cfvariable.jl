@@ -278,7 +278,12 @@ function Base.getindex(ds::AbstractDataset,varname::AbstractString)
         units = v.attrib["units"]
         if occursin(" since ",units)
             calendar = lowercase(get(v.attrib,"calendar","standard"))
-            time_origin,time_factor = CFTime.timeunits(units, calendar)
+            time_origin,time_factor =
+                try
+                    CFTime.timeunits(units, calendar)
+                catch
+                    (nothing,nothing)
+                end
         end
     end
 
@@ -301,15 +306,27 @@ function Base.getindex(ds::AbstractDataset,varname::AbstractString)
         if occursin(" since ",units)
             # type of data changes
             calendar = lowercase(get(v.attrib,"calendar","standard"))
-            DT = CFTime.timetype(calendar)
-            # this is the only supported option for NCDatasets
-            prefer_datetime = true
 
-            if prefer_datetime &&
-                (DT in [DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian])
-                rettype = DateTime
+            DT = nothing
+            try
+                DT = CFTime.timetype(calendar)
+            catch
+            end
+
+            if DT !== nothing
+                # this is the only supported option for NCDatasets
+                prefer_datetime = true
+
+                if prefer_datetime &&
+                    (DT in [DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian])
+                    rettype = DateTime
+                else
+                    rettype = DT
+                end
             else
-                rettype = DT
+                @warn("unsupported calendar $calendar " *
+                      "or units $units in file $(path(ds)). Time units are ignored.")
+
             end
         end
     end

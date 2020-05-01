@@ -1,4 +1,6 @@
-# time
+# convertion of time units
+using Test
+using Dates
 using NCDatasets
 
 filename = tempname()
@@ -69,5 +71,20 @@ NCDatasets.NCDataset(filename,"c") do ds
     v[:] = [1.,2.,3.]
     # load a "scalar" value
     @test v[1] == DateTime(2000,1,2)
+end
+rm(filename)
+
+
+
+# test non-standard calendars
+filename = tempname()
+NCDatasets.NCDataset(filename,"c") do ds
+    NCDatasets.defDim(ds,"time",3)
+    v = @test_logs (:warn,r".*unsupported.*") NCDatasets.defVar(ds,"time",Float64,("time",), attrib = [
+        "units" => "days since 2000-01-01 00:00:00",
+        "calendar" => "I_made_this_up"])
+    v.var[:] = [1.,2.,3.]
+    # load a "scalar" value
+    @test v[1] == 1.
 end
 rm(filename)
