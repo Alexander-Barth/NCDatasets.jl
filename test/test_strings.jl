@@ -1,23 +1,24 @@
-import NCDatasets
+using Test
+using NCDatasets
 
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
-ds = NCDatasets.NCDataset(filename,"c")
+ds = NCDataset(filename,"c")
 
 # define the dimension "lon" and "lat" with the size 10 and 11 resp.
 ds.dim["lon"] = 26
 
-v = NCDatasets.defVar(ds,"var_string",String,("lon",))
+v = defVar(ds,"var_string",String,("lon",))
 
 data = ["$(Char(Int('A')+i))" for i = 0:25]
 
 
 
 v[:] = data
-NCDatasets.close(ds)
+close(ds)
 
 
-ds = NCDatasets.NCDataset(filename)
+ds = NCDataset(filename)
 vs = ds["var_string"].var
 
 @test vs[:] == data
@@ -34,6 +35,6 @@ vs = ds["var_string"].var
 
 
 
-NCDatasets.close(ds)
+close(ds)
 
 
