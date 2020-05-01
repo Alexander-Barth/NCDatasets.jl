@@ -53,14 +53,14 @@ mutable struct NCDataset{TDS} <: AbstractDataset where TDS <: Union{AbstractData
     parentdataset::TDS
     ncid::Cint
     # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
-    # need to be an array, so that it is copied by reference
-    isdefmode::Vector{Bool}
+    # need to be a reference, so that remains syncronised when copied
+    isdefmode::Ref{Bool}
     attrib::Attributes
     dim::Dimensions
     group::Groups
 
     function NCDataset(ncid::Integer,
-                       isdefmode::Vector{Bool};
+                       isdefmode::Ref{Bool};
                        parentdataset = nothing,
                        )
 
@@ -152,17 +152,17 @@ Default fill-value for the given type.
 
 "Make sure that a dataset is in data mode"
 function datamode(ds)
-    if ds.isdefmode[1]
+    if ds.isdefmode[]
         nc_enddef(ds.ncid)
-        ds.isdefmode[1] = false
+        ds.isdefmode[] = false
     end
 end
 
 "Make sure that a dataset is in define mode"
 function defmode(ds)
-    if !ds.isdefmode[1]
+    if !ds.isdefmode[]
         nc_redef(ds.ncid)
-        ds.isdefmode[1] = true
+        ds.isdefmode[] = true
     end
 end
 
@@ -224,7 +224,7 @@ function NCDataset(filename::AbstractString,
                  attrib = [])
 
     ncid = -1
-    isdefmode = [false]
+    isdefmode = Ref(false)
 
     if (mode == "r") || (mode == "a")
         ncmode =
@@ -264,7 +264,7 @@ function NCDataset(filename::AbstractString,
 
 
         ncid = nc_create(filename,ncmode)
-        isdefmode[1] = true
+        isdefmode[] = true
     else
         throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
     end
