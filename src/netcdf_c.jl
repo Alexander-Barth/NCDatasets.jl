@@ -698,17 +698,17 @@ end
 
 function nc_put_var1(ncid::Integer,varid::Integer,indexp,op::Vector{T}) where T
     tmp = nc_vlen_t{T}(length(op), pointer(op))
-    check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),ncid,varid,indexp,Ref(tmp)))
+    check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Nothing}),ncid,varid,indexp,Ref(tmp)))
 end
 
 function nc_put_var1(ncid::Integer,varid::Integer,indexp,op::T) where T
     @debug "nc_put_var1",indexp,op
-    check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),ncid,varid,indexp,T[op]))
+    check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Nothing}),ncid,varid,indexp,T[op]))
 end
 
 function nc_put_var1(ncid::Integer,varid::Integer,indexp,op::Char)
    @debug "nc_put_var1 char",indexp,op
-   check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),ncid,varid,indexp,[UInt8(op)]))
+   check(ccall((:nc_put_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Nothing}),ncid,varid,indexp,[UInt8(op)]))
 end
 
 function nc_put_var1(ncid::Integer,varid::Integer,indexp,op::String)
@@ -719,26 +719,26 @@ end
 function nc_get_var1(::Type{Char},ncid::Integer,varid::Integer,indexp)
     @debug "nc_get_var1",indexp
     tmp = Vector{UInt8}(undef,1)
-    check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),ncid,varid,indexp,tmp))
+    check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Nothing}),ncid,varid,indexp,tmp))
     return Char(tmp[1])
 end
 
 function nc_get_var1(::Type{String},ncid::Integer,varid::Integer,indexp)
     tmp = Vector{Ptr{UInt8}}(undef,1)
-    check(ccall((:nc_get_var1_string,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Ptr{UInt8}}),ncid,varid,indexp,tmp))
+    check(ccall((:nc_get_var1_string,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Ptr{UInt8}}),ncid,varid,indexp,tmp))
     return unsafe_string(tmp[1])
 end
 
 function nc_get_var1(::Type{T},ncid::Integer,varid::Integer,indexp) where T
     @debug "nc_get_var1",indexp
     ip = Vector{T}(undef,1)
-    check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),ncid,varid,indexp,ip))
+    check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Nothing}),ncid,varid,indexp,ip))
     return ip[1]
 end
 
 function nc_get_var1(::Type{Vector{T}},ncid::Integer,varid::Integer,indexp) where T
     ip = Vector{nc_vlen_t{T}}(undef,1)
-    check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),ncid,varid,indexp,ip))
+    check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Nothing}),ncid,varid,indexp,ip))
     #data = unsafe_wrap(Vector{T},ip[1].p,(ip[1].len,))
     data = copy(unsafe_wrap(Vector{T},ip[1].p,(ip[1].len,)))
     nc_free_vlen(ip)
@@ -746,7 +746,7 @@ function nc_get_var1(::Type{Vector{T}},ncid::Integer,varid::Integer,indexp) wher
 end
 
 function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,op)
-    check(ccall((:nc_put_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,op))
+    check(ccall((:nc_put_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Nothing}),ncid,varid,startp,countp,op))
 end
 
 function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,op::Array{Char,N}) where N
@@ -755,7 +755,7 @@ function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,op::Array{Char,N
 end
 
 function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip)
-     check(ccall((:nc_get_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,ip))
+     check(ccall((:nc_get_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Nothing}),ncid,varid,startp,countp,ip))
 end
 
 # do we need nc_put_vara/nc_get_vara! for Array{String,N} ?
@@ -852,7 +852,7 @@ function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,op)
     _nc_check_size_put_vars(ncid,varid,countp,op)
 
     check(ccall((:nc_put_vars,libnetcdf),Cint,
-                (Cint,Cint,Ptr{Cint},Ptr{Cint},
+                (Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},
                  Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,stridep,op))
 end
 
@@ -885,7 +885,7 @@ end
 
 function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip)
     @debug "nc_get_vars!: $startp,$countp,$stridep"
-    check(ccall((:nc_get_vars,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,stridep,ip))
+    check(ccall((:nc_get_vars,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,stridep,ip))
 end
 
 
