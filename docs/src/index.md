@@ -55,7 +55,7 @@ using NCDatasets
 ds = NCDataset("file.nc")
 ```
 
-This creates the central structure of NCDatasets.jl, `NCDataset`, which represents the contents of the netCDF file (without immediatelly loading everything in memory). `NCDataset` is an alias for `NCDataset`.
+This creates the central structure of NCDatasets.jl, `NCDataset`, which represents the contents of the netCDF file (without immediatelly loading everything in memory).
 
 The following displays the information just for the variable `varname`:
 
