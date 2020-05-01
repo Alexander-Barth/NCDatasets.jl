@@ -36,7 +36,7 @@ title = ds.attrib["title"]
 ```
 """
 function Base.getindex(a::Attributes,name::AbstractString)
-    return nc_get_att(a.ncid,a.varid,name)
+    return nc_get_att(a.ds.ncid,a.varid,name)
 end
 
 
@@ -53,8 +53,8 @@ ds.attrib["title"] = "my title"
 ```
 """
 function Base.setindex!(a::Attributes,data,name::AbstractString)
-    defmode(a.ncid,a.isdefmode) # make sure that the file is in define mode
-    return nc_put_att(a.ncid,a.varid,name,data)
+    defmode(a.ds.ncid,a.ds.isdefmode) # make sure that the file is in define mode
+    return nc_put_att(a.ds.ncid,a.varid,name,data)
 end
 
 """
@@ -62,7 +62,7 @@ end
 
 Return a list of the names of all attributes.
 """
-Base.keys(a::Attributes) = listAtt(a.ncid,a.varid)
+Base.keys(a::Attributes) = listAtt(a.ds.ncid,a.varid)
 
 
 function Base.show(io::IO, a::BaseAttributes; indent = "  ")

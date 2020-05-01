@@ -36,21 +36,15 @@ end
 
 mutable struct Attributes{TDS<:AbstractDataset} <: BaseAttributes
     ds::TDS
-    ncid::Cint
     varid::Cint
-    isdefmode::Vector{Bool}
 end
 
 mutable struct Groups{TDS<:AbstractDataset} <: AbstractGroups
     ds::TDS
-    ncid::Cint
-    isdefmode::Vector{Bool}
 end
 
 mutable struct Dimensions{TDS<:AbstractDataset} <: AbstractDimensions
     ds::TDS
-    ncid::Cint
-    isdefmode::Vector{Bool}
 end
 
 
@@ -83,9 +77,9 @@ mutable struct NCDataset{TDS} <: AbstractDataset where TDS <: Union{AbstractData
         ds.parentdataset = parentdataset
         ds.ncid = ncid
         ds.isdefmode = isdefmode
-        ds.attrib = Attributes(ds,ncid,NC_GLOBAL,isdefmode)
-        ds.dim = Dimensions(ds,ncid,isdefmode)
-        ds.group = Groups(ds,ncid,isdefmode)
+        ds.attrib = Attributes(ds,NC_GLOBAL)
+        ds.dim = Dimensions(ds)
+        ds.group = Groups(ds)
 
         timeid = Dates.now()
         @debug "add finalizer $ncid $timeid"
@@ -164,11 +158,25 @@ function datamode(ncid,isdefmode::Vector{Bool})
     end
 end
 
+function datamode(ds)
+    if ds.isdefmode[1]
+        nc_enddef(ds.ncid)
+        ds.isdefmode[1] = false
+    end
+end
+
 "Make sure that a dataset is in define mode"
 function defmode(ncid,isdefmode::Vector{Bool})
     if !isdefmode[1]
         nc_redef(ncid)
         isdefmode[1] = true
+    end
+end
+
+function defmode(ds)
+    if !ds.isdefmode[1]
+        nc_redef(ds.ncid)
+        ds.isdefmode[1] = true
     end
 end
 
