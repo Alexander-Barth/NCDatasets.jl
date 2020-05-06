@@ -12,6 +12,14 @@ function escape(val)
 	return valescaped
 end
 
+"""
+    escape(val)
+
+Escape string for variable names.
+"""
+function escapevar(val)
+    return replace(val," " => "_")
+end
 
 function ncgen(io::IO,fname; newfname = "filename.nc")
     ds = NCDataset(fname)
@@ -33,7 +41,7 @@ function ncgen(io::IO,fname; newfname = "filename.nc")
     print(io,"\n# Declare variables\n\n")
 
     for (d,v) in ds
-        print(io,"nc$d = defVar(ds,\"$d\", $(eltype(v.var)), $(dimnames(v))")
+        print(io,"nc$(escapevar(d)) = defVar(ds,\"$d\", $(eltype(v.var)), $(dimnames(v))")
         ncgen_setattrib(io,v.attrib)
         print(io,")\n\n")
     end
@@ -41,7 +49,7 @@ function ncgen(io::IO,fname; newfname = "filename.nc")
     print(io,"\n# Define variables\n\n")
 
     for d in keys(ds)
-        print(io,"# nc$d[:] = ...\n")
+        print(io,"# nc$(escapevar(d))[:] = ...\n")
     end
 
     print(io,"\nclose(ds)\n")
