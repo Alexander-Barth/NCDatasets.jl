@@ -307,8 +307,8 @@ function readblock!(v::Variable, data, r::AbstractUnitRange...)
 #    @show "read "
     start = [first(i)-1 for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
-    datamode(v.ncid,v.isdefmode)
-    nc_get_vara!(v.ncid,v.varid,start,count,data)
+    datamode(v.ds)
+    nc_get_vara!(v.ds.ncid,v.varid,start,count,data)
 end
 
 function readblock!(v::Variable, data, r::StepRange...)
@@ -316,16 +316,16 @@ function readblock!(v::Variable, data, r::StepRange...)
     start = [first(i)-1 for i in reverse(r)]
     stride = [step(i) for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
-    datamode(v.ncid,v.isdefmode)
-    nc_get_vars!(v.ncid,v.varid,start,count,stride,data)
+    datamode(v.ds)
+    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
 end
 
 # for scalars
 function readblock!(v::Variable, data)
     @show typeof(data)
     @show "read no index",size(data),data
-    datamode(v.ncid,v.isdefmode)
-    nc_get_var!(v.ncid,v.varid,data)
+    datamode(v.ds)
+    nc_get_var!(v.ds.ncid,v.varid,data)
     @show typeof(data)
 end
 
@@ -333,9 +333,9 @@ function writeblock!(v::Variable{T,N}, a, r::AbstractUnitRange...) where {T,N}
 #    @show "write ",r,size(a),a
     start = [first(i)-1 for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
-    datamode(v.ncid,v.isdefmode)
-#    nc_put_vara(v.ncid,v.varid,start,count,a)
-    nc_put_vara(v.ncid,v.varid,start,count,convert(Array{T,N},a))
+    datamode(v.ds)
+#    nc_put_vara(v.ds.ncid,v.varid,start,count,a)
+    nc_put_vara(v.ds.ncid,v.varid,start,count,convert(Array{T,N},a))
 end
 
 function writeblock!(v::Variable{T,N}, a, r::StepRange...) where {T,N}
@@ -343,17 +343,17 @@ function writeblock!(v::Variable{T,N}, a, r::StepRange...) where {T,N}
     start = [first(i)-1 for i in reverse(r)]
     stride = [step(i) for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
-    datamode(v.ncid,v.isdefmode)
-#    nc_put_vars(v.ncid,v.varid,start,count,stride,a)
-    nc_put_vars(v.ncid,v.varid,start,count,stride,convert(Array{T,N},a))
+    datamode(v.ds)
+#    nc_put_vars(v.ds.ncid,v.varid,start,count,stride,a)
+    nc_put_vars(v.ds.ncid,v.varid,start,count,stride,convert(Array{T,N},a))
 end
 
 # for scalars
 function writeblock!(v::Variable{T,N}, a) where {T,N}
 #    @show "write ",size(a),a
-    datamode(v.ncid,v.isdefmode)
-#    nc_put_var(v.ncid,v.varid,a)
-    nc_put_var(v.ncid,v.varid,convert(Array{T,N},a))
+    datamode(v.ds)
+#    nc_put_var(v.ds.ncid,v.varid,a)
+    nc_put_var(v.ds.ncid,v.varid,convert(Array{T,N},a))
 end
 
 getchunksize(v::Variable) = getchunksize(haschunks(v),v)
