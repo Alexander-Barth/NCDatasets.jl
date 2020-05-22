@@ -19,9 +19,9 @@ NCDatasets.NCDataset(filename,"c") do ds
 
     v = NCDatasets.defVar(ds,"small",Float64,("lon","lat"))
 #    @test_throws Union{NCDatasets.NetCDFError,DimensionMismatch} v[:] = zeros(sz[1]+1,sz[2])
-    @test_throws NCDatasets.NetCDFError v[1:sz[1],1:sz[2]] = zeros(sz[1]+1,sz[2])
-    @test_throws NCDatasets.NetCDFError v[sz[1]+1,1] = 1
-    @test_throws NCDatasets.NetCDFError v[-1,1] = 1
+    @test_throws Exception v[1:sz[1],1:sz[2]] = zeros(sz[1]+1,sz[2])
+    @test_throws Exception v[sz[1]+1,1] = 1
+    @test_throws Exception v[-1,1] = 1
 
     # variables
     for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64,
@@ -130,7 +130,7 @@ rm(filename)
 filename = tempname()
 NCDataset(filename,"c") do ds
     defVar(ds,"temp",randn(10,11),("lon","lat"))
-    @test_throws NCDatasets.NetCDFError defVar(ds,"salt",randn(10,12),("lon","lat"))
+    @test_throws Exception defVar(ds,"salt",randn(10,12),("lon","lat"))
 end
 rm(filename)
 
