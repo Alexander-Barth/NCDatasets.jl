@@ -151,7 +151,7 @@ function loadragged(ncvar,index::Colon)
 
     ncvarsizes = varbyattrib(ds,sample_dimension = dimname)
     if length(ncvarsizes) !== 1
-        throw(NetCDFError(-1, "There should be exactly one NetCDF variable with the attribiute sample_dimension equal to '$(dimname)'"))
+        throw(NetCDFError(-1, "There should be exactly one NetCDF variable with the attribute 'sample_dimension' equal to '$(dimname)'"))
     end
 
     ncvarsize = ncvarsizes[1]
