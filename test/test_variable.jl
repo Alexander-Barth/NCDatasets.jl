@@ -18,15 +18,15 @@ NCDatasets.NCDataset(filename,"c") do ds
     ds.dim["lat"] = sz[2]
 
     v = NCDatasets.defVar(ds,"small",Float64,("lon","lat"))
-    @test_throws NCDatasets.NetCDFError v[:] = zeros(sz[1]+1,sz[2])
-    #@test_throws NCDatasets.NetCDFError v[1:sz[1],1:sz[2]] = zeros(sz[1]+1,sz[2])
+#    @test_throws Union{NCDatasets.NetCDFError,DimensionMismatch} v[:] = zeros(sz[1]+1,sz[2])
+    @test_throws NCDatasets.NetCDFError v[1:sz[1],1:sz[2]] = zeros(sz[1]+1,sz[2])
     @test_throws NCDatasets.NetCDFError v[sz[1]+1,1] = 1
     @test_throws NCDatasets.NetCDFError v[-1,1] = 1
 
     # variables
     for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64,
               Char,String]
-    #for T in []
+    #for T in [String]
         local data
         data, scalar_data =
             if T == String
@@ -57,7 +57,8 @@ NCDatasets.NCDataset(filename,"c") do ds
         @test v[[1,2,3],:] == data[[1,2,3],:]
 
         # write scalar,
-        v.var[:,:] = scalar_data
+        v.var[1,1] = scalar_data
+        v.var[:,:] .= scalar_data
         @test all(v.var[:,:][:] .== scalar_data)
 
     end
