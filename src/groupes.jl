@@ -8,7 +8,7 @@ Return the names of all subgroubs of the group `g`.
 """
 function Base.keys(g::Groups)
     return String[nc_inq_grpname(ncid)
-                  for ncid in nc_inq_grps(g.ncid)]
+                  for ncid in nc_inq_grps(g.ds.ncid)]
 end
 
 
@@ -26,8 +26,8 @@ julia> forecast_temp = forecast_group["temperature"]
 
 """
 function Base.getindex(g::Groups,groupname::AbstractString)
-    grp_ncid = nc_inq_grp_ncid(g.ncid,groupname)
-    return NCDataset(grp_ncid,g.isdefmode)
+    grp_ncid = nc_inq_grp_ncid(g.ds.ncid,groupname)
+    return NCDataset(grp_ncid,g.ds.isdefmode; parentdataset = g.ds)
 end
 
 """
@@ -38,7 +38,7 @@ Create the group with the name `groupname` in the dataset `ds`.
 """
 function defGroup(ds::NCDataset,groupname; attrib = [])
     grp_ncid = nc_def_grp(ds.ncid,groupname)
-    ds = NCDataset(grp_ncid,ds.isdefmode)
+    ds = NCDataset(grp_ncid,ds.isdefmode; parentdataset = ds)
 
     # set global attributes for group
     for (attname,attval) in attrib
