@@ -18,9 +18,9 @@ defVar(ds, "w", Float64, ("x", "Time"))
 for i in 1:10
     ds["Time"][i] = i
     ds["a"][:,i] .= 1
-    @test_throws Union{NCDatasets.NetCDFError,DimensionMismatch} ds["u"][:,i] = collect(1:9)
-    @test_throws Union{NCDatasets.NetCDFError,DimensionMismatch} ds["v"][:,i] = collect(1:11)
-    @test_throws Union{NCDatasets.NetCDFError,DimensionMismatch} ds["w"][:,i] = reshape(collect(1:20), 10, 2)
+    @test_throws Exception ds["u"][:,i] = collect(1:9)
+    @test_throws Exception ds["v"][:,i] = collect(1:11)
+    @test_throws Exception ds["w"][:,i] = reshape(collect(1:20), 10, 2)
 
     # ignore singleton dimension
     ds["w"][:,i] = reshape(collect(1:10), 1, 1, 10, 1)
@@ -33,7 +33,7 @@ ds["w"][:,:] = ones(10,15)
 @test size(ds["w"]) == (10,15)
 
 # w cannot grow along a fixed dimension
-@test_throws NCDatasets.NetCDFError ds["w"][:,:] = ones(11,15)
+@test_throws Exception ds["w"][:,:] = ones(11,15)
 
 # NetCDF: Index exceeds dimension bound
 @test_throws NCDatasets.NetCDFError ds["u"][100,100]

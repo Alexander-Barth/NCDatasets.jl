@@ -49,6 +49,11 @@ Base.size(v::Variable{T,N}) where {T,N} = ntuple(i -> nc_inq_dimlen(v.ds.ncid,v.
 
 
 
+function isresizable(v::Variable{T,N}) where {T,N}
+    unlimdims = nc_inq_unlimdims(v.ds.ncid)
+    return ntuple(l -> v.dimids[l] in unlimdims,Val(N))
+end
+
 """
     renameVar(ds::NCDataset,oldname,newname)
 
@@ -302,6 +307,12 @@ export nomissing
 
 
 # Implement the DiskArrays interface
+
+function resizable_indices(v::Variable{T,N}) where {T,N}
+    unlimdims = nc_inq_unlimdims(v.ds.ncid)
+    return filter(l -> v.dimids[l] in unlimdims,ntuple(identity,Val(N)))
+end
+
 
 function readblock!(v::Variable, data, r::AbstractUnitRange...)
 #    @show "read "

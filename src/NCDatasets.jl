@@ -27,7 +27,7 @@ using Dates
 using DataStructures: OrderedDict
 using DiskArrays
 import DiskArrays: readblock!, writeblock!, AbstractDiskArray, eachchunk, GridChunks,
-       estimate_chunksize, haschunks, Chunked, Unchunked
+       estimate_chunksize, haschunks, Chunked, Unchunked, resizable_indices
 using Printf
 
 export CFTime
