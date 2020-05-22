@@ -754,11 +754,6 @@ function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,op::Array{Char,N
     nc_put_vara(ncid,varid,startp,countp,tmp)
 end
 
-function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,op::Array{Char,N}) where N
-    tmp = convert(Array{UInt8,N},op)
-    nc_put_vara(ncid,varid,startp,countp,tmp)
-end
-
 function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip)
      check(ccall((:nc_get_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Nothing}),ncid,varid,startp,countp,ip))
 end
