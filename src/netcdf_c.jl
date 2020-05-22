@@ -77,8 +77,8 @@ const NC_FORMAT_DAP4 = NC_FORMATX_DAP4
 const NC_FORMAT_UNDEFINED = NC_FORMATX_UNDEFINED
 const NC_SIZEHINT_DEFAULT = 0
 
-const NC_UNLIMITED = Int32(0)
-const NC_GLOBAL = -1
+const NC_UNLIMITED = Cint(0)
+const NC_GLOBAL = Cint(-1)
 const NC_MAX_DIMS = 1024
 const NC_MAX_ATTRS = 8192
 const NC_MAX_VARS = 8192
@@ -1025,7 +1025,9 @@ end
 # end
 
 function nc_close(ncid::Integer)
+    @debug("closing $ncid")
     check(ccall((:nc_close,libnetcdf),Cint,(Cint,),ncid))
+    @debug("end close $ncid")
 end
 
 # function nc_inq(ncid::Integer,ndimsp,nvarsp,nattsp,unlimdimidp)
