@@ -769,7 +769,6 @@ function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip)
      check(ccall((:nc_get_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Nothing}),ncid,varid,startp,countp,ip))
 end
 
-# do we need nc_put_vara/nc_get_vara! for Array{String,N} ?
 function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip::Array{Char,N}) where N
     tmp = Array{UInt8,N}(undef,size(ip))
     nc_get_vara!(ncid,varid,startp,countp,tmp)
@@ -778,6 +777,24 @@ function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip::Array{Char,
     end
 end
 
+function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip::Array{String,N}) where N
+    tmp = Array{Ptr{UInt8},N}(undef,size(ip))
+    nc_get_vara!(ncid,varid,startp,countp,tmp)
+    for i in eachindex(tmp)
+        #ip[:] = unsafe_string.(tmp)
+        ip[i] = unsafe_string(tmp[i])
+    end
+end
+
+
+function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip::Array{Vector{T},N}) where {T,N}
+    tmp = Array{NCDatasets.nc_vlen_t{T},N}(undef,size(ip))
+    nc_get_vara!(ncid,varid,startp,countp,tmp)
+
+    for i in eachindex(tmp)
+        ip[i] = unsafe_wrap(Vector{T},tmp[i].p,(tmp[i].len,))
+    end
+end
 
 function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,
                      op::Array{Char,N}) where N
