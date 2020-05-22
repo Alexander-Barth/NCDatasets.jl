@@ -754,6 +754,17 @@ function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,op::Array{Char,N
     nc_put_vara(ncid,varid,startp,countp,tmp)
 end
 
+function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,op::Array{String,N}) where N
+    nc_put_vara(ncid,varid,startp,countp,pointer.(op))
+end
+
+function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,
+                     op::Array{Vector{T},N}) where {T,N}
+
+    nc_put_vara(ncid,varid,startp,countp,
+                convert(Array{nc_vlen_t{T},N},op))
+end
+
 function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip)
      check(ccall((:nc_get_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Nothing}),ncid,varid,startp,countp,ip))
 end
