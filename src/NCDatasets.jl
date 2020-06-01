@@ -17,6 +17,8 @@ close(ds)
 More information is available at https://github.com/Alexander-Barth/NCDatasets.jl .
 """
 module NCDatasets
+
+using NetCDF_jll
 using Dates
 using Printf
 
