@@ -854,13 +854,13 @@ function _nc_check_size_put_vars(ncid,varid,countp,op)
             i1 += 1
             continue
         end
-        if size(op,i2) == 1
+        if size(op,i2) == 1 && (i2 <= ndims(op))
             i2 += 1
             continue
         end
 
         # no test for unlimited dimensions
-        if (i1 <= length(countp)) && (dimids[i1] in unlimdims)
+        if (i1 <= length(dimids)) && (dimids[i1] in unlimdims)
             # ok
         elseif (size(op,i2) !== count_i1)
             path = nc_inq_path(ncid)
