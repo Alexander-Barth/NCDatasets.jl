@@ -96,7 +96,7 @@ If deferopen is `false`, all files are opened at the same time.
 However the operating system might limit the number of open files. In Linux,
 the limit can be controled with the [command `ulimit`](https://stackoverflow.com/questions/34588/how-do-i-change-the-number-of-open-files-limit-in-linux).
 """
-function NCDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, deferopen = false) where N where TS <: AbstractString
+function NCDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, deferopen = true) where N where TS <: AbstractString
     if !(mode == "r" || mode == "a")
         throw(NetCDFError(-1,"""Unsupported mode for multi-file dataset (mode = $(mode)). Mode must be "r" or "a". """))
     end
