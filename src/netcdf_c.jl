@@ -77,8 +77,8 @@ const NC_FORMAT_DAP4 = NC_FORMATX_DAP4
 const NC_FORMAT_UNDEFINED = NC_FORMATX_UNDEFINED
 const NC_SIZEHINT_DEFAULT = 0
 
-const NC_UNLIMITED = Int32(0)
-const NC_GLOBAL = -1
+const NC_UNLIMITED = Cint(0)
+const NC_GLOBAL = Cint(-1)
 const NC_MAX_DIMS = 1024
 const NC_MAX_ATTRS = 8192
 const NC_MAX_VARS = 8192
@@ -754,11 +754,21 @@ function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,op::Array{Char,N
     nc_put_vara(ncid,varid,startp,countp,tmp)
 end
 
+function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,op::Array{String,N}) where N
+    nc_put_vara(ncid,varid,startp,countp,pointer.(op))
+end
+
+function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,
+                     op::Array{Vector{T},N}) where {T,N}
+
+    nc_put_vara(ncid,varid,startp,countp,
+                convert(Array{nc_vlen_t{T},N},op))
+end
+
 function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip)
      check(ccall((:nc_get_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Nothing}),ncid,varid,startp,countp,ip))
 end
 
-# do we need nc_put_vara/nc_get_vara! for Array{String,N} ?
 function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip::Array{Char,N}) where N
     tmp = Array{UInt8,N}(undef,size(ip))
     nc_get_vara!(ncid,varid,startp,countp,tmp)
@@ -767,6 +777,24 @@ function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip::Array{Char,
     end
 end
 
+function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip::Array{String,N}) where N
+    tmp = Array{Ptr{UInt8},N}(undef,size(ip))
+    nc_get_vara!(ncid,varid,startp,countp,tmp)
+    for i in eachindex(tmp)
+        #ip[:] = unsafe_string.(tmp)
+        ip[i] = unsafe_string(tmp[i])
+    end
+end
+
+
+function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip::Array{Vector{T},N}) where {T,N}
+    tmp = Array{NCDatasets.nc_vlen_t{T},N}(undef,size(ip))
+    nc_get_vara!(ncid,varid,startp,countp,tmp)
+
+    for i in eachindex(tmp)
+        ip[i] = unsafe_wrap(Vector{T},tmp[i].p,(tmp[i].len,))
+    end
+end
 
 function nc_put_vars(ncid::Integer,varid::Integer,startp,countp,stridep,
                      op::Array{Char,N}) where N
@@ -826,13 +854,13 @@ function _nc_check_size_put_vars(ncid,varid,countp,op)
             i1 += 1
             continue
         end
-        if size(op,i2) == 1
+        if size(op,i2) == 1 && (i2 <= ndims(op))
             i2 += 1
             continue
         end
 
         # no test for unlimited dimensions
-        if (i1 <= length(countp)) && (dimids[i1] in unlimdims)
+        if (i1 <= length(dimids)) && (dimids[i1] in unlimdims)
             # ok
         elseif (size(op,i2) !== count_i1)
             path = nc_inq_path(ncid)
@@ -1020,7 +1048,9 @@ end
 # end
 
 function nc_close(ncid::Integer)
+    @debug("closing $ncid")
     check(ccall((:nc_close,libnetcdf),Cint,(Cint,),ncid))
+    @debug("end close $ncid")
 end
 
 # function nc_inq(ncid::Integer,ndimsp,nvarsp,nattsp,unlimdimidp)

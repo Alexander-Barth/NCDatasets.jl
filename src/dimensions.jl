@@ -14,13 +14,13 @@ julia> dimnames = keys(ds.dim)
 ```
 """
 function Base.keys(d::Dimensions)
-    return String[nc_inq_dimname(d.ncid,dimid)
-                  for dimid in nc_inq_dimids(d.ncid,false)]
+    return String[nc_inq_dimname(d.ds.ncid,dimid)
+                  for dimid in nc_inq_dimids(d.ds.ncid,false)]
 end
 
-function Base.getindex(a::Dimensions,name::AbstractString)
-    dimid = nc_inq_dimid(a.ncid,name)
-    return nc_inq_dimlen(a.ncid,dimid)
+function Base.getindex(d::Dimensions,name::AbstractString)
+    dimid = nc_inq_dimid(d.ds.ncid,name)
+    return nc_inq_dimlen(d.ds.ncid,dimid)
 end
 
 """
@@ -29,8 +29,8 @@ end
 Return the names of all unlimited dimensions.
 """
 function unlimited(d::Dimensions)
-    return String[nc_inq_dimname(d.ncid,dimid)
-                  for dimid in nc_inq_unlimdims(d.ncid)]
+    return String[nc_inq_dimname(d.ds.ncid,dimid)
+                  for dimid in nc_inq_unlimdims(d.ds.ncid)]
 end
 
 export unlimited
@@ -50,8 +50,8 @@ If `len` is the special value `Inf`, then the dimension is considered as
 `unlimited`, i.e. it will grow as data is added to the NetCDF file.
 """
 function Base.setindex!(d::Dimensions,len,name::AbstractString)
-    defmode(d.ncid,d.isdefmode) # make sure that the file is in define mode
-    dimid = nc_def_dim(d.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
+    defmode(d.ds) # make sure that the file is in define mode
+    dimid = nc_def_dim(d.ds.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
     return len
 end
 
@@ -72,14 +72,14 @@ defDim(ds,"lon",100)
 This defines the dimension `lon` with the size 100.
 """
 function defDim(ds::NCDataset,name,len)
-    defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
+    defmode(ds) # make sure that the file is in define mode
     dimid = nc_def_dim(ds.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
     return nothing
 end
 export defDim
 
 function renameDim(ds::NCDataset,oldname,newname)
-    defmode(ds.ncid,ds.isdefmode) # make sure that the file is in define mode
+    defmode(ds) # make sure that the file is in define mode
     dimid = nc_inq_dimid(ds.ncid,oldname)
     nc_rename_dim(ds.ncid,dimid,newname)
     return nothing

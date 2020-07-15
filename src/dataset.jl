@@ -30,39 +30,67 @@ abstract type AbstractGroups
 end
 
 
-
 # -----------------------------------------------------
 # List of attributes (for a single NetCDF file)
 # all ids should be Cint
 
-mutable struct Attributes <: BaseAttributes
-    ncid::Cint
+mutable struct Attributes{TDS<:AbstractDataset} <: BaseAttributes
+    ds::TDS
     varid::Cint
-    isdefmode::Vector{Bool}
 end
 
-mutable struct Groups <: AbstractGroups
-    ncid::Cint
-    isdefmode::Vector{Bool}
+mutable struct Groups{TDS<:AbstractDataset} <: AbstractGroups
+    ds::TDS
 end
 
-mutable struct Dimensions <: AbstractDimensions
-    ncid::Cint
-    isdefmode::Vector{Bool}
+mutable struct Dimensions{TDS<:AbstractDataset} <: AbstractDimensions
+    ds::TDS
 end
 
-mutable struct NCDataset <: AbstractDataset
+
+mutable struct NCDataset{TDS} <: AbstractDataset where TDS <: Union{AbstractDataset,Nothing}
+    # parent_dataset is nothing for the root dataset
+    parentdataset::TDS
     ncid::Cint
     # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
-    # need to be an array, so that it is copied by reference
-    isdefmode::Vector{Bool}
+    # need to be a reference, so that remains syncronised when copied
+    isdefmode::Ref{Bool}
     attrib::Attributes
     dim::Dimensions
     group::Groups
+
+    function NCDataset(ncid::Integer,
+                       isdefmode::Ref{Bool};
+                       parentdataset = nothing,
+                       )
+
+        function _finalize(ds)
+            @debug begin
+                ccall(:jl_, Cvoid, (Any,), "finalize $ncid $timeid \n")
+            end
+            # only close open root group
+            if (ds.ncid != -1) && (ds.parentdataset == nothing)
+                close(ds)
+            end
+        end
+        ds = new{typeof(parentdataset)}()
+        ds.parentdataset = parentdataset
+        ds.ncid = ncid
+        ds.isdefmode = isdefmode
+        ds.attrib = Attributes(ds,NC_GLOBAL)
+        ds.dim = Dimensions(ds)
+        ds.group = Groups(ds)
+
+        timeid = Dates.now()
+        @debug "add finalizer $ncid $timeid"
+        finalizer(_finalize, ds)
+        return ds
+    end
 end
 
 "Alias to `NCDataset`"
 const Dataset = NCDataset
+
 
 const NCIterable = Union{BaseAttributes,AbstractDimensions,AbstractDataset,AbstractGroups}
 Base.length(a::NCIterable) = length(keys(a))
@@ -123,18 +151,18 @@ Default fill-value for the given type.
 
 
 "Make sure that a dataset is in data mode"
-function datamode(ncid,isdefmode::Vector{Bool})
-    if isdefmode[1]
-        nc_enddef(ncid)
-        isdefmode[1] = false
+function datamode(ds)
+    if ds.isdefmode[]
+        nc_enddef(ds.ncid)
+        ds.isdefmode[] = false
     end
 end
 
 "Make sure that a dataset is in define mode"
-function defmode(ncid,isdefmode::Vector{Bool})
-    if !isdefmode[1]
-        nc_redef(ncid)
-        isdefmode[1] = true
+function defmode(ds)
+    if !ds.isdefmode[]
+        nc_redef(ds.ncid)
+        ds.isdefmode[] = true
     end
 end
 
@@ -196,7 +224,7 @@ function NCDataset(filename::AbstractString,
                  attrib = [])
 
     ncid = -1
-    isdefmode = [false]
+    isdefmode = Ref(false)
 
     if (mode == "r") || (mode == "a")
         ncmode =
@@ -236,7 +264,7 @@ function NCDataset(filename::AbstractString,
 
 
         ncid = nc_create(filename,ncmode)
-        isdefmode[1] = true
+        isdefmode[] = true
     else
         throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
     end
@@ -251,20 +279,13 @@ function NCDataset(filename::AbstractString,
     return ds
 end
 
-function NCDataset(ncid::Integer,
-                 isdefmode::Vector{Bool})
-    attrib = Attributes(ncid,NC_GLOBAL,isdefmode)
-    dim = Dimensions(ncid,isdefmode)
-    group = Groups(ncid,isdefmode)
-    return NCDataset(ncid,isdefmode,attrib,dim,group)
-end
 
 function NCDataset(f::Function,args...; kwargs...)
     ds = NCDataset(args...; kwargs...)
     try
         f(ds)
     finally
-        #@debug "closing netCDF NCDataset $(NCDatasets.path(ds))"
+        @debug "closing netCDF NCDataset $(ds.ncid) $(NCDatasets.path(ds))"
         close(ds)
     end
 end
@@ -295,7 +316,7 @@ export path
 Write all changes in NCDataset `ds` to the disk.
 """
 function sync(ds::NCDataset)
-    datamode(ds.ncid,ds.isdefmode)
+    datamode(ds)
     nc_sync(ds.ncid)
 end
 export sync
@@ -306,7 +327,13 @@ export sync
 Close the NCDataset `ds`. All pending changes will be written
 to the disk.
 """
-Base.close(ds::NCDataset) = nc_close(ds.ncid)
+function Base.close(ds::NCDataset)
+    @debug "closing netCDF NCDataset $(ds.ncid) $(NCDatasets.path(ds))"
+    nc_close(ds.ncid)
+    # prevent finalize to close file as ncid can reused for future files
+    ds.ncid = -1
+    return ds
+end
 export close
 
 ############################################################
