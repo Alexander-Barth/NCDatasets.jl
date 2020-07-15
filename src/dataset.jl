@@ -461,19 +461,38 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
 end
 
 """
-    write(dest_filename::AbstractString, src::AbstractDataset; include = keys(src), exclude = [])
-    write(dest::NCDataset, src::AbstractDataset; include = keys(src), exclude = [])
+    write(dest_filename::AbstractString, src::AbstractDataset; include = keys(src), exclude = [], idimensions = Dict())
+    write(dest::NCDataset, src::AbstractDataset; include = keys(src), exclude = [], idimensions = Dict())
 
 Write the variables of `src` dataset into an empty `dest` dataset (which must be opened in mode `"a"` or `"c"`).
 The keywords `include` and `exclude` configure which variable of `src` should be included
 (by default all), or which should be `excluded` (by default none).
 
-If the first argument is a file name, then the dataset is open in create mode (`c`).
+If the first argument is a file name, then the dataset is open in create mode (`"c"`).
 
 This function is useful when you want to save the dataset from a multi-file dataset.
+
+`idimensions` is a dictionary with dimension names mapping to a list of
+indices if only a subset of the dataset should be saved.
+
+## Example
+
+```
+NCDataset(fname_src) do ds
+    write(fname_slice,ds,idimensions = Dict("lon" => 2:3))
+end
+```
+
+All variables in the source file `fname_src` with a dimension `lon` will be sliced
+along the indices `2:3` for the `lon` dimension. All attributes (and variables
+without a dimension `lon`) will be copied over unmodified.
+
+It is assumed that all the variable of the output file can be loaded in memory.
 """
 function Base.write(dest::NCDataset, src::AbstractDataset;
-                     include = keys(src), exclude = String[])
+                    include = keys(src),
+                    exclude = String[],
+                    idimensions = Dict())
 
     unlimited_dims = unlimited(src.dim)
 
@@ -489,6 +508,10 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
             if isunlimited
                 defDim(dest, dimname, Inf)
             else
+                if haskey(idimensions,dimname)
+                    dimlength = length(idimensions[dimname])
+                    @debug "subset $dimname $(idimensions[dimname])"
+                end
                 defDim(dest, dimname, dimlength)
             end
         # end
@@ -498,8 +521,16 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
     for varname in include
         (varname ∈ exclude) && continue
         @debug "Writing variable $varname..."
+
         cfvar = src[varname]
-        defVar(dest, varname, Array(cfvar), dimnames(cfvar); attrib = cfvar.attrib)
+        dimension_names = dimnames(cfvar)
+
+        # indices for subset
+        index = ntuple(i -> get(idimensions,dimension_names[i],:),length(dimension_names))
+
+        destvar = defVar(dest, varname, eltype(cfvar.var), dimension_names; attrib = cfvar.attrib)
+        # copy data
+        destvar.var[:] = cfvar.var[index...]
     end
 
     # loop over all global attributes
@@ -510,14 +541,14 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
     # loop over all groups
     for (groupname,groupsrc) in src.group
         groupdest = defGroup(dest,groupname)
-        write(groupdest,groupsrc)
+        write(groupdest,groupsrc; idimensions = idimensions)
     end
     return dest
 end
 
 function Base.write(dest_filename::AbstractString, src::AbstractDataset; kwargs...)
     NCDataset(dest_filename,"c") do dest
-        write(dest,src, kwargs...)
+        write(dest,src; kwargs...)
     end
     return nothing
 end
