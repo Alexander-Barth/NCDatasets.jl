@@ -440,7 +440,7 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
                 return
             end
         end
-        rethrow
+        rethrow()
     end
 
     print(io,indent,"Group: ",groupname(ds),"\n")
