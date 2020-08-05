@@ -329,7 +329,17 @@ to the disk.
 """
 function Base.close(ds::NCDataset)
     @debug "closing netCDF NCDataset $(ds.ncid) $(NCDatasets.path(ds))"
-    nc_close(ds.ncid)
+    try
+        nc_close(ds.ncid)
+    catch err
+        # like Base, allow close on closed file
+        if isa(err,NetCDFError)
+            if err.code == NC_EBADID
+                return ds
+            end
+        end
+        rethrow()
+    end
     # prevent finalize to close file as ncid can reused for future files
     ds.ncid = -1
     return ds
@@ -440,7 +450,7 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
                 return
             end
         end
-        rethrow
+        rethrow()
     end
 
     print(io,indent,"Group: ",groupname(ds),"\n")

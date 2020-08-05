@@ -470,7 +470,7 @@ function Base.show(io::IO,v::AbstractVariable; indent="")
                     return
                 end
             end
-            rethrow
+            rethrow()
         end
     sz = size(v)
 

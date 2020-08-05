@@ -85,6 +85,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     # test sync
     NCDatasets.sync(ds)
     NCDatasets.close(ds)
+    # close on closed file should not throw
+    NCDatasets.close(ds)
 
     # Load a file (with unknown structure)
 

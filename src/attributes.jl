@@ -80,6 +80,6 @@ function Base.show(io::IO, a::BaseAttributes; indent = "  ")
                 return
             end
         end
-        rethrow
+        rethrow()
     end
 end
