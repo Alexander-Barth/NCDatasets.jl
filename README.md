@@ -1,11 +1,8 @@
 # NCDatasets
 
-[![Build Status Linux and macOS](https://travis-ci.org/Alexander-Barth/NCDatasets.jl.svg?branch=master)](https://travis-ci.org/Alexander-Barth/NCDatasets.jl)
-[![Build Status Windows](https://ci.appveyor.com/api/projects/status/github/Alexander-Barth/NCDatasets.jl?branch=master&svg=true)](https://ci.appveyor.com/project/Alexander-Barth/ncdatasets-jl)
-
+[![Build Status Linux and macOS](https://travis-ci.org/Alexander-Barth/NCDatasets.jl.svg?branch=master)](https://travis-ci.org/Alexander-Barth/NCDatasets.jl)[![Build Status Windows](https://ci.appveyor.com/api/projects/status/github/Alexander-Barth/NCDatasets.jl?branch=master&svg=true)](https://ci.appveyor.com/project/Alexander-Barth/ncdatasets-jl)
 [![Coverage Status](https://coveralls.io/repos/Alexander-Barth/NCDatasets.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/Alexander-Barth/NCDatasets.jl?branch=master)
 [![codecov.io](http://codecov.io/github/Alexander-Barth/NCDatasets.jl/coverage.svg?branch=master)](http://codecov.io/github/Alexander-Barth/NCDatasets.jl?branch=master)
-
 [![documentation stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/stable/)
 [![documentation latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/latest/)
 
@@ -117,7 +114,7 @@ In the example above, the subset can also be loaded with:
 subdata = Dataset("/tmp/test.nc")["temperature"][10:30,30:5:end]
 ```
 
-This might be useful in an interactive session. However, the file `test.nc` is not closed, which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
+This might be useful in an interactive session. However, the file `test.nc` is not directly closed (closing the file will be triggered by julia's garbage collector), which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
 
 An alternative way to ensure the file has been closed is to use a `do` block: the file will be closed automatically when leaving the block.
 
