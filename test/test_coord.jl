@@ -65,7 +65,7 @@ for define_standard_name in [false,true]
         ncubar.attrib["field"] = "ubar-velocity, scalar, series"
     end
 
-
+    local ds
     ds = NCDataset(fname)
     @test name(coord(ds["zeta"],"longitude")) == "lon_rho"
     @test name(coord(ds["ubar"],"longitude")) == "lon_u"
