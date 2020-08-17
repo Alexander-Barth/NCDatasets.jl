@@ -37,6 +37,7 @@ Create the group with the name `groupname` in the dataset `ds`.
 `attrib` is a list of attribute name and attribute value pairs (see `NCDataset`).
 """
 function defGroup(ds::NCDataset,groupname; attrib = [])
+    defmode(ds) # make sure that the file is in define mode
     grp_ncid = nc_def_grp(ds.ncid,groupname)
     ds = NCDataset(grp_ncid,ds.isdefmode; parentdataset = ds)
 
