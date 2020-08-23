@@ -146,3 +146,25 @@ NCDataset(filename, "r") do ds
 end
 
 rm(filename)
+
+
+# String fillvalues
+
+filename = tempname()
+ds = Dataset(filename,"c")
+defDim(ds, "mode_items", 10)
+v = defVar(ds,"instrument_mode",String,("mode_items",),
+       attrib = Dict("_FillValue" => "UNDEFINED MODE"))
+
+@test fillvalue(v) == "UNDEFINED MODE"
+close(ds)
+rm(filename)
+
+
+filename = tempname()
+ds = Dataset(filename,"c")
+defDim(ds, "mode_items", 10)
+v = defVar(ds,"instrument_mode",String,("mode_items",),fillvalue = "UNDEFINED MODE")
+@test fillvalue(v) == "UNDEFINED MODE"
+close(ds)
+rm(filename)

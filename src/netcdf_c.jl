@@ -505,8 +505,12 @@ end
 
 
 function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::AbstractString)
-    check(ccall((:nc_put_att_text,libnetcdf),Cint,(Cint,Cint,Cstring,Csize_t,Cstring),
-                ncid,varid,name,sizeof(data),data))
+    if name == "_FillValue"
+        nc_put_att_string(ncid,varid,"_FillValue",[data])
+    else
+        check(ccall((:nc_put_att_text,libnetcdf),Cint,(Cint,Cint,Cstring,Csize_t,Cstring),
+                    ncid,varid,name,sizeof(data),data))
+    end
 end
 
 function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Vector{Char})
@@ -981,6 +985,14 @@ function nc_def_var_fill(ncid::Integer,varid::Integer,no_fill::Bool,fill_value)
                 [fill_value]))
 end
 
+function nc_def_var_fill(ncid::Integer,varid::Integer,no_fill::Bool,fill_value::String)
+    check(ccall((:nc_def_var_fill,libnetcdf),Cint,(Cint,Cint,Cint,Ptr{Nothing}),
+                ncid,
+                varid,
+                Cint(no_fill),
+                [pointer(fill_value)]))
+end
+
 """
 no_fill,fill_value = nc_inq_var_fill(ncid::Integer,varid::Integer)
 no_fill is a boolean and fill_value the fill value (in the appropriate type)
@@ -1186,9 +1198,12 @@ end
 #     check(ccall((:nc_get_att_text,libnetcdf),Cint,(Cint,Cint,Cstring,Cstring),ncid,varid,name,ip))
 # end
 
-# function nc_put_att_string(ncid::Integer,varid::Integer,name,len::Integer,op)
-#     check(ccall((:nc_put_att_string,libnetcdf),Cint,(Cint,Cint,Cstring,Cint,Ptr{Ptr{UInt8}}),ncid,varid,name,len,op))
-# end
+function nc_put_att_string(ncid::Integer,varid::Integer,name,data)
+    len = length(data)
+    op = pointer(pointer.(data))
+
+    check(ccall((:nc_put_att_string,libnetcdf),Cint,(Cint,Cint,Cstring,Cint,Ptr{Cstring}),ncid,varid,name,len,op))
+end
 
 # function nc_get_att_string(ncid::Integer,varid::Integer,name,ip)
 #     check(ccall((:nc_get_att_string,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{Ptr{UInt8}}),ncid,varid,name,ip))

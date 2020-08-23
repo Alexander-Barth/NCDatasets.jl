@@ -235,6 +235,7 @@ end
 @testset "NetCDF4 groups" begin
     include("test_group.jl")
     include("test_group2.jl")
+    include("test_group_mode.jl")
 end
 
 @testset "Variable-length arrays" begin
