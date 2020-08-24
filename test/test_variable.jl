@@ -56,11 +56,14 @@ NCDatasets.NCDataset(filename,"c") do ds
 
         @test v[[1,2,3],:] == data[[1,2,3],:]
 
-        # write scalar,
+        # write scalar
         v.var[1,1] = scalar_data
         v.var[:,:] .= scalar_data
         @test all(v.var[:,:][:] .== scalar_data)
 
+        # stridded write and read
+        v[1:2:end,1:2:end] = data[1:2:end,1:2:end]
+        @test all(v[1:2:end,1:2:end] .== data[1:2:end,1:2:end])
     end
 end
 
