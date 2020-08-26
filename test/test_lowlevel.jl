@@ -24,6 +24,7 @@ samples = [
 
 
 for sampledata in samples
+    local start
     rm(filename;force=true)
 
     # write data

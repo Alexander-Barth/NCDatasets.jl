@@ -1,42 +1,10 @@
 using NCDatasets
 using Test
 
-filename = tempname()
-# The mode "c" stands for creating a new file (clobber)
-ds = NCDatasets.NCDataset(filename,"c")
-
-# define the dimension "lon" and "lat" with the size 10 and 11 resp.
-ds.dim["lon"] = 10
-ds.dim["lat"] = 11
-
-fv = fillvalue(Float32)
-
-v = NCDatasets.defVar(ds,"var_with_missing_data",Float32,("lon","lat"), fillvalue = fv)
-
-data = [Float32(i+j) for i = 1:10, j = 1:11]
-# mask the frist element
-datam = Array{Union{Float32,Missing}}(data)
-datam[1] = missing
-
-v[:,:] = datam
-@test ismissing(v[1,1])
-@test isequal(v[:,:],datam)
-
-# load without transformation
-@test v.var[1,1] == fv
-
-# write/read without transformation
-v.var[:,:] = data
-@test v.var[:,:] ≈ data
-
-NCDatasets.close(ds)
-
-
 sz = (4,5)
 filename = tempname()
-#filename = "/tmp/test-6.nc"
-# The mode "c" stands for creating a new file (clobber)
 
+# The mode "c" stands for creating a new file (clobber)
 NCDatasets.NCDataset(filename,"c") do ds
 
     # define the dimension "lon" and "lat"
@@ -44,21 +12,51 @@ NCDatasets.NCDataset(filename,"c") do ds
     ds.dim["lat"] = sz[2]
 
     # variables
-    for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
-    #for T in [Float32]
-        v = NCDatasets.defVar(ds,"var-$T",T,("lon","lat"); fillvalue = 124)
-        v[:,:] = fill(T(123),size(v))
-        @test all(v[:,:][:] .== 123)
+    for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64,Char,String]
+        fv = fillvalue(T)
 
-        @test NCDatasets.fillvalue(v) == 124
-        @test NCDatasets.fillmode(v) == (false,124)
+        data, scalar_data =
+            if T == String
+                [Char(i+60) * Char(j+60) for i = 1:sz[1], j = 1:sz[2]], "abcde"
+            else
+                [T(i+2*j+62) for i = 1:sz[1], j = 1:sz[2]], T(100)
+            end
 
+        # mask the frist element
+        datam = Array{Union{T,Missing}}(data)
+        datam[1] = missing
+
+        #for define_type in [:with_kw,:with_attrib]
+        for define_type in [:with_kw]
+
+            kwargs =
+                if define_type == :with_kw
+                    Dict(:fillvalue => fv)
+                else
+                    Dict(:attrib => Dict("_FillValue" => fv))
+                end
+
+            v = NCDatasets.defVar(ds,"var-$T-$define_type",T,("lon","lat"); kwargs...)
+
+            @test fillvalue(v) == fv
+            @test v.attrib["_FillValue"] == fv
+            @test fillmode(v) == (false,fv)
+
+            v[:,:] = datam
+            @test ismissing(v[1,1])
+            @test isequal(v[:,:],datam)
+
+            # load without transformation
+            @test v.var[1,1] == fv
+
+            # write/read without transformation
+            v.var[:,:] = data
+            @test v.var[:,:] == data
+        end
     end
 end
 
-
 # NaN as fillvalue
-
 
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
@@ -168,3 +166,4 @@ v = defVar(ds,"instrument_mode",String,("mode_items",),fillvalue = "UNDEFINED MO
 @test fillvalue(v) == "UNDEFINED MODE"
 close(ds)
 rm(filename)
+

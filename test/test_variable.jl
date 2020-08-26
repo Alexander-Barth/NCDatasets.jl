@@ -64,6 +64,7 @@ NCDatasets.NCDataset(filename,"c") do ds
         # stridded write and read
         v[1:2:end,1:2:end] = data[1:2:end,1:2:end]
         @test all(v[1:2:end,1:2:end] .== data[1:2:end,1:2:end])
+
     end
 end
 

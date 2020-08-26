@@ -471,11 +471,6 @@ end
     return out
 end
 
-# this function is necessary to avoid "iterating" over a single character in Julia 1.0 (fixed Julia 1.3)
-# https://discourse.julialang.org/t/broadcasting-and-single-characters/16836
-@inline CFtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) = data
-@inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = data
-
 
 @inline _inv(x::Nothing) = nothing
 @inline _inv(x) = 1/x
@@ -512,6 +507,14 @@ end
 
     return CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DT)
 end
+
+
+
+# this function is necessary to avoid "iterating" over a single character in Julia 1.0 (fixed Julia 1.3)
+# https://discourse.julialang.org/t/broadcasting-and-single-characters/16836
+@inline CFtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) = CFtransform_missing(data,fv)
+@inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = CFtransform_replace_missing(data,fv)
+
 
 function Base.getindex(v::CFVariable,
                        indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)

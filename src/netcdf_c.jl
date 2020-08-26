@@ -558,6 +558,12 @@ function nc_get_att(ncid::Integer,varid::Integer,name)
         val = Vector{UInt8}(undef,len)
         check(ccall((:nc_get_att,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{Nothing}),ncid,varid,name,val))
 
+        # Note
+        # fillvalues for character attributes must be returns as Char and not a strings
+        if name == "_FillValue"
+            return Char(val[1])
+        end
+
         if any(val .== 0)
             # consider the null terminating character if present
             # see issue #12
@@ -999,12 +1005,25 @@ no_fill is a boolean and fill_value the fill value (in the appropriate type)
 """
 function nc_inq_var_fill(ncid::Integer,varid::Integer)
     T = jlType[nc_inq_vartype(ncid,varid)]
-    fill_valuep = Vector{T}(undef,1)
     no_fillp = Vector{Cint}(undef,1)
-    check(ccall((:nc_inq_var_fill,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),
-                ncid,varid,no_fillp,fill_valuep))
 
-    return Bool(no_fillp[1]),fill_valuep[1]
+    if T == String
+        fill_valuep = Vector{Ptr{UInt8}}(undef,1)
+        #fill_valuep = Ptr{UInt8}()
+        check(ccall((:nc_inq_var_fill,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),
+                ncid,varid,no_fillp,fill_valuep))
+        return Bool(no_fillp[1]),unsafe_string(fill_valuep[1])
+    elseif T == Char
+        fill_valuep = Vector{UInt8}(undef,1)
+        check(ccall((:nc_inq_var_fill,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),
+                ncid,varid,no_fillp,fill_valuep))
+        return Bool(no_fillp[1]),Char(fill_valuep[1])
+    else
+        fill_valuep = Vector{T}(undef,1)
+        check(ccall((:nc_inq_var_fill,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),
+                ncid,varid,no_fillp,fill_valuep))
+        return Bool(no_fillp[1]),fill_valuep[1]
+    end
 end
 
 # function nc_def_var_endian(ncid::Integer,varid::Integer,endian::Integer)
