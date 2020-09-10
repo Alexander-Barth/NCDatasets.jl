@@ -36,6 +36,8 @@ export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
 
 const default_timeunits = "days since 1900-00-00 00:00:00"
 
+const SymbolOrString = Union{Symbol, AbstractString}
+
 include("CatArrays.jl")
 export CatArrays
 

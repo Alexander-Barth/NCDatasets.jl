@@ -266,7 +266,7 @@ converted into a date structure.
 
 A call `getindex(ds,varname)` is usually written as `ds[varname]`.
 """
-function Base.getindex(ds::AbstractDataset,varname::AbstractString)
+function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
     v = variable(ds,varname)
 
     fillvalue = get(v.attrib,"_FillValue",nothing)

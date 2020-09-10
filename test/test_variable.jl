@@ -127,6 +127,9 @@ NCDataset(filename,"c") do ds
 
     defVar(ds,"scalar",123.)
     @test ds["scalar"][:] == 123.
+
+    # test indexing with symbols #101
+    @test ds[:scalar][:] == 123.
 end
 rm(filename)
 
