@@ -12,7 +12,7 @@ NetCDF data set and attribute list behave like Julia dictionaries and variables 
 
 
 The module `NCDatasets` provides support for the following [netCDF CF conventions](http://cfconventions.org/):
-* `_FillValue` will be returned as `missing` ([more information](https://docs.julialang.org/en/latest/manual/missing/))
+* `_FillValue` will be returned as `missing` ([more information](https://docs.julialang.org/en/v1/manual/missing/))
 * `scale_factor` and `add_offset` are applied if present
 * time variables (recognized by the `units` attribute) are returned as `DateTime` objects.
 * Support of the [CF calendars](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#calendar) (standard, gregorian, proleptic gregorian, julian, all leap, no leap, 360 day)
