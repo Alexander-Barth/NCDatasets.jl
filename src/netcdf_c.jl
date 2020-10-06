@@ -1342,8 +1342,12 @@ function nc_inq_var(ncid::Integer,varid::Integer)
         if xtype >= NCDatasets.NC_FIRSTUSERTYPEID
             name,size,base_nc_type,nfields,class = nc_inq_user_type(ncid,xtype)
             # assume here variable-length type
-            @assert(class == NC_VLEN)
-            Vector{jlType[base_nc_type]}
+            if class == NC_VLEN
+                Vector{jlType[base_nc_type]}
+            else
+                warning("unsupported type: class=$(class)")
+                Nothing
+            end
         else
             jlType[xtype]
         end
