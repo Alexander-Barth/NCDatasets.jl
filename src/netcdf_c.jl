@@ -1345,7 +1345,7 @@ function nc_inq_var(ncid::Integer,varid::Integer)
             if class == NC_VLEN
                 Vector{jlType[base_nc_type]}
             else
-                warning("unsupported type: class=$(class)")
+                @warn "unsupported type: class=$(class)"
                 Nothing
             end
         else
