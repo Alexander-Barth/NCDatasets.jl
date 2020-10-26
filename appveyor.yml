@@ -1,7 +1,6 @@
 environment:
   matrix:
 #  - julia_version: 1.0
-  - julia_version: 1.4
   - julia_version: 1.5
   - julia_version: nightly
 
@@ -14,7 +13,6 @@ platform:
 matrix:
   allow_failures:
   - julia_version: nightly
-  - julia_version: 1.5
 
 branches:
   only:
