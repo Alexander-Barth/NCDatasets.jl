@@ -255,7 +255,7 @@ Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The CF convention are honored when the
 variable is indexed:
 * `_FillValue` will be returned as `missing`
-* `scale_factor` and `add_offset` are applied
+* `scale_factor` and `add_offset` are applied (output = `scale_factor` * data_in_file +  `add_offset`)
 * time variables (recognized by the units attribute and possibly the calendar attribute) are returned usually as
   `DateTime` object. Note that `DateTimeAllLeap`, `DateTimeNoLeap` and
   `DateTime360Day` cannot be converted to the proleptic gregorian calendar used in
@@ -263,6 +263,8 @@ variable is indexed:
 ones specified in the CF convention, then the data in the NetCDF file is not
 converted into a date structure.
 
+Note that the attribute `missing_value` is not used to determine which
+element is `missing` only `_FillValue`.
 
 A call `getindex(ds,varname)` is usually written as `ds[varname]`.
 """
