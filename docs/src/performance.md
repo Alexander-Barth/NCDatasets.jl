@@ -18,7 +18,7 @@ Alternatively, one can also use so called "[function barriers](https://docs.juli
 ds = NCDataset("file.nc")
 
 temp = zeros(10,20)
-NCDatasets.load!(ds["temp"],temp,:,:)
+NCDatasets.load!(variable(ds,"temp"),temp,:,:)
 ```
 
 * Most julia functions (like `mean`, `sum`,... from the module Statistics) access an array element-wise. It is generally much faster to load the data in memory (if possible) to make the computation.
