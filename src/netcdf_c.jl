@@ -252,9 +252,9 @@ end
 # end
 
 function nc_create(path,cmode::Integer)
-    ncidp = Vector{Cint}(undef,1)
+    ncidp = Ref(Cint(0))
     check(ccall((:nc_create,libnetcdf),Cint,(Cstring,Cint,Ptr{Cint}),path,cmode,ncidp))
-    return ncidp[1]
+    return ncidp[]
 end
 
 # function nc__open(path,mode::Integer,chunksizehintp,ncidp)
@@ -262,12 +262,12 @@ end
 # end
 
 function nc_open(path,mode::Integer)
-    ncidp = Vector{Cint}(undef,1)
+    ncidp = Ref(Cint(0))
 
     code = ccall((:nc_open,libnetcdf),Cint,(Cstring,Cint,Ptr{Cint}),path,mode,ncidp)
 
     if code == NC_NOERR
-        return ncidp[1]
+        return ncidp[]
         # otherwise throw an error message
     else
         # return a more helpful error message (i.e. with the path)
@@ -276,10 +276,10 @@ function nc_open(path,mode::Integer)
 end
 
 function nc_inq_path(ncid::Integer)
-    pathlenp = Vector{Csize_t}(undef,1)
+    pathlenp = Ref(Csize_t(0))
     check(ccall((:nc_inq_path,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{UInt8}),ncid,pathlenp,C_NULL))
 
-    path = zeros(UInt8,pathlenp[1]+1)
+    path = zeros(UInt8,pathlenp[]+1)
     check(ccall((:nc_inq_path,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{UInt8}),ncid,pathlenp,path))
 
     return unsafe_string(pointer(path))
@@ -290,9 +290,9 @@ end
 # end
 
 function nc_inq_grps(ncid::Integer)
-    numgrpsp = Vector{Cint}(undef,1)
+    numgrpsp = Ref(Cint(0))
     check(ccall((:nc_inq_grps,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,numgrpsp,C_NULL))
-    numgrps = numgrpsp[1]
+    numgrps = numgrpsp[]
 
     ncids = Vector{Cint}(undef,numgrps)
 
@@ -322,9 +322,9 @@ end
 # end
 
 function nc_inq_grp_ncid(ncid::Integer,grp_name)
-    grp_ncid = Vector{Cint}(undef,1)
+    grp_ncid = Ref(Cint(0))
     check(ccall((:nc_inq_grp_ncid,libnetcdf),Cint,(Cint,Cstring,Ptr{Cint}),ncid,grp_name,grp_ncid))
-    return grp_ncid[1]
+    return grp_ncid[]
 end
 
 # function nc_inq_grp_full_ncid(ncid::Integer,full_name,grp_ncid)
@@ -333,9 +333,9 @@ end
 
 function nc_inq_varids(ncid::Integer)::Vector{Cint}
     # first get number of variables
-    nvarsp = zeros(Int,1)
+    nvarsp = Ref(Cint(0))
     check(ccall((:nc_inq_varids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,nvarsp,C_NULL))
-    nvars = nvarsp[1]
+    nvars = nvarsp[]
 
     varids = zeros(Cint,nvars)
     check(ccall((:nc_inq_varids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,nvarsp,varids))
@@ -343,7 +343,7 @@ function nc_inq_varids(ncid::Integer)::Vector{Cint}
 end
 
 function nc_inq_dimids(ncid::Integer,include_parents::Bool)
-    ndimsp = Vector{Cint}(undef,1)
+    ndimsp = Ref(Cint(0))
     ndims = nc_inq_ndims(ncid)
     dimids = Vector{Cint}(undef,ndims)
     check(ccall((:nc_inq_dimids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint},Cint),ncid,ndimsp,dimids,include_parents))
@@ -352,10 +352,10 @@ function nc_inq_dimids(ncid::Integer,include_parents::Bool)
 end
 
 function nc_inq_typeids(ncid::Integer)
-    ntypesp = Vector{Cint}(undef,1)
+    ntypesp = Ref(Cint(0))
     check(ccall((:nc_inq_typeids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,ntypesp,C_NULL))
 
-    typeids = Vector{Cint}(undef,ntypesp[1])
+    typeids = Vector{Cint}(undef,ntypesp[])
     check(ccall((:nc_inq_typeids,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,C_NULL,typeids))
 
     return typeids
@@ -369,10 +369,10 @@ end
 Create a group with the name `name` returnings its id.
 """
 function nc_def_grp(parent_ncid::Integer,name)
-    new_ncid = Vector{Cint}(undef,1)
+    new_ncid = Ref(Cint(0))
     check(ccall((:nc_def_grp,libnetcdf),Cint,(Cint,Cstring,Ptr{Cint}),parent_ncid,name,new_ncid))
 
-    return new_ncid[1]
+    return new_ncid[]
 end
 
 # function nc_rename_grp(grpid::Integer,name)
@@ -444,24 +444,24 @@ end
 # end
 
 function nc_def_vlen(ncid::Integer,name,base_typeid::Integer)
-    xtypep = Vector{nc_type}(undef,1)
+    xtypep = Ref(nc_type(0))
 
     check(ccall((:nc_def_vlen,libnetcdf),Cint,(Cint,Cstring,nc_type,Ptr{nc_type}),ncid,name,base_typeid,xtypep))
 
-    return xtypep[1]
+    return xtypep[]
 end
 
 """
 datum_size is sizeof(nc_vlen_t)
 """
 function nc_inq_vlen(ncid::Integer,xtype::Integer)
-    datum_sizep = Vector{Csize_t}(undef,1)
-    base_nc_typep = Vector{nc_type}(undef,1)
+    datum_sizep = Ref(Csize_t(0))
+    base_nc_typep = Ref(nc_type(0))
     name = zeros(UInt8,NC_MAX_NAME+1)
 
     check(ccall((:nc_inq_vlen,libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{Csize_t},Ptr{nc_type}),ncid,xtype,name,datum_sizep,base_nc_typep))
 
-    return unsafe_string(pointer(name)),datum_sizep[1],base_nc_typep[1]
+    return unsafe_string(pointer(name)),datum_sizep[],base_nc_typep[]
 end
 
 function nc_free_vlen(vl)
@@ -486,14 +486,14 @@ end
 
 function nc_inq_user_type(ncid::Integer,xtype::Integer)
     name = Vector{UInt8}(undef,NC_MAX_NAME+1)
-    sizep = Vector{Csize_t}(undef,1)
-    base_nc_typep = Vector{nc_type}(undef,1)
-    nfieldsp = Vector{Csize_t}(undef,1)
-    classp = Vector{Cint}(undef,1)
+    sizep = Ref(Csize_t(0))
+    base_nc_typep = Ref(nc_type(0))
+    nfieldsp = Ref(Csize_t(0))
+    classp = Ref(Cint(0))
 
     check(ccall((:nc_inq_user_type,libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{Cint},Ptr{nc_type},Ptr{Csize_t},Ptr{Cint}),ncid,xtype,name,sizep,base_nc_typep,nfieldsp,classp))
 
-    return unsafe_string(pointer(name)),sizep[1],base_nc_typep[1],nfieldsp[1],classp[1]
+    return unsafe_string(pointer(name)),sizep[],base_nc_typep[],nfieldsp[],classp[]
 end
 
 
@@ -721,29 +721,29 @@ end
 
 function nc_get_var1(::Type{Char},ncid::Integer,varid::Integer,indexp)
     @debug "nc_get_var1",indexp
-    tmp = Vector{UInt8}(undef,1)
+    tmp = Ref(UInt8(0))
     check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Nothing}),ncid,varid,indexp,tmp))
-    return Char(tmp[1])
+    return Char(tmp[])
 end
 
 function nc_get_var1(::Type{String},ncid::Integer,varid::Integer,indexp)
-    tmp = Vector{Ptr{UInt8}}(undef,1)
+    tmp = Ref(Ptr{UInt8}(0))
     check(ccall((:nc_get_var1_string,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Ptr{UInt8}}),ncid,varid,indexp,tmp))
-    return unsafe_string(tmp[1])
+    return unsafe_string(tmp[])
 end
 
 function nc_get_var1(::Type{T},ncid::Integer,varid::Integer,indexp) where T
     @debug "nc_get_var1",indexp
-    ip = Vector{T}(undef,1)
+    ip = Ref(zero(T))
     check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Nothing}),ncid,varid,indexp,ip))
-    return ip[1]
+    return ip[]
 end
 
 function nc_get_var1(::Type{Vector{T}},ncid::Integer,varid::Integer,indexp) where T
-    ip = Vector{nc_vlen_t{T}}(undef,1)
+    ip = Ref(nc_vlen_t{T}(zero(T),Ptr{T}()))    
     check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Nothing}),ncid,varid,indexp,ip))
-    #data = unsafe_wrap(Vector{T},ip[1].p,(ip[1].len,))
-    data = copy(unsafe_wrap(Vector{T},ip[1].p,(ip[1].len,)))
+    #data = unsafe_wrap(Vector{T},ip[].p,(ip[].len,))
+    data = copy(unsafe_wrap(Vector{T},ip[].p,(ip[].len,)))
     nc_free_vlen(ip)
     return data
 end
@@ -952,9 +952,9 @@ function nc_def_var_fletcher32(ncid::Integer,varid::Integer,fletcher32)
 end
 
 function nc_inq_var_fletcher32(ncid::Integer,varid::Integer)
-    fletcher32p = zeros(Cint,1)
+    fletcher32p = Ref(Cint(0))
     check(ccall((:nc_inq_var_fletcher32,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,fletcher32p))
-    return NCChecksumSymbols[fletcher32p[1]]
+    return NCChecksumSymbols[fletcher32p[]]
 end
 
 function nc_def_var_chunking(ncid::Integer,varid::Integer,storage,chunksizes)
@@ -964,12 +964,12 @@ end
 
 function nc_inq_var_chunking(ncid::Integer,varid::Integer)
     ndims = nc_inq_varndims(ncid,varid)
-    storagep = zeros(Cint,1)
+    storagep = Ref(Cint(0))
     chunksizes = zeros(Csize_t,ndims)
 
     check(ccall((:nc_inq_var_chunking,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Csize_t}),ncid,varid,storagep,chunksizes))
 
-    return NCSymbols[storagep[1]],Int.(chunksizes)
+    return NCSymbols[storagep[]],Int.(chunksizes)
 end
 
 
@@ -998,24 +998,24 @@ no_fill is a boolean and fill_value the fill value (in the appropriate type)
 """
 function nc_inq_var_fill(ncid::Integer,varid::Integer)
     T = jlType[nc_inq_vartype(ncid,varid)]
-    no_fillp = Vector{Cint}(undef,1)
+    no_fillp = Ref(Cint(0))
 
     if T == String
         fill_valuep = Vector{Ptr{UInt8}}(undef,1)
         #fill_valuep = Ptr{UInt8}()
         check(ccall((:nc_inq_var_fill,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),
                 ncid,varid,no_fillp,fill_valuep))
-        return Bool(no_fillp[1]),unsafe_string(fill_valuep[1])
+        return Bool(no_fillp[]),unsafe_string(fill_valuep[1])
     elseif T == Char
-        fill_valuep = Vector{UInt8}(undef,1)
+        fill_valuep = Ref(UInt8(0))
         check(ccall((:nc_inq_var_fill,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),
                 ncid,varid,no_fillp,fill_valuep))
-        return Bool(no_fillp[1]),Char(fill_valuep[1])
+        return Bool(no_fillp[]),Char(fill_valuep[])
     else
-        fill_valuep = Vector{T}(undef,1)
+        fill_valuep = Ref(zero(T))
         check(ccall((:nc_inq_var_fill,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),
                 ncid,varid,no_fillp,fill_valuep))
-        return Bool(no_fillp[1]),fill_valuep[1]
+        return Bool(no_fillp[]),fill_valuep[]
     end
 end
 
@@ -1082,9 +1082,9 @@ end
 # end
 
 function nc_inq_ndims(ncid::Integer)
-    ndimsp = Vector{Cint}(undef,1)
+    ndimsp = Ref(Cint(0))
     check(ccall((:nc_inq_ndims,libnetcdf),Cint,(Cint,Ptr{Cint}),ncid,ndimsp))
-    return ndimsp[1]
+    return ndimsp[]
 end
 
 # function nc_inq_nvars(ncid::Integer,nvarsp)
@@ -1103,10 +1103,10 @@ end
 Returns the identifiers of unlimited dimensions
 """
 function nc_inq_unlimdims(ncid::Integer)
-    nunlimdimsp = Vector{Cint}(undef,1)
+    nunlimdimsp = Ref(Cint(0))
     check(ccall((:nc_inq_unlimdims,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,nunlimdimsp,C_NULL))
 
-    unlimdimids = Vector{Cint}(undef,nunlimdimsp[1])
+    unlimdimids = Vector{Cint}(undef,nunlimdimsp[])
     check(ccall((:nc_inq_unlimdims,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,nunlimdimsp,unlimdimids))
     return unlimdimids
 end
@@ -1124,17 +1124,17 @@ Define the dimension with the name NAME and the length LEN in the
 dataset NCID.  The id of the dimension is returned
 """
 function nc_def_dim(ncid::Integer,name,len::Integer)
-    idp = Vector{Cint}(undef,1)
+    idp = Ref(Cint(0))
 
     check(ccall((:nc_def_dim,libnetcdf),Cint,(Cint,Cstring,Cint,Ptr{Cint}),ncid,name,len,idp))
-    return idp[1]
+    return idp[]
 end
 
 """Return the id of a NetCDF dimension."""
 function nc_inq_dimid(ncid::Integer,name)
-    dimidp = Vector{Cint}(undef,1)
+    dimidp = Ref(Cint(0))
     check(ccall((:nc_inq_dimid,libnetcdf),Cint,(Cint,Cstring,Ptr{Cint}),ncid,name,dimidp))
-    return dimidp[1]
+    return dimidp[]
 end
 
 # function nc_inq_dim(ncid::Integer,dimid::Integer,name,lenp)
@@ -1150,9 +1150,9 @@ function nc_inq_dimname(ncid::Integer,dimid::Integer)
 end
 
 function nc_inq_dimlen(ncid::Integer,dimid::Integer)
-    lengthp = zeros(Csize_t,1)
+    lengthp = Ref(Csize_t(0))
     check(ccall((:nc_inq_dimlen,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t}),ncid,dimid,lengthp))
-    return Int(lengthp[1])
+    return Int(lengthp[])
 end
 
 function nc_rename_dim(ncid::Integer,dimid::Integer,name)
@@ -1160,12 +1160,12 @@ function nc_rename_dim(ncid::Integer,dimid::Integer,name)
 end
 
 function nc_inq_att(ncid::Integer,varid::Integer,name)
-    xtypep = zeros(nc_type,1)
-    lenp = zeros(Csize_t,1)
+    xtypep = Ref(nc_type(0))
+    lenp = Ref(Csize_t(0))
 
     check(ccall((:nc_inq_att,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{nc_type},Ptr{Cint}),ncid,varid,name,xtypep,lenp))
 
-    return xtypep[1],lenp[1]
+    return xtypep[],lenp[]
 end
 
 # function nc_inq_attid(ncid::Integer,varid::Integer,name,idp)
@@ -1310,27 +1310,27 @@ end
 # end
 
 function nc_def_var(ncid::Integer,name,xtype::Integer,dimids::Vector{Cint})
-    varidp = Vector{Cint}(undef,1)
+    varidp = Ref(Cint(0))
 
     check(ccall((:nc_def_var,libnetcdf),Cint,(Cint,Cstring,nc_type,Cint,Ptr{Cint},Ptr{Cint}),ncid,name,xtype,length(dimids),dimids,varidp))
 
-    return varidp[1]
+    return varidp[]
 end
 
 function nc_inq_var(ncid::Integer,varid::Integer)
     ndims = nc_inq_varndims(ncid,varid)
 
-    ndimsp = zeros(Int,1)
+    ndimsp = Ref(Cint(0))
     cname = zeros(UInt8,NC_MAX_NAME+1)
     dimids = zeros(Cint,ndims)
-    nattsp = Vector{Cint}(undef,1)
-    xtypep = zeros(nc_type,1)
+    nattsp = Ref(Cint(0))
+    xtypep = Ref(nc_type(0))
 
     check(ccall((:nc_inq_var,libnetcdf),Cint,(Cint,Cint,Ptr{UInt8},Ptr{nc_type},Ptr{Cint},Ptr{Cint},Ptr{Cint}),ncid,varid,cname,xtypep,ndimsp,dimids,nattsp))
 
     name = unsafe_string(pointer(cname))
 
-    xtype = xtypep[1]
+    xtype = xtypep[]
     jltype =
         if xtype >= NCDatasets.NC_FIRSTUSERTYPEID
             name,size,base_nc_type,nfields,class = nc_inq_user_type(ncid,xtype)
@@ -1345,15 +1345,15 @@ function nc_inq_var(ncid::Integer,varid::Integer)
             jlType[xtype]
         end
 
-    return name,jltype,dimids,nattsp[1]
+    return name,jltype,dimids,nattsp[]
 end
 
 function nc_inq_varid(ncid::Integer,name)
-    varidp = zeros(Cint,1)
+    varidp = Ref(Cint(0))
 
     code = ccall((:nc_inq_varid,libnetcdf),Cint,(Cint,Cstring,Ptr{Cint}),ncid,name,varidp);
     if code == NC_NOERR
-        return varidp[1]
+        return varidp[]
     else
         # return a more helpful error message (i.e. with the path)
         path =
@@ -1374,15 +1374,15 @@ function nc_inq_varname(ncid::Integer,varid::Integer)
 end
 
 function nc_inq_vartype(ncid::Integer,varid::Integer)
-    xtypep = zeros(nc_type,1)
+    xtypep = Ref(nc_type(0))
     check(ccall((:nc_inq_vartype,libnetcdf),Cint,(Cint,Cint,Ptr{nc_type}),ncid,varid,xtypep))
-    return xtypep[1]
+    return xtypep[]
 end
 
 function nc_inq_varndims(ncid::Integer,varid::Integer)
-    ndimsp = zeros(Int,1)
+    ndimsp = Ref(Cint(0))
     check(ccall((:nc_inq_varndims,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,ndimsp))
-    return ndimsp[1]
+    return ndimsp[]
 end
 
 function nc_inq_vardimid(ncid::Integer,varid::Integer)
@@ -1393,11 +1393,11 @@ function nc_inq_vardimid(ncid::Integer,varid::Integer)
 end
 
 function nc_inq_varnatts(ncid::Integer,varid::Integer)
-    nattsp = Vector{Cint}(undef,1)
+    nattsp = Ref(Cint(0))
 
     check(ccall((:nc_inq_varnatts,libnetcdf),Cint,(Cint,Cint,Ptr{Cint}),ncid,varid,nattsp))
 
-    return nattsp[1]
+    return nattsp[]
 end
 
 function nc_rename_var(ncid::Integer,varid::Integer,name)
