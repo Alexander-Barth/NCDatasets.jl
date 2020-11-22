@@ -277,10 +277,10 @@ end
 
 function nc_inq_path(ncid::Integer)
     pathlenp = Ref(Csize_t(0))
-    check(ccall((:nc_inq_path,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{UInt8}),ncid,pathlenp,C_NULL))
+    check(ccall((:nc_inq_path,libnetcdf),Cint,(Cint,Ptr{Csize_t},Ptr{UInt8}),ncid,pathlenp,C_NULL))
 
     path = zeros(UInt8,pathlenp[]+1)
-    check(ccall((:nc_inq_path,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{UInt8}),ncid,pathlenp,path))
+    check(ccall((:nc_inq_path,libnetcdf),Cint,(Cint,Ptr{Csize_t},Ptr{UInt8}),ncid,pathlenp,path))
 
     return unsafe_string(pointer(path))
 end
@@ -491,7 +491,7 @@ function nc_inq_user_type(ncid::Integer,xtype::Integer)
     nfieldsp = Ref(Csize_t(0))
     classp = Ref(Cint(0))
 
-    check(ccall((:nc_inq_user_type,libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{Cint},Ptr{nc_type},Ptr{Csize_t},Ptr{Cint}),ncid,xtype,name,sizep,base_nc_typep,nfieldsp,classp))
+    check(ccall((:nc_inq_user_type,libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{Csize_t},Ptr{nc_type},Ptr{Csize_t},Ptr{Cint}),ncid,xtype,name,sizep,base_nc_typep,nfieldsp,classp))
 
     return unsafe_string(pointer(name)),sizep[],base_nc_typep[],nfieldsp[],classp[]
 end
@@ -1163,7 +1163,7 @@ function nc_inq_att(ncid::Integer,varid::Integer,name)
     xtypep = Ref(nc_type(0))
     lenp = Ref(Csize_t(0))
 
-    check(ccall((:nc_inq_att,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{nc_type},Ptr{Cint}),ncid,varid,name,xtypep,lenp))
+    check(ccall((:nc_inq_att,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{nc_type},Ptr{Csize_t}),ncid,varid,name,xtypep,lenp))
 
     return xtypep[],lenp[]
 end
