@@ -464,8 +464,8 @@ function nc_inq_vlen(ncid::Integer,xtype::Integer)
     return unsafe_string(pointer(name)),datum_sizep[],base_nc_typep[]
 end
 
-function nc_free_vlen(vl)
-    check(ccall((:nc_free_vlen,libnetcdf),Cint,(Ptr{nc_vlen_t},),vl))
+function nc_free_vlen(vl::nc_vlen_t{T}) where {T}
+    check(ccall((:nc_free_vlen,libnetcdf),Cint,(Ptr{nc_vlen_t{T}},),Ref(vl)))
 end
 
 # function nc_free_vlens(len::Integer,vlens)
@@ -744,7 +744,7 @@ function nc_get_var1(::Type{Vector{T}},ncid::Integer,varid::Integer,indexp) wher
     check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Nothing}),ncid,varid,indexp,ip))
     #data = unsafe_wrap(Vector{T},ip[].p,(ip[].len,))
     data = copy(unsafe_wrap(Vector{T},ip[].p,(ip[].len,)))
-    nc_free_vlen(ip)
+    nc_free_vlen(ip[])
     return data
 end
 
