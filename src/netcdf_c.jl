@@ -934,13 +934,13 @@ function nc_def_var_deflate(ncid::Integer,varid::Integer,shuffle::Bool,deflate::
 end
 
 function nc_inq_var_deflate(ncid::Integer,varid::Integer)
-    shufflep = zeros(Cint,1)
-    deflatep = zeros(Cint,1)
-    deflate_levelp = zeros(Cint,1)
+    shufflep = Ref(Cint(0))
+    deflatep = Ref(Cint(0))
+    deflate_levelp = Ref(Cint(0))
 
     check(ccall((:nc_inq_var_deflate,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint}),ncid,varid,shufflep,deflatep,deflate_levelp))
 
-    return shufflep[1] == 1, deflatep[1] == 1, deflate_levelp[1]
+    return shufflep[] == 1, deflatep[] == 1, deflate_levelp[]
 end
 
 # function nc_inq_var_szip(ncid::Integer,varid::Integer,options_maskp,pixels_per_blockp)
