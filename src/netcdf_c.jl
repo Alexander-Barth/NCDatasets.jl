@@ -938,9 +938,17 @@ function nc_inq_var_deflate(ncid::Integer,varid::Integer)
     deflatep = Ref(Cint(0))
     deflate_levelp = Ref(Cint(0))
 
-    check(ccall((:nc_inq_var_deflate,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint}),ncid,varid,shufflep,deflatep,deflate_levelp))
+    ncerr = ccall((:nc_inq_var_deflate,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint},Ptr{Cint}),ncid,varid,shufflep,deflatep,deflate_levelp)
 
-    return shufflep[] == 1, deflatep[] == 1, deflate_levelp[]
+    if ncerr == NC_ENOTNC4
+       # work-around for netcdf 4.7.4
+       # https://github.com/Unidata/netcdf-c/issues/1691
+       return false, false, Cint(0)
+    else
+       check(ncerr)
+       return shufflep[] == 1, deflatep[] == 1, deflate_levelp[]
+    end
+
 end
 
 # function nc_inq_var_szip(ncid::Integer,varid::Integer,options_maskp,pixels_per_blockp)
