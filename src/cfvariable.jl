@@ -434,12 +434,18 @@ time_factor(v::CFVariable) = v._storage_attrib.time_factor
     convert(DTcast,time_origin + Dates.Millisecond(round(Int64,time_factor * data)))
 
 
-@inline fromdate(data::TimeType,time_origin,inv_time_factor,DTcast) =
-    Dates.value(DTcast(data) - time_origin) * inv_time_factor
-@inline fromdate(data,time_origin,time_factor,DTcast) = data
+@inline fromdate(data::TimeType,time_origin,inv_time_factor) =
+    Dates.value(data - time_origin) * inv_time_factor
+@inline fromdate(data,time_origin,time_factor) = data
 
 @inline function CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
-    return asdate(CFtransform_offset(CFtransform_scale(CFtransform_missing(data,fv),scale_factor),add_offset),time_origin,time_factor,DTcast)
+    return asdate(
+        CFtransform_offset(
+            CFtransform_scale(
+                CFtransform_missing(data,fv),
+                scale_factor),
+            add_offset),
+        time_origin,time_factor,DTcast)
 end
 
 # round float to integers
@@ -448,9 +454,15 @@ _approximate(::Type,data) = data
 
 
 @inline function CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DT)
-    return _approximate(DT,CFtransform_replace_missing(
-        CFtransform_scale(CFtransform_offset(data,minus_offset),
-                          inv_scale_factor),fv))
+    return _approximate(
+        DT,
+        CFtransform_replace_missing(
+            CFtransform_scale(
+                CFtransform_offset(
+                    fromdate(data,time_origin,inv_time_factor),
+                    minus_offset),
+                inv_scale_factor),
+            fv))
 end
 
 
@@ -535,12 +547,12 @@ end
 
 function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
 
-    units = get(v.attrib,"units",nothing)
-
     if calendar(v) !== nothing
         # can throw an convertion error if calendar attribute already exists and
         # is incompatible with the provided data
-        v[indexes...] = timeencode(data,units,calendar(v))
+        v.var[indexes...] = CFinvtransformdata(
+            data,fillvalue(v),scale_factor(v),add_offset(v),
+            time_origin(v),time_factor(v),eltype(v.var))
         return data
     end
 

@@ -60,7 +60,9 @@ checksum
 ```
 
 
-## Coordinate variables
+## Coordinate variables and cell boundaries
+
 ```@docs
 coord
+bounds
 ```
