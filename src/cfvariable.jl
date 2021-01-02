@@ -352,8 +352,11 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
         calendar,time_origin,time_factor = _calendar_time(variable(ds,parentname).attrib)
     end
 
-    calendar,time_origin,time_factor = _calendar_time(v.attrib;
-        calendar,time_origin,time_factor)
+    calendar,time_origin,time_factor = _calendar_time(
+        v.attrib;
+        calendar = calendar,
+        time_origin = time_origin,
+        time_factor = time_factor)
 
     scaledtype = eltype(v)
 
