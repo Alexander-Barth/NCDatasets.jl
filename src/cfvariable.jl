@@ -248,6 +248,53 @@ function defVar(ds::NCDataset,name,data::T; kwargs...) where T <: Number
 end
 export defVar
 
+
+function _boundsParentVar(ds,name)
+    for vname in keys(ds)
+        v = variable(ds,vname)
+        if haskey(v.attrib,"bounds")
+            if v.attrib["bounds"] == name
+                return vname
+            end
+        end
+    end
+
+    return nothing
+end
+
+
+"""
+    calendar,time_origin,time_factor = calendar_time(
+        attrib;
+        calendar = nothing,
+        time_origin = nothing,
+        time_factor = nothing)
+        )
+
+
+"""
+function _calendar_time(
+    attrib;
+    calendar = nothing,
+    time_origin = nothing,
+    time_factor = nothing,
+    )
+
+    if haskey(attrib,"units")
+        units = attrib["units"]
+        if occursin(" since ",units)
+            calendar = lowercase(get(attrib,"calendar","standard"))
+            try
+                time_origin,time_factor = CFTime.timeunits(units, calendar)
+            catch
+                # keep defaults
+            end
+        end
+    end
+
+    return calendar,time_origin,time_factor
+end
+
 """
     v = getindex(ds::NCDataset,varname::AbstractString)
 
@@ -267,6 +314,24 @@ Note that the attribute `missing_value` is not used to determine which
 element is `missing` only `_FillValue`.
 
 A call `getindex(ds,varname)` is usually written as `ds[varname]`.
+
+
+If variable represents a cell boundary, the attributes `calendar` and `units` of the related NetCDF variables are used, if they are not specified. For example:
+
+```
+dimensions:
+  time = UNLIMITED; // (5 currently)
+  nv = 2;
+variables:
+  double time(time);
+    time:long_name = "time";
+    time:units = "hours since 1998-04-019 06:00:00";
+    time:bounds = "time_bnds";
+  double time_bnds(time,nv);
+```
+
+In this case, the variable `time_bnds` uses the units and calendar of `time`
+because both variables are related thought the bounds attribute following the CF conventions.
 """
 function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
     v = variable(ds,varname)
@@ -275,21 +340,20 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
     scale_factor = get(v.attrib,"scale_factor",nothing)
     add_offset = get(v.attrib,"add_offset",nothing)
 
-    calendar = nothing
-    time_origin = nothing
-    time_factor = nothing
-    if haskey(v.attrib,"units")
-        units = v.attrib["units"]
-        if occursin(" since ",units)
-            calendar = lowercase(get(v.attrib,"calendar","standard"))
-            time_origin,time_factor =
-                try
-                    CFTime.timeunits(units, calendar)
-                catch
-                    (nothing,nothing)
-                end
-        end
+    # special case for bounds variable who inherit
+    # units and calendar from parent variables
+    parentname = _boundsParentVar(ds,varname)
+
+    if parentname == nothing
+        calendar = nothing
+        time_origin = nothing
+        time_factor = nothing
+    else
+        calendar,time_origin,time_factor = _calendar_time(variable(ds,parentname).attrib)
     end
+
+    calendar,time_origin,time_factor = _calendar_time(v.attrib;
+        calendar,time_origin,time_factor)
 
     scaledtype = eltype(v)
 
@@ -305,33 +369,26 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
 
     rettype = scaledtype
 
+    # rettype can be a date if calendar is different from nothing
     if calendar != nothing
-        units = get(v.attrib,"units","")
-        if occursin(" since ",units)
-            # type of data changes
-            calendar = lowercase(get(v.attrib,"calendar","standard"))
+        DT = nothing
+        try
+            DT = CFTime.timetype(calendar)
+        catch
+        end
 
-            DT = nothing
-            try
-                DT = CFTime.timetype(calendar)
-            catch
-            end
+        if DT !== nothing
+            # this is the only supported option for NCDatasets
+            prefer_datetime = true
 
-            if DT !== nothing
-                # this is the only supported option for NCDatasets
-                prefer_datetime = true
-
-                if prefer_datetime &&
-                    (DT in [DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian])
-                    rettype = DateTime
-                else
-                    rettype = DT
-                end
+            if prefer_datetime &&
+                (DT in [DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian])
+                rettype = DateTime
             else
-                @warn("unsupported calendar $calendar " *
-                      "or units $units in file $(path(ds)). Time units are ignored.")
-
+                rettype = DT
             end
+        else
+            @warn("unsupported calendar `$calendar`. Time units are ignored.")
         end
     end
 

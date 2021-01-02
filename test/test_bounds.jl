@@ -20,14 +20,11 @@ nctime = defVar(ds, "time", Float64, ("time",),attrib=OrderedDict(
 
 nctime_bounds = defVar(ds, "time_bounds", Float64, ("nv","time"),attrib=OrderedDict())
 
-
 ncvar = nctime
 nctime_bounds = NCDatasets.bounds(ncvar)
 nctime_bounds[:,:] = time_bounds
-
-#close(ds)
-
 @test nctime_bounds.var[:,:] ≈ [-0.5  0.5  1.5;
                                 0.5  1.5  2.5]
-
 @test nctime_bounds[:,:] == time_bounds
+
+close(ds)

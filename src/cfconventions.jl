@@ -174,29 +174,7 @@ packing of data `scale_factor`, `add_offset` and `_FillValue`.
 function bounds(ncvar::NCDatasets.CFVariable)
     ds = NCDataset(ncvar)
     varname = ncvar.attrib["bounds"]
-    ncbounds = ds[varname]
-    sa = ncvar._storage_attrib
-
-    # inherit calendar and time units from ncvar
-    storage_attrib = (
-        fillvalue = get(ncbounds.attrib,"_FillValue",nothing),
-        scale_factor = get(ncbounds.attrib,"scale_factor",nothing),
-        add_offset = get(ncbounds.attrib,"add_offset",nothing),
-        calendar = sa.calendar,
-        time_origin = sa.time_origin,
-        time_factor = sa.time_factor,
-    )
-
-    rettype =
-        if sa.calendar != nothing
-            # time variable
-            eltype(ncvar)
-        else
-            eltype(ncbounds)
-        end
-
-    return CFVariable{rettype,ndims(ncbounds),typeof(ncbounds.var),typeof(ncbounds.attrib),typeof(storage_attrib)}(
-        ncbounds.var,ncbounds.attrib,storage_attrib)
+    return ds[varname]
 end
 
 export bounds
