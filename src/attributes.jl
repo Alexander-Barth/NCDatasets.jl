@@ -70,7 +70,7 @@ function Base.show(io::IO, a::BaseAttributes; indent = "  ")
         # use the same order of attributes than in the NetCDF file
         for (attname,attval) in a
             print(io,indent,@sprintf("%-20s = ",attname))
-            printstyled(io, @sprintf("%s",attval),color=:blue)
+            printstyled(io, @sprintf("%s",attval),color=:cyan)
             print(io,"\n")
         end
     catch err
