@@ -442,7 +442,7 @@ Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
 function Base.show(io::IO,ds::AbstractDataset; indent="")
     try
         dspath = path(ds)
-        printstyled(io, indent, "NCDataset: ",dspath,"\n", color=:red)
+        printstyled(io, indent, "NCDataset: ",dspath,"\n", color=section_color())
     catch err
         if isa(err,NetCDFError)
             if err.code == NC_EBADID
@@ -459,7 +459,7 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
     dims = collect(ds.dim)
 
     if length(dims) > 0
-        printstyled(io, indent, "Dimensions\n",color=:red)
+        printstyled(io, indent, "Dimensions\n",color=section_color())
 
         for (dimname,dimlen) in dims
             print(io,indent,"   $(dimname) = $(dimlen)\n")
@@ -471,7 +471,7 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
 
     if length(varnames) > 0
 
-        printstyled(io, indent, "Variables\n",color=:red)
+        printstyled(io, indent, "Variables\n",color=section_color())
 
         for name in varnames
             show(io,variable(ds,name); indent = "$(indent)  ")
@@ -481,7 +481,7 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
 
     # global attribues
     if length(ds.attrib) > 0
-        printstyled(io, indent, "Global attributes\n",color=:red)
+        printstyled(io, indent, "Global attributes\n",color=section_color())
         show(io,ds.attrib; indent = "$(indent)  ");
     end
 
@@ -489,7 +489,7 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
     groupnames = keys(ds.group)
 
     if length(groupnames) > 0
-        printstyled(io, indent, "Groups\n",color = :red)
+        printstyled(io, indent, "Groups\n",color=section_color())
         for groupname in groupnames
             show(io,group(ds,groupname); indent = "  ")
         end

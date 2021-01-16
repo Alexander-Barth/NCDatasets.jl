@@ -474,7 +474,7 @@ function Base.show(io::IO,v::AbstractVariable; indent="")
         end
     sz = size(v)
 
-    printstyled(io, indent, name(v),color=:green)
+    printstyled(io, indent, name(v),color=variable_color())
     if length(sz) > 0
         print(io,indent," (",join(sz,delim),")\n")
         print(io,indent,"  Datatype:    ",eltype(v),"\n")
