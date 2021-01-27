@@ -117,7 +117,10 @@ load!(ds["temp"].var,data,:,1) # loads the 1st column
 
 """
 @inline function load!(ncvar::NCDatasets.Variable{T,N}, data, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
-    ind = to_indices(ncvar,indices)
+    sizes =  size(ncvar)   
+    normalizedindices = normalizeindexes(sizes, indices)
+    ind = to_indices(ncvar,normalizedindices)
+    
     start,count,stride,jlshape = ncsub(ind)
     nc_get_vars!(ncvar.ds.ncid,ncvar.varid,start,count,stride,data)
 end

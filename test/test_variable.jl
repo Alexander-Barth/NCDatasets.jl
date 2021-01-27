@@ -89,6 +89,10 @@ NCDataset(filename,"c") do ds
     NCDatasets.load!(ds["temp"].var,data2,:,1:2)
     @test data2 == data[:,1:2]
 
+    data2 = zeros(eltype(data),sz[1],1)
+    NCDatasets.load!(ds["temp"].var,data2,:,1)
+    @test data2[:] == data[:,1]
+
     # test Union{Missing,T}
     defVar(ds,"foo",[missing,1.,2.],("dim",), fillvalue = -9999.)
     @test fillvalue(ds["foo"]) == -9999.
