@@ -81,10 +81,16 @@ Base.Array(v::MFVariable) = Array(v.var)
 
 
 """
-    mfds = NCDataset(fnames,mode = "r"; aggdim = nothing, deferopen = true)
+    mfds = NCDataset(fnames, mode = "r"; aggdim = nothing, deferopen = true)
 
 Opens a multi-file dataset in read-only "r" or append mode "a". `fnames` is a
-vector of file names.
+vector of file names. You can use [Glob.jl](https://github.com/vtjnash/Glob.jl)
+to make `fnames`, e.g.
+```julia
+using NCDatasets, Glob
+ds = NCDataset(glob("ERA5_monthly3D_reanalysis_*.nc"))
+```
+
 Variables are aggregated over the first unlimited dimension or over
 the dimension `aggdim` if specified. The append mode is only implemented when
 `deferopen` is `false`.
