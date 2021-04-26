@@ -589,3 +589,14 @@ function Base.write(dest_filename::AbstractString, src::AbstractDataset; kwargs.
     end
     return nothing
 end
+
+
+get_chunk_cache() = nc_get_chunk_cache()
+
+function set_chunk_cache(;size=nothing,nelems=nothing,preemption=nothing)
+    size_orig,nelems_orig,preemption_orig = nc_get_chunk_cache()
+    size = (isnothing(size) ? size_orig : size)
+    nelems = (isnothing(nelems) ? nelems_orig : nelems)
+    preemption = (isnothing(preemption) ? preemption_orig : preemption)
+    nc_set_chunk_cache(size,nelems,preemption)
+end

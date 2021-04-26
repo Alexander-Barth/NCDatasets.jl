@@ -1043,13 +1043,17 @@ end
 #     check(ccall((:nc_set_default_format,libnetcdf),Cint,(Cint,Ptr{Cint}),format,old_formatp))
 # end
 
-# function nc_set_chunk_cache(size::Integer,nelems::Integer,preemption::Cfloat)
-#     check(ccall((:nc_set_chunk_cache,libnetcdf),Cint,(Cint,Cint,Cfloat),size,nelems,preemption))
-# end
+function nc_set_chunk_cache(size::Integer,nelems::Integer,preemption::Number)
+    check(ccall((:nc_set_chunk_cache,libnetcdf),Cint,(Csize_t,Csize_t,Cfloat),size,nelems,preemption))
+end
 
-# function nc_get_chunk_cache(sizep,nelemsp,preemptionp)
-#     check(ccall((:nc_get_chunk_cache,libnetcdf),Cint,(Ptr{Cint},Ptr{Cint},Ptr{Cfloat}),sizep,nelemsp,preemptionp))
-# end
+function nc_get_chunk_cache()
+    sizep = Ref{Csize_t}()
+    nelemsp = Ref{Csize_t}()
+    preemptionp = Ref{Cfloat}()
+    check(ccall((:nc_get_chunk_cache,libnetcdf),Cint,(Ptr{Csize_t},Ptr{Csize_t},Ptr{Cfloat}),sizep,nelemsp,preemptionp))
+    return Int(sizep[]),Int(nelemsp[]),preemptionp[]
+end
 
 # function nc_set_var_chunk_cache(ncid::Integer,varid::Integer,size::Integer,nelems::Integer,preemption::Cfloat)
 #     check(ccall((:nc_set_var_chunk_cache,libnetcdf),Cint,(Cint,Cint,Cint,Cint,Cfloat),ncid,varid,size,nelems,preemption))

@@ -231,6 +231,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_coord.jl")
     include("test_bounds.jl")
     include("test_cont_ragged_array.jl")
+
+    include("test_chunk_cache.jl")
 end
 
 @testset "NetCDF4 groups" begin
