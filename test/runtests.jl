@@ -135,6 +135,10 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
         v2 = ds["scalar"][:]
         @test typeof(v2) == Float32
         @test v2 == 123.f0
+
+        v2 = ds["scalar"][]
+        @test typeof(v2) == Float32
+        @test v2 == 123.f0
     end
     rm(filename)
 

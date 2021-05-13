@@ -448,6 +448,10 @@ function Base.getindex(v::Variable,indexes::Union{Int,Colon,UnitRange{Int},StepR
     return data
 end
 
+# NetCDF scalars indexed as []
+Base.getindex(v::Variable{T, 0}) where T = v[1]
+
+
 
 function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     ind = normalizeindexes(size(v),indexes)
