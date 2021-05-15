@@ -1210,9 +1210,9 @@ end
 #     check(ccall((:nc_rename_att,libnetcdf),Cint,(Cint,Cint,Cstring,Cstring),ncid,varid,name,newname))
 # end
 
-# function nc_del_att(ncid::Integer,varid::Integer,name)
-#     check(ccall((:nc_del_att,libnetcdf),Cint,(Cint,Cint,Cstring),ncid,varid,name))
-# end
+function nc_del_att(ncid::Integer,varid::Integer,name)
+     check(ccall((:nc_del_att,libnetcdf),Cint,(Cint,Cint,Cstring),ncid,varid,name))
+end
 
 # function nc_put_att_text(ncid::Integer,varid::Integer,name,len::Integer,op)
 #     check(ccall((:nc_put_att_text,libnetcdf),Cint,(Cint,Cint,Cstring,Cint,Cstring),ncid,varid,name,len,op))

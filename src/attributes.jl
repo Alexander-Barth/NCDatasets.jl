@@ -1,3 +1,5 @@
+import Base: delete!
+
 # `Attributes` is a collection of named attributes
 
 
@@ -64,6 +66,15 @@ Return a list of the names of all attributes.
 """
 Base.keys(a::Attributes) = listAtt(a.ds.ncid,a.varid)
 
+"""
+    Base.delete!(a::Attributes, name)
+
+Delete the attribute `name` from the attribute list `a`.
+"""
+function Base.delete!(a::Attributes,name::AbstractString)
+    nc_del_att(a.ds.ncid,a.varid,name)
+    return nothing
+end
 
 function Base.show(io::IO, a::BaseAttributes; indent = "  ")
     try
