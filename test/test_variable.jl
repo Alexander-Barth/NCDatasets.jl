@@ -182,11 +182,12 @@ rm(filename)
 
 x, y = collect(1:10), collect(10:18)
 
-NCDataset("temp1.nc", "c") do ds
+filename = tempname()
+NCDataset(filename, "c") do ds
       defDim(ds, "x", length(x))
       defVar(ds, "x", x, ("x",))
       defDim(ds, "y", length(y))
       defVar(ds, "y", y, ("y",))
 end
 
-rm("temp1.nc")
+rm(filename)
