@@ -464,8 +464,6 @@ function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int}
     return v[ind...] = data
 end
 
-# necessary for IJulia if showing a variable from a closed file
-Base.show(io::IO,::MIME"text/plain",v::Union{Variable,CFVariable}) = show(io,v)
 
 function Base.show(io::IO,v::AbstractVariable; indent="")
     delim = " × "
