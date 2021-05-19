@@ -636,4 +636,7 @@ Base.Array(v::Union{CFVariable{T,N},Variable{T,N}}) where {T,N} = v[ntuple(i -> 
 
 Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=indent)
 
+# necessary for IJulia if showing a variable from a closed file
+Base.show(io::IO,::MIME"text/plain",v::Union{Variable,CFVariable}) = show(io,v)
+
 Base.display(v::Union{Variable,CFVariable}) = show(stdout,v)
