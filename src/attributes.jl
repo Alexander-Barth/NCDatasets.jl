@@ -72,6 +72,7 @@ Base.keys(a::Attributes) = listAtt(a.ds.ncid,a.varid)
 Delete the attribute `name` from the attribute list `a`.
 """
 function Base.delete!(a::Attributes,name::AbstractString)
+    defmode(a.ds)
     nc_del_att(a.ds.ncid,a.varid,name)
     return nothing
 end
