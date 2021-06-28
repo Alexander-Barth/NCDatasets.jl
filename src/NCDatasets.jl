@@ -17,6 +17,9 @@ close(ds)
 More information is available at https://github.com/Alexander-Barth/NCDatasets.jl .
 """
 module NCDatasets
+using NetCDF_jll
+using Dates
+using Printf
 
 using Base
 import Base.convert
@@ -38,6 +41,9 @@ export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
 
 const default_timeunits = "days since 1900-00-00 00:00:00"
 
+const SymbolOrString = Union{Symbol, AbstractString}
+
+include("colors.jl")
 include("CatArrays.jl")
 export CatArrays
 

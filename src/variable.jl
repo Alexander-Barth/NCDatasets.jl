@@ -80,7 +80,7 @@ Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.Variable`. No scaling or other transformations are applied when the
 variable `v` is indexed.
 """
-function variable(ds::NCDataset,varname::AbstractString)
+function variable(ds::NCDataset,varname::SymbolOrString)
     varid = nc_inq_varid(ds.ncid,varname)
     name,nctype,dimids,nattr = nc_inq_var(ds.ncid,varid)
     ndims = length(dimids)
@@ -122,7 +122,10 @@ load!(ds["temp"].var,data,:,1) # loads the 1st column
 
 """
 @inline function load!(ncvar::NCDatasets.Variable{T,N}, data, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
-    ind = to_indices(ncvar,indices)
+    sizes =  size(ncvar)   
+    normalizedindices = normalizeindexes(sizes, indices)
+    ind = to_indices(ncvar,normalizedindices)
+    
     start,count,stride,jlshape = ncsub(ind)
     nc_get_vars!(ncvar.ds.ncid,ncvar.varid,start,count,stride,data)
 end
@@ -216,7 +219,7 @@ export chunking
     isshuffled,isdeflated,deflate_level = deflate(v::Variable)
 
 Return compression information of the variable `v`. If shuffle
-is `true`, then shuffling (byte interlacing) is activaded. If
+is `true`, then shuffling (byte interlacing) is activated. If
 deflate is `true`, then the data chunks (see `chunking`) are
 compressed using the compression level `deflate_level`
 (0 means no compression and 9 means maximum compression).
@@ -399,9 +402,9 @@ function Base.getindex(v::Variable{T,N},indexes::Colon...) where {T,N}
     datamode(v.ds)
     # special case for scalar NetCDF variable
     if N == 0
-        data = Vector{T}(undef,1)
+        data = Ref(zero(T))
         nc_get_var!(v.ds.ncid,v.varid,data)
-        return data[1]
+        return data[]
     else
         data = Array{T,N}(undef,size(v))
         nc_get_var!(v.ds.ncid,v.varid,data)
@@ -529,6 +532,10 @@ function Base.getindex(v::Variable,indexes::Union{Int,Colon,UnitRange{Int},StepR
     return data
 end
 
+# NetCDF scalars indexed as []
+Base.getindex(v::Variable{T, 0}) where T = v[1]
+
+
 
 function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     ind = normalizeindexes(size(v),indexes)
@@ -554,11 +561,11 @@ function Base.show(io::IO,v::AbstractVariable; indent="")
                     return
                 end
             end
-            rethrow
+            rethrow()
         end
     sz = size(v)
 
-    printstyled(io, indent, name(v),color=:green)
+    printstyled(io, indent, name(v),color=variable_color())
     if length(sz) > 0
         print(io,indent," (",join(sz,delim),")\n")
         print(io,indent,"  Datatype:    ",eltype(v),"\n")

@@ -12,13 +12,13 @@ temp = nctemp[:,:] :: Array{Float64,2}
 close(ds)
 ```
 
-Alternatively, one can also use so called "[function barriers](https://docs.julialang.org/en/v1/manual/performance-tips/index.html#kernel-functions-1)" or the in-place `load!` function:
+Alternatively, one can also use so called "[function barriers](https://docs.julialang.org/en/v1/manual/performance-tips/index.html#kernel-functions-1)" or the in-place `NCDatasets.load!` function (which is unexported, so it has to be prefixed with the module name):
 
 ```julia
 ds = NCDataset("file.nc")
 
 temp = zeros(10,20)
-load!(ds["temp"],temp,:,:)
+NCDatasets.load!(variable(ds,"temp"),temp,:,:)
 ```
 
 * Most julia functions (like `mean`, `sum`,... from the module Statistics) access an array element-wise. It is generally much faster to load the data in memory (if possible) to make the computation.

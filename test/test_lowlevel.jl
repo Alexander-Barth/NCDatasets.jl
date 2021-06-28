@@ -1,4 +1,5 @@
 using Random
+using Test
 import NCDatasets
 
 varname = "varname"
@@ -23,6 +24,7 @@ samples = [
 
 
 for sampledata in samples
+    local start
     rm(filename;force=true)
 
     # write data
@@ -42,7 +44,6 @@ for sampledata in samples
     NCDatasets.nc_close(ncid)
 
     # load data
-
     ncid = NCDatasets.nc_open(filename,NCDatasets.NC_NOWRITE)
     varid = NCDatasets.nc_inq_varid(ncid,varname)
     xtype2 = NCDatasets.nc_inq_vartype(ncid,varid)
@@ -51,15 +52,16 @@ for sampledata in samples
     attrval = NCDatasets.nc_get_att(ncid, varid, "attr-string-list")
     @test attrval == ["one","two"]
 
+    # test nc_get_var!
     sampledata2 = Array{T,ndims(sampledata)}(undef,size(sampledata))
     NCDatasets.nc_get_var!(ncid,varid,sampledata2)
     @test sampledata == sampledata2
 
-    # start = [1,1]
-    # count = [size(
-
-    # NCDatasets.nc_get_vara!(ncid,varid,start,count,sampledata2)
-    # @test sampledata == sampledata2
+    # test nc_get_vara!
+    start = [1 for i in 1:ndims(sampledata)] .- 1
+    count = reverse(collect(size(sampledata)))
+    NCDatasets.nc_get_vara!(ncid,varid,start,count,sampledata2)
+    @test sampledata == sampledata2
 
     NCDatasets.nc_close(ncid)
 end

@@ -91,7 +91,7 @@ C = cat(A...; dims = 3)
 fnames = example_file.(1:3,A)
 
 
-mfds = NCDataset(fnames);
+mfds = NCDataset(fnames, deferopen = false);
 varname = "var"
 var = variable(mfds,varname);
 data = var[:,:,:]
@@ -129,15 +129,15 @@ ds_merged = NCDataset(fname_merged)
 close(ds_merged)
 
 
-close(mfds)
-
 # show
 buf = IOBuffer()
 show(buf,mfds)
 occursin("time = 3",String(take!(buf)))
 
+close(mfds)
+
 # write
-mfds = NCDataset(fnames,"a");
+mfds = NCDataset(fnames,"a",deferopen = false);
 mfds[varname][2,2,:] = 1:length(fnames)
 
 for n = 1:length(fnames)
@@ -182,7 +182,7 @@ vel = rand(50,50)
 fnames = [example_file(1, vel; varname = "vel"),
           example_file(1, ampl; varname = "ampl")]
 
-ds = NCDataset(fnames,aggdim = "");
+ds = NCDataset(fnames,aggdim = "", deferopen = false);
 
 @test ds["ampl"][:,:,1] == ampl
 @test ds["vel"][:,:,1] == vel

@@ -115,6 +115,7 @@ function DeferDataset(filename,mode = "r")
 end
 export DeferDataset
 
+# files are not suppose to be open where using DeferDataset
 close(dds::DeferDataset) = nothing
 groupname(dds::DeferDataset) = dds.groupname
 path(dds::DeferDataset) = dds.r.filename
@@ -161,6 +162,7 @@ name(dv::DeferVariable) = dv.varname
 #----------------------------------------------
 Base.keys(dd::DeferDimensions) = collect(keys(dd.data))
 Base.getindex(dd::DeferDimensions,name::AbstractString) = dd.data[name]["length"]
+unlimited(dd::DeferDimensions) = [dimname for (dimname,dim) in dd.data if dim["unlimited"]]
 
 
 Base.keys(da::DeferAttributes) = collect(keys(da.data))

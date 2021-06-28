@@ -6,6 +6,7 @@ The NetCDF dataset (as returned by `NCDataset` or NetCDF groups) and the NetCDF 
 getindex(a::NCDatasets.Attributes,name::AbstractString)
 setindex!(a::NCDatasets.Attributes,data,name::AbstractString)
 keys(a::NCDatasets.Attributes)
+delete!(a::NCDatasets.Attributes,name::AbstractString)
 ```
 
 Loading all attributes as a `Dict` can be achieved by passing `ds.attrib` (where `ds` is the `NCDataset`) as argument to `Dict`.

@@ -56,10 +56,14 @@ NCDatasets.NCDataset(filename,"c") do ds
 
         @test v[[1,2,3],:] == data[[1,2,3],:]
 
-        # write scalar,
+        # write scalar
         v.var[1,1] = scalar_data
         v.var[:,:] .= scalar_data
         @test all(v.var[:,:][:] .== scalar_data)
+
+        # stridded write and read
+        v[1:2:end,1:2:end] = data[1:2:end,1:2:end]
+        @test all(v[1:2:end,1:2:end] .== data[1:2:end,1:2:end])
 
     end
 end
@@ -84,6 +88,10 @@ NCDataset(filename,"c") do ds
     data2 = zeros(eltype(data),sz[1],2)
     NCDatasets.load!(ds["temp"].var,data2,:,1:2)
     @test data2 == data[:,1:2]
+
+    data2 = zeros(eltype(data),sz[1],1)
+    NCDatasets.load!(ds["temp"].var,data2,:,1)
+    @test data2[:] == data[:,1]
 
     # test Union{Missing,T}
     defVar(ds,"foo",[missing,1.,2.],("dim",), fillvalue = -9999.)
@@ -123,16 +131,27 @@ NCDataset(filename,"c") do ds
 
     defVar(ds,"scalar",123.)
     @test ds["scalar"][:] == 123.
+
+    # test indexing with symbols #101
+    @test ds[:scalar][:] == 123.
 end
 rm(filename)
 
-# check error
+# check bounds error
 filename = tempname()
 NCDataset(filename,"c") do ds
     defVar(ds,"temp",randn(10,11),("lon","lat"))
     @test_throws Exception defVar(ds,"salt",randn(10,12),("lon","lat"))
 end
 rm(filename)
+
+# check error for unknown variable
+filename = tempname()
+NCDataset(filename,"c") do ds
+    @test_throws NCDatasets.NetCDFError ds["does_not_exist"]
+end
+rm(filename)
+
 
 # issue 23
 # return type using CartesianIndex
@@ -163,11 +182,12 @@ rm(filename)
 
 x, y = collect(1:10), collect(10:18)
 
-NCDataset("temp1.nc", "c") do ds
+filename = tempname()
+NCDataset(filename, "c") do ds
       defDim(ds, "x", length(x))
       defVar(ds, "x", x, ("x",))
       defDim(ds, "y", length(y))
       defVar(ds, "y", y, ("y",))
 end
 
-rm("temp1.nc")
+rm(filename)

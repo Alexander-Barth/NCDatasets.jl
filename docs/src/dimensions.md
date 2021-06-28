@@ -14,7 +14,7 @@ setindex!(d::NCDatasets.Dimensions,len,name::AbstractString)
 One can iterate over a list of dimensions as follows:
 
 ```julia
-for (dimname,dim) in ds.dims
+for (dimname,dim) in ds.dim
     # all dimensions
     @show (dimname,dim)
 end

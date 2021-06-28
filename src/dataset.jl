@@ -329,7 +329,17 @@ to the disk.
 """
 function Base.close(ds::NCDataset)
     @debug "closing netCDF NCDataset $(ds.ncid) $(NCDatasets.path(ds))"
-    nc_close(ds.ncid)
+    try
+        nc_close(ds.ncid)
+    catch err
+        # like Base, allow close on closed file
+        if isa(err,NetCDFError)
+            if err.code == NC_EBADID
+                return ds
+            end
+        end
+        rethrow()
+    end
     # prevent finalize to close file as ncid can reused for future files
     ds.ncid = -1
     return ds
@@ -432,7 +442,7 @@ Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
 function Base.show(io::IO,ds::AbstractDataset; indent="")
     try
         dspath = path(ds)
-        printstyled(io, indent, "NCDataset: ",dspath,"\n", color=:red)
+        printstyled(io, indent, "NCDataset: ",dspath,"\n", color=section_color())
     catch err
         if isa(err,NetCDFError)
             if err.code == NC_EBADID
@@ -440,7 +450,7 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
                 return
             end
         end
-        rethrow
+        rethrow()
     end
 
     print(io,indent,"Group: ",groupname(ds),"\n")
@@ -449,7 +459,7 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
     dims = collect(ds.dim)
 
     if length(dims) > 0
-        printstyled(io, indent, "Dimensions\n",color=:red)
+        printstyled(io, indent, "Dimensions\n",color=section_color())
 
         for (dimname,dimlen) in dims
             print(io,indent,"   $(dimname) = $(dimlen)\n")
@@ -461,7 +471,7 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
 
     if length(varnames) > 0
 
-        printstyled(io, indent, "Variables\n",color=:red)
+        printstyled(io, indent, "Variables\n",color=section_color())
 
         for name in varnames
             show(io,variable(ds,name); indent = "$(indent)  ")
@@ -471,7 +481,7 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
 
     # global attribues
     if length(ds.attrib) > 0
-        printstyled(io, indent, "Global attributes\n",color=:red)
+        printstyled(io, indent, "Global attributes\n",color=section_color())
         show(io,ds.attrib; indent = "$(indent)  ");
     end
 
@@ -479,7 +489,7 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
     groupnames = keys(ds.group)
 
     if length(groupnames) > 0
-        printstyled(io, indent, "Groups\n",color = :red)
+        printstyled(io, indent, "Groups\n",color=section_color())
         for groupname in groupnames
             show(io,group(ds,groupname); indent = "  ")
         end
@@ -488,19 +498,38 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
 end
 
 """
-    write(dest_filename::AbstractString, src::AbstractDataset; include = keys(src), exclude = [])
-    write(dest::NCDataset, src::AbstractDataset; include = keys(src), exclude = [])
+    write(dest_filename::AbstractString, src::AbstractDataset; include = keys(src), exclude = [], idimensions = Dict())
+    write(dest::NCDataset, src::AbstractDataset; include = keys(src), exclude = [], idimensions = Dict())
 
 Write the variables of `src` dataset into an empty `dest` dataset (which must be opened in mode `"a"` or `"c"`).
 The keywords `include` and `exclude` configure which variable of `src` should be included
 (by default all), or which should be `excluded` (by default none).
 
-If the first argument is a file name, then the dataset is open in create mode (`c`).
+If the first argument is a file name, then the dataset is open in create mode (`"c"`).
 
 This function is useful when you want to save the dataset from a multi-file dataset.
+
+`idimensions` is a dictionary with dimension names mapping to a list of
+indices if only a subset of the dataset should be saved.
+
+## Example
+
+```
+NCDataset(fname_src) do ds
+    write(fname_slice,ds,idimensions = Dict("lon" => 2:3))
+end
+```
+
+All variables in the source file `fname_src` with a dimension `lon` will be sliced
+along the indices `2:3` for the `lon` dimension. All attributes (and variables
+without a dimension `lon`) will be copied over unmodified.
+
+It is assumed that all the variable of the output file can be loaded in memory.
 """
 function Base.write(dest::NCDataset, src::AbstractDataset;
-                     include = keys(src), exclude = String[])
+                    include = keys(src),
+                    exclude = String[],
+                    idimensions = Dict())
 
     unlimited_dims = unlimited(src.dim)
 
@@ -516,6 +545,10 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
             if isunlimited
                 defDim(dest, dimname, Inf)
             else
+                if haskey(idimensions,dimname)
+                    dimlength = length(idimensions[dimname])
+                    @debug "subset $dimname $(idimensions[dimname])"
+                end
                 defDim(dest, dimname, dimlength)
             end
         # end
@@ -525,8 +558,16 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
     for varname in include
         (varname ∈ exclude) && continue
         @debug "Writing variable $varname..."
+
         cfvar = src[varname]
-        defVar(dest, varname, Array(cfvar), dimnames(cfvar); attrib = cfvar.attrib)
+        dimension_names = dimnames(cfvar)
+
+        # indices for subset
+        index = ntuple(i -> get(idimensions,dimension_names[i],:),length(dimension_names))
+
+        destvar = defVar(dest, varname, eltype(cfvar.var), dimension_names; attrib = cfvar.attrib)
+        # copy data
+        destvar.var[:] = cfvar.var[index...]
     end
 
     # loop over all global attributes
@@ -537,14 +578,25 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
     # loop over all groups
     for (groupname,groupsrc) in src.group
         groupdest = defGroup(dest,groupname)
-        write(groupdest,groupsrc)
+        write(groupdest,groupsrc; idimensions = idimensions)
     end
     return dest
 end
 
 function Base.write(dest_filename::AbstractString, src::AbstractDataset; kwargs...)
     NCDataset(dest_filename,"c") do dest
-        write(dest,src, kwargs...)
+        write(dest,src; kwargs...)
     end
     return nothing
+end
+
+
+get_chunk_cache() = nc_get_chunk_cache()
+
+function set_chunk_cache(;size=nothing,nelems=nothing,preemption=nothing)
+    size_orig,nelems_orig,preemption_orig = nc_get_chunk_cache()
+    size = (isnothing(size) ? size_orig : size)
+    nelems = (isnothing(nelems) ? nelems_orig : nelems)
+    preemption = (isnothing(preemption) ? preemption_orig : preemption)
+    nc_set_chunk_cache(size,nelems,preemption)
 end

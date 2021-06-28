@@ -1,6 +1,9 @@
+using NCDatasets
+using Test
 sz = (4,5)
 filename = tempname()
 #filename = "/tmp/mytest.nc"
+
 
 NCDatasets.NCDataset(filename,"c") do ds
 
@@ -25,10 +28,14 @@ NCDatasets.NCDataset(filename,"c") do ds
     @test NCDatasets.get(v.attrib,"does-not-exist","default") == "default"
     @test NCDatasets.get(v.attrib,"units","default") == "degree Celsius"
 
+    # test deletion of attributes
+    v.attrib["todelete"] = "foobar"
+    @test haskey(v.attrib,"todelete")
+    delete!(v.attrib,"todelete")
+    @test !haskey(v.attrib,"todelete")
 
     for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64,
               String,Char]
-    #for T in [Char]
         # scalar attribute
         name = "scalar-attrib-$T"
 
@@ -98,3 +105,20 @@ NCDatasets.NCDataset(filename,"c") do ds
 end
 
 rm(filename)
+
+filename = tempname()
+
+NCDatasets.NCDataset(filename,"c",format = :netcdf3_classic) do ds
+    # test deletion of attributes
+    ds.attrib["todelete"] = "foobar"
+end
+
+NCDatasets.NCDataset(filename,"a") do ds
+    @test haskey(ds.attrib,"todelete")
+    delete!(ds.attrib,"todelete")
+    @test !haskey(ds.attrib,"todelete")
+end
+
+rm(filename)
+
+#filename = "/tmp/mytest.nc"

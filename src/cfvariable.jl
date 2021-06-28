@@ -248,6 +248,53 @@ function defVar(ds::NCDataset,name,data::T; kwargs...) where T <: Number
 end
 export defVar
 
+
+function _boundsParentVar(ds,name)
+    for vname in keys(ds)
+        v = variable(ds,vname)
+        if haskey(v.attrib,"bounds")
+            if v.attrib["bounds"] == name
+                return vname
+            end
+        end
+    end
+
+    return nothing
+end
+
+
+"""
+    calendar,time_origin,time_factor = calendar_time(
+        attrib;
+        calendar = nothing,
+        time_origin = nothing,
+        time_factor = nothing)
+        )
+
+
+"""
+function _calendar_time(
+    attrib;
+    calendar = nothing,
+    time_origin = nothing,
+    time_factor = nothing,
+    )
+
+    if haskey(attrib,"units")
+        units = attrib["units"]
+        if occursin(" since ",units)
+            calendar = lowercase(get(attrib,"calendar","standard"))
+            try
+                time_origin,time_factor = CFTime.timeunits(units, calendar)
+            catch
+                # keep defaults
+            end
+        end
+    end
+
+    return calendar,time_origin,time_factor
+end
+
 """
     v = getindex(ds::NCDataset,varname::AbstractString)
 
@@ -255,7 +302,7 @@ Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The CF convention are honored when the
 variable is indexed:
 * `_FillValue` will be returned as `missing`
-* `scale_factor` and `add_offset` are applied
+* `scale_factor` and `add_offset` are applied (output = `scale_factor` * data_in_file +  `add_offset`)
 * time variables (recognized by the units attribute and possibly the calendar attribute) are returned usually as
   `DateTime` object. Note that `DateTimeAllLeap`, `DateTimeNoLeap` and
   `DateTime360Day` cannot be converted to the proleptic gregorian calendar used in
@@ -263,31 +310,53 @@ variable is indexed:
 ones specified in the CF convention, then the data in the NetCDF file is not
 converted into a date structure.
 
+Note that the attribute `missing_value` is not used to determine which
+element is `missing` only `_FillValue`.
 
 A call `getindex(ds,varname)` is usually written as `ds[varname]`.
+
+
+If variable represents a cell boundary, the attributes `calendar` and `units` of the related NetCDF variables are used, if they are not specified. For example:
+
+```
+dimensions:
+  time = UNLIMITED; // (5 currently)
+  nv = 2;
+variables:
+  double time(time);
+    time:long_name = "time";
+    time:units = "hours since 1998-04-019 06:00:00";
+    time:bounds = "time_bnds";
+  double time_bnds(time,nv);
+```
+
+In this case, the variable `time_bnds` uses the units and calendar of `time`
+because both variables are related thought the bounds attribute following the CF conventions.
 """
-function Base.getindex(ds::AbstractDataset,varname::AbstractString)
+function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
     v = variable(ds,varname)
 
     fillvalue = get(v.attrib,"_FillValue",nothing)
     scale_factor = get(v.attrib,"scale_factor",nothing)
     add_offset = get(v.attrib,"add_offset",nothing)
 
-    calendar = nothing
-    time_origin = nothing
-    time_factor = nothing
-    if haskey(v.attrib,"units")
-        units = v.attrib["units"]
-        if occursin(" since ",units)
-            calendar = lowercase(get(v.attrib,"calendar","standard"))
-            time_origin,time_factor =
-                try
-                    CFTime.timeunits(units, calendar)
-                catch
-                    (nothing,nothing)
-                end
-        end
+    # special case for bounds variable who inherit
+    # units and calendar from parent variables
+    parentname = _boundsParentVar(ds,varname)
+
+    if parentname == nothing
+        calendar = nothing
+        time_origin = nothing
+        time_factor = nothing
+    else
+        calendar,time_origin,time_factor = _calendar_time(variable(ds,parentname).attrib)
     end
+
+    calendar,time_origin,time_factor = _calendar_time(
+        v.attrib;
+        calendar = calendar,
+        time_origin = time_origin,
+        time_factor = time_factor)
 
     scaledtype = eltype(v)
 
@@ -303,33 +372,26 @@ function Base.getindex(ds::AbstractDataset,varname::AbstractString)
 
     rettype = scaledtype
 
+    # rettype can be a date if calendar is different from nothing
     if calendar != nothing
-        units = get(v.attrib,"units","")
-        if occursin(" since ",units)
-            # type of data changes
-            calendar = lowercase(get(v.attrib,"calendar","standard"))
+        DT = nothing
+        try
+            DT = CFTime.timetype(calendar)
+        catch
+        end
 
-            DT = nothing
-            try
-                DT = CFTime.timetype(calendar)
-            catch
-            end
+        if DT !== nothing
+            # this is the only supported option for NCDatasets
+            prefer_datetime = true
 
-            if DT !== nothing
-                # this is the only supported option for NCDatasets
-                prefer_datetime = true
-
-                if prefer_datetime &&
-                    (DT in [DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian])
-                    rettype = DateTime
-                else
-                    rettype = DT
-                end
+            if prefer_datetime &&
+                (DT in [DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian])
+                rettype = DateTime
             else
-                @warn("unsupported calendar $calendar " *
-                      "or units $units in file $(path(ds)). Time units are ignored.")
-
+                rettype = DT
             end
+        else
+            @warn("unsupported calendar `$calendar`. Time units are ignored.")
         end
     end
 
@@ -432,12 +494,18 @@ time_factor(v::CFVariable) = v._storage_attrib.time_factor
     convert(DTcast,time_origin + Dates.Millisecond(round(Int64,time_factor * data)))
 
 
-@inline fromdate(data::TimeType,time_origin,inv_time_factor,DTcast) =
-    Dates.value(DTcast(data) - time_origin) * inv_time_factor
-@inline fromdate(data,time_origin,time_factor,DTcast) = data
+@inline fromdate(data::TimeType,time_origin,inv_time_factor) =
+    Dates.value(data - time_origin) * inv_time_factor
+@inline fromdate(data,time_origin,time_factor) = data
 
 @inline function CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
-    return asdate(CFtransform_offset(CFtransform_scale(CFtransform_missing(data,fv),scale_factor),add_offset),time_origin,time_factor,DTcast)
+    return asdate(
+        CFtransform_offset(
+            CFtransform_scale(
+                CFtransform_missing(data,fv),
+                scale_factor),
+            add_offset),
+        time_origin,time_factor,DTcast)
 end
 
 # round float to integers
@@ -446,9 +514,15 @@ _approximate(::Type,data) = data
 
 
 @inline function CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DT)
-    return _approximate(DT,CFtransform_replace_missing(
-        CFtransform_scale(CFtransform_offset(data,minus_offset),
-                          inv_scale_factor),fv))
+    return _approximate(
+        DT,
+        CFtransform_replace_missing(
+            CFtransform_scale(
+                CFtransform_offset(
+                    fromdate(data,time_origin,inv_time_factor),
+                    minus_offset),
+                inv_scale_factor),
+            fv))
 end
 
 
@@ -470,11 +544,6 @@ end
     end
     return out
 end
-
-# this function is necessary to avoid "iterating" over a single character in Julia 1.0 (fixed Julia 1.3)
-# https://discourse.julialang.org/t/broadcasting-and-single-characters/16836
-@inline CFtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) = data
-@inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = data
 
 
 @inline _inv(x::Nothing) = nothing
@@ -513,6 +582,14 @@ end
     return CFinvtransform(data,fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DT)
 end
 
+
+
+# this function is necessary to avoid "iterating" over a single character in Julia 1.0 (fixed Julia 1.3)
+# https://discourse.julialang.org/t/broadcasting-and-single-characters/16836
+@inline CFtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) = CFtransform_missing(data,fv)
+@inline CFinvtransformdata(data::Char,fv,scale_factor,add_offset,time_origin,time_factor,DT) = CFtransform_replace_missing(data,fv)
+
+
 function Base.getindex(v::CFVariable,
                        indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     data = v.var[indexes...]
@@ -531,12 +608,12 @@ end
 
 function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
 
-    units = get(v.attrib,"units",nothing)
-
     if calendar(v) !== nothing
         # can throw an convertion error if calendar attribute already exists and
         # is incompatible with the provided data
-        v[indexes...] = timeencode(data,units,calendar(v))
+        v.var[indexes...] = CFinvtransformdata(
+            data,fillvalue(v),scale_factor(v),add_offset(v),
+            time_origin(v),time_factor(v),eltype(v.var))
         return data
     end
 
@@ -559,5 +636,8 @@ end
 Base.Array(v::Union{CFVariable{T,N},Variable{T,N}}) where {T,N} = v[ntuple(i -> :, Val(N))...]
 
 Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=indent)
+
+# necessary for IJulia if showing a variable from a closed file
+Base.show(io::IO,::MIME"text/plain",v::Union{Variable,CFVariable}) = show(io,v)
 
 Base.display(v::Union{Variable,CFVariable}) = show(stdout,v)

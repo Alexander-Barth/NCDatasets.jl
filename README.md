@@ -1,11 +1,7 @@
 # NCDatasets
 
-[![Build Status Linux and macOS](https://travis-ci.org/Alexander-Barth/NCDatasets.jl.svg?branch=master)](https://travis-ci.org/Alexander-Barth/NCDatasets.jl)
-[![Build Status Windows](https://ci.appveyor.com/api/projects/status/github/Alexander-Barth/NCDatasets.jl?branch=master&svg=true)](https://ci.appveyor.com/project/Alexander-Barth/ncdatasets-jl)
-
-[![Coverage Status](https://coveralls.io/repos/Alexander-Barth/NCDatasets.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/Alexander-Barth/NCDatasets.jl?branch=master)
+[![Build Status](https://github.com/Alexander-Barth/NCDatasets.jl/workflows/CI/badge.svg)](https://github.com/Alexander-Barth/NCDatasets.jl/actions)
 [![codecov.io](http://codecov.io/github/Alexander-Barth/NCDatasets.jl/coverage.svg?branch=master)](http://codecov.io/github/Alexander-Barth/NCDatasets.jl?branch=master)
-
 [![documentation stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/stable/)
 [![documentation latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/latest/)
 
@@ -15,7 +11,7 @@ NetCDF data set and attribute list behave like Julia dictionaries and variables 
 
 
 The module `NCDatasets` provides support for the following [netCDF CF conventions](http://cfconventions.org/):
-* `_FillValue` will be returned as `missing` ([more information](https://docs.julialang.org/en/latest/manual/missing/))
+* `_FillValue` will be returned as `missing` ([more information](https://docs.julialang.org/en/v1/manual/missing/))
 * `scale_factor` and `add_offset` are applied if present
 * time variables (recognized by the `units` attribute) are returned as `DateTime` objects.
 * Support of the [CF calendars](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#calendar) (standard, gregorian, proleptic gregorian, julian, all leap, no leap, 360 day)
@@ -117,7 +113,7 @@ In the example above, the subset can also be loaded with:
 subdata = Dataset("/tmp/test.nc")["temperature"][10:30,30:5:end]
 ```
 
-This might be useful in an interactive session. However, the file `test.nc` is not closed, which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
+This might be useful in an interactive session. However, the file `test.nc` is not directly closed (closing the file will be triggered by julia's garbage collector), which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
 
 An alternative way to ensure the file has been closed is to use a `do` block: the file will be closed automatically when leaving the block.
 

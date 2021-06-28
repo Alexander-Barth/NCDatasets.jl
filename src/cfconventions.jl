@@ -160,3 +160,21 @@ function coord(v::Union{CFVariable,Variable},standard_name)
 end
 
 export coord
+
+
+
+"""
+    b = bounds(ncvar::NCDatasets.CFVariable)
+
+Return the CFVariable corresponding to the `bounds` attribute of the variable `ncvar`.
+The time units and calendar from the `ncvar` are used but not the
+attributes controling the
+packing of data `scale_factor`, `add_offset` and `_FillValue`.
+"""
+function bounds(ncvar::NCDatasets.CFVariable)
+    ds = NCDataset(ncvar)
+    varname = ncvar.attrib["bounds"]
+    return ds[varname]
+end
+
+export bounds

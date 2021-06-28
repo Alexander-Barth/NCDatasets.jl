@@ -85,6 +85,8 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     # test sync
     NCDatasets.sync(ds)
     NCDatasets.close(ds)
+    # close on closed file should not throw
+    NCDatasets.close(ds)
 
     # Load a file (with unknown structure)
 
@@ -130,6 +132,10 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     end
 
     NCDatasets.NCDataset(filename,"r") do ds
+        v2 = ds["scalar"][]
+        @test typeof(v2) == Float32
+        @test v2 == 123.f0
+
         v2 = ds["scalar"][]
         @test typeof(v2) == Float32
         @test v2 == 123.f0
@@ -227,12 +233,16 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
     include("test_cfconventions.jl")
     include("test_coord.jl")
+    include("test_bounds.jl")
     include("test_cont_ragged_array.jl")
+
+    include("test_chunk_cache.jl")
 end
 
 @testset "NetCDF4 groups" begin
     include("test_group.jl")
     include("test_group2.jl")
+    include("test_group_mode.jl")
 end
 
 @testset "Variable-length arrays" begin
