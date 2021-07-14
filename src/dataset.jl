@@ -52,14 +52,18 @@ mutable struct NCDataset{TDS} <: AbstractDataset where TDS <: Union{AbstractData
     # parent_dataset is nothing for the root dataset
     parentdataset::TDS
     ncid::Cint
+    iswritable::Bool
     # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
     # need to be a reference, so that remains syncronised when copied
     isdefmode::Ref{Bool}
     attrib::Attributes
     dim::Dimensions
     group::Groups
-
+    # mapping between variables related via the bounds attribute
+    # It is only used for read-only datasets to improve performance
+    _boundsmap::Union{Nothing,Dict{String,String}}
     function NCDataset(ncid::Integer,
+                       iswritable::Bool,
                        isdefmode::Ref{Bool};
                        parentdataset = nothing,
                        )
@@ -76,13 +80,16 @@ mutable struct NCDataset{TDS} <: AbstractDataset where TDS <: Union{AbstractData
         ds = new{typeof(parentdataset)}()
         ds.parentdataset = parentdataset
         ds.ncid = ncid
+        ds.iswritable = iswritable
         ds.isdefmode = isdefmode
         ds.attrib = Attributes(ds,NC_GLOBAL)
         ds.dim = Dimensions(ds)
         ds.group = Groups(ds)
-
-        timeid = Dates.now()
-        @debug "add finalizer $ncid $timeid"
+        ds._boundsmap = nothing
+        if !iswritable
+            initboundsmap!(ds)
+        end
+        @debug "add finalizer $ncid $(Dates.now())"
         finalizer(_finalize, ds)
         return ds
     end
@@ -148,7 +155,7 @@ Default fill-value for the given type.
 @inline fillvalue(::Type{Char})    = NC_FILL_CHAR
 @inline fillvalue(::Type{String})  = NC_FILL_STRING
 
-
+iswritable(ds::NCDataset) = ds.iswritable
 
 "Make sure that a dataset is in data mode"
 function datamode(ds)
@@ -166,6 +173,18 @@ function defmode(ds)
     end
 end
 
+"Initialize the ds._boundsmap variable"
+function initboundsmap!(ds)
+    ds._boundsmap = Dict{String,String}()
+    for vname in keys(ds)
+        v = variable(ds,vname)
+        bounds = get(v.attrib,"bounds",nothing)
+        
+        if bounds !== nothing
+            ds._boundsmap[bounds] = vname
+        end
+    end
+end
 
 ############################################################
 # High-level
@@ -214,7 +233,7 @@ NCDataset("file.nc", "c", attrib = OrderedDict("title" => "my first netCDF file"
 end;
 ```
 
-`NCDataset` is an alias to `NCDataset`.
+`Dataset` is an alias of `NCDataset`.
 """
 function NCDataset(filename::AbstractString,
                  mode::AbstractString = "r";
@@ -269,7 +288,8 @@ function NCDataset(filename::AbstractString,
         throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
     end
 
-    ds = NCDataset(ncid,isdefmode)
+    iswritable = mode != "r" 
+    ds = NCDataset(ncid,iswritable,isdefmode)
 
     # set global attributes
     for (attname,attval) in attrib

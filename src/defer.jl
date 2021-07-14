@@ -35,6 +35,7 @@ mutable struct DeferDataset <: AbstractDataset
     dim::DeferDimensions
     group::DeferGroups
     data::OrderedDict
+    _boundsmap::Union{Nothing,Dict{String,String}}
 end
 
 mutable struct DeferVariable{T,N} <: AbstractVariable{T,N}
@@ -43,6 +44,8 @@ mutable struct DeferVariable{T,N} <: AbstractVariable{T,N}
     attrib::DeferAttributes
     data::OrderedDict
 end
+
+iswriteable(dds::DeferDataset) = dds.r.mode != "r"
 
 function metadata(ds::NCDataset)
     # dimensions
@@ -89,6 +92,16 @@ function metadata(ds::NCDataset)
         "attrib" => OrderedDict(ds.attrib),
         "group" => group
         )
+end
+
+
+function DeferDataset(r::Resource,groupname::String,attrib::DeferAttributes,dim::DeferDimensions,group::DeferGroups,data::OrderedDict)
+   _boundsmap = nothing
+   dds = DeferDataset(r,groupname,attrib,dim,group,data,_boundsmap)
+   if (r.mode == "r")
+       initboundsmap!(dds)
+   end
+   return dds
 end
 
 function DeferDataset(filename,mode,info)

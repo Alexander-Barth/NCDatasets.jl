@@ -68,6 +68,7 @@ mutable struct MFDataset{T,N,TA,TD,TG} <: AbstractDataset where T <: AbstractDat
     attrib::MFAttributes{TA}
     dim::MFDimensions{TD}
     group::MFGroups{TG}
+    _boundsmap::Union{Nothing,Dict{String,String}}
 end
 
 mutable struct MFVariable{T,N,M,TA} <: AbstractVariable{T,N}
@@ -79,6 +80,17 @@ end
 
 Base.Array(v::MFVariable) = Array(v.var)
 
+iswritable(mfds::MFDataset) = iswritable(mfds.ds[1])
+
+
+function MFDataset(ds,aggdim,attrib,dim,group)
+    _boundsmap = nothing
+    mfds = MFDataset(ds,aggdim,attrib,dim,group,_boundsmap)
+    if !iswritable(mfds)
+        initboundsmap!(mfds)
+    end
+    return mfds
+end
 
 """
     mfds = NCDataset(fnames, mode = "r"; aggdim = nothing, deferopen = true)
@@ -145,11 +157,12 @@ function NCDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, def
         aggdim = NCDatasets.unlimited(ds[1].dim)[1]
     end
 
-    attrib = MFAttributes([d.attrib for d in ds])
+     attrib = MFAttributes([d.attrib for d in ds])
     dim = MFDimensions([d.dim for d in ds],aggdim)
     group = MFGroups([d.group for d in ds],aggdim)
 
-    return MFDataset(ds,aggdim,attrib,dim,group)
+    mfds = MFDataset(ds,aggdim,attrib,dim,group)
+    return mfds
 end
 
 function close(mfds::MFDataset)

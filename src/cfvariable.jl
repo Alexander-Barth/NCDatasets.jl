@@ -250,16 +250,20 @@ export defVar
 
 
 function _boundsParentVar(ds,name)
-    for vname in keys(ds)
-        v = variable(ds,vname)
-        if haskey(v.attrib,"bounds")
-            if v.attrib["bounds"] == name
+    # get from cache is available
+    if ds._boundsmap !== nothing
+        return get(ds._boundsmap,name,nothing)
+    else
+        for vname in keys(ds)
+            v = variable(ds,vname)
+            bounds = get(v.attrib,"bounds",nothing)
+            if bounds == name
                 return vname
             end
         end
-    end
 
-    return nothing
+        return nothing
+    end
 end
 
 

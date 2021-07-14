@@ -27,7 +27,8 @@ julia> forecast_temp = forecast_group["temperature"]
 """
 function Base.getindex(g::Groups,groupname::AbstractString)
     grp_ncid = nc_inq_grp_ncid(g.ds.ncid,groupname)
-    return NCDataset(grp_ncid,g.ds.isdefmode; parentdataset = g.ds)
+    ds = NCDataset(grp_ncid,g.ds.iswritable,g.ds.isdefmode; parentdataset = g.ds)
+    return ds
 end
 
 """
@@ -39,7 +40,7 @@ Create the group with the name `groupname` in the dataset `ds`.
 function defGroup(ds::NCDataset,groupname; attrib = [])
     defmode(ds) # make sure that the file is in define mode
     grp_ncid = nc_def_grp(ds.ncid,groupname)
-    ds = NCDataset(grp_ncid,ds.isdefmode; parentdataset = ds)
+    ds = NCDataset(grp_ncid,ds.iswritable,ds.isdefmode; parentdataset = ds)
 
     # set global attributes for group
     for (attname,attval) in attrib

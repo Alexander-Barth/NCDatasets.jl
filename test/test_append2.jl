@@ -27,7 +27,11 @@ NCDatasets.NCDataset(filename,"a") do ds
     tempvar = ds["temp"]
 
     for itime = 1:length(times)
-        tempvar[:,:,itime] = [i+j for i = 1:length(lons), j = 1:length(lats)]
+        #@show size(tempvar)
+        #@show size(tempvar[:,:,itime])
+        data = [i+j for i = 1:length(lons), j = 1:length(lats)]
+        #tempvar[:,:,itime] = data
+        tempvar[:,:,itime] = data[:,:,1:1]
     end
 end
 
