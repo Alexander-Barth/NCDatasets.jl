@@ -89,7 +89,8 @@ mutable struct NCDataset{TDS} <: AbstractDataset where TDS <: Union{AbstractData
         if !iswritable
             initboundsmap!(ds)
         end
-        @debug "add finalizer $ncid $(Dates.now())"
+        timeid = Dates.now()
+        @debug "add finalizer $ncid $(timeid)"
         finalizer(_finalize, ds)
         return ds
     end
@@ -179,7 +180,7 @@ function initboundsmap!(ds)
     for vname in keys(ds)
         v = variable(ds,vname)
         bounds = get(v.attrib,"bounds",nothing)
-        
+
         if bounds !== nothing
             ds._boundsmap[bounds] = vname
         end
@@ -192,9 +193,13 @@ end
 
 """
     NCDataset(filename::AbstractString, mode = "r";
-            format::Symbol = :netcdf4, attrib = [])
+              format::Symbol = :netcdf4,
+              share::Bool = false,
+              diskless::Bool = false,
+              persist::Bool = false,
+              attrib = [])
 
-Load, create, or even overwrite a NetCDF file at `filename`, depending on `mode`:
+Load, create, or even overwrite a NetCDF file at `filename`, depending on `mode`
 
 * `"r"` (default) : open an existing netCDF file or OPeNDAP URL
    in read-only mode.
@@ -202,6 +207,12 @@ Load, create, or even overwrite a NetCDF file at `filename`, depending on `mode`
   name will be overwritten).
 * `"a"` : open `filename` into append mode (i.e. existing data in the netCDF
   file is not overwritten and a variable can be added).
+
+
+If `share` is true, the `NC_SHARE` flag is set allowing to have multiple
+processes to read the file and one writer process. Likewise setting `diskless`
+or `persist` to `true` will enable the flags `NC_DISKLESS` or `NC_PERSIST` flag.
+More information is available in the [NetCDF C-API](https://www.unidata.ucar.edu/software/netcdf/docs/).
 
 Notice that this does not close the dataset, use `close` on the
 result (or see below the `do`-block).
@@ -236,31 +247,45 @@ end;
 `Dataset` is an alias of `NCDataset`.
 """
 function NCDataset(filename::AbstractString,
-                 mode::AbstractString = "r";
-                 format::Symbol = :netcdf4,
-                 diskless = false,
-                 persist = false,
-                 attrib = [])
+                   mode::AbstractString = "r";
+                   format::Symbol = :netcdf4,
+                   share::Bool = false,
+                   diskless::Bool = false,
+                   persist::Bool = false,
+                   attrib = [])
 
     ncid = -1
     isdefmode = Ref(false)
 
-    if (mode == "r") || (mode == "a")
-        ncmode =
-            if (mode == "r")
-                NC_NOWRITE
-            else
-                NC_WRITE
-            end
-
-        if diskless
-            ncmode = ncmode | NC_DISKLESS
+    ncmode =
+        if mode == "r"
+            NC_NOWRITE
+        elseif mode == "a"
+            NC_WRITE
+        elseif mode == "c"
+            ncmode  = NC_CLOBBER
+        else
+            throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
         end
 
+    if diskless
+        ncmode = ncmode | NC_DISKLESS
+
+        if persist
+            ncmode = ncmode | NC_PERSIST
+        end
+    end
+
+    if share
+        @show "share"
+        ncmode = ncmode | NC_SHARE
+    end
+
+    @debug "ncmode: $ncmode"
+
+    if (mode == "r") || (mode == "a")
         ncid = nc_open(filename,ncmode)
     elseif mode == "c"
-        ncmode  = NC_CLOBBER
-
         if format == :netcdf3_64bit_offset
             ncmode = ncmode | NC_64BIT_OFFSET
         elseif format == :netcdf4_classic
@@ -273,22 +298,11 @@ function NCDataset(filename::AbstractString,
             throw(NetCDFError(-1, "Unkown format '$(format)' for filename '$(filename)'"))
         end
 
-        if diskless
-            ncmode = ncmode | NC_DISKLESS
-
-            if persist
-                ncmode = ncmode | NC_PERSIST
-            end
-        end
-
-
         ncid = nc_create(filename,ncmode)
         isdefmode[] = true
-    else
-        throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
     end
 
-    iswritable = mode != "r" 
+    iswritable = mode != "r"
     ds = NCDataset(ncid,iswritable,isdefmode)
 
     # set global attributes
