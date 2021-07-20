@@ -3,7 +3,7 @@ using Test
 using DataStructures
 using Dates
 
-time = DateTime(2000,1,1):Dates.Day(1):DateTime(2000,1,3)
+time = DateTime(2000,1,2):Dates.Day(1):DateTime(2000,1,4)
 time_bounds = Matrix{DateTime}(undef,2,length(time))
 time_bounds[1,:] = time .- Dates.Hour(12)
 time_bounds[2,:] = time .+ Dates.Hour(12)
@@ -20,11 +20,11 @@ nctime = defVar(ds, "time", Float64, ("time",),attrib=OrderedDict(
 
 nctime_bounds = defVar(ds, "time_bounds", Float64, ("nv","time"),attrib=OrderedDict())
 
-ncvar = nctime
-nctime_bounds = NCDatasets.bounds(ncvar)
+nctime[:] = time
+nctime_bounds = NCDatasets.bounds(nctime)
 nctime_bounds[:,:] = time_bounds
-@test nctime_bounds.var[:,:] ≈ [-0.5  0.5  1.5;
-                                0.5  1.5  2.5]
+@test nctime_bounds.var[:,:] ≈ [0.5  1.5  2.5;
+                                1.5  2.5  3.5]
 @test nctime_bounds[:,:] == time_bounds
 
 close(ds)
