@@ -88,7 +88,7 @@ function variable(ds::NCDataset,varname::SymbolOrString)
     attrib = Attributes(ds,varid)
 
     # reverse dimids to have the dimension order in Fortran style
-    return Variable{nctype,ndims,NCDataset,typeof(attrib)}(
+    return Variable{nctype,ndims,typeof(ds),typeof(attrib)}(
         ds,varid, (reverse(dimids)...,), attrib)
 end
 

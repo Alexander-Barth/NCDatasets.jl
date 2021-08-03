@@ -644,10 +644,3 @@ Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=inde
 Base.show(io::IO,::MIME"text/plain",v::Union{Variable,CFVariable}) = show(io,v)
 
 Base.display(v::Union{Variable,CFVariable}) = show(stdout,v)
-
-
-precompile(NCDataset{Nothing}, (String,))
-precompile(getindex, (NCDataset{Nothing}, String))
-precompile(getindex, (NCDataset{Nothing}, Symbol))
-precompile(variable, (NCDataset{Nothing}, String))
-precompile(NCDatasets.Variable, (Float32, 3, NCDataset))

@@ -56,6 +56,7 @@ include("cfconventions.jl")
 include("defer.jl")
 include("multifile.jl")
 include("ncgen.jl")
+include("precompile.jl")
 
 
 end # module
