@@ -348,7 +348,7 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
     # units and calendar from parent variables
     parentname = _boundsParentVar(ds,varname)
 
-    if parentname == nothing
+    if parentname === nothing
         calendar = nothing
         time_origin = nothing
         time_factor = nothing
@@ -365,11 +365,11 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
     scaledtype = eltype(v)
 
     if eltype(v) <: Number
-        if scale_factor != nothing
+        if scale_factor !== nothing
             scaledtype = promote_type(scaledtype, typeof(scale_factor))
         end
 
-        if add_offset != nothing
+        if add_offset !== nothing
             scaledtype = promote_type(scaledtype, typeof(add_offset))
         end
     end
@@ -377,7 +377,7 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
     rettype = scaledtype
 
     # rettype can be a date if calendar is different from nothing
-    if calendar != nothing
+    if calendar !== nothing
         DT = nothing
         try
             DT = CFTime.timetype(calendar)
@@ -403,13 +403,13 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
         rettype = Union{Missing,rettype}
     end
 
-    storage_attrib = (
-        fillvalue = fillvalue,
-        scale_factor = scale_factor,
-        add_offset = add_offset,
-        calendar = calendar,
-        time_origin = time_origin,
-        time_factor = time_factor,
+    storage_attrib = Dict{Symbol,Any}(
+        :fillvalue => fillvalue,
+        :scale_factor => scale_factor,
+        :add_offset => add_offset,
+        :calendar => calendar,
+        :time_origin => time_origin,
+        :time_factor => time_factor,
     )
 
     return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib),typeof(storage_attrib)}(
@@ -450,18 +450,18 @@ checksum(v::CFVariable) = checksum(v.var)
 
 fillmode(v::CFVariable) = fillmode(v.var)
 
-fillvalue(v::CFVariable) = v._storage_attrib.fillvalue
-scale_factor(v::CFVariable) = v._storage_attrib.scale_factor
-add_offset(v::CFVariable) = v._storage_attrib.add_offset
-time_origin(v::CFVariable) = v._storage_attrib.time_origin
-calendar(v::CFVariable) = v._storage_attrib.calendar
+fillvalue(v::CFVariable) = v._storage_attrib[:fillvalue]
+scale_factor(v::CFVariable) = v._storage_attrib[:scale_factor]
+add_offset(v::CFVariable) = v._storage_attrib[:add_offset]
+time_origin(v::CFVariable) = v._storage_attrib[:time_origin]
+calendar(v::CFVariable) = v._storage_attrib[:calendar]
 """"
     tf = time_factor(v::CFVariable)
 
 The time unit in milliseconds. E.g. seconds would be 1000., days would be 86400000.
 The result can also be `nothing` if the variable has no time units.
 """
-time_factor(v::CFVariable) = v._storage_attrib.time_factor
+time_factor(v::CFVariable) = v._storage_attrib[:time_factor]
 
 
 ############################################################
@@ -644,3 +644,10 @@ Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=inde
 Base.show(io::IO,::MIME"text/plain",v::Union{Variable,CFVariable}) = show(io,v)
 
 Base.display(v::Union{Variable,CFVariable}) = show(stdout,v)
+
+
+precompile(NCDataset{Nothing}, (String,))
+precompile(getindex, (NCDataset{Nothing}, String))
+precompile(getindex, (NCDataset{Nothing}, Symbol))
+precompile(variable, (NCDataset{Nothing}, String))
+precompile(NCDatasets.Variable, (Float32, 3, NCDataset))

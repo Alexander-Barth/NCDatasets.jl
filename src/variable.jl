@@ -11,11 +11,11 @@ abstract type AbstractVariable{T,N} <: AbstractArray{T,N} end
 
 # Variable (as stored in NetCDF file, without using
 # add_offset, scale_factor and _FillValue)
-mutable struct Variable{NetCDFType,N,TDS<:AbstractDataset} <: AbstractVariable{NetCDFType, N}
+mutable struct Variable{NetCDFType,N,TDS<:AbstractDataset,A<:Attributes} <: AbstractVariable{NetCDFType, N}
     ds::TDS
     varid::Cint
     dimids::NTuple{N,Cint}
-    attrib::Attributes
+    attrib::A
 end
 
 
@@ -88,9 +88,8 @@ function variable(ds::NCDataset,varname::SymbolOrString)
     attrib = Attributes(ds,varid)
 
     # reverse dimids to have the dimension order in Fortran style
-    return Variable{nctype,ndims,NCDataset}(ds,varid,
-                                  (reverse(dimids)...,),
-                                  attrib)
+    return Variable{nctype,ndims,NCDataset,typeof(attrib)}(
+        ds,varid, (reverse(dimids)...,), attrib)
 end
 
 export variable
