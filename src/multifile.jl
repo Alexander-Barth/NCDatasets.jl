@@ -62,18 +62,18 @@ function Base.getindex(a::MFGroups,name::AbstractString)
 end
 
 #---
-mutable struct MFDataset{T,N,TA,TD,TG} <: AbstractDataset where T <: AbstractDataset
+mutable struct MFDataset{T,N,S<:AbstractString,TA,TD,TG} <: AbstractDataset where T <: AbstractDataset
     ds::Array{T,N}
-    aggdim::AbstractString
+    aggdim::S
     attrib::MFAttributes{TA}
     dim::MFDimensions{TD}
     group::MFGroups{TG}
     _boundsmap::Union{Nothing,Dict{String,String}}
 end
 
-mutable struct MFVariable{T,N,M,TA} <: AbstractVariable{T,N}
+mutable struct MFVariable{T,N,M,TA,A} <: AbstractVariable{T,N}
     var::CatArrays.CatArray{T,N,M,TA}
-    attrib::MFAttributes
+    attrib::MFAttributes{A}
     dimnames::NTuple{N,String}
     varname::String
 end

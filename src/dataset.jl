@@ -56,9 +56,9 @@ mutable struct NCDataset{TDS} <: AbstractDataset where TDS <: Union{AbstractData
     # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
     # need to be a reference, so that remains syncronised when copied
     isdefmode::Ref{Bool}
-    attrib::Attributes
-    dim::Dimensions
-    group::Groups
+    attrib::Attributes{NCDataset{TDS}}
+    dim::Dimensions{NCDataset{TDS}}
+    group::Groups{NCDataset{TDS}}
     # mapping between variables related via the bounds attribute
     # It is only used for read-only datasets to improve performance
     _boundsmap::Union{Nothing,Dict{String,String}}

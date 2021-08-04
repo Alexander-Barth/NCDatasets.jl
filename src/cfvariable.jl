@@ -252,7 +252,7 @@ export defVar
 function _boundsParentVar(ds,name)
     # get from cache is available
     if ds._boundsmap !== nothing
-        return get(ds._boundsmap,name,nothing)
+        return get(ds._boundsmap,name,"")
     else
         for vname in keys(ds)
             v = variable(ds,vname)
@@ -262,7 +262,7 @@ function _boundsParentVar(ds,name)
             end
         end
 
-        return nothing
+        return ""
     end
 end
 
@@ -348,19 +348,18 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
     # units and calendar from parent variables
     parentname = _boundsParentVar(ds,varname)
 
-    if parentname === nothing
-        calendar = nothing
-        time_origin = nothing
-        time_factor = nothing
+    if parentname === ""
+        calendar,time_origin,time_factor = _calendar_time(v.attrib)
     else
         calendar,time_origin,time_factor = _calendar_time(variable(ds,parentname).attrib)
+        calendar,time_origin,time_factor = _calendar_time(
+            v.attrib;
+            calendar = calendar,
+            time_origin = time_origin,
+            time_factor = time_factor
+        )
     end
 
-    calendar,time_origin,time_factor = _calendar_time(
-        v.attrib;
-        calendar = calendar,
-        time_origin = time_origin,
-        time_factor = time_factor)
 
     scaledtype = eltype(v)
 
@@ -399,7 +398,7 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
         end
     end
 
-    if fillvalue != nothing
+    if fillvalue !== nothing
         rettype = Union{Missing,rettype}
     end
 
