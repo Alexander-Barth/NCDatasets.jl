@@ -61,7 +61,7 @@ mutable struct NCDataset{TDS} <: AbstractDataset where TDS <: Union{AbstractData
     group::Groups{NCDataset{TDS}}
     # mapping between variables related via the bounds attribute
     # It is only used for read-only datasets to improve performance
-    _boundsmap::Union{Nothing,Dict{String,String}}
+    _boundsmap::Dict{String,String}
     function NCDataset(ncid::Integer,
                        iswritable::Bool,
                        isdefmode::Ref{Bool};
@@ -85,7 +85,7 @@ mutable struct NCDataset{TDS} <: AbstractDataset where TDS <: Union{AbstractData
         ds.attrib = Attributes(ds,NC_GLOBAL)
         ds.dim = Dimensions(ds)
         ds.group = Groups(ds)
-        ds._boundsmap = nothing
+        ds._boundsmap = Dict{String,String}()
         if !iswritable
             initboundsmap!(ds)
         end

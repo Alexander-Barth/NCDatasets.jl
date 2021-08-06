@@ -3,10 +3,10 @@ for T in (Float16, Float32, Float64, Int16, Int32, Int64, UInt8, UInt16, UInt32)
     DS = NCDataset{Nothing}
     precompile(defVar, (DS, String, T))
     for N in (1, 2, 3, 4, 5)
-        A = Attributes{DS}
-        Var = Variable{T,N,DS}
+        A = NCDatasets.Attributes{DS}
+        Var = NCDatasets.Variable{T,N,DS}
         St = Dict{Symbol,Any}
-        CF = CFVariable{T,N,Var,A,St}
+        CF = NCDatasets.CFVariable{T,N,Var,A,St}
         precompile(Var, (DS, Cint, NTuple{N,Cint}, A))
         precompile(CF, (Var, A, St))
         precompile(dimsize, (CF,))

@@ -256,8 +256,8 @@ function _boundsParentVar(ds,name)
     else
         for vname in keys(ds)
             v = variable(ds,vname)
-            bounds = get(v.attrib,"bounds",nothing)
-            if bounds == name
+            bounds = get(v.attrib,"bounds","")
+            if bounds === name
                 return vname
             end
         end
@@ -373,34 +373,6 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
         end
     end
 
-    rettype = scaledtype
-
-    # rettype can be a date if calendar is different from nothing
-    if calendar !== nothing
-        DT = nothing
-        try
-            DT = CFTime.timetype(calendar)
-        catch
-        end
-
-        if DT !== nothing
-            # this is the only supported option for NCDatasets
-            prefer_datetime = true
-
-            if prefer_datetime &&
-                (DT in [DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian])
-                rettype = DateTime
-            else
-                rettype = DT
-            end
-        else
-            @warn("unsupported calendar `$calendar`. Time units are ignored.")
-        end
-    end
-
-    if fillvalue !== nothing
-        rettype = Union{Missing,rettype}
-    end
 
     storage_attrib = Dict{Symbol,Any}(
         :fillvalue => fillvalue,
@@ -411,8 +383,36 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
         :time_factor => time_factor,
     )
 
+    rettype = _get_rettype(ds, calendar, fillvalue, scaledtype)
+
     return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib),typeof(storage_attrib)}(
         v,v.attrib,storage_attrib)
+end
+
+function _get_rettype(ds, calendar, fillvalue, rettype)
+    # rettype can be a date if calendar is different from nothing
+    if calendar !== nothing
+        DT = nothing
+        try
+            DT = CFTime.timetype(calendar)
+            # this is the only supported option for NCDatasets
+            prefer_datetime = true
+
+            if prefer_datetime &&
+                (DT in (DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian))
+                rettype = DateTime
+            else
+                rettype = DT
+            end
+        catch
+            @warn("unsupported calendar `$calendar`. Time units are ignored.")
+        end
+    end
+
+    if fillvalue !== nothing
+        rettype = Union{Missing,rettype}
+    end
+    return rettype
 end
 
 
