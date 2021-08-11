@@ -106,7 +106,7 @@ data = var[:,:,:]
 
 @test dimnames(var) == ("lon", "lat", "time")
 # lon does not vary in time and thus there should be no aggregation
-lon = variable(mfds,"lon");
+lon = variable(mfds,:lon);
 @test lon.attrib["units"] == "degrees_east"
 @test size(lon) == (size(data,1),)
 
