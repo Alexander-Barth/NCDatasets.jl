@@ -78,7 +78,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     end
     @test v[:,:] == 2*data
 
-    # write a the complete data set
+    # write the complete data set
     v[:,:] = 3*data
     @test v[:,:] == 3*data
 
