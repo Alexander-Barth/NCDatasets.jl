@@ -68,7 +68,7 @@ mutable struct MFDataset{T,N,S<:AbstractString,TA,TD,TG} <: AbstractDataset wher
     attrib::MFAttributes{TA}
     dim::MFDimensions{TD}
     group::MFGroups{TG}
-    _boundsmap::Union{Nothing,Dict{String,String}}
+    _boundsmap::Dict{String,String}
 end
 
 mutable struct MFVariable{T,N,M,TA,A} <: AbstractVariable{T,N}
@@ -84,7 +84,7 @@ iswritable(mfds::MFDataset) = iswritable(mfds.ds[1])
 
 
 function MFDataset(ds,aggdim,attrib,dim,group)
-    _boundsmap = nothing
+    _boundsmap = Dict{String,String}()
     mfds = MFDataset(ds,aggdim,attrib,dim,group,_boundsmap)
     if !iswritable(mfds)
         initboundsmap!(mfds)
