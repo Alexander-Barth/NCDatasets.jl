@@ -251,7 +251,7 @@ export defVar
 
 function _boundsParentVar(ds,name)
     # get from cache is available
-    if ds._boundsmap !== nothing
+    if length(values(ds._boundsmap)) === 0
         return get(ds._boundsmap,name,"")
     else
         for vname in keys(ds)
@@ -352,6 +352,7 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
         calendar,time_origin,time_factor = _calendar_time(v.attrib)
     else
         calendar,time_origin,time_factor = _calendar_time(variable(ds,parentname).attrib)
+        @show calendar
         calendar,time_origin,time_factor = _calendar_time(
             v.attrib;
             calendar = calendar,
@@ -373,14 +374,13 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
         end
     end
 
-
-    storage_attrib = Dict{Symbol,Any}(
-        :fillvalue => fillvalue,
-        :scale_factor => scale_factor,
-        :add_offset => add_offset,
-        :calendar => calendar,
-        :time_origin => time_origin,
-        :time_factor => time_factor,
+    storage_attrib = (
+        fillvalue = fillvalue,
+        scale_factor = scale_factor,
+        add_offset = add_offset,
+        calendar = calendar,
+        time_origin = time_origin,
+        time_factor = time_factor,
     )
 
     rettype = _get_rettype(ds, calendar, fillvalue, scaledtype)
