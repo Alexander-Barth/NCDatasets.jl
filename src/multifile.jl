@@ -195,7 +195,7 @@ dimnames(v::MFVariable) = v.dimnames
 name(v::MFVariable) = v.varname
 
 
-function variable(mfds::MFDataset,varname::AbstractString)
+function variable(mfds::MFDataset,varname::SymbolOrString)
     if mfds.aggdim == ""
         # merge all variables
 

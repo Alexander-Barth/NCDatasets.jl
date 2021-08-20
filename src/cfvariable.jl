@@ -286,7 +286,7 @@ function _calendar_time(
 
     if haskey(attrib,"units")
         units = attrib["units"]
-        if occursin(" since ",units)
+        if (units isa String) && occursin(" since ",units)
             calendar = lowercase(get(attrib,"calendar","standard"))
             try
                 time_origin,time_factor = CFTime.timeunits(units, calendar)

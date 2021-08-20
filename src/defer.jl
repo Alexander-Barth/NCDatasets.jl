@@ -45,7 +45,7 @@ mutable struct DeferVariable{T,N} <: AbstractVariable{T,N}
     data::OrderedDict
 end
 
-iswriteable(dds::DeferDataset) = dds.r.mode != "r"
+iswritable(dds::DeferDataset) = dds.r.mode != "r"
 
 function metadata(ds::NCDataset)
     # dimensions
@@ -160,6 +160,8 @@ function variable(dds::DeferDataset,varname::AbstractString)
 
     return DeferVariable{T,N}(dds.r,varname,da,data)
 end
+
+variable(dds::DeferDataset,varname::Symbol) = variable(dds,string(varname))
 
 function Base.getindex(dv::DeferVariable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     Variable(dv) do v

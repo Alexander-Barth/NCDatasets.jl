@@ -46,13 +46,28 @@ end
     Base.setindex!(a::Attributes,data,name::AbstractString)
 
 Set the attribute called `name` to the value `data` in the
-attribute list `a`. Generally the attributes are defined by
-indexing, for example:
+attribute list `a`. `data` can be a vector or a scalar. A scalar
+is handeld as a vector with one element in the NetCDF data model.
+
+Generally the attributes are defined by indexing, for example:
 
 ```julia
 ds = NCDataset("file.nc","c")
 ds.attrib["title"] = "my title"
+close(ds)
 ```
+
+If `data` is a string, then attribute is saved as a list of
+NetCDF characters (`NC_CHAR`) with the appropriate length. To save the attribute
+as a string (`NC_STRING`) you can use the following:
+
+```julia
+ds = NCDataset("file.nc","c")
+ds.attrib["title"] = ["my title"]
+close(ds)
+```
+
+
 """
 function Base.setindex!(a::Attributes,data,name::AbstractString)
     defmode(a.ds) # make sure that the file is in define mode
