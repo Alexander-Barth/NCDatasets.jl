@@ -473,6 +473,7 @@ time_factor(v::CFVariable) = v._storage_attrib[:time_factor]
 @inline isfillvalue(data,fillvalue::AbstractFloat) = (isnan(fillvalue) ? isnan(data) : data == fillvalue)
 
 @inline CFtransform_missing(data,fv) = (isfillvalue(data,fv) ? missing : data)
+
 @inline CFtransform_missing(data,fv::Nothing) = data
 
 @inline CFtransform_replace_missing(data,fv) = (ismissing(data) ? fv : data)

@@ -115,10 +115,10 @@ load!(ds["temp"].var,data,:,1) # loads the 1st column
 
 """
 @inline function load!(ncvar::NCDatasets.Variable{T,N}, data, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
-    sizes =  size(ncvar)   
+    sizes = size(ncvar)
     normalizedindices = normalizeindexes(sizes, indices)
     ind = to_indices(ncvar,normalizedindices)
-    
+
     start,count,stride,jlshape = ncsub(ind)
     nc_get_vars!(ncvar.ds.ncid,ncvar.varid,start,count,stride,data)
 end
@@ -370,6 +370,30 @@ function Base.setindex!(v::Variable{T,N},data::AbstractArray{T2,N},indexes::Colo
     return data
 end
 
+
+_normalizeindex(n,ind::Colon) = 1:1:n
+_normalizeindex(n,ind::Int) = ind:1:ind
+_normalizeindex(n,ind::UnitRange) = StepRange(ind)
+_normalizeindex(n,ind::StepRange) = ind
+_normalizeindex(n,ind) = error("unsupported index")
+
+# indexes can be longer than sz
+function normalizeindexes(sz,indexes)
+    return ntuple(i -> _normalizeindex(sz[i],indexes[i]), length(sz))
+end
+
+
+# computes the shape of the array of size `sz` after applying the indexes
+# size(a[indexes...]) == _shape_after_slice(size(a),indexes...)
+
+# the difficulty here is to make the size inferrable by the compiler
+@inline _shape_after_slice(sz,indexes...) = __sh(sz,(),1,indexes...)
+@inline __sh(sz,sh,n,i::Integer,indexes...) = __sh(sz,sh,               n+1,indexes...)
+@inline __sh(sz,sh,n,i::Colon,  indexes...) = __sh(sz,(sh...,sz[n]),    n+1,indexes...)
+@inline __sh(sz,sh,n,i,         indexes...) = __sh(sz,(sh...,length(i)),n+1,indexes...)
+@inline __sh(sz,sh,n) = sh
+
+
 function ncsub(indexes::NTuple{N,T}) where N where T
     rindexes = reverse(indexes)
     count  = Int[length(i)  for i in rindexes]
@@ -377,6 +401,26 @@ function ncsub(indexes::NTuple{N,T}) where N where T
     stride = Int[step(i)    for i in rindexes]
     jlshape = length.(indexes)::NTuple{N,Int}
     return start,count,stride,jlshape
+end
+
+@inline start_count_stride(n,ind::AbstractRange) = (first(ind)-1,length(ind),step(ind))
+@inline start_count_stride(n,ind::Integer) = (ind-1,1,1)
+@inline start_count_stride(n,ind::Colon) = (0,n,1)
+
+@inline function ncsub2(sz,indexes...)
+    N = length(sz)
+
+    start = Vector{Int}(undef,N)
+    count = Vector{Int}(undef,N)
+    stride = Vector{Int}(undef,N)
+
+    for i = 1:N
+        ind = indexes[i]
+        ri = N-i+1
+        @inbounds start[ri],count[ri],stride[ri] = start_count_stride(sz[i],ind)
+    end
+
+    return start,count,stride
 end
 
 function Base.getindex(v::Variable{T,N},indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
@@ -423,26 +467,17 @@ function Base.setindex!(v::Variable{T,N},data::AbstractArray,indexes::StepRange{
 end
 
 
-_normalizeindex(n,ind::Colon) = 1:1:n
-_normalizeindex(n,ind::Int) = ind:1:ind
-_normalizeindex(n,ind::UnitRange) = StepRange(ind)
-_normalizeindex(n,ind::StepRange) = ind
-_normalizeindex(n,ind) = error("unsupported index")
 
-_dropindex(ind::Int) = 1
-_dropindex(ind) = Colon()
 
-# indexes can be longer than sz
-function normalizeindexes(sz,indexes)
-    return ntuple(i -> _normalizeindex(sz[i],indexes[i]), length(sz))
-end
+function Base.getindex(v::Variable{T,N},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where {T,N}
+    sz = size(v)
+    start,count,stride = ncsub2(sz,indexes...)
+    jlshape = _shape_after_slice(sz,indexes...)
+    data = Array{T}(undef,jlshape)
 
-function Base.getindex(v::Variable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
-    ind = normalizeindexes(size(v),indexes)
-    drop_index = _dropindex.(indexes)
-    # drop any dimension which was indexed with a scalar
-    # TODO: avoid copy
-    data = v[ind...][drop_index...]
+    datamode(v.ds)
+    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
+
     return data
 end
 
