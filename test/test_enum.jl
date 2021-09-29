@@ -1,13 +1,13 @@
+using Test
 using NCDatasets
-import NCDatasets: nc_type, check, libnetcdf
+import NCDatasets: nc_type, check, libnetcdf, nc_inq_user_type, NC_ENUM, ncType, jlType
 
 
-function nc_def_enum(ncid::Integer,base_typeid::Integer,name,typeidp)
+function nc_def_enum(ncid::Integer,base_typeid::Integer,name)
+    typeidp = Ref(NCDatasets.nc_type(0))
     check(ccall((:nc_def_enum,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{nc_type}),ncid,base_typeid,name,typeidp))
-end
 
-function nc_insert_enum(ncid::Integer,xtype::Integer,name,value)
-    check(ccall((:nc_insert_enum,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{Nothing}),ncid,xtype,name,value))
+    return typeidp[]
 end
 
 function nc_inq_enum(ncid::Integer,xtype::Integer)
@@ -23,10 +23,18 @@ function nc_inq_enum(ncid::Integer,xtype::Integer)
     num_members = num_membersp[]
     base_size = base_sizep[]
 
-    return name,base_nc_type,base_size,num_members
+    return type_name,jlType[base_nc_type],base_size,num_members
 end
 
-function nc_inq_enum_member(ncid::Integer,xtype::Integer,T,idx::Integer)
+
+function nc_insert_enum(ncid::Integer,xtype::Integer,name,value,
+                        T = nc_inq_enum(ncid,typeid)[2])
+    valuep = Ref{T}(value)
+    check(ccall((:nc_insert_enum,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{Nothing}),ncid,xtype,name,valuep))
+end
+
+function nc_inq_enum_member(ncid::Integer,xtype::Integer,idx::Integer,
+                            T::Type = nc_inq_enum(ncid,typeid)[2])
     valuep = Ref{T}()
     cmember_name = zeros(UInt8,NCDatasets.NC_MAX_NAME+1)
 
@@ -37,10 +45,15 @@ function nc_inq_enum_member(ncid::Integer,xtype::Integer,T,idx::Integer)
     return member_name,valuep[]
 end
 
-function nc_inq_enum_ident(ncid::Integer,xtype::Integer,value::Clonglong,identifier)
-    check(ccall((:nc_inq_enum_ident,libnetcdf),Cint,(Cint,nc_type,Clonglong,Cstring),ncid,xtype,value,identifier))
+function nc_inq_enum_ident(ncid::Integer,xtype::Integer,value)
+    cidentifier = zeros(UInt8,NCDatasets.NC_MAX_NAME+1)
+    check(ccall((:nc_inq_enum_ident,libnetcdf),Cint,(Cint,nc_type,Clonglong,Ptr{UInt8}),ncid,xtype,Clonglong(value),cidentifier))
+    identifier = unsafe_string(pointer(cidentifier))
+    return identifier
 end
 
+
+#=
 # example from https://www.unidata.ucar.edu/software/netcdf/workshops/2011/groups-types/EnumCDL.html
 
 
@@ -79,3 +92,65 @@ for idx = 0:num_members-1
     member_name,value = nc_inq_enum_member(ncid,xtype,T,idx)
     @show member_name,value
 end
+=#
+
+# create a file with enum type
+
+fname = tempname()
+fname = "enum4.nc"
+rm(fname)
+ds = NCDataset(fname,"c");
+ncid = ds.ncid
+
+T = Int8
+
+base_typeid = ncType[T]
+
+type_name = "cloud_t"
+typeid = nc_def_enum(ncid,base_typeid,type_name)
+
+
+members = [
+    "Clear" => 0, "Cumulonimbus" => 1, "Stratus" => 2,
+    "Stratocumulus" => 3, "Cumulus" => 4, "Altostratus" => 5, "Nimbostratus" => 6,
+    "Altocumulus" => 7, "Missing" => 127]
+
+
+members_dict = Dict(members)
+
+for (member_name,member_value) in members
+    nc_insert_enum(ncid,typeid,member_name,member_value)
+end
+
+# read enum type
+
+name2,size2,base_nc_type2,nfields2,class2 = nc_inq_user_type(ncid,typeid)
+
+@test name2 == type_name
+@test base_nc_type2 == base_typeid
+@test nfields2 == length(members)
+@test class2 == NC_ENUM
+
+
+name2,base_nc_type2,base_size2,num_members2 = nc_inq_enum(ncid,typeid)
+
+@test name2 == type_name
+@test base_nc_type2 == T
+@test base_size2 == sizeof(T)
+@test num_members2 == length(members)
+
+
+for idx = 0:num_members-1
+    member_name,value = nc_inq_enum_member(ncid,xtype,idx)
+    @test members_dict[member_name] == value
+    identifier = nc_inq_enum_ident(ncid,xtype,value)
+    @test identifier == member_name
+end
+
+
+close(ds)
+run(`ncdump -h $fname`)
+
+
+# TODO:
+# create variable and attribute with enum type

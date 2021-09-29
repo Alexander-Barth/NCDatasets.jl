@@ -484,6 +484,10 @@ end
 #     check(ccall((:nc_free_string,libnetcdf),Cint,(Cint,Ptr{Ptr{UInt8}}),len,data))
 # end
 
+
+"""
+    name,size,base_nc_type,nfields,class = nc_inq_user_type(ncid::Integer,xtype::Integer)
+"""
 function nc_inq_user_type(ncid::Integer,xtype::Integer)
     name = Vector{UInt8}(undef,NC_MAX_NAME+1)
     sizep = Ref(Csize_t(0))
@@ -1133,7 +1137,7 @@ end
 
 """
 Define the dimension with the name NAME and the length LEN in the
-dataset NCID.  The id of the dimension is returned
+dataset NCID. The id of the dimension is returned.
 """
 function nc_def_dim(ncid::Integer,name,len::Integer)
     idp = Ref(Cint(0))
