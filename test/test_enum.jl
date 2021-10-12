@@ -119,7 +119,7 @@ members = [
 members_dict = Dict(members)
 
 for (member_name,member_value) in members
-    nc_insert_enum(ncid,typeid,member_name,member_value)
+    nc_insert_enum(ncid,typeid,member_name,member_value,T)
 end
 
 # read enum type
@@ -141,7 +141,7 @@ name2,base_nc_type2,base_size2,num_members2 = nc_inq_enum(ncid,typeid)
 
 
 for idx = 0:num_members-1
-    member_name,value = nc_inq_enum_member(ncid,xtype,idx)
+    member_name,value = nc_inq_enum_member(ncid,xtype,idx,T)
     @test members_dict[member_name] == value
     identifier = nc_inq_enum_ident(ncid,xtype,value)
     @test identifier == member_name
@@ -149,7 +149,7 @@ end
 
 
 close(ds)
-run(`ncdump -h $fname`)
+#run(`ncdump -h $fname`)
 
 
 # TODO:
