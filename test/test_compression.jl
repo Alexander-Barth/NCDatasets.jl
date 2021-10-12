@@ -52,14 +52,17 @@ NCDataset(filename,"c") do ds
         @test deflate_level == 9
 
 
-        # change compression
-        # Note: shuffling cannot be disabled once applied
-        # https://github.com/Unidata/netcdf-c/issues/1713#issuecomment-625462059
-        deflate(v,true,true,4)
-        isshuffled,isdeflated,deflate_level = deflate(v)
-        @test isshuffled == true
-        @test isdeflated == true
-        @test deflate_level == 4
+        if VERSION >= v"1.6"
+            # change compression
+            # Note: shuffling cannot be disabled once applied
+            # https://github.com/Unidata/netcdf-c/issues/1713#issuecomment-625462059
+            # Behaviour changed in NetCDF 4.7 and 4.8
+            deflate(v,true,true,4)
+            isshuffled,isdeflated,deflate_level = deflate(v)
+            @test isshuffled == true
+            @test isdeflated == true
+            @test deflate_level == 4
+        end
 
         # write an array
         v[:,:] = data
