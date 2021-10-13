@@ -3,7 +3,6 @@
 # MIT
 
 # Several calls are commented out because they are not captured by tests
-# TODO: Then why keep the commented code here?
 
 const NC_NAT = 0
 const NC_BYTE = 1
@@ -590,25 +589,57 @@ function nc_get_att(ncid::Integer,varid::Integer,name)
     end
 end
 
-# function nc_def_enum(ncid::Integer,base_typeid::Integer,name,typeidp)
-#     check(ccall((:nc_def_enum,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{nc_type}),ncid,base_typeid,name,typeidp))
-# end
+# Enum
 
-# function nc_insert_enum(ncid::Integer,xtype::Integer,name,value)
-#     check(ccall((:nc_insert_enum,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{Nothing}),ncid,xtype,name,value))
-# end
+function nc_def_enum(ncid::Integer,base_typeid::Integer,name)
+    typeidp = Ref(NCDatasets.nc_type(0))
+    check(ccall((:nc_def_enum,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{nc_type}),ncid,base_typeid,name,typeidp))
 
-# function nc_inq_enum(ncid::Integer,xtype::Integer,name,base_nc_typep,base_sizep,num_membersp)
-#     check(ccall((:nc_inq_enum,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{nc_type},Ptr{Cint},Ptr{Cint}),ncid,xtype,name,base_nc_typep,base_sizep,num_membersp))
-# end
+    return typeidp[]
+end
 
-# function nc_inq_enum_member(ncid::Integer,xtype::Integer,idx::Integer,name,value)
-#     check(ccall((:nc_inq_enum_member,libnetcdf),Cint,(Cint,nc_type,Cint,Cstring,Ptr{Nothing}),ncid,xtype,idx,name,value))
-# end
+function nc_inq_enum(ncid::Integer,xtype::Integer)
 
-# function nc_inq_enum_ident(ncid::Integer,xtype::Integer,value::Clonglong,identifier)
-#     check(ccall((:nc_inq_enum_ident,libnetcdf),Cint,(Cint,nc_type,Clonglong,Cstring),ncid,xtype,value,identifier))
-# end
+    base_nc_typep = Ref(NCDatasets.nc_type(0))
+    base_sizep = Ref(Csize_t(0))
+    num_membersp = Ref(Csize_t(0))
+    cname = zeros(UInt8,NCDatasets.NC_MAX_NAME+1)
+
+    check(ccall((:nc_inq_enum,NCDatasets.libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{NCDatasets.nc_type},Ptr{Csize_t},Ptr{Csize_t}),ncid,xtype,cname,base_nc_typep,base_sizep,num_membersp))
+
+    type_name = unsafe_string(pointer(cname))
+    base_nc_type = base_nc_typep[]
+    num_members = num_membersp[]
+    base_size = base_sizep[]
+
+    return type_name,jlType[base_nc_type],base_size,num_members
+end
+
+
+function nc_insert_enum(ncid::Integer,xtype::Integer,name,value,
+                        T = nc_inq_enum(ncid,typeid)[2])
+    valuep = Ref{T}(value)
+    check(ccall((:nc_insert_enum,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{Nothing}),ncid,xtype,name,valuep))
+end
+
+function nc_inq_enum_member(ncid::Integer,xtype::Integer,idx::Integer,
+                            T::Type = nc_inq_enum(ncid,typeid)[2])
+    valuep = Ref{T}()
+    cmember_name = zeros(UInt8,NCDatasets.NC_MAX_NAME+1)
+
+    check(ccall((:nc_inq_enum_member,libnetcdf),Cint,(Cint,nc_type,Cint,Ptr{UInt8},Ptr{Nothing}),ncid,xtype,idx,cmember_name,valuep))
+
+    member_name = unsafe_string(pointer(cmember_name))
+
+    return member_name,valuep[]
+end
+
+function nc_inq_enum_ident(ncid::Integer,xtype::Integer,value)
+    cidentifier = zeros(UInt8,NCDatasets.NC_MAX_NAME+1)
+    check(ccall((:nc_inq_enum_ident,libnetcdf),Cint,(Cint,nc_type,Clonglong,Ptr{UInt8}),ncid,xtype,Clonglong(value),cidentifier))
+    identifier = unsafe_string(pointer(cidentifier))
+    return identifier
+end
 
 # function nc_def_opaque(ncid::Integer,size::Integer,name,xtypep)
 #     check(ccall((:nc_def_opaque,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{nc_type}),ncid,size,name,xtypep))

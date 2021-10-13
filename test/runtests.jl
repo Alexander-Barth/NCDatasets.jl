@@ -237,6 +237,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_cont_ragged_array.jl")
 
     include("test_chunk_cache.jl")
+    include("test_enum.jl")
 end
 
 @testset "NetCDF4 groups" begin
@@ -262,3 +263,4 @@ end
 @testset "Deferred datasets" begin
     include("test_defer.jl")
 end
+
