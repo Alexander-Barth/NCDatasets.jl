@@ -20,7 +20,7 @@ The module `NCDatasets` provides support for the following [netCDF CF convention
 
 Other features include:
 * Support for NetCDF 4 compression and variable-length arrays (i.e. arrays of vectors where each vector can have potentailly a different length)
-* The module also includes an utility function [`ncgen`](https://alexander-barth.github.io/NCDatasets.jl/stable/#NCDatasets.ncgen) which generates the Julia code that would produce a netCDF file with the same metadata as a template netCDF file.
+* The module also includes an utility function [`ncgen`](https://alexander-barth.github.io/NCDatasets.jl/stable/dataset/#NCDatasets.ncgen) which generates the Julia code that would produce a netCDF file with the same metadata as a template netCDF file.
 
 ## Installation
 
