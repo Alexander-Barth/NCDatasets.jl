@@ -221,3 +221,6 @@ function variable(mfds::MFDataset,varname::SymbolOrString)
         end
     end
 end
+
+
+fillvalue(v::MFVariable{T}) where T = v.attrib["_FillValue"]::T

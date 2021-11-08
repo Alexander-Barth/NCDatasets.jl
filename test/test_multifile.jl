@@ -14,7 +14,8 @@ function example_file(i,array, fname = tempname();
 
         # Declare variables
 
-        ncvar = defVar(ds,varname, Float64, ("lon", "lat", "time"))
+        ncvar = defVar(ds,varname, Float64, ("lon", "lat", "time"),
+                       fillvalue = -9999)
         ncvar.attrib["field"] = "u-wind, scalar, series"
         ncvar.attrib["units"] = "meter second-1"
         ncvar.attrib["long_name"] = "surface u-wind component"
@@ -168,6 +169,8 @@ end
 @test size(mfds[varname].var) == (2, 3, 3)
 @test name(mfds[varname].var) == varname
 @test NCDatasets.groupname(mfds.group["group"]) == "group"
+@test fillvalue(mfds[varname]) == -9999.
+@test fillvalue(mfds[varname].var) == -9999.
 
 
 # create new dimension in all files
