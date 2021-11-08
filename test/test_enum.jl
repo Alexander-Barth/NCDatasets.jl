@@ -103,7 +103,7 @@ nc_put_att(ncid, NC_GLOBAL, "enum_attrib", typeid, [Int8(0)])
 
 
 close(ds)
-run(`ncdump -h $fname`)
+#run(`ncdump -h $fname`)
 
 
 # TODO:
