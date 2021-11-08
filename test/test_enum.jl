@@ -1,7 +1,7 @@
 using Test
 using NCDatasets
 import NCDatasets: nc_type, check, libnetcdf, nc_inq_user_type, NC_ENUM, ncType, jlType
-
+import NCDatasets: nc_put_att, NC_GLOBAL
 
 #=
 # example from https://www.unidata.ucar.edu/software/netcdf/workshops/2011/groups-types/EnumCDL.html
@@ -97,8 +97,13 @@ for idx = 0:num_members2-1
 end
 
 
+# put enum attribute
+
+nc_put_att(ncid, NC_GLOBAL, "enum_attrib", typeid, [Int8(0)])
+
+
 close(ds)
-#run(`ncdump -h $fname`)
+run(`ncdump -h $fname`)
 
 
 # TODO:

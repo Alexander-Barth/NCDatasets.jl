@@ -195,7 +195,7 @@ const NC_FILL_INT64  = Int64(-9223372036854775806)
 const NC_FILL_UINT64 = UInt64(18446744073709551614)
 const NC_FILL_STRING = ""
 
-# depcrecated by e.g. fillvalue(Int8)
+# deprecated by e.g. fillvalue(Int8)
 #export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,
 #    NC_FILL_DOUBLE, NC_FILL_UBYTE, NC_FILL_USHORT, NC_FILL_UINT, NC_FILL_INT64,
 #    NC_FILL_UINT64, NC_FILL_STRING
@@ -539,8 +539,12 @@ function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Vect
 end
 
 function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Vector{T}) where {T}
+    nc_put_att(ncid,varid,name,ncType[T],data)
+end
+
+function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,typeid::Integer,data::Vector)
     check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Nothing}),
-                ncid,varid,name,ncType[eltype(data)],length(data),data))
+                ncid,varid,name,typeid,length(data),data))
 end
 
 function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data)
