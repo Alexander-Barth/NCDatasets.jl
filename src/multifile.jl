@@ -190,6 +190,7 @@ end
 
 Base.getindex(v::MFVariable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) = getindex(v.var,indexes...)
 Base.setindex!(v::MFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) = setindex!(v.var,data,indexes...)
+
 Base.size(v::MFVariable) = size(v.var)
 dimnames(v::MFVariable) = v.dimnames
 name(v::MFVariable) = v.varname

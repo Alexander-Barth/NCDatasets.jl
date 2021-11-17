@@ -498,6 +498,9 @@ function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int}
 end
 
 
+Base.getindex(v::AbstractVariable,ci::CartesianIndices) = v[ci.indices...]
+Base.setindex!(v::AbstractVariable,data,ci::CartesianIndices) = setindex!(v.var,data,ci.indices...)
+
 function Base.show(io::IO,v::AbstractVariable; indent="")
     delim = " × "
     dims =
