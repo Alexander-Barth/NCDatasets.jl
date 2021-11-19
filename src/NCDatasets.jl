@@ -40,10 +40,9 @@ const default_timeunits = "days since 1900-00-00 00:00:00"
 
 const SymbolOrString = Union{Symbol, AbstractString}
 
-include("colors.jl")
 include("CatArrays.jl")
-export CatArrays
-
+include("types.jl")
+include("colors.jl")
 include("errorhandling.jl")
 include("netcdf_c.jl")
 include("dataset.jl")
@@ -58,5 +57,6 @@ include("multifile.jl")
 include("ncgen.jl")
 include("precompile.jl")
 
+export CatArrays
 
 end # module

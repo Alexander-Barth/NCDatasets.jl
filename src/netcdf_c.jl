@@ -1082,6 +1082,15 @@ end
 #     check(ccall((:nc_set_default_format,libnetcdf),Cint,(Cint,Ptr{Cint}),format,old_formatp))
 # end
 
+"""
+    nc_set_chunk_cache(size::Integer,nelems::Integer,preemption::Number)
+
+Sets the default chunk cache settins.
+
+See netcdf C library documentation for `nc_set_chunk_cache` for details.
+
+https://www.unidata.ucar.edu/software/netcdf/workshops/most-recent/nc4chunking/Cache.html
+"""
 function nc_set_chunk_cache(size::Integer,nelems::Integer,preemption::Number)
     check(ccall((:nc_set_chunk_cache,libnetcdf),Cint,(Csize_t,Csize_t,Cfloat),size,nelems,preemption))
 end

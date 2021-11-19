@@ -1,35 +1,5 @@
-#=
-Multi-file related type definitions
-=#
-
-mutable struct MFAttributes{T} <: BaseAttributes where T <: BaseAttributes
-    as::Vector{T}
-end
-
-function Base.getindex(a::MFAttributes,name::AbstractString)
-    return a.as[1][name]
-end
-
-function Base.setindex!(a::MFAttributes,data,name::AbstractString)
-    for a in a.as
-        a[name] = data
-    end
-    return data
-end
 
 Base.keys(a::MFAttributes) = keys(a.as[1])
-
-
-mutable struct MFDimensions{T} <: AbstractDimensions where T <: AbstractDimensions
-    as::Vector{T}
-    aggdim::String
-end
-
-
-mutable struct MFGroups{T} <: AbstractGroups where T <: AbstractGroups
-    as::Vector{T}
-    aggdim::String
-end
 
 
 
@@ -61,22 +31,6 @@ function Base.getindex(a::MFGroups,name::AbstractString)
     return MFDataset(ds,a.aggdim,attrib,dim,group)
 end
 
-#---
-mutable struct MFDataset{T,N,S<:AbstractString,TA,TD,TG} <: AbstractDataset where T <: AbstractDataset
-    ds::Array{T,N}
-    aggdim::S
-    attrib::MFAttributes{TA}
-    dim::MFDimensions{TD}
-    group::MFGroups{TG}
-    _boundsmap::Dict{String,String}
-end
-
-mutable struct MFVariable{T,N,M,TA,A} <: AbstractVariable{T,N}
-    var::CatArrays.CatArray{T,N,M,TA}
-    attrib::MFAttributes{A}
-    dimnames::NTuple{N,String}
-    varname::String
-end
 
 Base.Array(v::MFVariable) = Array(v.var)
 

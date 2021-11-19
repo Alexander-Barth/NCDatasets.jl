@@ -3,20 +3,6 @@ Functionality and definitions
 related with the `Variables` types/subtypes
 =#
 
-############################################################
-# Types and subtypes
-############################################################
-
-abstract type AbstractVariable{T,N} <: AbstractArray{T,N} end
-
-# Variable (as stored in NetCDF file, without using
-# add_offset, scale_factor and _FillValue)
-mutable struct Variable{NetCDFType,N,TDS<:AbstractDataset} <: AbstractVariable{NetCDFType, N}
-    ds::TDS
-    varid::Cint
-    dimids::NTuple{N,Cint}
-    attrib::Attributes{TDS}
-end
 
 
 ############################################################
@@ -498,8 +484,9 @@ function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int}
 end
 
 
-Base.getindex(v::AbstractVariable,ci::CartesianIndices) = v[ci.indices...]
-Base.setindex!(v::AbstractVariable,data,ci::CartesianIndices) = setindex!(v.var,data,ci.indices...)
+Base.getindex(v::Union{MFVariable,CFVariable,Variable},ci::CartesianIndices) = v[ci.indices...]
+Base.setindex!(v::Union{MFVariable,CFVariable,Variable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
+
 
 function Base.show(io::IO,v::AbstractVariable; indent="")
     delim = " × "
