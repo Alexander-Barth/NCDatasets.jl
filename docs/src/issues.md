@@ -1,20 +1,5 @@
 # Known issues
 
-## libnetcdf not properly installed
-
-If you see the following error,
-
-```
-ERROR: LoadError: LoadError: libnetcdf not properly installed. Please run Pkg.build("NCDatasets")
-```
-
-you can try to install netcdf explicitly with Conda:
-
-```julia
-using Conda
-Conda.add("libnetcdf")
-```
-
 ## NetCDF: Not a valid data type or `_FillValue` type mismatch
 
 Trying to define the `_FillValue`, procudes the following error:
