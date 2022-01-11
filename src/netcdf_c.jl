@@ -1377,6 +1377,26 @@ function nc_def_var(ncid::Integer,name,xtype::Integer,dimids::Vector{Cint})
     return varidp[]
 end
 
+# get matching julia type
+function _jltype(ncid,xtype)
+    jltype =
+        if xtype >= NCDatasets.NC_FIRSTUSERTYPEID
+            name,size,base_nc_type,nfields,class = nc_inq_user_type(ncid,xtype)
+            # assume here variable-length type
+            if class == NC_VLEN
+                Vector{jlType[base_nc_type]}
+            else
+                @warn "unsupported type: class=$(class)"
+                Nothing
+            end
+        else
+            jlType[xtype]
+        end
+
+    return jltype
+end
+
+
 function nc_inq_var(ncid::Integer,varid::Integer)
     ndims = nc_inq_varndims(ncid,varid)
 
@@ -1391,19 +1411,7 @@ function nc_inq_var(ncid::Integer,varid::Integer)
     name = unsafe_string(pointer(cname))
 
     xtype = xtypep[]
-    jltype =
-        if xtype >= NCDatasets.NC_FIRSTUSERTYPEID
-            name,size,base_nc_type,nfields,class = nc_inq_user_type(ncid,xtype)
-            # assume here variable-length type
-            if class == NC_VLEN
-                Vector{jlType[base_nc_type]}
-            else
-                @warn "unsupported type: class=$(class)"
-                Nothing
-            end
-        else
-            jlType[xtype]
-        end
+    jltype = _jltype(ncid,xtype)
 
     return name,jltype,dimids,nattsp[]
 end
