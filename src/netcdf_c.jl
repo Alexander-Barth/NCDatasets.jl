@@ -779,7 +779,7 @@ function nc_get_var1(::Type{T},ncid::Integer,varid::Integer,indexp) where T
 end
 
 function nc_get_var1(::Type{Vector{T}},ncid::Integer,varid::Integer,indexp) where T
-    ip = Ref(nc_vlen_t{T}(zero(T),Ptr{T}()))    
+    ip = Ref(nc_vlen_t{T}(zero(T),Ptr{T}()))
     check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Nothing}),ncid,varid,indexp,ip))
     #data = unsafe_wrap(Vector{T},ip[].p,(ip[].len,))
     data = copy(unsafe_wrap(Vector{T},ip[].p,(ip[].len,)))
@@ -1218,6 +1218,15 @@ end
 function nc_rename_dim(ncid::Integer,dimid::Integer,name)
     check(ccall((:nc_rename_dim,libnetcdf),Cint,(Cint,Cint,Cstring),ncid,dimid,name))
 end
+
+# check presence of attribute without raising an error
+function _nc_has_att(ncid::Integer,varid::Integer,name)
+    xtypep = Ref(nc_type(0))
+    lenp = Ref(Csize_t(0))
+    code = ccall((:nc_inq_att,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{nc_type},Ptr{Csize_t}),ncid,varid,name,xtypep,lenp)
+    return code == NC_NOERR
+end
+
 
 function nc_inq_att(ncid::Integer,varid::Integer,name)
     xtypep = Ref(nc_type(0))
