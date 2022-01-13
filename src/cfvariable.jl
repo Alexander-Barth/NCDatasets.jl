@@ -540,6 +540,12 @@ end
     return out
 end
 
+@inline function CFtransformdata(
+    data::AbstractArray{T,N},fv::Nothing,scale_factor::Nothing,
+    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,::Type{T}) where {T,N}
+    # no transformation necessary (avoid allocation)
+    return data
+end
 
 @inline _inv(x::Nothing) = nothing
 @inline _inv(x) = 1/x
@@ -566,6 +572,13 @@ end
         out[i] = CFinvtransform(data[i],fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DT)
     end
     return out
+end
+
+@inline function CFinvtransformdata(
+    data::AbstractArray{T,N},fv::Nothing,scale_factor::Nothing,
+    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,::Type{T}) where {T,N}
+    # no transformation necessary (avoid allocation)
+    return data
 end
 
 # for scalar
