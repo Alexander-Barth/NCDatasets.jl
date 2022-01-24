@@ -484,8 +484,8 @@ function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int}
 end
 
 
-Base.getindex(v::Union{MFVariable,CFVariable,Variable},ci::CartesianIndices) = v[ci.indices...]
-Base.setindex!(v::Union{MFVariable,CFVariable,Variable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
+Base.getindex(v::Union{MFVariable,CFVariable,DeferVariable,Variable},ci::CartesianIndices) = v[ci.indices...]
+Base.setindex!(v::Union{MFVariable,CFVariable,DeferVariable,Variable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
 
 
 function Base.show(io::IO,v::AbstractVariable; indent="")
