@@ -81,6 +81,15 @@ Return a list of the names of all attributes.
 """
 Base.keys(a::Attributes) = listAtt(a.ds.ncid,a.varid)
 
+
+"""
+    Base.haskey(a::Attributes,name)
+
+Check if name is name is an attribute
+"""
+Base.haskey(a::Attributes,name::AbstractString) = _nc_has_att(a.ds.ncid,a.varid,name)
+
+
 """
     Base.delete!(a::Attributes, name)
 

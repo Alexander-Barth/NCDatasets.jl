@@ -1,3 +1,6 @@
+using NCDatasets
+using Test
+
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
 ds = NCDatasets.NCDataset(filename,"c")

@@ -235,16 +235,22 @@ end
 export defVar
 
 
-function _boundsParentVar(ds,name)
+
+function _boundsParentVar(ds,varname)
+    # iterating using variable ids instead of variable names
+    # is more efficient (but not possible for e.g. multi-file datasets)
+    eachvariable(ds::NCDataset) = (variable(ds,varid) for varid in nc_inq_varids(ds.ncid))
+    eachvariable(ds) = (variable(ds,vname) for vname in keys(ds))
+
+
     # get from cache is available
     if length(values(ds._boundsmap)) > 0
-        return get(ds._boundsmap,name,"")
+        return get(ds._boundsmap,varname,"")
     else
-        for vname in keys(ds)
-            v = variable(ds,vname)
+        for v in eachvariable(ds)
             bounds = get(v.attrib,"bounds","")
-            if bounds === name
-                return vname
+            if bounds === varname
+                return name(v)
             end
         end
 
@@ -534,6 +540,12 @@ end
     return out
 end
 
+@inline function CFtransformdata(
+    data::AbstractArray{T,N},fv::Nothing,scale_factor::Nothing,
+    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,::Type{T}) where {T,N}
+    # no transformation necessary (avoid allocation)
+    return data
+end
 
 @inline _inv(x::Nothing) = nothing
 @inline _inv(x) = 1/x
@@ -560,6 +572,13 @@ end
         out[i] = CFinvtransform(data[i],fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DT)
     end
     return out
+end
+
+@inline function CFinvtransformdata(
+    data::AbstractArray{T,N},fv::Nothing,scale_factor::Nothing,
+    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,::Type{T}) where {T,N}
+    # no transformation necessary (avoid allocation)
+    return data
 end
 
 # for scalar

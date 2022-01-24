@@ -54,6 +54,17 @@ export renameVar
 # Obtaining variables
 ############################################################
 
+function variable(ds::NCDataset,varid::Integer)
+    dimids = nc_inq_vardimid(ds.ncid,varid)
+    nctype = _jltype(ds.ncid,nc_inq_vartype(ds.ncid,varid))
+    ndims = length(dimids)
+    attrib = Attributes(ds,varid)
+
+    # reverse dimids to have the dimension order in Fortran style
+    return Variable{nctype,ndims,typeof(ds)}(ds,varid, (reverse(dimids)...,), attrib)
+end
+
+
 """
     v = variable(ds::NCDataset,varname::String)
 
@@ -63,18 +74,7 @@ variable `v` is indexed.
 """
 function variable(ds::NCDataset,varname::SymbolOrString)
     varid = nc_inq_varid(ds.ncid,varname)
-    name,nctype,dimids,nattr = nc_inq_var(ds.ncid,varid)
-    ndims = length(dimids)
-    shape = zeros(Int,ndims)
-
-    for i = 1:ndims
-        shape[ndims-i+1] = nc_inq_dimlen(ds.ncid,dimids[i])
-    end
-
-    attrib = Attributes(ds,varid)
-
-    # reverse dimids to have the dimension order in Fortran style
-    return Variable{nctype,ndims,typeof(ds)}(ds,varid, (reverse(dimids)...,), attrib)
+    return variable(ds,varid)
 end
 
 export variable
