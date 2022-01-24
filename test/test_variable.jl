@@ -194,3 +194,14 @@ NCDataset(filename, "c") do ds
 end
 
 rm(filename)
+
+# issue 155
+
+filename = tempname()
+x = 1.:0.1:10.
+ds = NCDataset(filename,"c");
+defDim(ds, "x", length(x))
+ncv = defVar(ds, "x", Float64, ("x",))
+ncv[:] = x
+close(ds)
+rm(filename)

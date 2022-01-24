@@ -670,8 +670,13 @@ function nc_put_var(ncid::Integer,varid::Integer,data::Array{Vector{T},N}) where
     nc_put_var(ncid,varid,convert(Array{nc_vlen_t{T},N},data))
 end
 
-function nc_unsafe_put_var(ncid::Integer,varid::Integer,data)
+function nc_unsafe_put_var(ncid::Integer,varid::Integer,data::Array)
     check(ccall((:nc_put_var,libnetcdf),Cint,(Cint,Cint,Ptr{Nothing}),ncid,varid,data))
+end
+
+# data can be a range that must first be converted to an array
+function nc_unsafe_put_var(ncid::Integer,varid::Integer,data)
+    check(ccall((:nc_put_var,libnetcdf),Cint,(Cint,Cint,Ptr{Nothing}),ncid,varid,Array(data)))
 end
 
 function nc_put_var(ncid::Integer,varid::Integer,data)
