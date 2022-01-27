@@ -102,6 +102,11 @@ NCDatasets.NCDataset(filename,"c") do ds
     # arrays cannot be attributes
     @test_throws ErrorException v.attrib["error_attrib"] = zeros(2,2)
 
+    # symbols in the attrib dict
+    foo = NCDatasets.defVar(ds,"foovar",Int64,("lon","lat"),
+                            attrib = [:long_name => "foo variable"])
+    @test foo.attrib["long_name"] == "foo variable"
+
 end
 
 rm(filename)
