@@ -83,6 +83,14 @@ Base.keys(a::Attributes) = listAtt(a.ds.ncid,a.varid)
 
 
 """
+    Base.haskey(a::Attributes,name)
+
+Check if name is an attribute
+"""
+Base.haskey(a::Attributes{NCDataset},name::SymbolOrString) = _nc_has_att(a.ds.ncid,a.varid,name)
+
+
+"""
     Base.delete!(a::Attributes, name)
 
 Delete the attribute `name` from the attribute list `a`.
