@@ -18,6 +18,22 @@ function Base.keys(d::Dimensions)
                   for dimid in nc_inq_dimids(d.ds.ncid,false)]
 end
 
+function Base.show(io::IO, d::Dimensions; indent = "  ")
+    try
+        for (dimname, dimval) in d
+            println(io, indent, dimname, " = ", dimval)
+        end
+    catch err
+        if isa(err, NetCDFError)
+            if err.code == NC_EBADID
+                print(io, "NetCDF dimensions (file closed)")
+                return
+            end
+        end
+        rethrow()
+    end
+end
+
 function Base.getindex(d::Dimensions,name::AbstractString)
     dimid = nc_inq_dimid(d.ds.ncid,name)
     return nc_inq_dimlen(d.ds.ncid,dimid)
