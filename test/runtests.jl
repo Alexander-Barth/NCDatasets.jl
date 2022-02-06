@@ -213,6 +213,11 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
         show(buf,ds.attrib)
         @test occursin("title",String(take!(buf)))
 
+        show(buf,ds.dim)
+        @test occursin("lon",String(take!(buf)))
+        show(buf,ds.dim)
+        @test occursin("lat",String(take!(buf)))
+
         show(buf,ds["temperature"])
         @test occursin("temperature",String(take!(buf)))
 
