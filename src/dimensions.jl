@@ -18,10 +18,11 @@ function Base.keys(d::Dimensions)
                   for dimid in nc_inq_dimids(d.ds.ncid,false)]
 end
 
-function Base.show(io::IO, d::Dimensions; indent = "  ")
+function Base.show(io::IO, d::AbstractDimensions; indent = "")
+    printstyled(io, indent, "Dimensions\n",color=section_color())
     try
-        for (dimname, dimval) in d
-            println(io, indent, dimname, " = ", dimval)
+        for (dimname,dimlen) in d
+            print(io,indent,"   $(dimname) = $(dimlen)\n")
         end
     catch err
         if isa(err, NetCDFError)
