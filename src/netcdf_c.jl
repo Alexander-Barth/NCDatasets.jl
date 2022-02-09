@@ -378,13 +378,15 @@ end
 #     check(ccall((:nc_rename_grp,libnetcdf),Cint,(Cint,Cstring),grpid,name))
 # end
 
-# function nc_def_compound(ncid::Integer,size::Integer,name,typeidp)
-#     check(ccall((:nc_def_compound,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{nc_type}),ncid,size,name,typeidp))
-# end
+function nc_def_compound(ncid::Integer,size::Integer,name)
+    typeidp = Ref{nc_type}()
+    check(ccall((:nc_def_compound,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{nc_type}),ncid,size,name,typeidp))
+    return typeidp[]
+end
 
-# function nc_insert_compound(ncid::Integer,xtype::Integer,name,offset::Integer,field_typeid::Integer)
-#     check(ccall((:nc_insert_compound,libnetcdf),Cint,(Cint,nc_type,Cstring,Cint,nc_type),ncid,xtype,name,offset,field_typeid))
-# end
+function nc_insert_compound(ncid::Integer,xtype::Integer,name,offset::Integer,field_typeid::Integer)
+    check(ccall((:nc_insert_compound,libnetcdf),Cint,(Cint,nc_type,Cstring,Csize_t,nc_type),ncid,xtype,name,offset,field_typeid))
+end
 
 # function nc_insert_array_compound(ncid::Integer,xtype::Integer,name,offset::Integer,field_typeid::Integer,ndims::Integer,dim_sizes)
 #     check(ccall((:nc_insert_array_compound,libnetcdf),Cint,(Cint,nc_type,Cstring,Cint,nc_type,Cint,Ptr{Cint}),ncid,xtype,name,offset,field_typeid,ndims,dim_sizes))

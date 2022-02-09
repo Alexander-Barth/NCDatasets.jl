@@ -256,6 +256,10 @@ end
     include("test_vlen.jl")
 end
 
+@testset "Compound types" begin
+    include("test_compound.jl")
+end
+
 @testset "Time and calendars" begin
     include("test_time.jl")
     include("test_timeunits.jl")
