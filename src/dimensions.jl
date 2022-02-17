@@ -95,7 +95,7 @@ To create a variable with an unlimited dimensions use for example:
 
 ```julia
 using NCDatasets
-ds = NCDataset("/tmp/test.nc","c")
+ds = NCDataset("/tmp/test2.nc","c")
 defDim(ds,"lon",10)
 defDim(ds,"lat",10)
 defDim(ds,"time",Inf)

@@ -48,9 +48,9 @@ varid = nc_def_var(ncid, "data", typeid, reverse(dimids))
 nc_put_var(ncid, varid, data)
 nc_close(ncid)
 
-
+#=
 run(`ncdump $filename`)
-
+=#
 
 module NCReconstructedTypes end
 
