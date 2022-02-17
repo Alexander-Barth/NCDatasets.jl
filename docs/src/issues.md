@@ -72,8 +72,8 @@ Having outdated versions of HDF5 or NetCDF libraries installed can be an issue o
 
 ## Using a custom NetCDF library
 
-The NetCDF library `libnetcdf.so` is install as artefact via the package `NetCDF_jll`.
-You can override which `libnetcdf.so` gets loaded through `Preferences` package, as follows:
+The NetCDF library `libnetcdf.so` is installed as an artifact via the package `NetCDF_jll`.
+You can override which `libnetcdf.so` gets loaded through the `Preferences` package, as follows:
 
 ``` julia
 # install these packages if necessary
@@ -90,7 +90,7 @@ This will create a `LocalPreferences.toml` file in your top-level project with t
 libnetcdf_path = "/path/to/libnetcdf.so.xyz"
 ```
 
-However, the depedencies of the library version `libnetcdf.so.xyz` (in particular `libcurl.so` and `libmbedtls.so`) should be compatible with the dependecies of julia (in the folder `.../julia-x.y.z/lib/julia`). On Linux, you can list the library dependencies with the shell command `ldd`, for example:
+However, the dependencies of the library version `libnetcdf.so.xyz` (in particular `libcurl.so` and `libmbedtls.so`) should be compatible with the dependencies of julia (in the folder `.../julia-x.y.z/lib/julia`). On Linux, you can list the library dependencies with the shell command `ldd`, for example:
 
 ``` bash
 ldd /path/to/libnetcdf.so.xyz
