@@ -1,95 +1,3 @@
-#=
-Core type definitions for the `NCDataset` struct,
-the `Attributes` and `Group` parts as well.
-and the `Attributes` part of it.
-Helper functions defined for these as well.
-
-High-level interface is at the "High-level" section about actually
-loading/reading/making datasets.
-=#
-
-############################################################
-# Type definitions
-############################################################
-# -----------------------------------------------------
-# base type of attributes list
-# concrete types are Attributes (single NetCDF file) and
-# MFAttributes (multiple NetCDF files)
-
-abstract type BaseAttributes
-end
-
-abstract type AbstractDataset
-end
-
-
-abstract type AbstractDimensions
-end
-
-abstract type AbstractGroups
-end
-
-
-# -----------------------------------------------------
-# List of attributes (for a single NetCDF file)
-# all ids should be Cint
-
-mutable struct Attributes{TDS<:AbstractDataset} <: BaseAttributes
-    ds::TDS
-    varid::Cint
-end
-
-mutable struct Groups{TDS<:AbstractDataset} <: AbstractGroups
-    ds::TDS
-end
-
-mutable struct Dimensions{TDS<:AbstractDataset} <: AbstractDimensions
-    ds::TDS
-end
-
-
-mutable struct NCDataset{TDS} <: AbstractDataset where TDS <: Union{AbstractDataset,Nothing}
-    # parent_dataset is nothing for the root dataset
-    parentdataset::TDS
-    ncid::Cint
-    # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
-    # need to be a reference, so that remains syncronised when copied
-    isdefmode::Ref{Bool}
-    attrib::Attributes
-    dim::Dimensions
-    group::Groups
-
-    function NCDataset(ncid::Integer,
-                       isdefmode::Ref{Bool};
-                       parentdataset = nothing,
-                       )
-
-        function _finalize(ds)
-            @debug begin
-                ccall(:jl_, Cvoid, (Any,), "finalize $ncid $timeid \n")
-            end
-            # only close open root group
-            if (ds.ncid != -1) && (ds.parentdataset == nothing)
-                close(ds)
-            end
-        end
-        ds = new{typeof(parentdataset)}()
-        ds.parentdataset = parentdataset
-        ds.ncid = ncid
-        ds.isdefmode = isdefmode
-        ds.attrib = Attributes(ds,NC_GLOBAL)
-        ds.dim = Dimensions(ds)
-        ds.group = Groups(ds)
-
-        timeid = Dates.now()
-        @debug "add finalizer $ncid $timeid"
-        finalizer(_finalize, ds)
-        return ds
-    end
-end
-
-"Alias to `NCDataset`"
-const Dataset = NCDataset
 
 
 const NCIterable = Union{BaseAttributes,AbstractDimensions,AbstractDataset,AbstractGroups}
@@ -148,7 +56,7 @@ Default fill-value for the given type.
 @inline fillvalue(::Type{Char})    = NC_FILL_CHAR
 @inline fillvalue(::Type{String})  = NC_FILL_STRING
 
-
+iswritable(ds::NCDataset) = ds.iswritable
 
 "Make sure that a dataset is in data mode"
 function datamode(ds)
@@ -166,6 +74,18 @@ function defmode(ds)
     end
 end
 
+"Initialize the ds._boundsmap variable"
+function initboundsmap!(ds)
+    ds._boundsmap = Dict{String,String}()
+    for vname in keys(ds)
+        v = variable(ds,vname)
+        bounds = get(v.attrib,"bounds",nothing)
+
+        if bounds !== nothing
+            ds._boundsmap[bounds] = vname
+        end
+    end
+end
 
 ############################################################
 # High-level
@@ -173,9 +93,13 @@ end
 
 """
     NCDataset(filename::AbstractString, mode = "r";
-            format::Symbol = :netcdf4, attrib = [])
+              format::Symbol = :netcdf4,
+              share::Bool = false,
+              diskless::Bool = false,
+              persist::Bool = false,
+              attrib = [])
 
-Load, create, or even overwrite a NetCDF file at `filename`, depending on `mode`:
+Load, create, or even overwrite a NetCDF file at `filename`, depending on `mode`
 
 * `"r"` (default) : open an existing netCDF file or OPeNDAP URL
    in read-only mode.
@@ -183,6 +107,12 @@ Load, create, or even overwrite a NetCDF file at `filename`, depending on `mode`
   name will be overwritten).
 * `"a"` : open `filename` into append mode (i.e. existing data in the netCDF
   file is not overwritten and a variable can be added).
+
+
+If `share` is true, the `NC_SHARE` flag is set allowing to have multiple
+processes to read the file and one writer process. Likewise setting `diskless`
+or `persist` to `true` will enable the flags `NC_DISKLESS` or `NC_PERSIST` flag.
+More information is available in the [NetCDF C-API](https://www.unidata.ucar.edu/software/netcdf/docs/).
 
 Notice that this does not close the dataset, use `close` on the
 result (or see below the `do`-block).
@@ -214,34 +144,48 @@ NCDataset("file.nc", "c", attrib = OrderedDict("title" => "my first netCDF file"
 end;
 ```
 
-`NCDataset` is an alias to `NCDataset`.
+`Dataset` is an alias of `NCDataset`.
 """
 function NCDataset(filename::AbstractString,
-                 mode::AbstractString = "r";
-                 format::Symbol = :netcdf4,
-                 diskless = false,
-                 persist = false,
-                 attrib = [])
+                   mode::AbstractString = "r";
+                   format::Symbol = :netcdf4,
+                   share::Bool = false,
+                   diskless::Bool = false,
+                   persist::Bool = false,
+                   attrib = [])
 
     ncid = -1
     isdefmode = Ref(false)
 
-    if (mode == "r") || (mode == "a")
-        ncmode =
-            if (mode == "r")
-                NC_NOWRITE
-            else
-                NC_WRITE
-            end
-
-        if diskless
-            ncmode = ncmode | NC_DISKLESS
+    ncmode =
+        if mode == "r"
+            NC_NOWRITE
+        elseif mode == "a"
+            NC_WRITE
+        elseif mode == "c"
+            ncmode  = NC_CLOBBER
+        else
+            throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
         end
 
+    if diskless
+        ncmode = ncmode | NC_DISKLESS
+
+        if persist
+            ncmode = ncmode | NC_PERSIST
+        end
+    end
+
+    if share
+        @show "share"
+        ncmode = ncmode | NC_SHARE
+    end
+
+    @debug "ncmode: $ncmode"
+
+    if (mode == "r") || (mode == "a")
         ncid = nc_open(filename,ncmode)
     elseif mode == "c"
-        ncmode  = NC_CLOBBER
-
         if format == :netcdf3_64bit_offset
             ncmode = ncmode | NC_64BIT_OFFSET
         elseif format == :netcdf4_classic
@@ -254,22 +198,12 @@ function NCDataset(filename::AbstractString,
             throw(NetCDFError(-1, "Unkown format '$(format)' for filename '$(filename)'"))
         end
 
-        if diskless
-            ncmode = ncmode | NC_DISKLESS
-
-            if persist
-                ncmode = ncmode | NC_PERSIST
-            end
-        end
-
-
         ncid = nc_create(filename,ncmode)
         isdefmode[] = true
-    else
-        throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
     end
 
-    ds = NCDataset(ncid,isdefmode)
+    iswritable = mode != "r"
+    ds = NCDataset(ncid,iswritable,isdefmode)
 
     # set global attributes
     for (attname,attval) in attrib
@@ -456,21 +390,15 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
     print(io,indent,"Group: ",groupname(ds),"\n")
     print(io,"\n")
 
-    dims = collect(ds.dim)
-
-    if length(dims) > 0
-        printstyled(io, indent, "Dimensions\n",color=section_color())
-
-        for (dimname,dimlen) in dims
-            print(io,indent,"   $(dimname) = $(dimlen)\n")
-        end
+    # show dimensions
+    if length(ds.dim) > 0
+        show(io, ds.dim; indent = indent)
         print(io,"\n")
     end
 
     varnames = keys(ds)
 
     if length(varnames) > 0
-
         printstyled(io, indent, "Variables\n",color=section_color())
 
         for name in varnames

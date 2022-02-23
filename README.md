@@ -20,7 +20,7 @@ The module `NCDatasets` provides support for the following [netCDF CF convention
 
 Other features include:
 * Support for NetCDF 4 compression and variable-length arrays (i.e. arrays of vectors where each vector can have potentailly a different length)
-* The module also includes an utility function [`ncgen`](https://alexander-barth.github.io/NCDatasets.jl/stable/#NCDatasets.ncgen) which generates the Julia code that would produce a netCDF file with the same metadata as a template netCDF file.
+* The module also includes an utility function [`ncgen`](https://alexander-barth.github.io/NCDatasets.jl/stable/dataset/#NCDatasets.ncgen) which generates the Julia code that would produce a netCDF file with the same metadata as a template netCDF file.
 
 ## Installation
 
@@ -186,12 +186,12 @@ The code is available at https://github.com/Alexander-Barth/NCDatasets.jl/tree/m
 
 | Module           | median | minimum |  mean | std. dev. |
 |:---------------- | ------:| -------:| -----:| ---------:|
-| R-ncdf4          |  0.590 |   0.568 | 0.591 |     0.025 |
-| python-netCDF4   |  0.515 |   0.511 | 0.516 |     0.003 |
-| julia-NCDatasets |  0.233 |   0.210 | 0.235 |     0.012 |
+| R-ncdf4          |  0.572 |   0.550 | 0.575 |     0.023 |
+| python-netCDF4   |  0.504 |   0.498 | 0.505 |     0.003 |
+| julia-NCDatasets |  0.228 |   0.212 | 0.226 |     0.005 |
 
 All runtimes are in seconds.
-Julia 1.3.1 (with NCDatasets 0667438), R 3.4.4 (with ncdf4 1.17) and python 3.6.9 (with netCDF4 1.4.2).
+Julia 1.6.0 (with NCDatasets b953bf5), R 3.4.4 (with ncdf4 1.17) and python 3.6.9 (with netCDF4 1.5.4).
 This CPU is a i7-7700.
 
 

@@ -22,6 +22,7 @@ NCDatasets.NCDataset(filename,"c") do ds
     @test NCDatasets.haskey(v.attrib,"comment")
     @test "comment" in v.attrib
     @test v.attrib["long_name"] == "Temperature"
+    @test v.attrib[:long_name] == "Temperature"
     @test v.attrib["test_vector_attrib"] == [1,2,3]
     @test v.attrib["comment"] == "this is a string attribute with unicode Ω ∈ ∑ ∫ f(x) dx "
 
@@ -101,6 +102,11 @@ NCDatasets.NCDataset(filename,"c") do ds
 
     # arrays cannot be attributes
     @test_throws ErrorException v.attrib["error_attrib"] = zeros(2,2)
+
+    # symbols in the attrib dict
+    foo = NCDatasets.defVar(ds,"foovar",Int64,("lon","lat"),
+                            attrib = [:long_name => "foo variable"])
+    @test foo.attrib["long_name"] == "foo variable"
 
 end
 

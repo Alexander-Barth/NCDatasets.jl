@@ -56,6 +56,10 @@ NCDatasets.NCDataset(filename,"c") do ds
 
         @test v[[1,2,3],:] == data[[1,2,3],:]
 
+        # cartesian indices
+        ci = CartesianIndex(1,1):CartesianIndex(3,2)
+        @test v.var[ci] == data[ci]
+
         # write scalar
         v.var[1,1] = scalar_data
         v.var[:,:] .= scalar_data
@@ -64,7 +68,6 @@ NCDatasets.NCDataset(filename,"c") do ds
         # stridded write and read
         v[1:2:end,1:2:end] = data[1:2:end,1:2:end]
         @test all(v[1:2:end,1:2:end] .== data[1:2:end,1:2:end])
-
     end
 end
 
@@ -190,4 +193,15 @@ NCDataset(filename, "c") do ds
       defVar(ds, "y", y, ("y",))
 end
 
+rm(filename)
+
+# issue 155
+
+filename = tempname()
+x = 1.:0.1:10.
+ds = NCDataset(filename,"c");
+defDim(ds, "x", length(x))
+ncv = defVar(ds, "x", Float64, ("x",))
+ncv[:] = x
+close(ds)
 rm(filename)

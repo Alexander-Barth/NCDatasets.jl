@@ -1,17 +1,3 @@
-
-
-# Variable (with applied transformations following the CF convention)
-mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractArray{T, N}
-    # this var is generally a `Variable` type
-    var::TV
-    # Dict-like object for all attributes read from disk
-    attrib::TA
-    # a named tuple with fill value, scale factor, offset,...
-    # immutable for type-stability
-    _storage_attrib::TSA
-end
-
-
 NCDataset(var::CFVariable) = NCDataset(var.var)
 
 
@@ -249,17 +235,27 @@ end
 export defVar
 
 
-function _boundsParentVar(ds,name)
-    for vname in keys(ds)
-        v = variable(ds,vname)
-        if haskey(v.attrib,"bounds")
-            if v.attrib["bounds"] == name
-                return vname
+
+function _boundsParentVar(ds,varname)
+    # iterating using variable ids instead of variable names
+    # is more efficient (but not possible for e.g. multi-file datasets)
+    eachvariable(ds::NCDataset) = (variable(ds,varid) for varid in nc_inq_varids(ds.ncid))
+    eachvariable(ds) = (variable(ds,vname) for vname in keys(ds))
+
+
+    # get from cache is available
+    if length(values(ds._boundsmap)) > 0
+        return get(ds._boundsmap,varname,"")
+    else
+        for v in eachvariable(ds)
+            bounds = get(v.attrib,"bounds","")
+            if bounds === varname
+                return name(v)
             end
         end
-    end
 
-    return nothing
+        return ""
+    end
 end
 
 
@@ -282,7 +278,7 @@ function _calendar_time(
 
     if haskey(attrib,"units")
         units = attrib["units"]
-        if occursin(" since ",units)
+        if (units isa String) && occursin(" since ",units)
             calendar = lowercase(get(attrib,"calendar","standard"))
             try
                 time_origin,time_factor = CFTime.timeunits(units, calendar)
@@ -344,59 +340,29 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
     # units and calendar from parent variables
     parentname = _boundsParentVar(ds,varname)
 
-    if parentname == nothing
-        calendar = nothing
-        time_origin = nothing
-        time_factor = nothing
+    if parentname === ""
+        calendar,time_origin,time_factor = _calendar_time(v.attrib)
     else
         calendar,time_origin,time_factor = _calendar_time(variable(ds,parentname).attrib)
+        calendar,time_origin,time_factor = _calendar_time(
+            v.attrib;
+            calendar = calendar,
+            time_origin = time_origin,
+            time_factor = time_factor
+        )
     end
 
-    calendar,time_origin,time_factor = _calendar_time(
-        v.attrib;
-        calendar = calendar,
-        time_origin = time_origin,
-        time_factor = time_factor)
 
     scaledtype = eltype(v)
 
     if eltype(v) <: Number
-        if scale_factor != nothing
+        if scale_factor !== nothing
             scaledtype = promote_type(scaledtype, typeof(scale_factor))
         end
 
-        if add_offset != nothing
+        if add_offset !== nothing
             scaledtype = promote_type(scaledtype, typeof(add_offset))
         end
-    end
-
-    rettype = scaledtype
-
-    # rettype can be a date if calendar is different from nothing
-    if calendar != nothing
-        DT = nothing
-        try
-            DT = CFTime.timetype(calendar)
-        catch
-        end
-
-        if DT !== nothing
-            # this is the only supported option for NCDatasets
-            prefer_datetime = true
-
-            if prefer_datetime &&
-                (DT in [DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian])
-                rettype = DateTime
-            else
-                rettype = DT
-            end
-        else
-            @warn("unsupported calendar `$calendar`. Time units are ignored.")
-        end
-    end
-
-    if fillvalue != nothing
-        rettype = Union{Missing,rettype}
     end
 
     storage_attrib = (
@@ -408,8 +374,36 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
         time_factor = time_factor,
     )
 
+    rettype = _get_rettype(ds, calendar, fillvalue, scaledtype)
+
     return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib),typeof(storage_attrib)}(
         v,v.attrib,storage_attrib)
+end
+
+function _get_rettype(ds, calendar, fillvalue, rettype)
+    # rettype can be a date if calendar is different from nothing
+    if calendar !== nothing
+        DT = nothing
+        try
+            DT = CFTime.timetype(calendar)
+            # this is the only supported option for NCDatasets
+            prefer_datetime = true
+
+            if prefer_datetime &&
+                (DT in (DateTimeStandard,DateTimeProlepticGregorian,DateTimeJulian))
+                rettype = DateTime
+            else
+                rettype = DT
+            end
+        catch
+            @warn("unsupported calendar `$calendar`. Time units are ignored.")
+        end
+    end
+
+    if fillvalue !== nothing
+        rettype = Union{Missing,rettype}
+    end
+    return rettype
 end
 
 
@@ -457,7 +451,7 @@ calendar(v::CFVariable) = v._storage_attrib.calendar
 The time unit in milliseconds. E.g. seconds would be 1000., days would be 86400000.
 The result can also be `nothing` if the variable has no time units.
 """
-time_factor(v::CFVariable) = v._storage_attrib.time_factor
+time_factor(v::CFVariable) = v._storage_attrib[:time_factor]
 
 
 ############################################################
@@ -471,6 +465,7 @@ time_factor(v::CFVariable) = v._storage_attrib.time_factor
 @inline isfillvalue(data,fillvalue::AbstractFloat) = (isnan(fillvalue) ? isnan(data) : data == fillvalue)
 
 @inline CFtransform_missing(data,fv) = (isfillvalue(data,fv) ? missing : data)
+
 @inline CFtransform_missing(data,fv::Nothing) = data
 
 @inline CFtransform_replace_missing(data,fv) = (ismissing(data) ? fv : data)
@@ -545,6 +540,12 @@ end
     return out
 end
 
+@inline function CFtransformdata(
+    data::AbstractArray{T,N},fv::Nothing,scale_factor::Nothing,
+    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,::Type{T}) where {T,N}
+    # no transformation necessary (avoid allocation)
+    return data
+end
 
 @inline _inv(x::Nothing) = nothing
 @inline _inv(x) = 1/x
@@ -571,6 +572,13 @@ end
         out[i] = CFinvtransform(data[i],fv,inv_scale_factor,minus_offset,time_origin,inv_time_factor,DT)
     end
     return out
+end
+
+@inline function CFinvtransformdata(
+    data::AbstractArray{T,N},fv::Nothing,scale_factor::Nothing,
+    add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,::Type{T}) where {T,N}
+    # no transformation necessary (avoid allocation)
+    return data
 end
 
 # for scalar

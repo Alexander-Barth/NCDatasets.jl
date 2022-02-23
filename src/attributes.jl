@@ -16,7 +16,7 @@ function listAtt(ncid,varid)
 end
 
 
-function Base.get(a::BaseAttributes, name::AbstractString,default)
+function Base.get(a::BaseAttributes, name::SymbolOrString,default)
     if haskey(a,name)
         return a[name]
     else
@@ -26,7 +26,7 @@ end
 
 
 """
-    getindex(a::Attributes,name::AbstractString)
+    getindex(a::Attributes,name::SymbolOrString)
 
 Return the value of the attribute called `name` from the
 attribute list `a`. Generally the attributes are loaded by
@@ -37,24 +37,39 @@ ds = NCDataset("file.nc")
 title = ds.attrib["title"]
 ```
 """
-function Base.getindex(a::Attributes,name::AbstractString)
+function Base.getindex(a::Attributes,name::SymbolOrString)
     return nc_get_att(a.ds.ncid,a.varid,name)
 end
 
 
 """
-    Base.setindex!(a::Attributes,data,name::AbstractString)
+    Base.setindex!(a::Attributes,data,name::SymbolOrString)
 
 Set the attribute called `name` to the value `data` in the
-attribute list `a`. Generally the attributes are defined by
-indexing, for example:
+attribute list `a`. `data` can be a vector or a scalar. A scalar
+is handeld as a vector with one element in the NetCDF data model.
+
+Generally the attributes are defined by indexing, for example:
 
 ```julia
 ds = NCDataset("file.nc","c")
 ds.attrib["title"] = "my title"
+close(ds)
 ```
+
+If `data` is a string, then attribute is saved as a list of
+NetCDF characters (`NC_CHAR`) with the appropriate length. To save the attribute
+as a string (`NC_STRING`) you can use the following:
+
+```julia
+ds = NCDataset("file.nc","c")
+ds.attrib["title"] = ["my title"]
+close(ds)
+```
+
+
 """
-function Base.setindex!(a::Attributes,data,name::AbstractString)
+function Base.setindex!(a::Attributes,data,name::SymbolOrString)
     defmode(a.ds) # make sure that the file is in define mode
     return nc_put_att(a.ds.ncid,a.varid,name,data)
 end
@@ -66,12 +81,21 @@ Return a list of the names of all attributes.
 """
 Base.keys(a::Attributes) = listAtt(a.ds.ncid,a.varid)
 
+
+"""
+    Base.haskey(a::Attributes,name)
+
+Check if name is an attribute
+"""
+Base.haskey(a::Attributes{NCDataset},name::SymbolOrString) = _nc_has_att(a.ds.ncid,a.varid,name)
+
+
 """
     Base.delete!(a::Attributes, name)
 
 Delete the attribute `name` from the attribute list `a`.
 """
-function Base.delete!(a::Attributes,name::AbstractString)
+function Base.delete!(a::Attributes,name::SymbolOrString)
     defmode(a.ds)
     nc_del_att(a.ds.ncid,a.varid,name)
     return nothing

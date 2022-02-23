@@ -1,4 +1,4 @@
-# Performance tips
+# [Performance tips](@id performance_tips)
 
 * Reading data from a file is not type-stable, because the type of the output of the read operation does depedent on the type defined in the NetCDF files and the value of various attribute (like `scale_factor`, `add_offset` and `units` for time conversion). All this information cannot be inferred from a static analysis of the source code. It is therefore recommended to use [type annotation](https://docs.julialang.org/en/v1/manual/types/index.html#Type-Declarations-1) if resulting type of a read operation in known:
 

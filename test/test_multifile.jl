@@ -14,7 +14,8 @@ function example_file(i,array, fname = tempname();
 
         # Declare variables
 
-        ncvar = defVar(ds,varname, Float64, ("lon", "lat", "time"))
+        ncvar = defVar(ds,varname, Float64, ("lon", "lat", "time"),
+                       fillvalue = -9999)
         ncvar.attrib["field"] = "u-wind, scalar, series"
         ncvar.attrib["units"] = "meter second-1"
         ncvar.attrib["long_name"] = "surface u-wind component"
@@ -90,51 +91,57 @@ A = [randn(2,3),randn(2,3),randn(2,3)]
 C = cat(A...; dims = 3)
 fnames = example_file.(1:3,A)
 
-
-mfds = NCDataset(fnames, deferopen = false);
 varname = "var"
-var = variable(mfds,varname);
-data = var[:,:,:]
 
-@test C == var[:,:,:]
+for deferopen in (false,true)
+    local data
+    local lon
 
-@test_throws BoundsError var[:,:,end+1]
-@test_throws BoundsError mfds[varname].var[:,:,end+1]
+    mfds = NCDataset(fnames, deferopen = deferopen);
+    var = variable(mfds,varname);
+    data = var[:,:,:]
 
-@test mfds.attrib["history"] == "foo"
-@test var.attrib["units"] == "meter second-1"
+    @test C == var[:,:,:]
 
-@test dimnames(var) == ("lon", "lat", "time")
-# lon does not vary in time and thus there should be no aggregation
-lon = variable(mfds,"lon");
-@test lon.attrib["units"] == "degrees_east"
-@test size(lon) == (size(data,1),)
+    @test_throws BoundsError var[:,:,end+1]
+    @test_throws BoundsError mfds[varname].var[:,:,end+1]
 
-var = mfds[varname]
-@test C == var[:,:,:]
-@test dimnames(var) == ("lon", "lat", "time")
+    @test mfds.attrib["history"] == "foo"
+    @test var.attrib["units"] == "meter second-1"
 
-@test mfds.dim["lon"] == size(C,1)
-@test mfds.dim["lat"] == size(C,2)
-@test mfds.dim["time"] == size(C,3)
+    @test dimnames(var) == ("lon", "lat", "time")
+    # lon does not vary in time and thus there should be no aggregation
+    lon = variable(mfds,:lon);
+    @test lon.attrib["units"] == "degrees_east"
+    @test size(lon) == (size(data,1),)
 
-@test mfds.dim["time"] == size(C,3)
+    var = mfds[varname]
+    @test C == var[:,:,:]
+    @test dimnames(var) == ("lon", "lat", "time")
 
-# save a aggregated file
-fname_merged = tempname()
-write(fname_merged,mfds)
+    @test mfds.dim["lon"] == size(C,1)
+    @test mfds.dim["lat"] == size(C,2)
+    @test mfds.dim["time"] == size(C,3)
 
-ds_merged = NCDataset(fname_merged)
-@test mfds.dim["time"] == size(C,3)
-close(ds_merged)
+    @test mfds.dim["time"] == size(C,3)
+
+    # save a aggregated file
+    fname_merged = tempname()
+    write(fname_merged,mfds)
+
+    ds_merged = NCDataset(fname_merged)
+    @test mfds.dim["time"] == size(C,3)
+    close(ds_merged)
 
 
-# show
-buf = IOBuffer()
-show(buf,mfds)
-occursin("time = 3",String(take!(buf)))
+    # show
+    buf = IOBuffer()
+    show(buf,mfds)
+    occursin("time = 3",String(take!(buf)))
 
-close(mfds)
+    close(mfds)
+end
+
 
 # write
 mfds = NCDataset(fnames,"a",deferopen = false);
@@ -162,6 +169,8 @@ end
 @test size(mfds[varname].var) == (2, 3, 3)
 @test name(mfds[varname].var) == varname
 @test NCDatasets.groupname(mfds.group["group"]) == "group"
+@test fillvalue(mfds[varname]) == -9999.
+@test fillvalue(mfds[varname].var) == -9999.
 
 
 # create new dimension in all files

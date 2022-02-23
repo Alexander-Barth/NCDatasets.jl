@@ -36,10 +36,10 @@ This is a quickstart guide that outlines basic loading, reading, etc. usage.
 For more details please see the individual pages of the documentation.
 
 
-* [Explore the content of a netCDF file](#explore-the-content-of-a-netcdf-file)
-* [Load a netCDF file](#load-a-netcdf-file)
-* [Create a netCDF file](#create-a-netcdf-file)
-* [Edit an existing netCDF file](#edit-an-existing-netcdf-file)
+* [Explore the content of a netCDF file](@ref)
+* [Load a netCDF file](@ref)
+* [Create a netCDF file](@ref)
+* [Edit an existing netCDF file](@ref)
 * [Create a netCDF file using the metadata of an existing netCDF file as template](@ref)
 * [Get one or several variables by specifying the value of an attribute](@ref)
 * [Load a file with unknown structure](@ref)
@@ -55,18 +55,6 @@ using NCDatasets
 ds = NCDataset("file.nc")
 ```
 
-This creates the central structure of NCDatasets.jl, `NCDataset`, which represents the contents of the netCDF file (without immediatelly loading everything in memory).
-
-The following displays the information just for the variable `varname`:
-
-```julia
-ds["varname"]
-```
-
-while to get the global attributes you can do:
-```julia
-ds.attrib
-```
 which produces a listing like:
 
 ```
@@ -86,6 +74,22 @@ Variables
      units                = days since 1950-01-01 00:00:00
 [...]
 ```
+
+This creates the central structure of NCDatasets.jl, `NCDataset`, which represents the contents of the netCDF file (without immediatelly loading everything in memory).
+
+The following displays the information just for the variable `varname`:
+
+```julia
+ds["varname"]
+```
+
+To get a list of global attributes, you can use:
+
+```julia
+ds.attrib
+```
+
+
 
 ### Load a netCDF file
 

@@ -78,7 +78,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     end
     @test v[:,:] == 2*data
 
-    # write a the complete data set
+    # write the complete data set
     v[:,:] = 3*data
     @test v[:,:] == 3*data
 
@@ -213,6 +213,11 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
         show(buf,ds.attrib)
         @test occursin("title",String(take!(buf)))
 
+        show(buf,ds.dim)
+        @test occursin("lon",String(take!(buf)))
+        show(buf,ds.dim)
+        @test occursin("lat",String(take!(buf)))
+
         show(buf,ds["temperature"])
         @test occursin("temperature",String(take!(buf)))
 
@@ -237,6 +242,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_cont_ragged_array.jl")
 
     include("test_chunk_cache.jl")
+    include("test_enum.jl")
 end
 
 @testset "NetCDF4 groups" begin
@@ -248,6 +254,10 @@ end
 @testset "Variable-length arrays" begin
     include("test_vlen_lowlevel.jl")
     include("test_vlen.jl")
+end
+
+@testset "Compound types" begin
+    include("test_compound.jl")
 end
 
 @testset "Time and calendars" begin
@@ -262,3 +272,4 @@ end
 @testset "Deferred datasets" begin
     include("test_defer.jl")
 end
+

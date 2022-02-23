@@ -18,6 +18,23 @@ function Base.keys(d::Dimensions)
                   for dimid in nc_inq_dimids(d.ds.ncid,false)]
 end
 
+function Base.show(io::IO, d::AbstractDimensions; indent = "")
+    printstyled(io, indent, "Dimensions\n",color=section_color())
+    try
+        for (dimname,dimlen) in d
+            print(io,indent,"   $(dimname) = $(dimlen)\n")
+        end
+    catch err
+        if isa(err, NetCDFError)
+            if err.code == NC_EBADID
+                print(io, "NetCDF dimensions (file closed)")
+                return
+            end
+        end
+        rethrow()
+    end
+end
+
 function Base.getindex(d::Dimensions,name::AbstractString)
     dimid = nc_inq_dimid(d.ds.ncid,name)
     return nc_inq_dimlen(d.ds.ncid,dimid)
@@ -65,11 +82,31 @@ If `len` is the special value `Inf`, then the dimension is considered as
 For example:
 
 ```julia
+using NCDatasets
 ds = NCDataset("/tmp/test.nc","c")
 defDim(ds,"lon",100)
+# [...]
+close(ds)
 ```
 
 This defines the dimension `lon` with the size 100.
+
+To create a variable with an unlimited dimensions use for example:
+
+```julia
+using NCDatasets
+ds = NCDataset("/tmp/test2.nc","c")
+defDim(ds,"lon",10)
+defDim(ds,"lat",10)
+defDim(ds,"time",Inf)
+defVar(ds,"unlimited_variable",Float64,("lon","lat","time"))
+@show ds.dim["time"]
+# returns 0 as no data is added
+ds["unlimited_variable"][:,:,:] = randn(10,10,4)
+@show ds.dim["time"]
+# returns now 4 as 4 time slice have been added
+close(ds)
+```
 """
 function defDim(ds::NCDataset,name,len)
     defmode(ds) # make sure that the file is in define mode

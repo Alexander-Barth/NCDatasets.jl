@@ -3,21 +3,6 @@ Functionality and definitions
 related with the `Variables` types/subtypes
 =#
 
-############################################################
-# Types and subtypes
-############################################################
-
-abstract type AbstractVariable{T,N} <: AbstractDiskArray{T,N} end
-
-# Variable (as stored in NetCDF file, without using
-# add_offset, scale_factor and _FillValue)
-mutable struct Variable{NetCDFType,N,TDS<:AbstractDataset} <: AbstractVariable{NetCDFType, N}
-    ds::TDS
-    varid::Cint
-    dimids::NTuple{N,Cint}
-    attrib::Attributes
-end
-
 
 ############################################################
 # Helper functions (internal)
@@ -73,6 +58,17 @@ export renameVar
 # Obtaining variables
 ############################################################
 
+function variable(ds::NCDataset,varid::Integer)
+    dimids = nc_inq_vardimid(ds.ncid,varid)
+    nctype = _jltype(ds.ncid,nc_inq_vartype(ds.ncid,varid))
+    ndims = length(dimids)
+    attrib = Attributes(ds,varid)
+
+    # reverse dimids to have the dimension order in Fortran style
+    return Variable{nctype,ndims,typeof(ds)}(ds,varid, (reverse(dimids)...,), attrib)
+end
+
+
 """
     v = variable(ds::NCDataset,varname::String)
 
@@ -82,20 +78,7 @@ variable `v` is indexed.
 """
 function variable(ds::NCDataset,varname::SymbolOrString)
     varid = nc_inq_varid(ds.ncid,varname)
-    name,nctype,dimids,nattr = nc_inq_var(ds.ncid,varid)
-    ndims = length(dimids)
-    shape = zeros(Int,ndims)
-
-    for i = 1:ndims
-        shape[ndims-i+1] = nc_inq_dimlen(ds.ncid,dimids[i])
-    end
-
-    attrib = Attributes(ds,varid)
-
-    # reverse dimids to have the dimension order in Fortran style
-    return Variable{nctype,ndims,NCDataset}(ds,varid,
-                                  (reverse(dimids)...,),
-                                  attrib)
+    return variable(ds,varid)
 end
 
 export variable
@@ -122,10 +105,10 @@ load!(ds["temp"].var,data,:,1) # loads the 1st column
 
 """
 @inline function load!(ncvar::NCDatasets.Variable{T,N}, data, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
-    sizes =  size(ncvar)   
+    sizes = size(ncvar)
     normalizedindices = normalizeindexes(sizes, indices)
     ind = to_indices(ncvar,normalizedindices)
-    
+
     start,count,stride,jlshape = ncsub(ind)
     nc_get_vars!(ncvar.ds.ncid,ncvar.varid,start,count,stride,data)
 end
@@ -318,7 +301,8 @@ end
 
 
 function readblock!(v::Variable, data, r::AbstractUnitRange...)
-#    @show "read "
+    #    @show "read "
+    @debug "readblock! $r"
     start = [first(i)-1 for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
     datamode(v.ds)
@@ -327,6 +311,7 @@ end
 
 function readblock!(v::Variable, data, r::StepRange...)
 #    @show "read strided"
+    @debug "readblock! $r"
     start = [first(i)-1 for i in reverse(r)]
     stride = [step(i) for i in reverse(r)]
     count = [length(i) for i in reverse(r)]
@@ -383,76 +368,29 @@ function read(v::Variable)
     return data
 end
 
-#=
 
-function Base.getindex(v::Variable,indexes::Int...)
-    datamode(v.ds)
-    return nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
+_normalizeindex(n,ind::Colon) = 1:1:n
+_normalizeindex(n,ind::Int) = ind:1:ind
+_normalizeindex(n,ind::UnitRange) = StepRange(ind)
+_normalizeindex(n,ind::StepRange) = ind
+_normalizeindex(n,ind) = error("unsupported index")
+
+# indexes can be longer than sz
+function normalizeindexes(sz,indexes)
+    return ntuple(i -> _normalizeindex(sz[i],indexes[i]), length(sz))
 end
 
-function Base.setindex!(v::Variable{T,N},data,indexes::Int...) where N where T
-    @debug "$(@__LINE__)"
-    datamode(v.ds)
-    # use zero-based indexes and reversed order
-    nc_put_var1(v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],T(data))
-    return data
-end
 
-function Base.getindex(v::Variable{T,N},indexes::Colon...) where {T,N}
-    datamode(v.ds)
-    # special case for scalar NetCDF variable
-    if N == 0
-        data = Ref(zero(T))
-        nc_get_var!(v.ds.ncid,v.varid,data)
-        return data[]
-    else
-        data = Array{T,N}(undef,size(v))
-        nc_get_var!(v.ds.ncid,v.varid,data)
-        return data
-    end
-end
+# computes the shape of the array of size `sz` after applying the indexes
+# size(a[indexes...]) == _shape_after_slice(size(a),indexes...)
 
-function Base.setindex!(v::Variable{T,N},data::T,indexes::Colon...) where {T,N}
-    @debug "setindex! colon $data"
-    datamode(v.ds) # make sure that the file is in data mode
-    tmp = fill(data,size(v))
+# the difficulty here is to make the size inferrable by the compiler
+@inline _shape_after_slice(sz,indexes...) = __sh(sz,(),1,indexes...)
+@inline __sh(sz,sh,n,i::Integer,indexes...) = __sh(sz,sh,               n+1,indexes...)
+@inline __sh(sz,sh,n,i::Colon,  indexes...) = __sh(sz,(sh...,sz[n]),    n+1,indexes...)
+@inline __sh(sz,sh,n,i,         indexes...) = __sh(sz,(sh...,length(i)),n+1,indexes...)
+@inline __sh(sz,sh,n) = sh
 
-    nc_put_var(v.ds.ncid,v.varid,tmp)
-    return data
-end
-
-# call to v .= 123
-function Base.setindex!(v::Variable{T,N},data::Number) where {T,N}
-    @debug "setindex! $data"
-    datamode(v.ds) # make sure that the file is in data mode
-    tmp = fill(convert(T,data),size(v))
-
-    nc_put_var(v.ds.ncid,v.varid,tmp)
-    return data
-end
-
-Base.setindex!(v::Variable,data::Number,indexes::Colon...) = setindex!(v::Variable,data)
-
-function Base.setindex!(v::Variable{T,N},data::AbstractArray{T,N},indexes::Colon...) where {T,N}
-    datamode(v.ds) # make sure that the file is in data mode
-
-    nc_put_var(v.ds.ncid,v.varid,data)
-    return data
-end
-
-function Base.setindex!(v::Variable{T,N},data::AbstractArray{T2,N},indexes::Colon...) where {T,T2,N}
-    datamode(v.ds) # make sure that the file is in data mode
-    tmp =
-        if T <: Integer
-            round.(T,data)
-        else
-            convert(Array{T,N},data)
-        end
-
-    nc_put_var(v.ds.ncid,v.varid,tmp)
-    return data
-end
-=#
 
 function ncsub(indexes::NTuple{N,T}) where N where T
     rindexes = reverse(indexes)
@@ -463,91 +401,30 @@ function ncsub(indexes::NTuple{N,T}) where N where T
     return start,count,stride,jlshape
 end
 
-#=
-function Base.getindex(v::Variable{T,N},indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
-    start,count,stride,jlshape = ncsub(indexes[1:N])
-    data = Array{T,N}(undef,jlshape)
+@inline start_count_stride(n,ind::AbstractRange) = (first(ind)-1,length(ind),step(ind))
+@inline start_count_stride(n,ind::Integer) = (ind-1,1,1)
+@inline start_count_stride(n,ind::Colon) = (0,n,1)
 
-    datamode(v.ds)
-    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
-    return data
-end
+@inline function ncsub2(sz,indexes...)
+    N = length(sz)
 
-function Base.setindex!(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...) where {T,N}
-    datamode(v.ds) # make sure that the file is in data mode
-    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
-    tmp = fill(data,jlshape)
-    nc_put_vars(v.ds.ncid,v.varid,start,count,stride,tmp)
-    return data
-end
+    start = Vector{Int}(undef,N)
+    count = Vector{Int}(undef,N)
+    stride = Vector{Int}(undef,N)
 
-function Base.setindex!(v::Variable{T,N},data::Number,indexes::StepRange{Int,Int}...) where {T,N}
-    datamode(v.ds) # make sure that the file is in data mode
-    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
-    tmp = fill(convert(T,data),jlshape)
-    nc_put_vars(v.ds.ncid,v.varid,start,count,stride,tmp)
-    return data
-end
-
-function Base.setindex!(v::Variable{T,N},data::Array{T,N},indexes::StepRange{Int,Int}...) where {T,N}
-    datamode(v.ds) # make sure that the file is in data mode
-    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
-    nc_put_vars(v.ds.ncid,v.varid,start,count,stride,data)
-    return data
-end
-
-# data can be Array{T2,N} or BitArray{N}
-function Base.setindex!(v::Variable{T,N},data::AbstractArray,indexes::StepRange{Int,Int}...) where {T,N}
-    datamode(v.ds) # make sure that the file is in data mode
-    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
-
-    tmp = convert(Array{T,ndims(data)},data)
-    nc_put_vars(v.ds.ncid,v.varid,start,count,stride,tmp)
-
-    return data
-end
-=#
-
-_normalizeindex(n,ind::Colon) = 1:1:n
-_normalizeindex(n,ind::Int) = ind:1:ind
-_normalizeindex(n,ind::UnitRange) = StepRange(ind)
-_normalizeindex(n,ind::StepRange) = ind
-_normalizeindex(n,ind) = error("unsupported index")
-
-_dropindex(ind::Int) = 1
-_dropindex(ind) = Colon()
-
-# indexes can be longer than sz
-function normalizeindexes(sz,indexes)
-    return ntuple(i -> _normalizeindex(sz[i],indexes[i]), length(sz))
-end
-
-#=
-function Base.getindex(v::Variable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
-    ind = normalizeindexes(size(v),indexes)
-    drop_index = _dropindex.(indexes)
-    # drop any dimension which was indexed with a scalar
-    # TODO: avoid copy
-    data = v[ind...][drop_index...]
-    return data
-end
-
-# NetCDF scalars indexed as []
-Base.getindex(v::Variable{T, 0}) where T = v[1]
-
-
-
-function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
-    ind = normalizeindexes(size(v),indexes)
-
-    # make arrays out of scalars
-    if ndims(data) == 0
-        data = fill(data,length.(ind))
+    for i = 1:N
+        ind = indexes[i]
+        ri = N-i+1
+        @inbounds start[ri],count[ri],stride[ri] = start_count_stride(sz[i],ind)
     end
 
-    return v[ind...] = data
+    return start,count,stride
 end
-=#
+
+
+Base.getindex(v::Union{MFVariable,CFVariable,DeferVariable},ci::CartesianIndices) = v[ci.indices...]
+Base.setindex!(v::Union{MFVariable,CFVariable,DeferVariable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
+
 
 function Base.show(io::IO,v::AbstractVariable; indent="")
     delim = " × "

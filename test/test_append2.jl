@@ -8,11 +8,11 @@ times = 0:10
 # generate a NetCDF file
 
 NCDatasets.NCDataset(filename,"c") do ds
-    NCDatasets.defDim(ds,"lonc",length(lons))
-    NCDatasets.defDim(ds,"latc",length(lats))
+    NCDatasets.defDim(ds,"lon",length(lons))
+    NCDatasets.defDim(ds,"lat",length(lats))
     NCDatasets.defDim(ds,"time",Inf)
 
-    tempvar = NCDatasets.defVar(ds,"temp",Float32,("lonc","latc","time"))
+    tempvar = NCDatasets.defVar(ds,"temp",Float32,("lon","lat","time"))
     timevar = NCDatasets.defVar(ds,"time",Float64,("time",))
 
     for itime = 1:length(times)
@@ -27,7 +27,11 @@ NCDatasets.NCDataset(filename,"a") do ds
     tempvar = ds["temp"]
 
     for itime = 1:length(times)
-        tempvar[:,:,itime] = [i+j for i = 1:length(lons), j = 1:length(lats)]
+        #@show size(tempvar)
+        #@show size(tempvar[:,:,itime])
+        data = [i+j for i = 1:length(lons), j = 1:length(lats)]
+        #tempvar[:,:,itime] = data
+        tempvar[:,:,itime] = data[:,:,1:1]
     end
 end
 

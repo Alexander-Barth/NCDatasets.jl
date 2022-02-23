@@ -4,12 +4,6 @@
 
 import Base: showerror
 
-# Exception type for error thrown by the NetCDF library
-mutable struct NetCDFError <: Exception
-    code::Cint
-    msg::String
-end
-
 """
     NetCDFError(code::Cint)
 

@@ -1,48 +1,4 @@
-# DeferDataset are Dataset which are open only when there are accessed and
-# closed directly after. This is necessary to work with a large number
-# of NetCDF files (e.g. more than 1000).
-
-struct Resource
-    filename::String
-    mode::String
-    metadata::OrderedDict
-end
-
-mutable struct DeferAttributes <: BaseAttributes
-    r::Resource
-    varname::String # "/" for global attributes
-    data::OrderedDict
-end
-
-mutable struct DeferDimensions <: AbstractDimensions
-    r::Resource
-    data::OrderedDict
-end
-
-mutable struct DeferGroups <: AbstractGroups
-    r::Resource
-    data::OrderedDict
-end
-
-
-# -----------------------------------------------------
-
-
-mutable struct DeferDataset <: AbstractDataset
-    r::Resource
-    groupname::String
-    attrib::DeferAttributes
-    dim::DeferDimensions
-    group::DeferGroups
-    data::OrderedDict
-end
-
-mutable struct DeferVariable{T,N} <: AbstractVariable{T,N}
-    r::Resource
-    varname::String
-    attrib::DeferAttributes
-    data::OrderedDict
-end
+iswritable(dds::DeferDataset) = dds.r.mode != "r"
 
 function metadata(ds::NCDataset)
     # dimensions
@@ -89,6 +45,16 @@ function metadata(ds::NCDataset)
         "attrib" => OrderedDict(ds.attrib),
         "group" => group
         )
+end
+
+
+function DeferDataset(r::Resource,groupname::String,attrib::DeferAttributes,dim::DeferDimensions,group::DeferGroups,data::OrderedDict)
+   _boundsmap = nothing
+   dds = DeferDataset(r,groupname,attrib,dim,group,data,_boundsmap)
+   if (r.mode == "r")
+       initboundsmap!(dds)
+   end
+   return dds
 end
 
 function DeferDataset(filename,mode,info)
@@ -147,6 +113,8 @@ function variable(dds::DeferDataset,varname::AbstractString)
 
     return DeferVariable{T,N}(dds.r,varname,da,data)
 end
+
+variable(dds::DeferDataset,varname::Symbol) = variable(dds,string(varname))
 
 function Base.getindex(dv::DeferVariable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     Variable(dv) do v

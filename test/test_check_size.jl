@@ -29,7 +29,9 @@ end
 ds["w"][:,:] = ones(10,10)
 
 # w should grow along the unlimited dimension
-ds["w"][:,:] = ones(10,15)
+### TODO: growable
+#ds["w"][:,:] = ones(10,15)
+ds["w"][:,1:15] = ones(10,15)
 @test size(ds["w"]) == (10,15)
 
 # w cannot grow along a fixed dimension
@@ -46,7 +48,9 @@ ds = NCDataset(filename, "c")
 ds.dim["z"] = 4
 ds.dim["time"] = Inf
 defVar(ds, "temp", Float64, ("z", "time"))
-ds["temp"][:, :, 1] = rand(4)
+### TODO: growable
+#ds["temp"][:, :, 1] = rand(4)
+ds["temp"][:, 1:1, 1] = rand(4)
 close(ds)
 
 rm(filename)
