@@ -531,13 +531,19 @@ end
 @inline CFtransformdata(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast) =
     CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
 
-# for arrays
-@inline function CFtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,DTcast) where {T,N}
-    out = Array{DTcast,N}(undef,size(data))
+# in-place version
+@inline function CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,DTcast) where {T,N}
+
     @inbounds @simd for i in eachindex(data)
         out[i] = CFtransform(data[i],fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
     end
     return out
+end
+
+# for arrays
+@inline function CFtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,DTcast) where {T,N}
+    out = Array{DTcast,N}(undef,size(data))
+    return CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
 end
 
 @inline function CFtransformdata(
@@ -648,3 +654,46 @@ Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=inde
 Base.show(io::IO,::MIME"text/plain",v::Union{Variable,CFVariable}) = show(io,v)
 
 Base.display(v::Union{Variable,CFVariable}) = show(stdout,v)
+
+
+
+"""
+    NCDatasets.load!(ncvar::CFVariable, data, buffer, indices)
+
+Loads a NetCDF variables `ncvar` in-place and puts the result in `data` (an
+array of `eltype(ncvar)`) along the specified `indices`. `buffer` is a temporary
+ array of the same size as data but the type should be `eltype(ncv.var)`, i.e.
+the corresponding type in the NetCDF files (before applying `scale_factor`,
+`add_offset` and masking fill values). Scaling and masking will be applied to
+the array `data`.
+
+`data` and `buffer` can be the same array if `eltype(ncvar) == eltype(ncvar.var)`.
+
+## Example:
+
+```julia
+# create some test array
+Dataset("file.nc","c") do ds
+    defDim(ds,"time",3)
+    ncvar = defVar(ds,"vgos",Int16,("time",),attrib = ["scale_factor" => 0.1])
+    ncvar[:] = [1.1, 1.2, 1.3]
+    # store 11, 12 and 13 as scale_factor is 0.1
+end
+
+
+ds = Dataset("file.nc")
+ncv = ds["vgos"];
+# data and buffer must have the right shape and type
+data = zeros(eltype(ncv),size(ncv)); # here Vector{Float64}
+buffer = zeros(eltype(ncv.var),size(ncv)); # here Vector{Int16}
+NCDatasets.load!(ncv,data,buffer,:,:,:)
+close(ds)
+```
+"""
+@inline function load!(v::NCDatasets.CFVariable{T,N}, data, buffer, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
+
+    load!(v.var,buffer,indices...)
+    return CFtransformdata!(data,buffer,fillvalue(v),scale_factor(v),add_offset(v),
+                           time_origin(v),time_factor(v),eltype(v))
+
+end
