@@ -87,9 +87,9 @@ julia> NCDataset("test_file.nc","c") do ds
 
 !!! note
 
-    If the attributes `_FillValue`, `add_offset`, `scale_factor`, `units` and
-    `calendar` are used, they should be defined when calling `defVar` by using the
-    parameter `attrib` as shown in the example above.
+    If the attributes `_FillValue`, `missing_value`, `add_offset`, `scale_factor`,
+    `units` and `calendar` are used, they should be defined when calling `defVar`
+    by using the parameter `attrib` as shown in the example above.
 """
 function defVar(ds::NCDataset,name,vtype::DataType,dimnames; kwargs...)
     # all keyword arguments as dictionary
@@ -297,7 +297,7 @@ end
 Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The CF convention are honored when the
 variable is indexed:
-* `_FillValue` will be returned as `missing`
+* `_FillValue` or `missing_value` (which can be a list) will be returned as `missing`
 * `scale_factor` and `add_offset` are applied (output = `scale_factor` * data_in_file +  `add_offset`)
 * time variables (recognized by the units attribute and possibly the calendar attribute) are returned usually as
   `DateTime` object. Note that `DateTimeAllLeap`, `DateTimeNoLeap` and
@@ -331,8 +331,11 @@ because both variables are related thought the bounds attribute following the CF
 """
 function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
     v = variable(ds,varname)
+    T = eltype(v)
 
     fillvalue = get(v.attrib,"_FillValue",nothing)
+    # missing_value can be a vector
+    missing_values = get(v.attrib,"missing_value",T[])
     scale_factor = get(v.attrib,"scale_factor",nothing)
     add_offset = get(v.attrib,"add_offset",nothing)
 
@@ -353,8 +356,7 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
     end
 
 
-    scaledtype = eltype(v)
-
+    scaledtype = T
     if eltype(v) <: Number
         if scale_factor !== nothing
             scaledtype = promote_type(scaledtype, typeof(scale_factor))
@@ -367,6 +369,7 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
 
     storage_attrib = (
         fillvalue = fillvalue,
+        missing_values = (T.(missing_values)...,),
         scale_factor = scale_factor,
         add_offset = add_offset,
         calendar = calendar,
@@ -441,6 +444,20 @@ checksum(v::CFVariable) = checksum(v.var)
 fillmode(v::CFVariable) = fillmode(v.var)
 
 fillvalue(v::CFVariable) = v._storage_attrib.fillvalue
+missing_values(v::CFVariable) = v._storage_attrib.missing_values
+
+# collect all possible fill values
+function fill_and_missing_values(v::CFVariable)
+    T = eltype(v.var)
+    fv = ()
+    if !isnothing(fillvalue(v))
+        fv = (fillvalue(v),)
+    end
+
+    mv = missing_values(v)
+    (fv...,mv...)
+end
+
 scale_factor(v::CFVariable) = v._storage_attrib.scale_factor
 add_offset(v::CFVariable) = v._storage_attrib.add_offset
 time_origin(v::CFVariable) = v._storage_attrib.time_origin
@@ -464,12 +481,19 @@ time_factor(v::CFVariable) = v._storage_attrib[:time_factor]
 @inline isfillvalue(data,fillvalue) = data == fillvalue
 @inline isfillvalue(data,fillvalue::AbstractFloat) = (isnan(fillvalue) ? isnan(data) : data == fillvalue)
 
-@inline CFtransform_missing(data,fv) = (isfillvalue(data,fv) ? missing : data)
+# tuple peeling
+@inline function CFtransform_missing(data,fv::Tuple)
+    if isfillvalue(data,first(fv))
+        missing
+    else
+        CFtransform_missing(data,Base.tail(fv))
+    end
+end
 
-@inline CFtransform_missing(data,fv::Nothing) = data
+@inline CFtransform_missing(data,fv::Tuple{}) = data
 
-@inline CFtransform_replace_missing(data,fv) = (ismissing(data) ? fv : data)
-@inline CFtransform_replace_missing(data,fv::Nothing) = data
+@inline CFtransform_replace_missing(data,fv) = (ismissing(data) ? first(fv) : data)
+@inline CFtransform_replace_missing(data,fv::Tuple{}) = data
 
 @inline CFtransform_scale(data,scale_factor) = data*scale_factor
 @inline CFtransform_scale(data,scale_factor::Nothing) = data
@@ -547,7 +571,7 @@ end
 end
 
 @inline function CFtransformdata(
-    data::AbstractArray{T,N},fv::Nothing,scale_factor::Nothing,
+    data::AbstractArray{T,N},fv::Tuple{},scale_factor::Nothing,
     add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,::Type{T}) where {T,N}
     # no transformation necessary (avoid allocation)
     return data
@@ -581,7 +605,7 @@ end
 end
 
 @inline function CFinvtransformdata(
-    data::AbstractArray{T,N},fv::Nothing,scale_factor::Nothing,
+    data::AbstractArray{T,N},fv::Tuple{},scale_factor::Nothing,
     add_offset::Nothing,time_origin::Nothing,time_factor::Nothing,::Type{T}) where {T,N}
     # no transformation necessary (avoid allocation)
     return data
@@ -607,7 +631,7 @@ end
 function Base.getindex(v::CFVariable,
                        indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     data = v.var[indexes...]
-    return CFtransformdata(data,fillvalue(v),scale_factor(v),add_offset(v),
+    return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v),eltype(v))
 end
 
@@ -625,7 +649,7 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
         # can throw an convertion error if calendar attribute already exists and
         # is incompatible with the provided data
         v.var[indexes...] = CFinvtransformdata(
-            data,fillvalue(v),scale_factor(v),add_offset(v),
+            data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
             time_origin(v),time_factor(v),eltype(v.var))
         return data
     end
@@ -636,7 +660,8 @@ end
 
 function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
     v.var[indexes...] = CFinvtransformdata(
-        data,fillvalue(v),scale_factor(v),add_offset(v),
+        data,fill_and_missing_values(v),
+        scale_factor(v),add_offset(v),
         time_origin(v),time_factor(v),eltype(v.var))
 
     return data
@@ -693,7 +718,8 @@ close(ds)
 @inline function load!(v::NCDatasets.CFVariable{T,N}, data, buffer, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
 
     load!(v.var,buffer,indices...)
-    return CFtransformdata!(data,buffer,fillvalue(v),scale_factor(v),add_offset(v),
+    fmv = fill_and_missing_values(v)
+    return CFtransformdata!(data,buffer,fmv,scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v))
 
 end
