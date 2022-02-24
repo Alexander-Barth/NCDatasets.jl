@@ -532,8 +532,8 @@ end
     CFtransform(data,fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
 
 # in-place version
-@inline function CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,DTcast) where {T,N}
-
+@inline function CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor) where {T,N}
+    DTcast = eltype(out)
     @inbounds @simd for i in eachindex(data)
         out[i] = CFtransform(data[i],fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
     end
@@ -543,7 +543,7 @@ end
 # for arrays
 @inline function CFtransformdata(data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,DTcast) where {T,N}
     out = Array{DTcast,N}(undef,size(data))
-    return CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor,DTcast)
+    return CFtransformdata!(out,data::AbstractArray{T,N},fv,scale_factor,add_offset,time_origin,time_factor)
 end
 
 @inline function CFtransformdata(
@@ -694,6 +694,6 @@ close(ds)
 
     load!(v.var,buffer,indices...)
     return CFtransformdata!(data,buffer,fillvalue(v),scale_factor(v),add_offset(v),
-                           time_origin(v),time_factor(v),eltype(v))
+                           time_origin(v),time_factor(v))
 
 end
