@@ -465,6 +465,16 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
                     exclude = String[],
                     idimensions = Dict())
 
+    torange(indices::Colon) = indices
+    function torange(indices)
+        i = indices[1]:indices[end]
+        if i == indices
+            return i
+        else
+            error("indices cannot be converted to range")
+        end
+    end
+
     unlimited_dims = unlimited(src.dim)
 
     for (dimname,dimlength) in src.dim
@@ -497,7 +507,7 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
         dimension_names = dimnames(cfvar)
 
         # indices for subset
-        index = ntuple(i -> get(idimensions,dimension_names[i],:),length(dimension_names))
+        index = ntuple(i -> torange(get(idimensions,dimension_names[i],:)),length(dimension_names))
 
         destvar = defVar(dest, varname, eltype(cfvar.var), dimension_names; attrib = cfvar.attrib)
         # copy data
