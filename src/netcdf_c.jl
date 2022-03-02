@@ -378,13 +378,15 @@ end
 #     check(ccall((:nc_rename_grp,libnetcdf),Cint,(Cint,Cstring),grpid,name))
 # end
 
-# function nc_def_compound(ncid::Integer,size::Integer,name,typeidp)
-#     check(ccall((:nc_def_compound,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{nc_type}),ncid,size,name,typeidp))
-# end
+function nc_def_compound(ncid::Integer,size::Integer,name)
+    typeidp = Ref{nc_type}()
+    check(ccall((:nc_def_compound,libnetcdf),Cint,(Cint,Cint,Cstring,Ptr{nc_type}),ncid,size,name,typeidp))
+    return typeidp[]
+end
 
-# function nc_insert_compound(ncid::Integer,xtype::Integer,name,offset::Integer,field_typeid::Integer)
-#     check(ccall((:nc_insert_compound,libnetcdf),Cint,(Cint,nc_type,Cstring,Cint,nc_type),ncid,xtype,name,offset,field_typeid))
-# end
+function nc_insert_compound(ncid::Integer,xtype::Integer,name,offset::Integer,field_typeid::Integer)
+    check(ccall((:nc_insert_compound,libnetcdf),Cint,(Cint,nc_type,Cstring,Csize_t,nc_type),ncid,xtype,name,offset,field_typeid))
+end
 
 # function nc_insert_array_compound(ncid::Integer,xtype::Integer,name,offset::Integer,field_typeid::Integer,ndims::Integer,dim_sizes)
 #     check(ccall((:nc_insert_array_compound,libnetcdf),Cint,(Cint,nc_type,Cstring,Cint,nc_type,Cint,Ptr{Cint}),ncid,xtype,name,offset,field_typeid,ndims,dim_sizes))
@@ -398,49 +400,74 @@ end
 #     check(ccall((:nc_inq_typeid,libnetcdf),Cint,(Cint,Cstring,Ptr{nc_type}),ncid,name,typeidp))
 # end
 
-# function nc_inq_compound(ncid::Integer,xtype::Integer,name,sizep,nfieldsp)
-#     check(ccall((:nc_inq_compound,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{Cint},Ptr{Cint}),ncid,xtype,name,sizep,nfieldsp))
-# end
+function nc_inq_compound(ncid::Integer,xtype::Integer)
+    name = zeros(UInt8,NC_MAX_NAME+1)
+    sizep = Ref{Csize_t}()
+    nfieldsp = Ref{Csize_t}()
 
-# function nc_inq_compound_name(ncid::Integer,xtype::Integer,name)
-#     check(ccall((:nc_inq_compound_name,libnetcdf),Cint,(Cint,nc_type,Cstring),ncid,xtype,name))
-# end
+    check(ccall((:nc_inq_compound,libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{Csize_t},Ptr{Csize_t}),ncid,xtype,name,sizep,nfieldsp))
 
-# function nc_inq_compound_size(ncid::Integer,xtype::Integer,sizep)
-#     check(ccall((:nc_inq_compound_size,libnetcdf),Cint,(Cint,nc_type,Ptr{Cint}),ncid,xtype,sizep))
-# end
+    return unsafe_string(pointer(name)), sizep[], nfieldsp[]
+end
 
-# function nc_inq_compound_nfields(ncid::Integer,xtype::Integer,nfieldsp)
-#     check(ccall((:nc_inq_compound_nfields,libnetcdf),Cint,(Cint,nc_type,Ptr{Cint}),ncid,xtype,nfieldsp))
-# end
+function nc_inq_compound_name(ncid::Integer,xtype::Integer)
+    name = zeros(UInt8,NC_MAX_NAME+1)
+    check(ccall((:nc_inq_compound_name,libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8}),ncid,xtype,name))
+    return unsafe_string(pointer(name))
+end
+
+function nc_inq_compound_size(ncid::Integer,xtype::Integer)
+    sizep = Ref{Csize_t}()
+    check(ccall((:nc_inq_compound_size,libnetcdf),Cint,(Cint,nc_type,Ptr{Csize_t}),ncid,xtype,sizep))
+    return sizep[]
+end
+
+function nc_inq_compound_nfields(ncid::Integer,xtype::Integer)
+    nfieldsp = Ref{Csize_t}()
+    check(ccall((:nc_inq_compound_nfields,libnetcdf),Cint,(Cint,nc_type,Ptr{Csize_t}),ncid,xtype,nfieldsp))
+    return nfieldsp[]
+end
 
 # function nc_inq_compound_field(ncid::Integer,xtype::Integer,fieldid::Integer,name,offsetp,field_typeidp,ndimsp,dim_sizesp)
 #     check(ccall((:nc_inq_compound_field,libnetcdf),Cint,(Cint,nc_type,Cint,Cstring,Ptr{Cint},Ptr{nc_type},Ptr{Cint},Ptr{Cint}),ncid,xtype,fieldid,name,offsetp,field_typeidp,ndimsp,dim_sizesp))
 # end
 
-# function nc_inq_compound_fieldname(ncid::Integer,xtype::Integer,fieldid::Integer,name)
-#     check(ccall((:nc_inq_compound_fieldname,libnetcdf),Cint,(Cint,nc_type,Cint,Cstring),ncid,xtype,fieldid,name))
-# end
+function nc_inq_compound_fieldname(ncid::Integer,xtype::Integer,fieldid::Integer)
+    name = zeros(UInt8,NC_MAX_NAME+1)
+    check(ccall((:nc_inq_compound_fieldname,libnetcdf),Cint,(Cint,nc_type,Cint,Ptr{UInt8}),ncid,xtype,fieldid,name))
+    return unsafe_string(pointer(name))
+end
 
-# function nc_inq_compound_fieldindex(ncid::Integer,xtype::Integer,name,fieldidp)
-#     check(ccall((:nc_inq_compound_fieldindex,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{Cint}),ncid,xtype,name,fieldidp))
-# end
+function nc_inq_compound_fieldindex(ncid::Integer,xtype::Integer,name)
+    fieldidp = Ref{Cint}()
+    check(ccall((:nc_inq_compound_fieldindex,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{Cint}),ncid,xtype,name,fieldidp))
+    return fieldidp[]
+end
 
-# function nc_inq_compound_fieldoffset(ncid::Integer,xtype::Integer,fieldid::Integer,offsetp)
-#     check(ccall((:nc_inq_compound_fieldoffset,libnetcdf),Cint,(Cint,nc_type,Cint,Ptr{Cint}),ncid,xtype,fieldid,offsetp))
-# end
+function nc_inq_compound_fieldoffset(ncid::Integer,xtype::Integer,fieldid::Integer)
+    offsetp = Ref{Cint}()
+    check(ccall((:nc_inq_compound_fieldoffset,libnetcdf),Cint,(Cint,nc_type,Cint,Ptr{Cint}),ncid,xtype,fieldid,offsetp))
+    return offsetp[]
+end
 
-# function nc_inq_compound_fieldtype(ncid::Integer,xtype::Integer,fieldid::Integer,field_typeidp)
-#     check(ccall((:nc_inq_compound_fieldtype,libnetcdf),Cint,(Cint,nc_type,Cint,Ptr{nc_type}),ncid,xtype,fieldid,field_typeidp))
-# end
+function nc_inq_compound_fieldtype(ncid::Integer,xtype::Integer,fieldid::Integer)
+    field_typeidp = Ref{nc_type}()
+    check(ccall((:nc_inq_compound_fieldtype,libnetcdf),Cint,(Cint,nc_type,Cint,Ptr{nc_type}),ncid,xtype,fieldid,field_typeidp))
+    return field_typeidp[]
+end
 
-# function nc_inq_compound_fieldndims(ncid::Integer,xtype::Integer,fieldid::Integer,ndimsp)
-#     check(ccall((:nc_inq_compound_fieldndims,libnetcdf),Cint,(Cint,nc_type,Cint,Ptr{Cint}),ncid,xtype,fieldid,ndimsp))
-# end
+function nc_inq_compound_fieldndims(ncid::Integer,xtype::Integer,fieldid::Integer)
+    ndimsp = Ref{Cint}()
+    check(ccall((:nc_inq_compound_fieldndims,libnetcdf),Cint,(Cint,nc_type,Cint,Ptr{Cint}),ncid,xtype,fieldid,ndimsp))
+    return ndimsp[]
+end
 
-# function nc_inq_compound_fielddim_sizes(ncid::Integer,xtype::Integer,fieldid::Integer,dim_sizes)
-#     check(ccall((:nc_inq_compound_fielddim_sizes,libnetcdf),Cint,(Cint,nc_type,Cint,Ptr{Cint}),ncid,xtype,fieldid,dim_sizes))
-# end
+function nc_inq_compound_fielddim_sizes(ncid::Integer,xtype::Integer,fieldid::Integer)
+    ndims = nc_inq_compound_fieldndims(ncid,xtype,fieldid)
+    dim_sizes = zeros(Cint,ndims)
+    check(ccall((:nc_inq_compound_fielddim_sizes,libnetcdf),Cint,(Cint,nc_type,Cint,Ptr{Cint}),ncid,xtype,fieldid,dim_sizes))
+    return dim_sizes
+end
 
 function nc_def_vlen(ncid::Integer,name,base_typeid::Integer)
     xtypep = Ref(nc_type(0))
@@ -500,7 +527,7 @@ function nc_inq_user_type(ncid::Integer,xtype::Integer)
 end
 
 
-function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::AbstractString)
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::AbstractString)
     if name == "_FillValue"
         nc_put_att_string(ncid,varid,"_FillValue",[data])
     else
@@ -509,45 +536,45 @@ function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Abst
     end
 end
 
-function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Vector{Char})
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vector{Char})
     nc_put_att(ncid,varid,name,join(data))
 end
 
 # NetCDF does not necessarily support 64 bit attributes
-nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Int64) =
+nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Int64) =
     nc_put_att(ncid,varid,name,Int32(data))
 
-nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Vector{Int64}) =
+nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vector{Int64}) =
     nc_put_att(ncid,varid,name,Int32.(data))
 
-function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Number)
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Number)
     check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Nothing}),
                 ncid,varid,name,ncType[typeof(data)],1,[data]))
 end
 
-function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Char)
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Char)
     # UInt8('α')
     # ERROR: InexactError: trunc(UInt8, 945)
     check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Nothing}),
                 ncid,varid,name,ncType[typeof(data)],1,[UInt8(data)]))
 end
 
-function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Vector{T}) where T <: AbstractString
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vector{T}) where T <: AbstractString
     check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,
                                               nc_type,Csize_t,Ptr{Nothing}),
                 ncid,varid,name,ncType[eltype(data)],length(data),pointer.(data)))
 end
 
-function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data::Vector{T}) where {T}
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vector{T}) where {T}
     nc_put_att(ncid,varid,name,ncType[T],data)
 end
 
-function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,typeid::Integer,data::Vector)
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,typeid::Integer,data::Vector)
     check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Nothing}),
                 ncid,varid,name,typeid,length(data),data))
 end
 
-function nc_put_att(ncid::Integer,varid::Integer,name::AbstractString,data)
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data)
     error("attributes can only be scalars or vectors")
 end
 
@@ -604,12 +631,12 @@ end
 
 function nc_inq_enum(ncid::Integer,xtype::Integer)
 
-    base_nc_typep = Ref(NCDatasets.nc_type(0))
+    base_nc_typep = Ref(nc_type(0))
     base_sizep = Ref(Csize_t(0))
     num_membersp = Ref(Csize_t(0))
-    cname = zeros(UInt8,NCDatasets.NC_MAX_NAME+1)
+    cname = zeros(UInt8,NC_MAX_NAME+1)
 
-    check(ccall((:nc_inq_enum,NCDatasets.libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{NCDatasets.nc_type},Ptr{Csize_t},Ptr{Csize_t}),ncid,xtype,cname,base_nc_typep,base_sizep,num_membersp))
+    check(ccall((:nc_inq_enum,libnetcdf),Cint,(Cint,nc_type,Ptr{UInt8},Ptr{NCDatasets.nc_type},Ptr{Csize_t},Ptr{Csize_t}),ncid,xtype,cname,base_nc_typep,base_sizep,num_membersp))
 
     type_name = unsafe_string(pointer(cname))
     base_nc_type = base_nc_typep[]

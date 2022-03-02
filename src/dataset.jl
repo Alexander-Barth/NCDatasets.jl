@@ -390,21 +390,15 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
     print(io,indent,"Group: ",groupname(ds),"\n")
     print(io,"\n")
 
-    dims = collect(ds.dim)
-
-    if length(dims) > 0
-        printstyled(io, indent, "Dimensions\n",color=section_color())
-
-        for (dimname,dimlen) in dims
-            print(io,indent,"   $(dimname) = $(dimlen)\n")
-        end
+    # show dimensions
+    if length(ds.dim) > 0
+        show(io, ds.dim; indent = indent)
         print(io,"\n")
     end
 
     varnames = keys(ds)
 
     if length(varnames) > 0
-
         printstyled(io, indent, "Variables\n",color=section_color())
 
         for name in varnames

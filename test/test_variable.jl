@@ -83,7 +83,7 @@ NCDataset(filename,"c") do ds
     @test ds.dim["lon"] == sz[1]
     @test ds.dim["lat"] == sz[2]
 
-    # load in-place
+    # load in-place of Variable
     data2 = similar(data)
     NCDatasets.load!(ds["temp"].var,data2,:,:)
     @test data2 == data
@@ -96,10 +96,26 @@ NCDataset(filename,"c") do ds
     NCDatasets.load!(ds["temp"].var,data2,:,1)
     @test data2[:] == data[:,1]
 
+    # load in-place of CFVariable
+    ncv = ds["temp"]
+    data2 = similar(data)
+    buffer = zeros(eltype(ncv.var),size(ncv));
+    NCDatasets.load!(ncv,data2,buffer,:,:)
+    @test data2 == data
+
     # test Union{Missing,T}
-    defVar(ds,"foo",[missing,1.,2.],("dim",), fillvalue = -9999.)
+    data = [missing,1.,2.]
+    defVar(ds,"foo",data,("dim",), fillvalue = -9999.)
     @test fillvalue(ds["foo"]) == -9999.
-    @test isequal(ds["foo"][:], [missing,1.,2.])
+    @test isequal(ds["foo"][:], data)
+
+    # load in-place of CFVariable with fill value
+    ncv = ds["foo"]
+    data2 = zeros(eltype(ncv),size(ncv))
+    buffer = zeros(eltype(ncv.var),size(ncv));
+    NCDatasets.load!(ncv,data2,buffer,:,:)
+    @test isequal(data2,data)
+
 
     # test Union{Missing,T} and default fill value (issue #38)
     defVar(ds,"foo_default_fill_value",[missing,1.,2.],("dim",))

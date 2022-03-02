@@ -69,6 +69,33 @@ This change was introduced in `NCDatasets` version 0.10
 
 Having outdated versions of HDF5 or NetCDF libraries installed can be an issue on Windows if they are included in the system `PATH` environement variable. It is advised to adapt the system `PATH` to remove the locations containing these libraries.
 
+
+## Using a custom NetCDF library
+
+The NetCDF library `libnetcdf.so` is installed as an artifact via the package `NetCDF_jll`.
+You can override which `libnetcdf.so` gets loaded through the `Preferences` package, as follows:
+
+``` julia
+# install these packages if necessary
+using Preferences, NetCDF_jll
+
+set_preferences!(NetCDF_jll, "libnetcdf_path" => "/path/to/libnetcdf.so.xyz")
+```
+
+where `/path/to/libnetcdf.so.xyz` is the full path to the NetCDF library.
+This will create a `LocalPreferences.toml` file in your top-level project with the following content:
+
+```
+[NetCDF_jll]
+libnetcdf_path = "/path/to/libnetcdf.so.xyz"
+```
+
+However, the dependencies of the library version `libnetcdf.so.xyz` (in particular `libcurl.so` and `libmbedtls.so`) should be compatible with the dependencies of julia (in the folder `.../julia-x.y.z/lib/julia`). On Linux, you can list the library dependencies with the shell command `ldd`, for example:
+
+``` bash
+ldd /path/to/libnetcdf.so.xyz
+```
+
 ## Corner cases
 
 

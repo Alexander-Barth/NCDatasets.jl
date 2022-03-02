@@ -213,6 +213,11 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
         show(buf,ds.attrib)
         @test occursin("title",String(take!(buf)))
 
+        show(buf,ds.dim)
+        @test occursin("lon",String(take!(buf)))
+        show(buf,ds.dim)
+        @test occursin("lat",String(take!(buf)))
+
         show(buf,ds["temperature"])
         @test occursin("temperature",String(take!(buf)))
 
@@ -249,6 +254,10 @@ end
 @testset "Variable-length arrays" begin
     include("test_vlen_lowlevel.jl")
     include("test_vlen.jl")
+end
+
+@testset "Compound types" begin
+    include("test_compound.jl")
 end
 
 @testset "Time and calendars" begin
