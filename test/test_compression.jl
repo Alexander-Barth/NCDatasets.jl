@@ -51,7 +51,7 @@ NCDataset(filename,"c") do ds
         @test isdeflated == true
         @test deflate_level == 9
 
-
+#=
         # change compression
         deflate(v,false,true,4)
         isshuffled,isdeflated,deflate_level = deflate(v)
@@ -62,7 +62,7 @@ NCDataset(filename,"c") do ds
         # write an array
         v[:,:] = data
         @test all(v[:,:] .== data)
-
+=#
 
         v = defVar(ds,"var2-$T",T,("lon","lat");
                               shuffle = true,
