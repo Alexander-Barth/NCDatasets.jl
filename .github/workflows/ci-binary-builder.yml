@@ -49,14 +49,14 @@ jobs:
         run: |
            using Pkg
            Pkg.add(["Preferences", "NetCDF_jll"])
+           using Preferences, NetCDF_jll
            @show NetCDF_jll.libnetcdf # this is the file to be replaced
            set_preferences!(NetCDF_jll, "libnetcdf_path" => joinpath(pwd(),"bin","libnetcdf-19.dll"))
            @show NetCDF_jll.libnetcdf # new library
         shell: julia --color=yes --project=@. {0}
       - name: Test
         run: |
-           using Pkg
-           using NetCDF_jll
+           using NetCDF_jll, NCDatasets
            @show NetCDF_jll.libnetcdf # new library
            include(joinpath(dirname(pathof(NCDatasets)),"..","test","runtests.jl"))
         shell: julia --color=yes --project=@. {0}
