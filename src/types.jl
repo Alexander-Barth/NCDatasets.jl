@@ -115,7 +115,7 @@ const Dataset = NCDataset
 
 
 # Variable (with applied transformations following the CF convention)
-mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractArray{T, N}
+mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractVariable{T, N}
     # this var is generally a `Variable` type
     var::TV
     # Dict-like object for all attributes read from disk
