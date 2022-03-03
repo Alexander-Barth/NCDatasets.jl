@@ -336,6 +336,9 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
     fillvalue = get(v.attrib,"_FillValue",nothing)
     # missing_value can be a vector
     missing_values = get(v.attrib,"missing_value",T[])
+    valid_min = get(v.attrib,"valid_min",nothing)
+    valid_max = get(v.attrib,"valid_max",nothing)
+    valid_range = get(v.attrib,"valid_range",nothing)
     scale_factor = get(v.attrib,"scale_factor",nothing)
     add_offset = get(v.attrib,"add_offset",nothing)
 
