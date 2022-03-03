@@ -48,6 +48,8 @@ jobs:
       - name: Configure NetCDF_jll
         run: |
            using Pkg
+           Pkg.add(name = "HDF5_jll", version = "1.12.0")
+           Pkg.pin("HDF5_jll")
            Pkg.add(["Preferences", "NetCDF_jll"])
            using Preferences, NetCDF_jll
            @show NetCDF_jll.libnetcdf # this is the file to be replaced
