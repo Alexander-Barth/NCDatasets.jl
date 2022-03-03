@@ -51,7 +51,7 @@ jobs:
            Pkg.add(["Preferences", "NetCDF_jll"])
            using Preferences, NetCDF_jll
            @show NetCDF_jll.libnetcdf # this is the file to be replaced
-           set_preferences!(NetCDF_jll, "libnetcdf_path" => joinpath(pwd(),"bin","libnetcdf-19.dll"))
+           set_preferences!(NetCDF_jll, "libnetcdf_path" => joinpath(pwd(),"test-dir","bin","libnetcdf-19.dll"))
            @show NetCDF_jll.libnetcdf # new library
         shell: julia --color=yes --project=@. {0}
       - name: Test
