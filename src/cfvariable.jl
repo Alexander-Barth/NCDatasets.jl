@@ -306,11 +306,7 @@ variable is indexed:
 ones specified in the CF convention, then the data in the NetCDF file is not
 converted into a date structure.
 
-Note that the attribute `missing_value` is not used to determine which
-element is `missing` only `_FillValue`.
-
 A call `getindex(ds,varname)` is usually written as `ds[varname]`.
-
 
 If variable represents a cell boundary, the attributes `calendar` and `units` of the related NetCDF variables are used, if they are not specified. For example:
 
