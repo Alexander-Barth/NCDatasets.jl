@@ -368,7 +368,7 @@ function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
 
     storage_attrib = (
         fillvalue = fillvalue,
-        missing_values = (T.(missing_values)...,),
+        missing_values = (missing_values...,),
         scale_factor = scale_factor,
         add_offset = add_offset,
         calendar = calendar,
