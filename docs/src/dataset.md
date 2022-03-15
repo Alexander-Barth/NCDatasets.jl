@@ -9,14 +9,16 @@ NCDataset
 ```
 
 Useful functions that operate on datasets are:
+
 ```@docs
 keys(ds::NCDataset)
 haskey
 getindex(ds::NCDataset,varname::AbstractString)
 variable
+cfvariable
 sync
 close
-path
+NCDatasets.path
 ncgen
 varbyattrib
 write

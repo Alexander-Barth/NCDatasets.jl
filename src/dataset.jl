@@ -238,6 +238,7 @@ Base.keys(ds::NCDataset) = listVar(ds.ncid)
 
 """
     path(ds::NCDataset)
+
 Return the file path (or the opendap URL) of the NCDataset `ds`
 """
 path(ds::NCDataset) = nc_inq_path(ds.ncid)
