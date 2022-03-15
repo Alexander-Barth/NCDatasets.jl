@@ -25,5 +25,12 @@ data = [0., 123., 124.]
 v.var[:] = data
 @test isequal(v[:],[0.,missing,missing])
 
+
+# missing values of wrong type
+v = defVar(ds,"var3",Float64,("dim",), attrib = OrderedDict("missing_value" => "value of wrong type"))
+data = [0., 1., 2.]
+v.var[:] = data
+@test isequal(v[:],[0.,1.,2.])
+
 close(ds)
 

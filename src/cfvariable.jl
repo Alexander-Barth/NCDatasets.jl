@@ -384,7 +384,7 @@ function cfvariable(ds,
 
     storage_attrib = (
         fillvalue = fillvalue,
-        missing_values = (T.(missing_value)...,),
+        missing_values = (missing_value...,),
         scale_factor = scale_factor,
         add_offset = add_offset,
         calendar = calendar,
