@@ -254,50 +254,160 @@ function _boundsParentVar(ds,varname)
             end
         end
 
-        return ""
+        return nothing
     end
 end
 
 
 """
-    calendar,time_origin,time_factor = calendar_time(
-        attrib;
-        calendar = nothing,
-        time_origin = nothing,
-        time_factor = nothing)
-        )
+    _getattrib(ds,v,parentname,attribname,default)
 
+Get a NetCDF attribute, looking also at the parent variable name
+(linked via the bounds attribute as following the CF conventions).
+The default value is returned if the attribute cannot be found.
+"""
+function _getattrib(ds,v,parentname,attribname,default)
+    val = get(v.attrib,attribname,nothing)
+    if val !== nothing
+        return val
+    else
+        if parentname === nothing
+            return default
+        else
+            vp = variable(ds,parentname)
+            return get(vp.attrib,attribname,default)
+        end
+    end
+end
 
 """
-function _calendar_time(
-    attrib;
-    calendar = nothing,
-    time_origin = nothing,
-    time_factor = nothing,
-    )
+    v = cfvariable(ds::NCDataset,varname::AbstractString; <attrib> = <value>)
 
-    if haskey(attrib,"units")
-        units = attrib["units"]
-        if (units isa String) && occursin(" since ",units)
-            calendar = lowercase(get(attrib,"calendar","standard"))
-            try
-                time_origin,time_factor = CFTime.timeunits(units, calendar)
-            catch
-                # keep defaults
-            end
+Return the NetCDF variable `varname` in the dataset `ds` as a
+`NCDataset.CFVariable`. The keyword argument `<attrib>` are
+the NetCDF attributes (`fillvalue`, `missing_value`, `scale_factor`, `add_offset`,
+`units` and `calendar`) relevant to the CF conventions.
+By specifing the value of these attributes, the one can override the value
+specified in the NetCDF file. If the attribute is set to `nothing`, then
+the attribute is not loaded and the corresponding transformation is ignored.
+This function is similar to `ds[varname]` with the additional flexibility that
+some variable attributes can be overridden.
+
+
+Example:
+
+```julia
+NCDataset("foo.nc","c") do ds
+  defVar(ds,"data",[10., 11., 12., 13.], ("time",), attrib = Dict(
+      "add_offset" => 10.,
+      "scale_factor" => 0.2))
+end
+
+# The stored (packed) valued are [0., 5., 10., 15.]
+# since 0.2 .* [0., 5., 10., 15.] .+ 10 is [10., 11., 12., 13.]
+
+ds = NCDataset("foo.nc");
+
+@show ds["data"].var[:]
+# returns [0., 5., 10., 15.]
+
+@show cfvariable(ds,"data")[:]
+# returns [10., 11., 12., 13.]
+
+# neither add_offset nor scale_factor are applied
+@show cfvariable(ds,"data", add_offset = nothing, scale_factor = nothing)[:]
+# returns [0, 5, 10, 15]
+
+# add_offset is applied but not scale_factor
+@show cfvariable(ds,"data", scale_factor = nothing)[:]
+# returns [10, 15, 20, 25]
+
+# 0 is declared as the fill value (add_offset and scale_factor are applied as usual)
+@show cfvariable(ds,"data", fillvalue = 0)[:]
+# return [missing, 11., 12., 13.]
+
+# Use the time units: days since 2000-01-01
+@show cfvariable(ds,"data", units = "days since 2000-01-01")[:]
+# returns [DateTime(2000,1,11), DateTime(2000,1,12), DateTime(2000,1,13), DateTime(2000,1,14)]
+
+close(ds)
+```
+"""
+function cfvariable(ds,
+                    varname;
+                    _v = variable(ds,varname),
+                    # special case for bounds variable who inherit
+                    # units and calendar from parent variables
+                    _parentname = _boundsParentVar(ds,varname),
+                    fillvalue = get(_v.attrib,"_FillValue",nothing),
+                    # missing_value can be a vector
+                    missing_value = get(_v.attrib,"missing_value",eltype(_v)[]),
+                    #valid_min = get(_v.attrib,"valid_min",nothing),
+                    #valid_max = get(_v.attrib,"valid_max",nothing),
+                    #valid_range = get(_v.attrib,"valid_range",nothing),
+                    scale_factor = get(_v.attrib,"scale_factor",nothing),
+                    add_offset = get(_v.attrib,"add_offset",nothing),
+                    # look also at parent if defined
+                    units = _getattrib(ds,_v,_parentname,"units",nothing),
+                    calendar = _getattrib(ds,_v,_parentname,"calendar",nothing),
+                    )
+
+    v = _v
+    T = eltype(v)
+
+    time_origin = nothing
+    time_factor = nothing
+
+    if (units isa String) && occursin(" since ",units)
+        if calendar == nothing
+            calendar = "standard"
+        elseif calendar isa String
+            calendar = lowercase(calendar)
+        end
+        try
+            time_origin,time_factor = CFTime.timeunits(units, calendar)
+        catch
+            # ignore, warning is emited by CFTime.timeunits
         end
     end
 
-    return calendar,time_origin,time_factor
+    scaledtype = T
+    if eltype(v) <: Number
+        if scale_factor !== nothing
+            scaledtype = promote_type(scaledtype, typeof(scale_factor))
+        end
+
+        if add_offset !== nothing
+            scaledtype = promote_type(scaledtype, typeof(add_offset))
+        end
+    end
+
+    storage_attrib = (
+        fillvalue = fillvalue,
+        missing_values = (T.(missing_value)...,),
+        scale_factor = scale_factor,
+        add_offset = add_offset,
+        calendar = calendar,
+        time_origin = time_origin,
+        time_factor = time_factor,
+    )
+
+    rettype = _get_rettype(ds, calendar, fillvalue, missing_value, scaledtype)
+
+    return CFVariable{rettype,ndims(v),typeof(v),typeof(_v.attrib),typeof(storage_attrib)}(
+        v,_v.attrib,storage_attrib)
+
 end
+
+export cfvariable
 
 """
     v = getindex(ds::NCDataset,varname::AbstractString)
 
 Return the NetCDF variable `varname` in the dataset `ds` as a
-`NCDataset.CFVariable`. The CF convention are honored when the
+`NCDataset.CFVariable`. The following CF convention are honored when the
 variable is indexed:
-* `_FillValue` or `missing_value` (which can be a list) will be returned as `missing`
+* `_FillValue` or `missing_value` (which can be a list) will be returned as `missing`. `NCDatasets` does not use implicitely the default NetCDF fill values when reading data.
 * `scale_factor` and `add_offset` are applied (output = `scale_factor` * data_in_file +  `add_offset`)
 * time variables (recognized by the units attribute and possibly the calendar attribute) are returned usually as
   `DateTime` object. Note that `DateTimeAllLeap`, `DateTimeNoLeap` and
@@ -324,65 +434,15 @@ variables:
 
 In this case, the variable `time_bnds` uses the units and calendar of `time`
 because both variables are related thought the bounds attribute following the CF conventions.
+
+See also cfvariable
 """
 function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
-    v = variable(ds,varname)
-    T = eltype(v)
-
-    fillvalue = get(v.attrib,"_FillValue",nothing)
-    # missing_value can be a vector
-    missing_values = get(v.attrib,"missing_value",T[])
-    valid_min = get(v.attrib,"valid_min",nothing)
-    valid_max = get(v.attrib,"valid_max",nothing)
-    valid_range = get(v.attrib,"valid_range",nothing)
-    scale_factor = get(v.attrib,"scale_factor",nothing)
-    add_offset = get(v.attrib,"add_offset",nothing)
-
-    # special case for bounds variable who inherit
-    # units and calendar from parent variables
-    parentname = _boundsParentVar(ds,varname)
-
-    if parentname === ""
-        calendar,time_origin,time_factor = _calendar_time(v.attrib)
-    else
-        calendar,time_origin,time_factor = _calendar_time(variable(ds,parentname).attrib)
-        calendar,time_origin,time_factor = _calendar_time(
-            v.attrib;
-            calendar = calendar,
-            time_origin = time_origin,
-            time_factor = time_factor
-        )
-    end
-
-
-    scaledtype = T
-    if eltype(v) <: Number
-        if scale_factor !== nothing
-            scaledtype = promote_type(scaledtype, typeof(scale_factor))
-        end
-
-        if add_offset !== nothing
-            scaledtype = promote_type(scaledtype, typeof(add_offset))
-        end
-    end
-
-    storage_attrib = (
-        fillvalue = fillvalue,
-        missing_values = (T.(missing_values)...,),
-        scale_factor = scale_factor,
-        add_offset = add_offset,
-        calendar = calendar,
-        time_origin = time_origin,
-        time_factor = time_factor,
-    )
-
-    rettype = _get_rettype(ds, calendar, fillvalue, scaledtype)
-
-    return CFVariable{rettype,ndims(v),typeof(v),typeof(v.attrib),typeof(storage_attrib)}(
-        v,v.attrib,storage_attrib)
+    return cfvariable(ds, varname)
 end
 
-function _get_rettype(ds, calendar, fillvalue, rettype)
+
+function _get_rettype(ds, calendar, fillvalue, missing_value, rettype)
     # rettype can be a date if calendar is different from nothing
     if calendar !== nothing
         DT = nothing
@@ -402,7 +462,7 @@ function _get_rettype(ds, calendar, fillvalue, rettype)
         end
     end
 
-    if fillvalue !== nothing
+    if (fillvalue !== nothing) || (!isempty(missing_value))
         rettype = Union{Missing,rettype}
     end
     return rettype
