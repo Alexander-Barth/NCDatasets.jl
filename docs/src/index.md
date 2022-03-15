@@ -28,7 +28,7 @@ To get started quickly see the [Quickstart](@ref) section. Otherwise see the fol
 * [Dimensions](@ref) : accessing/creating NetCDF dimensions
 * [Variables](@ref) : accessing/examining the variables (or dimensions) stored within a NetCDF dataset.
 * [Attributes](@ref) : accessing/creating NetCDF attributes
-* See [Performance tips](@ref), [Known issues](@ref), [Experimental features](@ref) for more information.
+* See [Performance tips](@ref performance_tips), [Known issues](@ref), [Experimental features](@ref) for more information.
 
 ## Quickstart
 
