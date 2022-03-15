@@ -16,6 +16,7 @@ A description of what you expected to happen.
  - CPU architecture (Intel/AMD x86_64, PowerPC, ARM, Appel M1,...)
  - Julia version: [e.g. julia 1.1.1, official binaries from https://julialang.org/downloads/]
  - NCDatasets version:
+ - Output of `using Pkg; Pkg.status(mode=PKGMODE_MANIFEST)`
  
 **Full output**
 
