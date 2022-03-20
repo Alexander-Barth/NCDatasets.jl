@@ -28,3 +28,33 @@ nctime_bounds[:,:] = time_bounds
 @test nctime_bounds[:,:] == time_bounds
 
 close(ds)
+
+
+# issue 170
+
+fname = tempname()
+ds = NCDataset(fname,"c")
+
+ds.dim["time"] = 3
+ds.dim["bnds"] = 2
+
+nctime = defVar(ds,"time", Float64, ("time",), attrib = OrderedDict(
+    "standard_name"             => "time",
+    "long_name"                 => "time",
+    "units"                     => "days since 2001-1-1",
+    "bounds"                    => "time_bnds",
+))
+
+nctime_bnds = defVar(ds,"time_bnds", Float64, ("bnds", "time"))
+
+nctos = defVar(ds,"tos", Float32, ("time",), attrib = OrderedDict(
+    "_FillValue"                => Float32(1.0e20),
+))
+
+nctos[:] = zeros(Float32,3)
+close(ds)
+
+ds = NCDataset(fname)
+tos = ds["tos"][:]
+@test all(tos .== zeros(3))
+close(ds)

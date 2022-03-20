@@ -254,7 +254,7 @@ function _boundsParentVar(ds,varname)
             end
         end
 
-        return nothing
+        return ""
     end
 end
 
@@ -271,7 +271,7 @@ function _getattrib(ds,v,parentname,attribname,default)
     if val !== nothing
         return val
     else
-        if parentname === nothing
+        if (parentname === nothing) || (parentname === "")
             return default
         else
             vp = variable(ds,parentname)
