@@ -99,7 +99,7 @@ ldd /path/to/libnetcdf.so.xyz
 ## Using non-official julia builds
 
 Julia and NetCDF_jll have several common dependencies (curl, MbedTLS, zlib).
-Non-official julia builds will work only if they use exactly the same library version as those used to compile NetCDF. This is unlikey to be the case in general and outside of our control. Therefore non-official julia builds are not supported.
+Non-official julia builds will work only if they use exactly the same library version as those used to compile NetCDF. This is unlikely to be the case in general and outside of our control. Therefore non-official julia builds are not supported.
 Official julia builds are available at https://julialang.org/downloads/.
 
 
