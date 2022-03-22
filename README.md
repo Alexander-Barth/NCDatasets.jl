@@ -113,7 +113,7 @@ In the example above, the subset can also be loaded with:
 subdata = Dataset("/tmp/test.nc")["temperature"][10:30,30:5:end]
 ```
 
-This might be useful in an interactive session. However, the file `test.nc` is not directly closed (closing the file will be triggered by julia's garbage collector), which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
+This might be useful in an interactive session. However, the file `test.nc` is not directly closed (closing the file will be triggered by Julia's garbage collector), which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
 
 An alternative way to ensure the file has been closed is to use a `do` block: the file will be closed automatically when leaving the block.
 
@@ -164,8 +164,8 @@ close(ds)
 
 ## Edit an existing netCDF file
 
-When you need to modify the variables or the attributes of a netCDF, you have
-to open it with the `"a"` option. Here of instance we add a global attribute *creator* to the
+When you need to modify variables or attributes in a netCDF file, you have
+to open it with the `"a"` option. Here as an instance we add a global attribute *creator* to the
 file created in the previous step.
 
 ```julia
@@ -191,7 +191,7 @@ The code is available at https://github.com/Alexander-Barth/NCDatasets.jl/tree/m
 | julia-NCDatasets |  0.228 |   0.212 | 0.226 |     0.005 |
 
 All runtimes are in seconds.
-Julia 1.6.0 (with NCDatasets b953bf5), R 3.4.4 (with ncdf4 1.17) and python 3.6.9 (with netCDF4 1.5.4).
+Julia 1.6.0 (with NCDatasets b953bf5), R 3.4.4 (with ncdf4 1.17) and Python 3.6.9 (with netCDF4 1.5.4).
 This CPU is a i7-7700.
 
 
