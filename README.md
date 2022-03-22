@@ -165,7 +165,7 @@ close(ds)
 ## Edit an existing netCDF file
 
 When you need to modify variables or attributes in a netCDF file, you have
-to open it with the `"a"` option. Here as an instance we add a global attribute *creator* to the
+to open it with the `"a"` option. Here, for example, we add a global attribute *creator* to the
 file created in the previous step.
 
 ```julia
