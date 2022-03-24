@@ -355,6 +355,17 @@ function cfvariable(ds,
     v = _v
     T = eltype(v)
 
+
+    # sanity check
+    if (T <: Number) && (
+        (eltype(missing_value) <: AbstractChar) ||
+            (eltype(missing_value) <: AbstractString))
+        @warn "variable '$varname' has a numeric type but the corresponding " *
+            "missing_value ($(litteral(missing_value))) is a character or string. " *
+            "Comparing, e.g. an integer and a string (1 == \"1\") will always evaluate to false. " *
+            "See the function NCDatasets.cfvariable how to manually override the missing_value attribute."
+    end
+
     time_origin = nothing
     time_factor = nothing
 
