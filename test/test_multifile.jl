@@ -1,5 +1,6 @@
 using Test
 using NCDatasets
+using Dates
 
 function example_file(i,array, fname = tempname();
     varname = "var")
@@ -211,3 +212,24 @@ ds_merged = NCDataset(fname_merged)
 close(ds_merged)
 rm(fname_merged)
 nothing
+
+
+
+# multi-file with different time units
+fnames = [tempname(), tempname()]
+times = [DateTime(2000,1,1), DateTime(2000,1,2)]
+time_units = ["days since 2000-01-01","seconds since 2000-01-01"]
+
+for i = 1:2
+    ds = NCDataset(fnames[i],"c")
+    defVar(ds,"time",times[i:i],("time",),attrib = Dict(
+        "units" => time_units[i],
+        "scale_factor" => Float64(10*i),
+        "add_offset" => Float64(i),
+    ))
+    close(ds)
+end
+
+ds = NCDataset(fnames,aggdim = "time")
+@time ds["time"][:] == times
+close(ds)

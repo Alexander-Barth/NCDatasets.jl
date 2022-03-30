@@ -177,7 +177,7 @@ function NCDataset(filename::AbstractString,
     end
 
     if share
-        @show "share"
+        @debug "share mode"
         ncmode = ncmode | NC_SHARE
     end
 

@@ -146,6 +146,7 @@ Base.getindex(v::MFVariable,indexes::Union{Int,Colon,UnitRange{Int},StepRange{In
 Base.setindex!(v::MFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) = setindex!(v.var,data,indexes...)
 
 Base.size(v::MFVariable) = size(v.var)
+Base.size(v::MFCFVariable) = size(v.var)
 dimnames(v::MFVariable) = v.dimnames
 name(v::MFVariable) = v.varname
 
@@ -178,4 +179,38 @@ function variable(mfds::MFDataset,varname::SymbolOrString)
 end
 
 
-fillvalue(v::MFVariable{T}) where T = v.attrib["_FillValue"]::T
+
+function cfvariable(mfds::MFDataset,varname::SymbolOrString)
+    if mfds.aggdim == ""
+        # merge all variables
+
+        # the latest dataset should be used if a variable name is present multiple times
+        for ds in reverse(mfds.ds)
+            if haskey(ds,varname)
+                return cfvariable(ds,varname)
+            end
+        end
+    else
+        # aggregated along a given dimension
+        cfvars = cfvariable.(mfds.ds,varname)
+
+        dim = findfirst(dimnames(cfvars[1]) .== mfds.aggdim)
+        @debug "dim $dim"
+
+        if (dim != nothing)
+            cfvar = CatArrays.CatArray(dim,cfvars...)
+            var = variable(mfds,varname)
+
+            return MFCFVariable(cfvar,var,var.attrib,
+                          dimnames(var),varname)
+        else
+            return cfvars[1]
+        end
+    end
+end
+
+
+fillvalue(v::Union{MFVariable{T},MFCFVariable{T}}) where T = v.attrib["_FillValue"]::T
+
+Base.getindex(v::MFCFVariable,ind...) = v.cfvar[ind...]
+Base.setindex!(v::MFCFVariable,data,ind...) = v.cfvar[ind...] = data

@@ -150,6 +150,14 @@ mutable struct MFVariable{T,N,M,TA,A} <: AbstractVariable{T,N}
     varname::String
 end
 
+mutable struct MFCFVariable{T,N,M,TA,TV,A} <: AbstractVariable{T,N}
+    cfvar::CatArrays.CatArray{T,N,M,TA}
+    var::TV
+    attrib::MFAttributes{A}
+    dimnames::NTuple{N,String}
+    varname::String
+end
+
 mutable struct MFDimensions{T} <: AbstractDimensions where T <: AbstractDimensions
     as::Vector{T}
     aggdim::String

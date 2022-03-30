@@ -109,7 +109,6 @@ function defVar(ds::NCDataset,name,vtype::DataType,dimnames; kwargs...)
 
     varid = nc_def_var(ds.ncid,name,typeid,dimids)
 
-
     if haskey(kw,:chunksizes)
         storage = :chunked
         chunksizes = kw[:chunksizes]
@@ -147,6 +146,7 @@ function defVar(ds::NCDataset,name,vtype::DataType,dimnames; kwargs...)
 
     return ds[name]
 end
+
 
 # data has the type e.g. Array{Union{Missing,Float64},3}
 function defVar(ds::NCDataset,
@@ -485,14 +485,14 @@ end
 
 Return a tuple of strings with the dimension names of the variable `v`.
 """
-dimnames(v::CFVariable)  = dimnames(v.var)
+dimnames(v::Union{CFVariable,MFCFVariable})  = dimnames(v.var)
 
 
 """
     dimsize(v::CFVariable)
 Get the size of a `CFVariable` as a named tuple of dimension → length.
 """
-function dimsize(v::CFVariable)
+function dimsize(v::Union{CFVariable,MFCFVariable})
     s = size(v)
     names = Symbol.(dimnames(v))
     return NamedTuple{names}(s)
@@ -500,7 +500,7 @@ end
 export dimsize
 
 
-name(v::CFVariable) = name(v.var)
+name(v::Union{CFVariable,MFCFVariable}) = name(v.var)
 chunking(v::CFVariable,storage,chunksize) = chunking(v.var,storage,chunksize)
 chunking(v::CFVariable) = chunking(v.var)
 
@@ -746,9 +746,9 @@ Base.Array(v::Union{CFVariable{T,N},Variable{T,N}}) where {T,N} = v[ntuple(i -> 
 Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=indent)
 
 # necessary for IJulia if showing a variable from a closed file
-Base.show(io::IO,::MIME"text/plain",v::Union{Variable,CFVariable}) = show(io,v)
+Base.show(io::IO,::MIME"text/plain",v::Union{Variable,CFVariable,MFCFVariable}) = show(io,v)
 
-Base.display(v::Union{Variable,CFVariable}) = show(stdout,v)
+Base.display(v::Union{Variable,CFVariable,MFCFVariable}) = show(stdout,v)
 
 
 
@@ -785,7 +785,7 @@ NCDatasets.load!(ncv,data,buffer,:,:,:)
 close(ds)
 ```
 """
-@inline function load!(v::NCDatasets.CFVariable{T,N}, data, buffer, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
+@inline function load!(v::Union{CFVariable{T,N},MFCFVariable{T,N}}, data, buffer, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
 
     load!(v.var,buffer,indices...)
     fmv = fill_and_missing_values(v)
