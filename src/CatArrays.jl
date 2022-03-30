@@ -57,7 +57,14 @@ function CatArray(dim::Int,arrays...)
     sz = asize[1,:]
     sz[dim] = sum(asize[:,dim])
 
-    return CatArray{eltype(arrays[1]),nd,na,typeof(arrays[1])}(
+    TA = typeof(arrays[1])
+    T = eltype(arrays[1])
+    for i = 2:length(arrays)
+        T = promote_type(T,eltype(arrays[i]))
+        TA = promote_type(TA,typeof(arrays[i]))
+    end
+
+    return CatArray{T,nd,na,TA}(
                     dim,
                     arrays,
                     asize,
