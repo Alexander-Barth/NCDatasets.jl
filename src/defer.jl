@@ -106,7 +106,10 @@ function Variable(f::Function, dv::DeferVariable)
 end
 
 function variable(dds::DeferDataset,varname::AbstractString)
-    data = dds.data["var"][varname]
+    data = get(dds.data["var"],varname,nothing)
+    if data == nothing
+        error("Dataset $(dds.r.filename) does not contain the variable $varname")
+    end
     T = data["eltype"]
     N = length(data["dimensions"])
     da = DeferAttributes(dds.r,varname,data["attrib"])
