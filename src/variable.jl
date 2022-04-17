@@ -118,7 +118,7 @@ end
 
 
 """
-     data = loadragged(ncvar,index::Colon)
+     data = loadragged(ncvar,index::Union{Colon,UnitRange,Int})
 
 Load data from `ncvar` in the [contiguous ragged array representation](https://web.archive.org/web/20190111092546/http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#_contiguous_ragged_array_representation) as a
 vector of vectors. It is typically used to load a list of profiles
@@ -126,7 +126,7 @@ or time series of different length each.
 
 The [indexed ragged array representation](https://web.archive.org/web/20190111092546/http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#_indexed_ragged_array_representation) is currently not supported.
 """
-function loadragged(ncvar,index::Colon)
+function loadragged(ncvar,index::Union{Colon,UnitRange})
     ds = NCDataset(ncvar)
 
     dimensionnames = dimnames(ncvar)
@@ -141,10 +141,14 @@ function loadragged(ncvar,index::Colon)
     end
 
     ncvarsize = ncvarsizes[1]
-    varsize = ncvarsize.var[:]
+
+    isa(index,Colon)||(index[1]==1) ? n0=1 : n0=1+sum(ncvarsize[1:index[1]-1])
+    isa(index,Colon) ? n1=sum(ncvarsize[:]) : n1=sum(ncvarsize[1:index[end]])
+    
+    varsize = ncvarsize.var[index]
 
     istart = 0;
-    tmp = ncvar[:]
+    tmp = ncvar[n0:n1]
 
     T = typeof(view(tmp,1:varsize[1]))
     data = Vector{T}(undef,length(varsize))
@@ -155,6 +159,9 @@ function loadragged(ncvar,index::Colon)
     end
     return data
 end
+
+loadragged(ncvar,index::Int) = loadragged(ncvar,index:index)
+
 export loadragged
 
 
