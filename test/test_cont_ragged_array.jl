@@ -80,6 +80,10 @@ ds = NCDataset(fname);
 ncvar = ds["z"]
 data = loadragged(ncvar,:)
 @test data == [[1.,2.,3.],  [10.,20.],  [100., 200.]]
+data = loadragged(ncvar,1)
+@test data == [[1.,2.,3.]]
+data = loadragged(ncvar,2:3)
+@test data == [[10.,20.],  [100., 200.]]
 close(ds)
 
 rm(fname)
