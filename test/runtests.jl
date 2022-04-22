@@ -264,7 +264,6 @@ end
 end
 
 @testset "Time and calendars" begin
-    include("test_time.jl")
     include("test_timeunits.jl")
 end
 
