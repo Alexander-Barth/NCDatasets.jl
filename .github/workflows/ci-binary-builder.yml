@@ -39,37 +39,26 @@ jobs:
       - run: |
           git config --global user.name Tester
           git config --global user.email te@st.er
-#      - name: Get NetCDF_jll library
-#        run: |
-#           curl -O https://data-assimilation.net/upload/Alex/NetCDF_jll_debug/NetCDF.v400.802.102.x86_64-w64-mingw32.tar.gz
-#           mkdir test-dir
-#           tar -C test-dir -xvf NetCDF.v400.802.102.x86_64-w64-mingw32.tar.gz
-#        shell: bash
       - name: Remove NetCDF_jll compat section
         run: |
-            using TOML
-            proj = TOML.parsefile("Project.toml")
-            delete!(proj["compat"],"NetCDF_jll")
-            open("Project.toml","w") do f
-                TOML.print(f,proj)
-            end
+           using TOML
+           proj = TOML.parsefile("Project.toml")
+           delete!(proj["compat"],"NetCDF_jll")
+           open("Project.toml","w") do f
+               TOML.print(f,proj)
+           end
         shell: julia --color=yes --project=@. {0}
-      - name: Configure NetCDF_jll
+      - name: Install NetCDF_jll
         run: |
            using Pkg
-#           Pkg.add(name = "HDF5_jll", version = "1.12.0")
-#           Pkg.pin("HDF5_jll")
            Pkg.add("Preferences")
-#           Pkg.add("NetCDF_jll")
            Pkg.add(url="https://github.com/Alexander-Barth/NetCDF_jll.jl")
            using Preferences, NetCDF_jll
-           @show NetCDF_jll.libnetcdf # this is the file to be replaced
-           #set_preferences!(NetCDF_jll, "libnetcdf_path" => joinpath(pwd(),"test-dir","bin","libnetcdf-19.dll"))
-           #@show NetCDF_jll.libnetcdf # new library
+           @show NetCDF_jll.libnetcdf
         shell: julia --color=yes --project=@. {0}
       - name: Test
         run: |
            using NetCDF_jll, NCDatasets
-           @show NetCDF_jll.libnetcdf # new library
+           @show NetCDF_jll.libnetcdf
            include(joinpath(dirname(pathof(NCDatasets)),"..","test","runtests.jl"))
         shell: julia --color=yes --project=@. {0}
