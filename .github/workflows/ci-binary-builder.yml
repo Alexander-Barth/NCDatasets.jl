@@ -15,7 +15,7 @@ jobs:
 #          - 'nightly'
         os:
           - ubuntu-latest
-#          - macOS-latest
+          - macOS-latest
           - windows-latest
         arch:
           - x64
@@ -51,9 +51,8 @@ jobs:
       - name: Install NetCDF_jll
         run: |
            using Pkg
-           Pkg.add("Preferences")
            Pkg.add(url="https://github.com/Alexander-Barth/NetCDF_jll.jl")
-           using Preferences, NetCDF_jll
+           using NetCDF_jll
            @show NetCDF_jll.libnetcdf
         shell: julia --color=yes --project=@. {0}
       - name: Test
