@@ -221,6 +221,7 @@ times = [DateTime(2000,1,1), DateTime(2000,1,2)]
 time_units = ["days since 2000-01-01","seconds since 2000-01-01"]
 
 for i = 1:2
+    local ds
     ds = NCDataset(fnames[i],"c")
     defVar(ds,"time",times[i:i],("time",),attrib = Dict(
         "units" => time_units[i],
