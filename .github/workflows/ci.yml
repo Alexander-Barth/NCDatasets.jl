@@ -40,6 +40,14 @@ jobs:
       - run: |
           git config --global user.name Tester
           git config --global user.email te@st.er
+      - name: Pin NetCDF_jll on Windows
+        run: |
+           using Pkg
+           if Sys.iswindows()
+              Pkg.add("NetCDF_jll")
+              Pkg.pin(name="NetCDF_jll", version="400.702.400")
+           end
+        shell: julia --color=yes --project=@. {0}
       - uses: julia-actions/julia-runtest@latest
         continue-on-error: ${{ matrix.version == 'nightly' }}
       - uses: julia-actions/julia-processcoverage@v1
