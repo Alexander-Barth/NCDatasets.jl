@@ -112,14 +112,14 @@ end
 
 function _gli(offset,subarray,i,idx_global,idx_local,idx::Integer,idx_rest...)
     # rebase subscribt
-    tmp = idx - offset[i]
+    idx_offset = idx - offset[i]
     # only indeces within bounds of the subarray
-    if  !(1 <= tmp <= size(subarray,i))
-        tmp = -1
+    if  !(1 <= idx_offset <= size(subarray,i))
+        idx_offset = -1
     end
 
     # scalar indices are not part of idx_global (as they are dropped)
-    return _gli(offset,subarray,i+1,idx_global,(idx_local...,tmp),idx_rest...)
+    return _gli(offset,subarray,i+1,idx_global,(idx_local...,idx_offset),idx_rest...)
 end
 
 function _gli(offset,subarray,i,idx_global,idx_local,idx::Colon,idx_rest...)
@@ -136,17 +136,17 @@ function _gli(offset,subarray,i,idx_global,idx_local,idx::AbstractRange,idx_rest
     within(j) = 1 <= j <= size(subarray,i)
 
     # rebase subscribt
-    tmp = idx .- offset[i]
+    idx_offset = idx .- offset[i]
 
-    n_within = count(within,tmp)
+    n_within = count(within,idx_offset)
 
     if n_within == 0
         idx_local_tmp = 1:0
         idx_global_tmp = 1:0
     else
         # index for getting the data from the local array
-        idx_local_tmp = tmp[findfirst(within,tmp):findlast(within,tmp)]
-        idx_global_tmp = (1:n_within) .+ (findfirst(within,tmp) - 1)
+        idx_local_tmp = idx_offset[findfirst(within,idx_offset):findlast(within,idx_offset)]
+        idx_global_tmp = (1:n_within) .+ (findfirst(within,idx_offset) - 1)
     end
 
     return _gli(offset,subarray,i+1,
