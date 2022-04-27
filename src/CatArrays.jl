@@ -79,7 +79,7 @@ function Base.getindex(CA::CatArray{T,N},idx...) where {T,N}
     checkbounds(CA,idx...)
 
     sz = NCDatasets._shape_after_slice(size(CA),idx...)
-    idx_global_local = idx_global_local_(CA,idx)
+    idx_global_local = index_global_local(CA,idx)
     B = Array{T,length(sz)}(undef,sz...)
 
     for (array,(idx_global,idx_local)) in zip(CA.arrays,idx_global_local)
@@ -165,7 +165,7 @@ end
 # all indices have been processed
 _gli(offset,subarray,i,idx_global,idx_local) = (idx_global,idx_local)
 
-function idx_global_local_(CA::CatArray{T,N,M,TA},idx) where {T,N,M,TA}
+function index_global_local(CA::CatArray{T,N,M,TA},idx) where {T,N,M,TA}
     # number of indices must be equal to dimension
     @assert(length(idx) == N)
 
@@ -175,7 +175,7 @@ function idx_global_local_(CA::CatArray{T,N,M,TA},idx) where {T,N,M,TA}
 end
 
 function Base.setindex!(CA::CatArray{T,N},data,idx...) where {T,N}
-    idx_global_local = idx_global_local_(CA,idx);
+    idx_global_local = index_global_local(CA,idx)
     @debug ind,idx_global,idx_local,sz
 
     for (array,(idx_global,idx_local)) in zip(CA.arrays,idx_global_local)
