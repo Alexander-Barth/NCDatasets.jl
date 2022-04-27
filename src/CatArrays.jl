@@ -7,8 +7,6 @@ mutable struct CatArray{T,N,M,TA} <: AbstractArray{T,N} where TA <: AbstractArra
     dim::Int
     # tuple of all sub-arrays
     arrays::NTuple{M,TA}
-    # size of all subarrays
-    asize::Array{Int,2}
     # start indices of every subarrays in the combined array
     start::Array{Int,2}
     # size of the combined array
@@ -68,7 +66,6 @@ function CatArray(dim::Int,arrays...)
     return CatArray{T,nd,na,TA}(
                     dim,
                     arrays,
-                    asize,
                     start,
                     (sz...,))
 
@@ -112,48 +109,39 @@ end
 # stop condition
 valid_local_idx() = true
 
-function gli(start,sz,idx)
-    idx_global_tmp,idx_local_tmp = _gli(start,sz,1,(),(),idx...)
+function gli(start,subarray,idx)
+    idx_global_tmp,idx_local_tmp = _gli(start,subarray,1,(),(),idx...)
     return idx_global_tmp,idx_local_tmp
 end
 
-function _gli(start,sz,i,idx_global,idx_local,idx,idx_rest...)
-    ig,il = global_local_index(
-        start[i],
-        sz[i],
-        idx)
-
-    return _gli(start,sz,i+1,(idx_global...,ig),(idx_local...,il),idx_rest...)
-end
-
-function _gli(start,sz,i,idx_global,idx_local,idx::Integer,idx_rest...)
+function _gli(start,subarray,i,idx_global,idx_local,idx::Integer,idx_rest...)
     # rebase subscribt
     tmp = idx - (start[i] - 1)
     # only indeces within bounds of the j-th array
-    if  !(1 <= tmp <= sz[i])
+    if  !(1 <= tmp <= size(subarray,i))
         tmp = -1
     end
 
     # scalar indices are not part of idx_global
-    return _gli(start,sz,i+1,idx_global,(idx_local...,tmp),idx_rest...)
+    return _gli(start,subarray,i+1,idx_global,(idx_local...,tmp),idx_rest...)
 end
 
-function _gli(start,sz,i,idx_global,idx_local,idx::Colon,idx_rest...)
-    idx_global_tmp = start[i]:(start[i]+sz[i]-1)
-    idx_local_tmp = 1:sz[i]
+function _gli(start,subarray,i,idx_global,idx_local,idx::Colon,idx_rest...)
+    idx_global_tmp = start[i]:(start[i]+size(subarray,i)-1)
+    idx_local_tmp = 1:size(subarray,i)
 
-    return _gli(start,sz,i+1,
+    return _gli(start,subarray,i+1,
                 (idx_global...,idx_global_tmp),
                 (idx_local..., idx_local_tmp),idx_rest...)
 end
 
 
-function _gli(start,sz,i,idx_global,idx_local,idx::AbstractRange,idx_rest...)
+function _gli(start,subarray,i,idx_global,idx_local,idx::AbstractRange,idx_rest...)
     # rebase subscribt
     tmp = idx .- (start[i] - 1)
 
     # only indeces within bounds of the j-th array
-    sel = (1 .<= tmp) .& (tmp .<= sz[i])
+    sel = (1 .<= tmp) .& (tmp .<= size(subarray,i))
 
     if sum(sel) == 0
         idx_local_tmp = 1:0
@@ -164,7 +152,7 @@ function _gli(start,sz,i,idx_global,idx_local,idx::AbstractRange,idx_rest...)
         idx_global_tmp = (1:sum(sel)) .+ (findfirst(sel) - 1)
     end
 
-    return _gli(start,sz,i+1,
+    return _gli(start,subarray,i+1,
                 (idx_global...,idx_global_tmp),
                 (idx_local..., idx_local_tmp),idx_rest...)
 end
@@ -172,7 +160,7 @@ end
 
 # stop condition
 # all indices have been processed
-_gli(start,sz,i,idx_global,idx_local) = (idx_global,idx_local)
+_gli(start,subarray,i,idx_global,idx_local) = (idx_global,idx_local)
 
 function idx_global_local_(CA::CatArray,idx)
     n = ndims(CA)
@@ -182,7 +170,7 @@ function idx_global_local_(CA::CatArray,idx)
 
 
     idx_global_local = ntuple(j -> gli((CA.start[j,:]...,),
-                                       (CA.asize[j,:]...,),idx),length(CA.arrays))
+                                       CA.arrays[j],idx),length(CA.arrays))
 
 
     return idx_global_local
