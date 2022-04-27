@@ -21,43 +21,35 @@ Create a concatenated array view from a list of arrays. Individual
 elements can be accessed by subscribs
 """
 function CatArray(dim::Int,arrays...)
-    na = length(arrays)
+    M = length(arrays)
 
     # number of dimensions
-    nd = ndims(arrays[1])
-    if dim > nd
-        nd = dim
-    end
-
-    asize = ones(Int,na,nd)
-    start = ones(Int,na,nd)
-
-    # get size of all arrays
-    for i=1:na
-        tmp = size(arrays[i])
-        asize[i,1:length(tmp)] = [tmp...]
+    N = ndims(arrays[1])
+    if dim > N
+        N = dim
     end
 
     # check if dimensions are consistent
-    ncd = 1:nd .!= dim
-
-    for i=2:na
-        if any(asize[i,ncd] .!= asize[1,ncd])
-            error("Array number $i has inconsistent size")
+    for i = 2:M
+        for j = 1:N
+            if j !== dim
+                if size(arrays[i],j) !== size(arrays[1],j)
+                    error("Array number $i has inconsistent size $(size(arrays[i]))")
+                end
+            end
         end
     end
 
-    # start index of each sub-array
-
-    for i=2:na
-        start[i,:] = start[i-1,:]
-        start[i,dim] = start[i,dim] + asize[i-1,dim]
+    # offset of each sub-array
+    countdim = 0
+    offset = ntuple(M) do i
+        off = ntuple(j -> (j == dim ? countdim : 0), N)
+        countdim += size(arrays[i],dim)
+        off
     end
 
-    offset = ntuple(i -> (start[i,:]...,) .- 1,na)
-
-    sz = asize[1,:]
-    sz[dim] = sum(asize[:,dim])
+    # size of concatenated array
+    sz = ntuple(j -> (j == dim ? countdim : size(arrays[1],j)), N)
 
     TA = typeof(arrays[1])
     T = eltype(arrays[1])
@@ -66,12 +58,11 @@ function CatArray(dim::Int,arrays...)
         TA = promote_type(TA,typeof(arrays[i]))
     end
 
-    return CatArray{T,nd,na,TA}(
-                    dim,
-                    arrays,
-                    offset,
-                    (sz...,))
-
+    return CatArray{T,N,M,TA}(
+        dim,
+        arrays,
+        offset,
+        sz)
 end
 
 
@@ -84,7 +75,7 @@ function Base.getindex(CA::CatArray{T,N},idx...) where {T,N}
 
     for (array,(idx_global,idx_local)) in zip(CA.arrays,idx_global_local)
         if valid_local_idx(idx_local...)
-            # get subset from j-th array
+            # get subset from subarray
             subset = array[idx_local...]
             B[idx_global...] = subset
         end
@@ -112,6 +103,8 @@ end
 # stop condition
 valid_local_idx() = true
 
+# iterate thought all indices by peeling the first value of a tuple off
+# which results in better type stability
 function gli(offset,subarray,idx)
     idx_global_tmp,idx_local_tmp = _gli(offset,subarray,1,(),(),idx...)
     return idx_global_tmp,idx_local_tmp
@@ -120,12 +113,12 @@ end
 function _gli(offset,subarray,i,idx_global,idx_local,idx::Integer,idx_rest...)
     # rebase subscribt
     tmp = idx - offset[i]
-    # only indeces within bounds of the j-th array
+    # only indeces within bounds of the subarray
     if  !(1 <= tmp <= size(subarray,i))
         tmp = -1
     end
 
-    # scalar indices are not part of idx_global
+    # scalar indices are not part of idx_global (as they are dropped)
     return _gli(offset,subarray,i+1,idx_global,(idx_local...,tmp),idx_rest...)
 end
 
@@ -138,21 +131,22 @@ function _gli(offset,subarray,i,idx_global,idx_local,idx::Colon,idx_rest...)
                 (idx_local..., idx_local_tmp),idx_rest...)
 end
 
-
 function _gli(offset,subarray,i,idx_global,idx_local,idx::AbstractRange,idx_rest...)
+    # within bounds of the subarray
+    within(j) = 1 <= j <= size(subarray,i)
+
     # rebase subscribt
     tmp = idx .- offset[i]
 
-    # only indeces within bounds of the j-th array
-    sel = (1 .<= tmp) .& (tmp .<= size(subarray,i))
+    n_within = count(within,tmp)
 
-    if sum(sel) == 0
+    if n_within == 0
         idx_local_tmp = 1:0
         idx_global_tmp = 1:0
     else
         # index for getting the data from the local array
-        idx_local_tmp = tmp[findfirst(sel):findlast(sel)]
-        idx_global_tmp = (1:sum(sel)) .+ (findfirst(sel) - 1)
+        idx_local_tmp = tmp[findfirst(within,tmp):findlast(within,tmp)]
+        idx_global_tmp = (1:n_within) .+ (findfirst(within,tmp) - 1)
     end
 
     return _gli(offset,subarray,i+1,
@@ -182,8 +176,8 @@ function Base.setindex!(CA::CatArray{T,N},data,idx...) where {T,N}
         if valid_local_idx(idx_local...)
             subset = @view data[idx_global...]
             @debug idx_local
-            # set subset in j-th array
-            array[idx_local...] = subset;
+            # set subset in array
+            array[idx_local...] = subset
         end
     end
 
