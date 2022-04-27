@@ -45,7 +45,7 @@ jobs:
            using Pkg
            if Sys.iswindows()
               Pkg.add("NetCDF_jll")
-              Pkg.pin("NetCDF_jll", version="400.702.400")
+              Pkg.pin(name="NetCDF_jll", version="400.702.400")
            end
         shell: julia --color=yes --project=@. {0}
       - uses: julia-actions/julia-runtest@latest
