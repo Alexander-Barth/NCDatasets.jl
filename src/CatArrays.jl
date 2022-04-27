@@ -78,15 +78,15 @@ end
 function Base.getindex(CA::CatArray{T,N},idx...) where {T,N}
     checkbounds(CA,idx...)
 
-    idx_global,idx_local,sz = idx_global_local_(CA,idx)
+    sz = NCDatasets._shape_after_slice(size(CA),idx...)
+    idx_global_local = idx_global_local_(CA,idx)
     B = Array{T,length(sz)}(undef,sz...)
 
-    for j=1:length(CA.arrays)
-        if prod(length.(idx_local[j])) > 0
+    for (array,(idx_global,idx_local)) in zip(CA.arrays,idx_global_local)
+        if prod(length.(idx_local)) > 0
             # get subset from j-th array
-            subset = CA.arrays[j][idx_local[j]...]
-
-            B[idx_global[j]...] = subset
+            subset = array[idx_local...]
+            B[idx_global...] = subset
         end
     end
 
@@ -100,70 +100,6 @@ end
 
 Base.size(CA::CatArray) = CA.sz
 
-
-function global_local_index(start,len,idx::Colon)
-    idx_global_tmp = start:(start+len-1)
-    idx_local_tmp = 1:len
-
-#    @show idx_global_tmp,idx_local_tmp
-    return idx_global_tmp,idx_local_tmp
-end
-
-
-function global_local_index(start,len,idx::AbstractRange)
-    # rebase subscribt
-    tmp = idx .- (start - 1)
-
-    # only indeces within bounds of the j-th array
-    sel = (1 .<= tmp) .& (tmp .<= len)
-
-    if sum(sel) == 0
-        idx_local_tmp = 1:0
-        idx_global_tmp = 1:0
-    else
-        # index for getting the data from the local array
-        idx_local_tmp = tmp[findfirst(sel):findlast(sel)]
-        idx_global_tmp = (1:sum(sel)) .+ (findfirst(sel) - 1)
-    end
-
-    return idx_global_tmp,idx_local_tmp
-end
-
-
-function global_local_index(start,len,idx::Integer)
-    # rebase subscribt
-    tmp = idx - (start - 1)
-
-    # only indeces within bounds of the j-th array
-    if  (1 <= tmp <= len)
-        idx_local_tmp = tmp
-        idx_global_tmp = nothing
-    else
-        idx_local_tmp = 1:0
-        idx_global_tmp = 1:0
-    end
-    #@show idx_global_tmp,idx_local_tmp
-
-    return idx_global_tmp,idx_local_tmp
-end
-
-function gli2(start,sz,idx)
-    n = length(sz)
-
-    idx_local_tmp = Vector{Any}(undef,n)
-    idx_global_tmp = Vector{Any}(undef,n)
-
-        # loop over all dimensions
-        for i=1:n
-
-            idx_global_tmp[i],idx_local_tmp[i] = global_local_index(
-                start[i],
-                sz[i],
-                idx[i])
-        end
-
-    return filter(!isnothing,(idx_global_tmp...,)),(idx_local_tmp...,)
-end
 
 function gli(start,sz,idx)
     idx_global_tmp,idx_local_tmp = _gli(start,sz,1,(),(),idx...)
@@ -226,44 +162,30 @@ function _gli(start,sz,i,idx_global,idx_local,idx::AbstractRange,idx_rest...)
 end
 
 function idx_global_local_(CA::CatArray,idx)
-    N = ndims(CA)
     n = ndims(CA)
 
     # number of indices must be equal to dimension
     @assert(length(idx) == n)
 
 
-    #sz = ntuple(i -> length(idx[i]),Val(N))
-    sz = NCDatasets._shape_after_slice(size(CA),idx...)
+    idx_global_local = ntuple(j -> gli((CA.start[j,:]...,),
+                                       (CA.asize[j,:]...,),idx),length(CA.arrays))
 
-    #idx_local  = Vector{NTuple{N,StepRange{Int,Int}}}(undef,length(CA.arrays))
-    #idx_global = Vector{NTuple{N,StepRange{Int,Int}}}(undef,length(CA.arrays))
-    idx_local  = Vector{Any}(undef,length(CA.arrays))
-    idx_global = Vector{Any}(undef,length(CA.arrays))
 
-    # loop over all arrays
-    for j = 1:length(CA.arrays)
-        idx_global[j],idx_local[j] = gli((CA.start[j,:]...,),
-                                         (CA.asize[j,:]...,),idx)
-    end
-
-    #@show idx_global,idx_local,sz
-    return idx_global,idx_local,sz
-
+    return idx_global_local
 end
 
 function Base.setindex!(CA::CatArray{T,N},data,idx...) where {T,N}
-    idx_global,idx_local,sz = idx_global_local_(CA,idx);
+    idx_global_local = idx_global_local_(CA,idx);
     @debug ind,idx_global,idx_local,sz
 
-    for j = 1:length(CA.arrays)
-        # get subset from global array x
-        subset = @view data[idx_global[j]...]
-
-        @debug idx_local[j]
-
-        # set subset in j-th array
-        CA.arrays[j][idx_local[j]...] = subset;
+    for (array,(idx_global,idx_local)) in zip(CA.arrays,idx_global_local)
+        if prod(length.(idx_local)) > 0
+            subset = @view data[idx_global...]
+            @debug idx_local
+            # set subset in j-th array
+            array[idx_local...] = subset;
+        end
     end
 
     return data
