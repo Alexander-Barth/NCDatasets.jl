@@ -147,7 +147,7 @@ function global_local_index(start,len,idx::Integer)
     return idx_global_tmp,idx_local_tmp
 end
 
-function gli(start,sz,idx)
+function gli2(start,sz,idx)
     n = length(sz)
 
     idx_local_tmp = Vector{Any}(undef,n)
@@ -165,7 +165,65 @@ function gli(start,sz,idx)
     return filter(!isnothing,(idx_global_tmp...,)),(idx_local_tmp...,)
 end
 
+function gli(start,sz,idx)
+    idx_global_tmp,idx_local_tmp = _gli(start,sz,1,(),(),idx...)
+    return idx_global_tmp,idx_local_tmp
+end
 
+# all indices have been processed
+_gli(start,sz,i,idx_global,idx_local) = (idx_global,idx_local)
+
+function _gli(start,sz,i,idx_global,idx_local,idx,idx_rest...)
+    ig,il = global_local_index(
+        start[i],
+        sz[i],
+        idx)
+
+    return _gli(start,sz,i+1,(idx_global...,ig),(idx_local...,il),idx_rest...)
+end
+
+function _gli(start,sz,i,idx_global,idx_local,idx::Integer,idx_rest...)
+    # rebase subscribt
+    tmp = idx - (start[i] - 1)
+    # only indeces within bounds of the j-th array
+    if  (1 <= tmp <= sz[i])
+        # scalar indices are not part of idx_global
+        return _gli(start,sz,i+1,idx_global,(idx_local...,tmp),idx_rest...)
+    else
+        return _gli(start,sz,i+1,idx_global,(idx_local...,1:0),idx_rest...)
+    end
+end
+
+function _gli(start,sz,i,idx_global,idx_local,idx::Colon,idx_rest...)
+    idx_global_tmp = start[i]:(start[i]+sz[i]-1)
+    idx_local_tmp = 1:sz[i]
+
+    return _gli(start,sz,i+1,
+                (idx_global...,idx_global_tmp),
+                (idx_local..., idx_local_tmp),idx_rest...)
+end
+
+
+function _gli(start,sz,i,idx_global,idx_local,idx::AbstractRange,idx_rest...)
+    # rebase subscribt
+    tmp = idx .- (start[i] - 1)
+
+    # only indeces within bounds of the j-th array
+    sel = (1 .<= tmp) .& (tmp .<= sz[i])
+
+    if sum(sel) == 0
+        idx_local_tmp = 1:0
+        idx_global_tmp = 1:0
+    else
+        # index for getting the data from the local array
+        idx_local_tmp = tmp[findfirst(sel):findlast(sel)]
+        idx_global_tmp = (1:sum(sel)) .+ (findfirst(sel) - 1)
+    end
+
+    return _gli(start,sz,i+1,
+                (idx_global...,idx_global_tmp),
+                (idx_local..., idx_local_tmp),idx_rest...)
+end
 
 function idx_global_local_(CA::CatArray,idx)
     N = ndims(CA)
