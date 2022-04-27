@@ -83,7 +83,7 @@ function Base.getindex(CA::CatArray{T,N},idx...) where {T,N}
     B = Array{T,length(sz)}(undef,sz...)
 
     for (array,(idx_global,idx_local)) in zip(CA.arrays,idx_global_local)
-        if prod(length.(idx_local)) > 0
+        if valid_local_idx(idx_local...)
             # get subset from j-th array
             subset = array[idx_local...]
             B[idx_global...] = subset
@@ -101,13 +101,21 @@ end
 Base.size(CA::CatArray) = CA.sz
 
 
+function valid_local_idx(local_idx::Integer,local_idx_rest...)
+    return (local_idx > 0) && valid_local_idx(local_idx_rest...)
+end
+
+function valid_local_idx(local_idx::AbstractRange,local_idx_rest...)
+    return (length(local_idx) > 0) && valid_local_idx(local_idx_rest...)
+end
+
+# stop condition
+valid_local_idx() = true
+
 function gli(start,sz,idx)
     idx_global_tmp,idx_local_tmp = _gli(start,sz,1,(),(),idx...)
     return idx_global_tmp,idx_local_tmp
 end
-
-# all indices have been processed
-_gli(start,sz,i,idx_global,idx_local) = (idx_global,idx_local)
 
 function _gli(start,sz,i,idx_global,idx_local,idx,idx_rest...)
     ig,il = global_local_index(
@@ -122,12 +130,12 @@ function _gli(start,sz,i,idx_global,idx_local,idx::Integer,idx_rest...)
     # rebase subscribt
     tmp = idx - (start[i] - 1)
     # only indeces within bounds of the j-th array
-    if  (1 <= tmp <= sz[i])
-        # scalar indices are not part of idx_global
-        return _gli(start,sz,i+1,idx_global,(idx_local...,tmp),idx_rest...)
-    else
-        return _gli(start,sz,i+1,idx_global,(idx_local...,1:0),idx_rest...)
+    if  !(1 <= tmp <= sz[i])
+        tmp = -1
     end
+
+    # scalar indices are not part of idx_global
+    return _gli(start,sz,i+1,idx_global,(idx_local...,tmp),idx_rest...)
 end
 
 function _gli(start,sz,i,idx_global,idx_local,idx::Colon,idx_rest...)
@@ -161,6 +169,11 @@ function _gli(start,sz,i,idx_global,idx_local,idx::AbstractRange,idx_rest...)
                 (idx_local..., idx_local_tmp),idx_rest...)
 end
 
+
+# stop condition
+# all indices have been processed
+_gli(start,sz,i,idx_global,idx_local) = (idx_global,idx_local)
+
 function idx_global_local_(CA::CatArray,idx)
     n = ndims(CA)
 
@@ -180,7 +193,7 @@ function Base.setindex!(CA::CatArray{T,N},data,idx...) where {T,N}
     @debug ind,idx_global,idx_local,sz
 
     for (array,(idx_global,idx_local)) in zip(CA.arrays,idx_global_local)
-        if prod(length.(idx_local)) > 0
+        if valid_local_idx(idx_local...)
             subset = @view data[idx_global...]
             @debug idx_local
             # set subset in j-th array
