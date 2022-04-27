@@ -66,9 +66,9 @@ A = [randn(2,3),randn(2,3),randn(2,3)]
 C = cat(A...; dims = 3)
 CA = CatArrays.CatArray(3,A...)
 
-idx_global,idx_local,sz = CatArrays.idx_global_local_(CA,(1:1,1:1,1:1))
+idx_global_local = CatArrays.index_global_local(CA,(1:1,1:1,1:1))
 
-@inferred CatArrays.idx_global_local_(CA,(1:1,1:1,1:1))
+@inferred CatArrays.index_global_local(CA,(1:1,1:1,1:1))
 
 @test CA[1:1,1:1,1:1] == C[1:1,1:1,1:1]
 @test CA[1:1,1:1,1:2] == C[1:1,1:1,1:2]
