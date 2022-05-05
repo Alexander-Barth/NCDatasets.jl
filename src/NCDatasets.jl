@@ -18,6 +18,7 @@ More information is available at https://github.com/Alexander-Barth/NCDatasets.j
 """
 module NCDatasets
 
+using NetworkOptions
 using NetCDF_jll
 using Dates
 using Printf
@@ -35,6 +36,20 @@ export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
 export dayofyear, firstdayofyear
 export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
     DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
+
+function __init__()
+    println("running __init__")
+    state = Ref{UInt64}(0)  # allow ocopen to write the address here
+    url = ""  # don't know what this url should be, perhaps empty is fine
+    flag = 10065  # CURLOPT_CAINFO
+    value = ca_roots()
+    @info "calling ocopen" state url
+    err = @ccall(libnetcdf.ocopen(state::Ptr{Cvoid}, url::Cstring)::Int32)
+    @info "calling ocset_curlopt" state flag value err
+    err = @ccall(libnetcdf.ocset_curlopt(state::Ptr{Cvoid}, flag::Int32, value::Cstring)::Int32)
+    println(err)
+    println("finished __init__")
+end
 
 const default_timeunits = "days since 1900-00-00 00:00:00"
 
