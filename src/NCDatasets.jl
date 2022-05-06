@@ -22,7 +22,6 @@ using NetworkOptions
 using NetCDF_jll
 using Dates
 using Printf
-using Scratch
 
 using Base
 using DataStructures: OrderedDict
@@ -38,19 +37,23 @@ export dayofyear, firstdayofyear
 export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
     DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
 
-const NCRC = Ref{String}()
-
 function __init__()
-    ca_path = ca_roots()
-    if ca_path !== nothing
-        dir = get_scratch!(NetCDF_jll, "config")
-        path = joinpath(dir, ".ncrc")
-        ENV["NCRCENV_RC"] = path
-        NCRC[] = path
-        content = string("HTTP.SSL.CAINFO=", ca_path)
-        write(path, content)
+    value = ca_roots()
+    if value !== nothing
+        key = "HTTP.SSL.CAINFO"
+        hostport=C_NULL
+        path=C_NULL
+        err = @ccall(libnetcdf.NC_rcfile_insert(key::Cstring, value::Cstring, hostport::Cstring, path::Cstring)::Int32)
+        println("NC_rcfile_insert returns ", err)
+        lookup = @ccall(libnetcdf.NC_rclookup(key::Cstring, hostport::Cstring, path::Cstring)::Cstring)
+        @show lookup
+        # println(unsafe_string(lookup))
     end
 end
+
+# EXTERNL int NC_rcfile_insert(const char* key, const char* value, const char* hostport, const char* path);
+# EXTERNL char* NC_rclookup(const char* key, const char* hostport, const char* path);
+    
 
 const default_timeunits = "days since 1900-00-00 00:00:00"
 
