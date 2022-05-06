@@ -12,6 +12,7 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 NetCDF_jll = "7243133f-43d8-5620-bbf4-c2c921802cf3"
 NetworkOptions = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Scratch = "6c6a2e73-6563-6170-7368-637461726353"
 
 [compat]
 CFTime = "0.1.1"
