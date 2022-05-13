@@ -67,6 +67,23 @@ set on NetCDF 4 files.
 | NC_STRING   | String |
 
 
+## Dimension ordering
+
+The data is stored in the NetCDF file in same order as they are stored in
+memory. As julia uses the
+[Column-major ordering](https://en.wikipedia.org/wiki/Row-_and_column-major_order)
+for arrays, the order of dimensions will appear reversed when the data in loaded
+in languages or programms using
+[Row-major ordering](https://en.wikipedia.org/wiki/Row-_and_column-major_order)
+such as C/C++, Python/NumPy or the tools `ncdump`/`ncgen`
+([NetCDF CDL](https://web.archive.org/web/20220513091844/https://docs.unidata.ucar.edu/nug/current/_c_d_l.html)).
+NumPy can also use Column-major ordering but Row-major order is the default. For the column-major
+interpretation of the dimensions (as in Julia), the
+[CF Convention recommends](https://web.archive.org/web/20220328110810/http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#dimensions) the
+order  "longitude" (X), "latitude" (Y), "height or depth" (Z) and
+"date or time" (T) (if applicable). All other dimensions should, whenever
+possible, be placed to the right of the spatiotemporal dimensions.
+
 ## Example:
 
 In this example, `scale_factor` and `add_offset` are applied when the `data`
@@ -90,6 +107,8 @@ julia> NCDataset("test_file.nc","c") do ds
     If the attributes `_FillValue`, `missing_value`, `add_offset`, `scale_factor`,
     `units` and `calendar` are used, they should be defined when calling `defVar`
     by using the parameter `attrib` as shown in the example above.
+
+
 """
 function defVar(ds::NCDataset,name,vtype::DataType,dimnames; kwargs...)
     # all keyword arguments as dictionary
