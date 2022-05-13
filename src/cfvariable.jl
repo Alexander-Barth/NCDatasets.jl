@@ -69,11 +69,11 @@ set on NetCDF 4 files.
 
 ## Dimension ordering
 
-The data is stored in the NetCDF file in same order as they are stored in
+The data is stored in the NetCDF file in the same order as they are stored in
 memory. As julia uses the
 [Column-major ordering](https://en.wikipedia.org/wiki/Row-_and_column-major_order)
-for arrays, the order of dimensions will appear reversed when the data in loaded
-in languages or programms using
+for arrays, the order of dimensions will appear reversed when the data is loaded
+in languages or programs using
 [Row-major ordering](https://en.wikipedia.org/wiki/Row-_and_column-major_order)
 such as C/C++, Python/NumPy or the tools `ncdump`/`ncgen`
 ([NetCDF CDL](https://web.archive.org/web/20220513091844/https://docs.unidata.ucar.edu/nug/current/_c_d_l.html)).
