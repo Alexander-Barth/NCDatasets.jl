@@ -574,6 +574,11 @@ function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,typeid::In
                 ncid,varid,name,typeid,length(data),data))
 end
 
+# convert e.g. ranges to vectors
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::AbstractVector)
+    nc_put_att(ncid,varid,name,Vector(data))
+end
+
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data)
     error("attributes can only be scalars or vectors")
 end

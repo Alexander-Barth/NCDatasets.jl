@@ -219,5 +219,6 @@ ds = NCDataset(filename,"c");
 defDim(ds, "x", length(x))
 ncv = defVar(ds, "x", Float64, ("x",))
 ncv[:] = x
+ds.attrib["x_range"] = x
 close(ds)
 rm(filename)
