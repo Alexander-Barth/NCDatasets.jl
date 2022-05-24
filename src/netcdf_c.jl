@@ -231,8 +231,8 @@ const NCChecksumConstants = Dict(value => key for (key, value) in NCChecksumSymb
 function convert(::Type{Array{nc_vlen_t{T},N}},data::Array{Vector{T},N}) where {T,N}
     tmp = Array{nc_vlen_t{T},N}(undef,size(data))
 
-    for i = 1:length(data)
-        tmp[i] = nc_vlen_t{T}(length(data[i]), pointer(data[i]))
+    for (i,d) in enumerate(data)
+        tmp[i] = nc_vlen_t{T}(length(d), pointer(d))
     end
     return tmp
 end

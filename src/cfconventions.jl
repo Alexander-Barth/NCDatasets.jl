@@ -15,10 +15,10 @@ function ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
 
     ancillary_variables = split(ncv.attrib["ancillary_variables"])
 
-    for j = 1:length(ancillary_variables)
-        ncv_ancillary = ds[ancillary_variables[j]]
+    for ancillary_variable in ancillary_variables
+        ncv_ancillary = ds[ancillary_variable]
         if occursin(modifier,ncv_ancillary.attrib["standard_name"])
-            @debug ancillary_variables[j]
+            @debug ancillary_variable
             return ncv_ancillary
         end
     end
@@ -62,7 +62,7 @@ function filter(ncv::Union{Variable,CFVariable}, indices...; accepted_status_fla
         end
 
         accepted_status_flag_values = zeros(eltype(flag_values),length(accepted_status_flags))
-        for i = 1:length(accepted_status_flags)
+        for i = eachindex(accepted_status_flags,accepted_status_flag_values)
             tmp = findfirst(accepted_status_flags[i] .== flag_meanings)
 
             if tmp == nothing

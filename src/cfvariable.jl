@@ -194,15 +194,15 @@ end
 
 function _defVar(ds::NCDataset,name,data,nctype,dimnames; attrib = [], kwargs...)
     # define the dimensions if necessary
-    for i = 1:length(dimnames)
-        if !(dimnames[i] in ds.dim)
-            ds.dim[dimnames[i]] = size(data,i)
-        elseif !(dimnames[i] in unlimited(ds.dim))
-            dimlen = ds.dim[dimnames[i]]
+    for (i,dimname) in enumerate(dimnames)
+        if !(dimname in ds.dim)
+            ds.dim[dimname] = size(data,i)
+        elseif !(dimname in unlimited(ds.dim))
+            dimlen = ds.dim[dimname]
 
             if (dimlen !== size(data,i))
                 throw(NetCDFError(
-                    -1,"dimension $(dimnames[i]) is already defined with the " *
+                    -1,"dimension $(dimname) is already defined with the " *
                     "length $dimlen. It cannot be redefined with a length of $(size(data,i))."))
             end
         end

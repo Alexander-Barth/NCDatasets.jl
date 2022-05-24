@@ -94,9 +94,9 @@ function NCDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, def
             data_master = metadata(ds_master)
             ds = Vector{Union{NCDataset,DeferDataset}}(undef,length(fnames))
             #ds[master_index] = ds_master
-            for i = 1:length(fnames)
+            for (i,fname) in enumerate(fnames)
                 #if i !== master_index
-                ds[i] = DeferDataset(fnames[i],mode,data_master)
+                ds[i] = DeferDataset(fname,mode,data_master)
                 #end
             end
         else

@@ -153,7 +153,7 @@ function loadragged(ncvar,index::Union{Colon,UnitRange})
     T = typeof(view(tmp,1:varsize[1]))
     data = Vector{T}(undef,length(varsize))
 
-    for i = 1:length(varsize)
+    for i in eachindex(varsize,data)
         data[i] = view(tmp,istart+1:istart+varsize[i]);
         istart += varsize[i]
     end

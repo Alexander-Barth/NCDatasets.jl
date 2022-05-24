@@ -51,9 +51,9 @@ function CatArray(dim::Int,arrays...)
     # size of concatenated array
     sz = ntuple(j -> (j == dim ? countdim : size(arrays[1],j)), N)
 
-    TA = typeof(arrays[1])
-    T = eltype(arrays[1])
-    for i = 2:length(arrays)
+    TA = typeof(arrays[begin])
+    T = eltype(arrays[begin])
+    for i = (firstindex(arrays)+1):lastindex(arrays)
         T = promote_type(T,eltype(arrays[i]))
         TA = promote_type(TA,typeof(arrays[i]))
     end
