@@ -598,8 +598,15 @@ end
 @inline asdate(data::Missing,time_origin,time_factor,DTcast) = data
 @inline asdate(data,time_origin::Nothing,time_factor,DTcast) = data
 @inline asdate(data::Missing,time_origin::Nothing,time_factor,DTcast) = data
+
 @inline asdate(data,time_origin,time_factor,DTcast) =
     convert(DTcast,time_origin + Dates.Millisecond(round(Int64,time_factor * data)))
+
+# special case when time variables are stored as single precision,
+# promoted internally to double precision
+@inline asdate(data::Float32,time_origin::Nothing,time_factor,DTcast) = data
+@inline asdate(data::Float32,time_origin,time_factor,DTcast) =
+    convert(DTcast,time_origin + Dates.Millisecond(round(Int64,time_factor * Float64(data))))
 
 
 @inline fromdate(data::TimeType,time_origin,inv_time_factor) =
