@@ -275,3 +275,7 @@ end
     include("test_defer.jl")
 end
 
+@testset "@select macro" begin
+    include("test_select.jl")
+end
+

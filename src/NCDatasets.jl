@@ -84,6 +84,7 @@ include("cfconventions.jl")
 include("defer.jl")
 include("multifile.jl")
 include("ncgen.jl")
+include("select.jl")
 include("precompile.jl")
 
 export CatArrays
