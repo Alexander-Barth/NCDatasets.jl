@@ -334,7 +334,7 @@ end
 ds = NCDataset(fname)
 v = NCDatasets.@select(ds["temperature"],Dates.month(time) == 1 && salinity >= 35)
 
-v2 = ds["temperature"][findall(Dates.month.(time) .== 1 .&& salinity .>= 35)]
+v2 = ds["temperature"][findall((Dates.month.(time) .== 1) .& (salinity .>= 35))]
 @test v == v2
 close(ds)
 
