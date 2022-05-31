@@ -787,8 +787,6 @@ function to_range_list(index::Vector{T},len) where T <: Integer
             range_test = grow(range_test)
         end
 
-        #@show range
-
         push!(indices_ranges,range)
         baseindex += length(range)
     end
@@ -817,11 +815,9 @@ function Base.getindex(v::NCDatasets.CFVariable,indices::Union{Int,Colon,UnitRan
     @debug "transform vector of indices to ranges"
 
     sz_source = size(v)
-    #@show sz_source, indices
     ri = to_range_list.(indices,sz_source)
     sz_dest = NCDatasets._shape_after_slice(sz_source,indices...)
 
-    #@show eltype(v),length(sz_dest)
     dest = Array{eltype(v),length(sz_dest)}(undef,sz_dest)
     N = length(indices)
 
@@ -831,7 +827,6 @@ function Base.getindex(v::NCDatasets.CFVariable,indices::Union{Int,Colon,UnitRan
         ind_source = ntuple(i -> ri[i][R[i]],N)
         ind_dest = ntuple(i -> ri_dest[i][R[i]],length(ri_dest))
         dest[ind_dest...] = v[ind_source...]
-        #@show R, ind_source
     end
     return dest
 end
