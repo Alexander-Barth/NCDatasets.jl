@@ -1,6 +1,6 @@
 
 using NCDatasets
-using NCDatasets: subsub
+using NCDatasets: subsub, SubDataset
 using DataStructures
 using Test
 
@@ -118,5 +118,29 @@ io = IOBuffer()
 show(io,view(ncvar,:,:));
 @test occursin("elevation",String(take!(io)))
 
+# subset of dataset
+
+indices = (lon = 3:4, lat = 1:3)
+
+sds = SubDataset(ds,indices)
+@test size(sds["lon"]) == (2,)
+@test size(sds["lat"]) == (3,)
+@test size(sds["bat"]) == (2,3)
+
+@test sds["bat"][2,2] == ds["bat"][4,2]
+
+@test "lon" in keys(sds)
+
+indices = (lon = 1:2,)
+sds = SubDataset(ds,indices)
+@test size(sds["lon"]) == (2,)
+@test size(sds["lat"]) == (11,)
+@test size(sds["bat"]) == (2,11)
+@test sds.dim["lon"] == 2
+@test sds.dim["lat"] == 11
+
+io = IOBuffer()
+show(io,sds);
+@test occursin("lon = 2",String(take!(io)))
 
 close(ds)

@@ -98,3 +98,45 @@ Base.setindex!(v::SubVariable,data,indices::CartesianIndex) =
     setindex!(v,data,indices.I...)
 Base.setindex!(v::SubVariable,data,indices::CartesianIndices) =
     setindex!(v,data,indices.indices...)
+
+
+
+
+
+
+Base.keys(ds::SubDimensions) = keys(ds.dim)
+
+function Base.getindex(sd::SubDimensions,dimname)
+    dn = Symbol(dimname)
+    if hasproperty(sd.indices,dn)
+        length(getproperty(sd.indices,dn))
+    else
+        sd.dim[dimname]
+    end
+end
+
+
+
+function SubDataset(ds,indices)
+    dim = SubDimensions(ds.dim,indices)
+    SubDataset(ds,indices,dim,ds.attrib,ds.group)
+end
+
+function Base.getindex(ds::SubDataset,varname::Union{AbstractString, Symbol})
+    ncvar = ds.ds[varname]
+    dims = dimnames(ncvar)
+    ind = ntuple(i -> get(ds.indices,Symbol(dims[i]),:),ndims(ncvar))
+    return view(ncvar,ind...)
+end
+
+function variable(ds::SubDataset,varname::Union{AbstractString, Symbol})
+    ncvar = variable(ds.ds,varname)
+    dims = dimnames(ncvar)
+    ind = ntuple(i -> get(ds.indices,Symbol(dims[i]),:),ndims(ncvar))
+    return view(ncvar,ind...)
+end
+
+
+Base.keys(ds::SubDataset) = keys(ds.ds)
+path(ds::SubDataset) = path(ds.ds)
+groupname(ds::SubDataset) = groupname(ds.ds)
