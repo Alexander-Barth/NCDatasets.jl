@@ -6,20 +6,12 @@ Base.size(v::SubVariable) = _shape_after_slice(size(v.parent),v.indices...)
 dimnames(v::SubVariable) = dimnames(v.parent)
 name(v::SubVariable) = name(v.parent)
 
-function SubVariable(A::AbstractArray,indices...)
-    T = eltype(A)
-    N = ndims(A)
-    attrib = Dict{String,Any}()
-    SubVariable{T,N,typeof(A),typeof(indices),typeof(attrib)}(A,indices,attrib)
-end
-
 function SubVariable(A::AbstractVariable,indices...)
     T = eltype(A)
     N = ndims(A)
     SubVariable{T,N,typeof(A),typeof(indices),typeof(A.attrib)}(A,indices,A.attrib)
 end
 
-SubVariable(A::AbstractArray{T,N}) where T where N = SubVariable(A,ntuple(i -> :,N)...)
 SubVariable(A::AbstractVariable{T,N}) where T where N = SubVariable(A,ntuple(i -> :,N)...)
 
 # recursive calls so that the compiler can infer the types via inline-ing
