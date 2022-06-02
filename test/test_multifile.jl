@@ -232,5 +232,5 @@ for i = 1:2
 end
 
 ds = NCDataset(fnames,aggdim = "time")
-@time ds["time"][:] == times
+ds["time"][:] == times
 close(ds)
