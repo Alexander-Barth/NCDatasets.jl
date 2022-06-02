@@ -30,7 +30,6 @@ end
 
 allowmissing(x::AbstractArray{T}) where {T} = convert(AbstractArray{Union{T, Missing}}, x)
 
-import Base: filter
 """
     data = NCDatasets.filter(ncv, indices...; accepted_status_flags = nothing)
 

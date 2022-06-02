@@ -2,8 +2,6 @@
 # Copyright (c) 2012-2013: Fabian Gans, Max-Planck-Institut fuer Biogeochemie, Jena, Germany
 # MIT
 
-import Base: showerror
-
 """
     NetCDFError(code::Cint)
 

@@ -18,19 +18,16 @@ More information is available at https://github.com/Alexander-Barth/NCDatasets.j
 """
 module NCDatasets
 
-using NetworkOptions
-using NetCDF_jll
+import Base: Array, close, collect, convert, delete, display!, filter, getindex,
+    parent, parentindices, setindex, show, showerror!, size, view
+using CFTime
+using DataStructures: OrderedDict
 using Dates
+using NetCDF_jll
+using NetworkOptions
 using Printf
 
-using Base
-using DataStructures: OrderedDict
-import Base.convert
 
-import Base: close
-import Base: Array
-
-using CFTime
 export CFTime
 export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
 export dayofyear, firstdayofyear
@@ -80,6 +77,7 @@ include("dimensions.jl")
 include("groupes.jl")
 include("variable.jl")
 include("cfvariable.jl")
+include("subvariable.jl")
 include("cfconventions.jl")
 include("defer.jl")
 include("multifile.jl")

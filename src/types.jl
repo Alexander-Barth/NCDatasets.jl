@@ -158,6 +158,12 @@ mutable struct MFCFVariable{T,N,M,TA,TV,A} <: AbstractVariable{T,N}
     varname::String
 end
 
+struct SubVariable{T,N,TA,TI,TAttrib} <: AbstractVariable{T,N}
+    parent::TA
+    indices::TI
+    attrib::TAttrib
+end
+
 mutable struct MFDimensions{T} <: AbstractDimensions where T <: AbstractDimensions
     as::Vector{T}
     aggdim::String

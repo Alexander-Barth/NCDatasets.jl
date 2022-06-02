@@ -511,7 +511,7 @@ dimnames(v::Union{CFVariable,MFCFVariable})  = dimnames(v.var)
     dimsize(v::CFVariable)
 Get the size of a `CFVariable` as a named tuple of dimension → length.
 """
-function dimsize(v::Union{CFVariable,MFCFVariable})
+function dimsize(v::Union{CFVariable,MFCFVariable,SubVariable})
     s = size(v)
     names = Symbol.(dimnames(v))
     return NamedTuple{names}(s)
@@ -774,7 +774,7 @@ Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=inde
 # necessary for IJulia if showing a variable from a closed file
 Base.show(io::IO,::MIME"text/plain",v::Union{Variable,CFVariable,MFCFVariable}) = show(io,v)
 
-Base.display(v::Union{Variable,CFVariable,MFCFVariable}) = show(stdout,v)
+Base.display(v::Union{Variable,CFVariable,MFCFVariable,SubVariable}) = show(stdout,v)
 
 
 

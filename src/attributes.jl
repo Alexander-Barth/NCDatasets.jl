@@ -1,5 +1,3 @@
-import Base: delete!
-
 # `Attributes` is a collection of named attributes
 
 
