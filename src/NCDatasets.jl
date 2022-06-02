@@ -27,13 +27,6 @@ using NetCDF_jll
 using NetworkOptions
 using Printf
 
-
-export CFTime
-export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
-export dayofyear, firstdayofyear
-export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
-    DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
-
 function __init__()
     init_certificate_authority()
 end
@@ -61,5 +54,10 @@ include("select.jl")
 include("precompile.jl")
 
 export CatArrays
+export CFTime
+export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
+export dayofyear, firstdayofyear
+export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
+    DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
 
 end # module
