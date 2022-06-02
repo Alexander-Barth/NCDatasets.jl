@@ -763,6 +763,75 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
     return data
 end
 
+# indexing with vector of integers
+
+to_range_list(index::Integer,len) = index
+
+to_range_list(index::Colon,len) = [1:len]
+
+function to_range_list(index::Vector{T},len) where T <: Integer
+    grow(istart) = istart[begin]:(istart[end]+step(istart))
+
+    baseindex = 1
+    indices_ranges = UnitRange{T}[]
+
+    while baseindex <= length(index)
+        range = index[baseindex]:index[baseindex]
+        range_test = grow(range)
+        index_view = @view index[baseindex:end]
+
+        while checkbounds(Bool,index_view,length(range_test)) &&
+            (range_test[end] == index_view[length(range_test)])
+
+            range = range_test
+            range_test = grow(range_test)
+        end
+
+        push!(indices_ranges,range)
+        baseindex += length(range)
+    end
+
+    @assert reduce(vcat,indices_ranges) == index
+    return indices_ranges
+end
+
+_range_indices_dest(of) = of
+_range_indices_dest(of,i::Integer,rest...) = _range_indices_dest(of,rest...)
+
+function _range_indices_dest(of,v,rest...)
+    b = 0
+    ind = similar(v,0)
+    for r in v
+        rr = 1:length(r)
+        push!(ind,b .+ rr)
+        b += length(r)
+    end
+
+    _range_indices_dest((of...,ind),rest...)
+end
+range_indices_dest(ri...) = _range_indices_dest((),ri...)
+
+function Base.getindex(v::NCDatasets.CFVariable,indices::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int},Vector{Int}}...)
+    @debug "transform vector of indices to ranges"
+
+    sz_source = size(v)
+    ri = to_range_list.(indices,sz_source)
+    sz_dest = NCDatasets._shape_after_slice(sz_source,indices...)
+
+    dest = Array{eltype(v),length(sz_dest)}(undef,sz_dest)
+    N = length(indices)
+
+    ri_dest = range_indices_dest(ri...)
+
+    for R in CartesianIndices(length.(ri))
+        ind_source = ntuple(i -> ri[i][R[i]],N)
+        ind_dest = ntuple(i -> ri_dest[i][R[i]],length(ri_dest))
+        dest[ind_dest...] = v[ind_source...]
+    end
+    return dest
+end
+
+
 ############################################################
 # Convertion to array
 ############################################################
@@ -819,3 +888,4 @@ close(ds)
                            time_origin(v),time_factor(v))
 
 end
+
