@@ -140,3 +140,10 @@ end
 Base.keys(ds::SubDataset) = keys(ds.ds)
 path(ds::SubDataset) = path(ds.ds)
 groupname(ds::SubDataset) = groupname(ds.ds)
+
+
+function NCDataset(v::SubVariable)
+    indices = (;((Symbol(d),i) for (d,i) in zip(dimnames(v),v.indices))...)
+    return SubDataset(NCDataset(v.parent),indices)
+end
+

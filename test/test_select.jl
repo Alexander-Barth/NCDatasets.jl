@@ -121,9 +121,9 @@ v = SelectableVariable((lon = lon,),data);
 
 
 target = 7.2
-a = NCDatasets.@select(v,lon ≈ 7.2)
+a = NCDatasets.@select(v,lon ≈ 7.2)[]
 
-a = NCDatasets.@select(v,lon ≈ $target)
+a = NCDatasets.@select(v,lon ≈ $target)[]
 
 
 @test data[findmin(abs.(lon .- target))[2]] == a
@@ -134,7 +134,7 @@ target = 7.2
 
 
 
-a = NCDatasets.@select(v,lon ≈ $target ± 1)
+a = NCDatasets.@select(v,lon ≈ $target ± 1)[]
 @test v[findmin(x -> abs(x - target),lon)[2]] == a
 
 a = NCDatasets.@select(v,lon ≈ $target ± 1e-10)
@@ -180,11 +180,10 @@ a = NCDatasets.@select(v,3 <= lon <= 7.2 && 2 <= lat < 4)
 @test a[:] == data[(3 .<= lon .<= 7.2) .& (2 .<= lat' .< 4)]
 
 
-NCDatasets.@select(v,3 <= lon <= 7.2 && 2 <= lat < 4) .= NaN
-
+NCDatasets.@select(v,3 <= lon <= 7.2 && 2 <= lat < 4) .= 12
 i = findfirst(3 .<= lon .<= 7.2):findlast(3 .<= lon .<= 7.2)
 j = findfirst(2 .<= lat .< 4):findlast(2 .<= lat .< 4)
-@test a == data[i,j]
+@test all(data[i,j] .== 12)
 
 
 lonr = (3,7.2)
@@ -310,7 +309,7 @@ v2 = ds["SST"][ilon,ilat,:]
 @test v == v2
 
 
-v = NCDatasets.@select(ds["SST"],lon ≈ 3 && lat ≈ 6 && time ≈ DateTime(2000,1,4) ± Day(1))
+v = NCDatasets.@select(ds["SST"],lon ≈ 3 && lat ≈ 6 && time ≈ DateTime(2000,1,4) ± Day(1))[]
 
 ilon = findmin(x -> abs(x-3),ds["lon"])[2]
 ilat = findmin(x -> abs(x-6),ds["lat"])[2]

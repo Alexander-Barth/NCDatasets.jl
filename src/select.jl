@@ -55,13 +55,13 @@ _intersect(r1::Colon,r2::AbstractRange) = r2
 """
     NCDatasets.@select(v,expression)
 
-Load a subset of the variable `v` following the condition `expression`. The condition
+Return a subset of the variable `v` following the condition `expression` as a view. The condition
 has the following form:
 
 `condition1 && condition2 && condition3 ... conditionN `
 
 Every condition should involve a single 1D NetCDF variable (typically a coordinate variable, referred as `coord` below)
-and should have a shared dimension with the variable `v`. All local variables (including local functions) need to have a \$ prefix (see examples below) as the condition is evaluated in the scope of the module NCDatasets[^1]. This macro is experimental and subjected to change.
+and should have a shared dimension with the variable `v`. All local variables (including local functions) need to have a \$ prefix (see examples below) as the condition is evaluated in the scope of the module NCDatasets[^1]. This macro is highly experimental and subjected to change.
 
 Every condition can either perform:
 
@@ -73,6 +73,8 @@ Every condition can either perform:
 
 Only the data which satisfies all conditions is loaded. All conditions must be chained with an `&&` (logical and). They should not contain additional paranthesis or other logical operators such as `||` (logical or).
 
+To convert the view into a regular array one can use `collect` or `Array` for arrays.
+As in julia, views on scalars are wrapped into a zero dimensional arrays which can be dereferended by using `[]`.
 
 ## Examples
 
@@ -224,7 +226,8 @@ macro select(v,expression)
     end
 
     #push!(code,:(println("indices ",indices)))
-    push!(code,:($(esc(v))[indices...]))
+    #push!(code,:($(esc(v))[indices...]))
+    push!(code,:(view($(esc(v)),indices...)))
     return Expr(:block,code...)
 end
 

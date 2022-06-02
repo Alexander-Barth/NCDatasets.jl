@@ -107,7 +107,7 @@ v = ncv[:]
 close(ds)
 ```
 """
-function coord(v::Union{CFVariable,Variable},standard_name)
+function coord(v::Union{CFVariable,Variable,SubVariable},standard_name)
     matches = Dict(
         "time" => [r".*since.*"],
         # It is great to have choice!
