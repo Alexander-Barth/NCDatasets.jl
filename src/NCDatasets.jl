@@ -35,35 +35,10 @@ export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
     DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
 
 function __init__()
-    value = ca_roots()
-    if value == nothing
-        return
-    end
-
-    key = "HTTP.SSL.CAINFO"
-    hostport = C_NULL
-    path = C_NULL
-    err = @ccall(libnetcdf.NC_rcfile_insert(key::Cstring, value::Cstring, hostport::Cstring, path::Cstring)::Int32)
-    @debug "NC_rcfile_insert returns $err"
-
-    if err != NC_NOERR
-        @warn "setting HTTP.SSL.CAINFO using NC_rcfile_insert " *
-            "failed with error $err. See https://github.com/Alexander-Barth/NCDatasets.jl/issues/173 for more information. "
-
-        @debug begin
-            lookup = @ccall(libnetcdf.NC_rclookup(key::Cstring, hostport::Cstring, path::Cstring)::Cstring)
-
-            if lookup !== C_NULL
-                @debug "NC_rclookup: ",unsafe_string(lookup)
-            else
-                @debug "NC_rclookup result pointer: ",lookup
-            end
-        end
-    end
+    init_certificate_authority()
 end
 
 const default_timeunits = "days since 1900-00-00 00:00:00"
-
 const SymbolOrString = Union{Symbol, AbstractString}
 
 include("CatArrays.jl")
