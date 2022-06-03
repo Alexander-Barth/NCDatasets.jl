@@ -143,4 +143,7 @@ io = IOBuffer()
 show(io,sds);
 @test occursin("lon = 2",String(take!(io)))
 
+
+@test dimnames(view(ncvar,:,1)) == ("lon",)
+
 close(ds)

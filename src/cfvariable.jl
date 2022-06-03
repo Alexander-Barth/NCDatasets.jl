@@ -818,15 +818,26 @@ function Base.getindex(v::NCDatasets.CFVariable,indices::Union{Int,Colon,UnitRan
     ri = to_range_list.(indices,sz_source)
     sz_dest = NCDatasets._shape_after_slice(sz_source,indices...)
 
-    dest = Array{eltype(v),length(sz_dest)}(undef,sz_dest)
     N = length(indices)
 
     ri_dest = range_indices_dest(ri...)
+    @debug "ri_dest $ri_dest"
 
+    if all(==(1),length.(ri))
+        # single chunk
+        R = first(CartesianIndices(length.(ri)))
+        ind_source = ntuple(i -> ri[i][R[i]],N)
+        ind_dest = ntuple(i -> ri_dest[i][R[i]],length(ri_dest))
+        return v[ind_source...]
+    end
+
+    dest = Array{eltype(v),length(sz_dest)}(undef,sz_dest)
     for R in CartesianIndices(length.(ri))
         ind_source = ntuple(i -> ri[i][R[i]],N)
         ind_dest = ntuple(i -> ri_dest[i][R[i]],length(ri_dest))
-        dest[ind_dest...] = v[ind_source...]
+        #dest[ind_dest...] = v[ind_source...]
+        buffer = Array{eltype(v.var),length(ind_dest)}(undef,length.(ind_dest))
+        load!(v,view(dest,ind_dest...),buffer,ind_source...)
     end
     return dest
 end

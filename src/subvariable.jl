@@ -3,7 +3,11 @@ Base.parent(v::SubVariable) = v.parent
 Base.parentindices(v::SubVariable) = v.indices
 Base.size(v::SubVariable) = _shape_after_slice(size(v.parent),v.indices...)
 
-dimnames(v::SubVariable) = dimnames(v.parent)
+function dimnames(v::SubVariable)
+    dimension_names = dimnames(v.parent)
+    [dimension_name for (i,dimension_name) in zip(v.indices,dimension_names) if !(i isa Integer)]
+end
+
 name(v::SubVariable) = name(v.parent)
 
 function SubVariable(A::AbstractVariable,indices...)
