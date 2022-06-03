@@ -23,8 +23,7 @@ scan_exp(exp::Expr,varnames) = scan_exp!(exp::Expr,varnames,Symbol[])
 
 function scan_coordinate_name(exp,coordinate_names)
     params = scan_exp(exp,coordinate_names)
-    #println("dn",coordinate_names)
-    #println("pp",params)
+
     if length(params) != 1
         error("Multiple (or none) coordinates in expression $exp ($params) while looking for $(coordinate_names).")
     end
@@ -53,7 +52,7 @@ _intersect(r1::Colon,r2::AbstractRange) = r2
 
 
 """
-    NCDatasets.@select(v,expression)
+    vsubset = NCDatasets.@select(v,expression)
 
 Return a subset of the variable `v` following the condition `expression` as a view. The condition
 has the following form:
@@ -67,14 +66,17 @@ Every condition can either perform:
 
 * a nearest match: `coord ≈ target_coord`. Only the data corresponding to the index closest to `target_coord` is loaded.
 
-* a nearest match with tolerance: `coord ≈ target_coord ± tolerance`. As before, but if the difference between the closest value in `coord` and `target_coord` is larger (in absolue value) than `tolerance`, an empty array is returned.
+* a nearest match with tolerance: `coord ≈ target_coord ± tolerance`. As before, but if the difference between the closest value in `coord` and `target_coord` is larger (in absolute value) than `tolerance`, an empty array is returned.
 
 * a condition operating on scalar values. For example, a `condition` equal to `10 <= lon <= 20` loads all data with the longitude between 10 and 20 or `abs(lat) > 60` loads all variables with a latitude north of 60° N and south of 60° S (assuming that the NetCDF has the 1D variables `lon` and `lat` for longitude and latitude).
 
-Only the data which satisfies all conditions is loaded. All conditions must be chained with an `&&` (logical and). They should not contain additional paranthesis or other logical operators such as `||` (logical or).
+Only the data which satisfies all conditions is loaded. All conditions must be chained with an `&&` (logical and). They should not contain additional parenthesis or other logical operators such as `||` (logical or).
 
 To convert the view into a regular array one can use `collect` or `Array` for arrays.
-As in julia, views on scalars are wrapped into a zero dimensional arrays which can be dereferended by using `[]`.
+As in julia, views of scalars are wrapped into a zero dimensional arrays which can be dereferenced by using `[]`. Modifying a view will modify the underlying NetCDF file (if
+the file is opened as writable).
+
+As for any view, one can use `parentindices(vsubset)` to get the indices matching a select query.
 
 ## Examples
 
@@ -88,39 +90,44 @@ lat = -90:90
 time = DateTime(2000,1,1):Day(1):DateTime(2000,1,3)
 SST = randn(length(lon),length(lat),length(time))
 
-NCDataset(fname,"c") do ds
-    defVar(ds,"lon",lon,("lon",));
-    defVar(ds,"lat",lat,("lat",));
-    defVar(ds,"time",time,("time",));
-    defVar(ds,"SST",SST,("lon","lat","time"));
-end
+ds = NCDataset(fname,"c")
+defVar(ds,"lon",lon,("lon",));
+defVar(ds,"lat",lat,("lat",));
+defVar(ds,"time",time,("time",));
+defVar(ds,"SST",SST,("lon","lat","time"));
+
 
 # load by bounding box
 v = NCDatasets.@select(ds["SST"],30 <= lon <= 60 && 40 <= lat <= 90)
 
-# subsitute a local variable in condition using \$
+# substitute a local variable in condition using \$
 lonr = (30,60) # longitude range
 latr = (40,90) # latitude range
 
 v = NCDatasets.@select(v,\$lonr[1] <= lon <= \$lonr[2] && \$latr[1] <= lat <= \$latr[2])
 
+# get the indices matching a select query
+(lon_indices,lat_indices,time_indices) = parentindices(v)
+
 # find the nearest time instance
 v = NCDatasets.@select(ds["SST"],time ≈ DateTime(2000,1,4))
 
-# find the nearest time instance but not ealier or later than 2 hours
+# find the nearest time instance but not earlier or later than 2 hours
 # an empty array is returned if no time instance is present
 
 v = NCDatasets.@select(ds["SST"],time ≈ DateTime(2000,1,3,1) ± Hour(2))
 
 # Note DateTime and Hour do not need to a \$ prefix because NCDataset imports
 # the modules Dates and CFTime.
+
+close(ds)
 ```
 
 Any 1D variable with the same dimension name can be used in `@select`. For example,
 if we have a time series of temperature and salinity, the temperature values
 can also be selected based on salinity:
 
-```
+```julia
 # create a sample time series
 using NCDatasets, Dates
 fname = "sample_series.nc"
@@ -141,6 +148,7 @@ v = NCDatasets.@select(ds["temperature"],Dates.month(time) == 1 && salinity >= 3
 
 # this is equivalent to
 v2 = ds["temperature"][findall(Dates.month.(time) .== 1 .&& salinity .>= 35)]
+
 @test v == v2
 close(ds)
 ```
@@ -149,10 +157,10 @@ close(ds)
 
 !!! note
 
-    For optimal performance, one should try to load contigous data ranges, in
+    For optimal performance, one should try to load contiguous data ranges, in
     particular when the data is loaded over HTTP/OPeNDAP.
 
-[^1]: Please file an issue at https://github.com/Alexander-Barth/NCDatasets.jl/issues/ if you know a better solution.
+[^1]: Please file an [issue](https://github.com/Alexander-Barth/NCDatasets.jl/issues/) if you know a better solution.
 """
 macro select(v,expression)
     expression_list = split_by_and(expression)
@@ -227,8 +235,6 @@ macro select(v,expression)
         end
     end
 
-    #push!(code,:(println("indices ",indices)))
-    #push!(code,:($(esc(v))[indices...]))
     push!(code,:(view($(esc(v)),indices...)))
     return Expr(:block,code...)
 end
@@ -257,3 +263,8 @@ function coordinate_names(v::AbstractVariable)
     return [Symbol(varname) for (varname,ncvar) in ds
      if (ndims(ncvar) == 1) && dimnames(ncvar) ⊆ dimension_names]
 end
+
+#  LocalWords:  params vsubset conditionN NetCDF coord NCDatasets lon
+#  LocalWords:  julia dereferenced parentindices fname nc DateTime ds
+#  LocalWords:  randn NCDataset defVar lonr latr CFTime OPeNDAP args
+#  LocalWords:  hasproperty esc Expr fmtd ncv
