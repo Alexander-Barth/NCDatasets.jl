@@ -695,7 +695,10 @@ function nc_put_var(ncid::Integer,varid::Integer,data::Array{Char,N}) where N
 end
 
 function nc_put_var(ncid::Integer,varid::Integer,data::Array{String,N}) where N
-    nc_put_var(ncid,varid,pointer.(data))
+    # pointer.(data) is surprisingly a scalar pointer Ptr{UInt8} if data is a
+    # Array{T,0}
+    tmp = map(pointer,data)
+    nc_put_var(ncid,varid,tmp)
 end
 
 function nc_put_var(ncid::Integer,varid::Integer,data::Array{Vector{T},N}) where {T,N}

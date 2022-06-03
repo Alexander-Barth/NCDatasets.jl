@@ -144,7 +144,7 @@ function loadragged(ncvar,index::Union{Colon,UnitRange})
 
     isa(index,Colon)||(index[1]==1) ? n0=1 : n0=1+sum(ncvarsize[1:index[1]-1])
     isa(index,Colon) ? n1=sum(ncvarsize[:]) : n1=sum(ncvarsize[1:index[end]])
-    
+
     varsize = ncvarsize.var[index]
 
     istart = 0;
@@ -326,22 +326,33 @@ function Base.setindex!(v::Variable{T,N},data::T,indexes::Colon...) where {T,N}
     @debug "setindex! colon $data"
     datamode(v.ds) # make sure that the file is in data mode
     tmp = fill(data,size(v))
-
     nc_put_var(v.ds.ncid,v.varid,tmp)
     return data
 end
 
-# call to v .= 123
-function Base.setindex!(v::Variable{T,N},data::Number) where {T,N}
-    @debug "setindex! $data"
-    datamode(v.ds) # make sure that the file is in data mode
-    tmp = fill(convert(T,data),size(v))
+# union types cannot be used to avoid ambiguity
+for data_type = [Number, String, Char]
+    @eval begin
+        # call to v .= 123
+        function Base.setindex!(v::Variable{T,N},data::$data_type) where {T,N}
+            @debug "setindex! $data"
+            datamode(v.ds) # make sure that the file is in data mode
+            tmp = fill(convert(T,data),size(v))
+            nc_put_var(v.ds.ncid,v.varid,tmp)
+            return data
+        end
 
-    nc_put_var(v.ds.ncid,v.varid,tmp)
-    return data
+        Base.setindex!(v::Variable,data::$data_type,indexes::Colon...) = setindex!(v::Variable,data)
+
+        function Base.setindex!(v::Variable{T,N},data::$data_type,indexes::StepRange{Int,Int}...) where {T,N}
+            datamode(v.ds) # make sure that the file is in data mode
+            start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
+            tmp = fill(convert(T,data),jlshape)
+            nc_put_vars(v.ds.ncid,v.varid,start,count,stride,tmp)
+            return data
+        end
+    end
 end
-
-Base.setindex!(v::Variable,data::Number,indexes::Colon...) = setindex!(v::Variable,data)
 
 function Base.setindex!(v::Variable{T,N},data::AbstractArray{T,N},indexes::Colon...) where {T,N}
     datamode(v.ds) # make sure that the file is in data mode
@@ -429,14 +440,6 @@ function Base.setindex!(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...)
     datamode(v.ds) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
     tmp = fill(data,jlshape)
-    nc_put_vars(v.ds.ncid,v.varid,start,count,stride,tmp)
-    return data
-end
-
-function Base.setindex!(v::Variable{T,N},data::Number,indexes::StepRange{Int,Int}...) where {T,N}
-    datamode(v.ds) # make sure that the file is in data mode
-    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
-    tmp = fill(convert(T,data),jlshape)
     nc_put_vars(v.ds.ncid,v.varid,start,count,stride,tmp)
     return data
 end

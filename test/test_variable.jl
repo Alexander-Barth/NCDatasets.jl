@@ -222,3 +222,27 @@ ncv[:] = x
 ds.attrib["x_range"] = x
 close(ds)
 rm(filename)
+
+
+# issue 180
+using NCDatasets
+
+filename = tempname()
+ds = NCDataset(filename, "c")
+
+sample_data = [UInt8(1),Int64(2),Float64(3.),"string",'a']
+
+for data = sample_data
+    T = typeof(data)
+
+    ncv = defVar(ds, "$(T)_scalar1", T, ())
+    ncv[] = data
+    @test ncv[] == data
+
+    ncv = defVar(ds, "$(T)_scalar2", data, ())
+    @test ncv[] == data
+
+    ncv = defVar(ds, "$(T)_scalar3", data)
+    @test ncv[] == data
+end
+close(ds)

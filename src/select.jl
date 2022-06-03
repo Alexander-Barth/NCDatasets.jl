@@ -145,6 +145,8 @@ v2 = ds["temperature"][findall(Dates.month.(time) .== 1 .&& salinity .>= 35)]
 close(ds)
 ```
 
+
+
 !!! note
 
     For optimal performance, one should try to load contigous data ranges, in

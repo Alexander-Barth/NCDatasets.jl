@@ -188,7 +188,12 @@ function defVar(ds::NCDataset,
 end
 
 function defVar(ds::NCDataset,name,data,dimnames; kwargs...)
-    nctype = eltype(data)
+    # eltype of a String would be Char
+    if data isa String
+        nctype = String
+    else
+        nctype = eltype(data)
+    end
     _defVar(ds::NCDataset,name,data,nctype,dimnames; kwargs...)
 end
 
@@ -246,7 +251,7 @@ function _defVar(ds::NCDataset,name,data,nctype,dimnames; attrib = [], kwargs...
 end
 
 
-function defVar(ds::NCDataset,name,data::T; kwargs...) where T <: Number
+function defVar(ds::NCDataset,name,data::T; kwargs...) where T <: Union{Number,String,Char}
     v = defVar(ds,name,T,(); kwargs...)
     v[:] = data
     return v
