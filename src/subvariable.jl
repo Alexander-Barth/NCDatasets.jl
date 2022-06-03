@@ -5,7 +5,7 @@ Base.size(v::SubVariable) = _shape_after_slice(size(v.parent),v.indices...)
 
 function dimnames(v::SubVariable)
     dimension_names = dimnames(v.parent)
-    [dimension_name for (i,dimension_name) in zip(v.indices,dimension_names) if !(i isa Integer)]
+    return dimension_names[map(i -> !(i isa Integer),collect(v.indices))]
 end
 
 name(v::SubVariable) = name(v.parent)
@@ -13,7 +13,8 @@ name(v::SubVariable) = name(v.parent)
 function SubVariable(A::AbstractVariable,indices...)
     T = eltype(A)
     N = ndims(A)
-    SubVariable{T,N,typeof(A),typeof(indices),typeof(A.attrib)}(A,indices,A.attrib)
+    return SubVariable{T,N,typeof(A),typeof(indices),typeof(A.attrib)}(
+        A,indices,A.attrib)
 end
 
 SubVariable(A::AbstractVariable{T,N}) where T where N = SubVariable(A,ntuple(i -> :,N)...)
