@@ -281,3 +281,7 @@ end
     include("test_select.jl")
 end
 
+@testset "OPeNDAP" begin
+    include("test_opendap.jl")
+end
+
