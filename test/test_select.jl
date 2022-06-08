@@ -237,7 +237,7 @@ a = NCDatasets.@select(v,time ≈ DateTime(2001,12,3) ± Day(1))
 
 
 dims = (time = DateTime(2000,1,1):Day(1):DateTime(2009,12,31),)
-sz = ((length(d) for d in dims)...,)
+sz = ((Int(length(d)) for d in dims)...,)
 data = randn(sz)
 
 v = SelectableVariable(dims,data);
@@ -254,7 +254,7 @@ fname = tempname()
 lon = -180:180
 lat = -90:90
 time = DateTime(2000,1,1):Day(1):DateTime(2000,1,3)
-SST = randn(length(lon),length(lat),length(time))
+SST = randn(length(lon),length(lat),Int(length(time)))
 
 NCDataset(fname,"c") do ds
     defVar(ds,"lon",lon,("lon",));
@@ -320,8 +320,8 @@ v2 = ds["SST"][ilon,ilat,end]
 fname = "sample_series.nc"
 fname = tempname()
 time = DateTime(2000,1,1):Day(1):DateTime(2009,12,31)
-salinity = randn(length(time)) .+ 35
-temperature = randn(length(time))
+salinity = randn(Int(length(time))) .+ 35
+temperature = randn(Int(length(time)))
 
 NCDataset(fname,"c") do ds
     defVar(ds,"time",time,("time",));
