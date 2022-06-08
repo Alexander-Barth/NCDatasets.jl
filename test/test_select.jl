@@ -217,7 +217,7 @@ lon = 1:9
 lat = 2:11
 
 dims = (lon = lon,lat = lat, time = DateTime(2001,1):Month(1):DateTime(2001,12))
-sz = ((length(d) for d in dims)...,)
+sz = ((Int(length(d)) for d in dims)...,)
 data = randn(sz)
 
 v = SelectableVariable(dims,data);
