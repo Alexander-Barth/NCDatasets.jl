@@ -2,7 +2,7 @@
 
 ## NetCDF: Not a valid data type or `_FillValue` type mismatch
 
-Trying to define the `_FillValue`, procudes the following error:
+Trying to define the `_FillValue`, produces the following error:
 
 ```
 ERROR: LoadError: NCDatasets.NetCDFError(-45, "NetCDF: Not a valid data type or _FillValue type mismatch")
@@ -65,9 +65,9 @@ v = defVar(ds,"var_with_all_missing_data",Int32,("lon",), fillvalue = fv, attrib
 
 This change was introduced in `NCDatasets` version 0.10
 
-## Mutiple versions of HDF5 or NetCDF libraries
+## Multiple versions of HDF5 or NetCDF libraries
 
-Having outdated versions of HDF5 or NetCDF libraries installed can be an issue on Windows if they are included in the system `PATH` environement variable. It is advised to adapt the system `PATH` to remove the locations containing these libraries.
+Having outdated versions of HDF5 or NetCDF libraries installed can be an issue on Windows if they are included in the system `PATH` environment variable. It is advised to adapt the system `PATH` to remove the locations containing these libraries.
 
 
 ## Using a custom NetCDF library
