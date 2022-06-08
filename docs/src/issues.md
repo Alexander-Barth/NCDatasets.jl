@@ -96,6 +96,34 @@ However, the dependencies of the library version `libnetcdf.so.xyz` (in particul
 ldd /path/to/libnetcdf.so.xyz
 ```
 
+
+## OPeNDAP on Windows fails with `Assertion failed: ocpanic`
+
+On windows, NetCDF 4.7.4 can fail with this error:
+
+```
+Assertion failed: ocpanic(("state->auth.curlflags.cookiejar != NULL")), file ocinternal.c, line 566
+```
+
+when accessing OPeNDAP URLs, like these:
+
+```julia
+using NCDatasets
+ds = NCDataset("https://thredds.jpl.nasa.gov/thredds/dodsC/ncml_aggregation/OceanTemperature/modis/terra/11um/4km/aggregate__MODIS_TERRA_L3_SST_THERMAL_DAILY_4KM_DAYTIME_V2019.0.ncml#fillmismatch")
+```
+
+See also the issue report: https://github.com/Unidata/netcdf-c/issues/2380 .
+The work-around is to create a `.dodsrc` in the current working directory with the content:
+
+```
+HTTP.COOKIEJAR=C:\Users\USERNAME\AppData\Local\Temp\
+```
+
+where USERNAME is your username. The directory should exist and be writable by the user.
+You can run `pwd()` to determine the current working directory. Note that the initial current working directory
+can be different depending you how you start julia (from the command line or from jupyter notebook for example).
+Julia need to be restarted after this file is placed in the your working directory.
+
 ## Using non-official julia builds
 
 Julia and NetCDF_jll have several common dependencies (curl, MbedTLS, zlib).
