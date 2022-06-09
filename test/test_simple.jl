@@ -16,9 +16,8 @@ ds = NCDataset(filename,"c") do ds
 end
 
 ds = NCDataset(filename)
-ds2 = NCDataset(filename)
 v = ds["var"]
-@test v[:] == ds2["var"][:]
+@test v[:] == ds["var"][:]
 
 A = v[:,:]
 @test A == data

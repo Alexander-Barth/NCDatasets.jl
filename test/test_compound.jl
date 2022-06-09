@@ -133,3 +133,5 @@ data2[1,1] == data[1,1]
 for fn = fieldnames(eltype(data2))
     @test getproperty.(data,fn) == getproperty.(data2,fn)
 end
+
+nc_close(ncid)
