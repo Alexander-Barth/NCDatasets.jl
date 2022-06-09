@@ -147,19 +147,7 @@ end
 # write
 mfds = NCDataset(fnames,"a",deferopen = false);
 mfds[varname][2,2,:] = 1:length(fnames)
-
-for n = 1:length(fnames)
-    NCDataset(fnames[n]) do ds
-        @test ds[varname][2,2,1] == n
-    end
-end
-
 mfds.attrib["history"] = "foo2"
-sync(mfds)
-
-NCDataset(fnames[1]) do ds
-    @test ds.attrib["history"] == "foo2"
-end
 
 @test_throws NCDatasets.NetCDFError NCDataset(fnames,"not-a-mode")
 
@@ -176,13 +164,22 @@ end
 
 # create new dimension in all files
 mfds.dim["newdim"] = 123;
-sync(mfds);
+sync(mfds)
+close(mfds)
+
+for n = 1:length(fnames)
+    NCDataset(fnames[n]) do ds
+        @test ds[varname][2,2,1] == n
+    end
+end
+
+NCDataset(fnames[1]) do ds
+    @test ds.attrib["history"] == "foo2"
+end
+
 NCDataset(fnames[1]) do ds
     @test ds.dim["newdim"] == 123
 end
-close(mfds)
-
-
 
 # multi-file merge
 
