@@ -1,6 +1,6 @@
 # NCDatasets.jl
 
-Documentation for NCDatasets.jl, a Julia package for loading/writing NetCDF data, as well as doing basic numerics with them.
+Documentation for NCDatasets.jl, a Julia package for loading and writing NetCDF ([Network Common Data Form](https://www.unidata.ucar.edu/software/netcdf/)) files.
 
 ## Installation
 
@@ -15,7 +15,7 @@ Pkg.add("NCDatasets")
 
 If you want to try the latest development version, again go into package manager mode and simply type
 
-```
+```julia
 using Pkg
 Pkg.add(PackageSpec(name="NCDatasets", rev="master"))
 ```
@@ -126,8 +126,7 @@ This might be useful in an interactive session. However, the file `test.nc` is n
 An alternative way to ensure the file has been closed is to use a `do` block: the file will be closed automatically when leaving the block.
 
 ```julia
-data =
-NCDataset(filename,"r") do ds
+data = NCDataset(filename,"r") do ds
     ds["temperature"][:,:]
 end # ds is closed
 ```

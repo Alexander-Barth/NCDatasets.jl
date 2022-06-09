@@ -25,7 +25,7 @@ Define a variable with the name `name` in the dataset `ds`.  `vtype` can be
 Julia types in the table below (with the corresponding NetCDF type). The
 parameter `dimnames` is a tuple with the names of the dimension.  For scalar
 this parameter is the empty tuple `()`.
-The variable is returned (of the type CFVariable).
+The variable is returned (of the type `CFVariable`).
 
 Instead of providing the variable type one can directly give also the data `data` which
 will be used to fill the NetCDF variable. In this case, the dimensions with
@@ -443,7 +443,7 @@ Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The following CF convention are honored when the
 variable is indexed:
 * `_FillValue` or `missing_value` (which can be a list) will be returned as `missing`. `NCDatasets` does not use implicitely the default NetCDF fill values when reading data.
-* `scale_factor` and `add_offset` are applied (output = `scale_factor` * data_in_file +  `add_offset`)
+* `scale_factor` and `add_offset` are applied (output = `scale_factor` * `data_in_file` +  `add_offset`)
 * time variables (recognized by the units attribute and possibly the calendar attribute) are returned usually as
   `DateTime` object. Note that `DateTimeAllLeap`, `DateTimeNoLeap` and
   `DateTime360Day` cannot be converted to the proleptic gregorian calendar used in

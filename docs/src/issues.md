@@ -112,7 +112,7 @@ using NCDatasets
 ds = NCDataset("https://thredds.jpl.nasa.gov/thredds/dodsC/ncml_aggregation/OceanTemperature/modis/terra/11um/4km/aggregate__MODIS_TERRA_L3_SST_THERMAL_DAILY_4KM_DAYTIME_V2019.0.ncml#fillmismatch")
 ```
 
-See also the issue report: https://github.com/Unidata/netcdf-c/issues/2380 .
+See also the issue report: [https://github.com/Unidata/netcdf-c/issues/2380](https://github.com/Unidata/netcdf-c/issues/2380).
 The work-around is to create a `.dodsrc` in the current working directory with the content:
 
 ```
@@ -128,7 +128,7 @@ Julia need to be restarted after this file is placed in the your working directo
 
 Julia and NetCDF_jll have several common dependencies (curl, MbedTLS, zlib).
 Non-official julia builds will work only if they use exactly the same library version as those used to compile NetCDF. This is unlikely to be the case in general and outside of our control. Therefore non-official julia builds are not supported.
-Official julia builds are available at https://julialang.org/downloads/.
+Official julia builds are available at [https://julialang.org/downloads/](https://julialang.org/downloads/).
 
 
 ## Corner cases

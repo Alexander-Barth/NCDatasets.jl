@@ -49,7 +49,7 @@ end
 """
     mfds = NCDataset(fnames, mode = "r"; aggdim = nothing, deferopen = true)
 
-Opens a multi-file dataset in read-only "r" or append mode "a". `fnames` is a
+Opens a multi-file dataset in read-only `"r"` or append mode `"a"`. `fnames` is a
 vector of file names. You can use [Glob.jl](https://github.com/vtjnash/Glob.jl)
 to make `fnames`, e.g.
 ```julia
