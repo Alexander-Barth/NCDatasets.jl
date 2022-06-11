@@ -1,3 +1,15 @@
+
+CFStdName(n::AbstractString) = CFStdName(Symbol(n))
+
+macro CF_str(n)
+    CFStdName(n)
+end
+
+export @CF_str
+import Base.string
+Base.string(n::CFStdName) = string(n.name)
+
+
 """
     ncvar = NCDatasets.ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
 

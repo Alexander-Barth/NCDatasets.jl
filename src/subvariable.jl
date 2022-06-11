@@ -54,7 +54,7 @@ end
 
 Base.Array(v::SubVariable) = collect(v)
 
-function Base.view(v::SubVariable,indices...)
+function Base.view(v::SubVariable,indices::Union{Int,Colon,AbstractVector{Int}}...)
     sub_indices = subsub(v.indices,indices)
     SubVariable(parent(v),sub_indices...)
 end
@@ -85,11 +85,11 @@ close(ds)
 ```
 
 """
-Base.view(v::AbstractVariable,indices...) = SubVariable(v,indices...)
+Base.view(v::AbstractVariable,indices::Union{Int,Colon,AbstractVector{Int}}...) = SubVariable(v,indices...)
 Base.view(v::SubVariable,indices::CartesianIndex) = view(v,indices.I...)
 Base.view(v::SubVariable,indices::CartesianIndices) = view(v,indices.indices...)
 
-Base.getindex(v::SubVariable,indices...) = materialize(view(v,indices...))
+Base.getindex(v::SubVariable,indices::Union{Int,Colon,AbstractVector{Int}}...) = materialize(view(v,indices...))
 Base.getindex(v::SubVariable,indices::CartesianIndex) = getindex(v,indices.I...)
 Base.getindex(v::SubVariable,indices::CartesianIndices) =
     getindex(v,indices.indices...)
@@ -129,6 +129,10 @@ end
 
 function Base.getindex(ds::SubDataset,varname::Union{AbstractString, Symbol})
     ncvar = ds.ds[varname]
+    if ndims(ncvar) == 0
+        return ncvar
+    end
+
     dims = dimnames(ncvar)
     ind = ntuple(i -> get(ds.indices,Symbol(dims[i]),:),ndims(ncvar))
     return view(ncvar,ind...)
@@ -136,6 +140,9 @@ end
 
 function variable(ds::SubDataset,varname::Union{AbstractString, Symbol})
     ncvar = variable(ds.ds,varname)
+    if ndims(ncvar) == 0
+        return ncvar
+    end
     dims = dimnames(ncvar)
     ind = ntuple(i -> get(ds.indices,Symbol(dims[i]),:),ndims(ncvar))
     return view(ncvar,ind...)

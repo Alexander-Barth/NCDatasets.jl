@@ -13,6 +13,11 @@ mutable struct NetCDFError <: Exception
     msg::String
 end
 
+
+struct CFStdName
+    name::Symbol
+end
+
 # base type of attributes list
 # concrete types are Attributes (single NetCDF file) and
 # MFAttributes (multiple NetCDF files)
