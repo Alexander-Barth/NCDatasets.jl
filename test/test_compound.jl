@@ -94,7 +94,7 @@ type_name,type_size,type_nfields = nc_inq_compound(ncid,xtype)
 
 
 nfields = nc_inq_compound_nfields(ncid,xtype)
-names = Symbol.(nc_inq_compound_fieldname.(ncid,xtype,0:(nfields-1)))
+cnames = Symbol.(nc_inq_compound_fieldname.(ncid,xtype,0:(nfields-1)))
 
 
 types = [NCDatasets.jlType[nc_inq_compound_fieldtype(ncid,xtype,fieldid)] for fieldid = 0:(nfields-1)]
@@ -115,7 +115,7 @@ Core.eval(
     NCReconstructedTypes,
     Expr(:struct, false, reconname,
          Expr(:block,
-              Any[ Expr(Symbol("::"), names[i], types[i]) for i = 1:length(types) ]...,
+              Any[ Expr(Symbol("::"), cnames[i], types[i]) for i = 1:length(types) ]...,
               # suppress default constructors, plus a bogus `new()` call to make sure
               # ninitialized is zero.
               Expr(:if, false, Expr(:call, :new))
