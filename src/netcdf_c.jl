@@ -2131,7 +2131,8 @@ function init_certificate_authority()
     key = "HTTP.SSL.CAINFO"
     hostport = C_NULL
     path = C_NULL
-    err = @ccall(libnetcdf.NC_rcfile_insert(key::Cstring, value::Cstring, hostport::Cstring, path::Cstring)::Int32)
+    err = @ccall(libnetcdf.NCDISPATCH_initialize()::Cint)
+    err = @ccall(libnetcdf.NC_rcfile_insert(key::Cstring, value::Cstring, hostport::Cstring, path::Cstring)::Cint)
     @debug "NC_rcfile_insert returns $err"
 
     if err != NC_NOERR
