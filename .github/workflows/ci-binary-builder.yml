@@ -54,6 +54,11 @@ jobs:
            Pkg.add(url="https://github.com/Alexander-Barth/NetCDF_jll.jl")
            using NetCDF_jll
            @show NetCDF_jll.libnetcdf
+           using LibCURL_jll
+           if Sys.isapple()
+               run(`otool -L $(LibCURL_jll.libcurl_path)`)
+               run(`otool -L $(NetCDF_jll.libnetcdf_path)`)
+           end
         shell: julia --color=yes --project=@. {0}
       - name: Test
         run: |
