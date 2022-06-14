@@ -11,10 +11,14 @@ end
 name(v::SubVariable) = name(v.parent)
 
 function SubVariable(A::AbstractVariable,indices...)
+    var = nothing
+    if hasproperty(A,:var)
+        var = SubVariable(A.var,indices...)
+    end
     T = eltype(A)
     N = ndims(A)
-    return SubVariable{T,N,typeof(A),typeof(indices),typeof(A.attrib)}(
-        A,indices,A.attrib)
+    return SubVariable{T,N,typeof(A),typeof(indices),typeof(A.attrib),typeof(var)}(
+        A,indices,A.attrib,var)
 end
 
 SubVariable(A::AbstractVariable{T,N}) where T where N = SubVariable(A,ntuple(i -> :,N)...)
@@ -120,7 +124,7 @@ function Base.getindex(sd::SubDimensions,dimname)
     end
 end
 
-
+unlimited(sd::SubDimensions) = unlimited(sd.dim)
 
 function SubDataset(ds,indices)
     dim = SubDimensions(ds.dim,indices)

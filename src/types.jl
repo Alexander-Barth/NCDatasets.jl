@@ -229,10 +229,12 @@ end
 # view of subsets
 
 
-struct SubVariable{T,N,TA,TI,TAttrib} <: AbstractVariable{T,N}
+struct SubVariable{T,N,TA,TI,TAttrib,TV} <: AbstractVariable{T,N}
     parent::TA
     indices::TI
     attrib::TAttrib
+    # unpacked variable
+    var::TV
 end
 
 struct SubDataset{TD,TI,TDIM,TA,TG}  <: AbstractDataset
