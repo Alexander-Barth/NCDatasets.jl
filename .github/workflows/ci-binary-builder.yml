@@ -54,6 +54,7 @@ jobs:
            if Sys.isapple()
                run(`otool -L $(LibCURL_jll.libcurl_path)`)
            end
+        shell: julia --color=yes --project=@. {0}
       - name: Install NetCDF_jll
         run: |
            using Pkg
