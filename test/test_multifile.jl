@@ -31,11 +31,12 @@ function example_file(i,array, fname = tempname();
         nclon.attrib["units"] = "degrees_east"
         nclon.attrib["modulo"] = 360.0
 
-        nctime = defVar(ds,"time", Float64, ("time",))
-        nctime.attrib["long_name"] = "surface wind time"
-        nctime.attrib["field"] = "time, scalar, series"
-        nctime.attrib["units"] = "days since 2000-01-01 00:00:00 GMT"
-
+        nctime = defVar(ds,"time", Float64, ("time",), attrib = OrderedDict(
+            "long_name" => "surface wind time",
+            "field" => "time, scalar, series",
+            "units" => "days since 2000-01-01 00:00:00",
+            "standard_name" => "time",
+        ))
         # Global attributes
 
         ds.attrib["history"] = "foo"
@@ -43,18 +44,20 @@ function example_file(i,array, fname = tempname();
         # Define variables
 
         g = defGroup(ds,"group")
-        ncvarg = defVar(g,varname, Float64, ("lon", "lat", "time"))
-        ncvarg.attrib["field"] = "u-wind, scalar, series"
-        ncvarg.attrib["units"] = "meter second-1"
-        ncvarg.attrib["long_name"] = "surface u-wind component"
-        ncvarg.attrib["time"] = "time"
-        ncvarg.attrib["coordinates"] = "lon lat"
+        ncvarg = defVar(g,varname, Float64, ("lon", "lat", "time"),
+                        attrib = OrderedDict(
+                            "field" => "u-wind, scalar, series",
+                            "units" => "meter second-1",
+                            "long_name" => "surface u-wind component",
+                            "time" => "time",
+                            "coordinates" => "lon lat",
+                        ))
 
         ncvar[:,:,1] = array
         ncvarg[:,:,1] = array.+1
         #nclon[:] = 1:size(array,1)
         #nclat[:] = 1:size(array,2)
-        nctime[:] = i
+        nctime.var[:] = i
     end
     return fname
 end
@@ -146,6 +149,9 @@ for deferopen in (false,true)
 
     ds_merged = NCDataset(fname_merged)
     @test mfds.dim["time"] == size(C,3)
+
+    @test name(mfds[CF"time"]) == "time"
+
     close(ds_merged)
 
 
@@ -174,6 +180,7 @@ mfds.attrib["history"] = "foo2"
 @test NCDatasets.groupname(mfds.group["group"]) == "group"
 @test fillvalue(mfds[varname]) == -9999.
 @test fillvalue(mfds[varname].var) == -9999.
+@test NCDataset(mfds[varname]) == mfds
 
 
 # create new dimension in all files

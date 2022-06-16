@@ -261,6 +261,7 @@ end
 # end
 
 function nc_open(path,mode::Integer)
+    @debug "nc_open $path with mode $mode"
     ncidp = Ref(Cint(0))
 
     code = ccall((:nc_open,libnetcdf),Cint,(Cstring,Cint,Ptr{Cint}),path,mode,ncidp)
@@ -812,7 +813,8 @@ function nc_get_var1(::Type{String},ncid::Integer,varid::Integer,indexp)
 end
 
 function nc_get_var1(::Type{T},ncid::Integer,varid::Integer,indexp) where T
-    @debug "nc_get_var1",indexp
+    @debug "AAAnc_get_var1",indexp
+    #error("ll")
     ip = Ref(zero(T))
     check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Nothing}),ncid,varid,indexp,ip))
     return ip[]
@@ -848,7 +850,8 @@ function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,
 end
 
 function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip)
-     check(ccall((:nc_get_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Nothing}),ncid,varid,startp,countp,ip))
+    @debug "nc_get_vara!",startp,indexp
+    check(ccall((:nc_get_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Nothing}),ncid,varid,startp,countp,ip))
 end
 
 function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip::Array{Char,N}) where N
@@ -968,6 +971,7 @@ end
 
 
 function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{Char,N}) where N
+    @debug "nc_get_vars!: $startp,$countp,$stridep"
     tmp = Array{UInt8,N}(undef,size(ip))
     nc_get_vars!(ncid,varid,startp,countp,stridep,tmp)
     for i in eachindex(tmp)
@@ -976,6 +980,7 @@ function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Arr
 end
 
 function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{String,N}) where N
+    @debug "nc_get_vars!: $startp,$countp,$stridep"
     tmp = Array{Ptr{UInt8},N}(undef,size(ip))
     nc_get_vars!(ncid,varid,startp,countp,stridep,tmp)
     for i in eachindex(tmp)
@@ -985,6 +990,7 @@ function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Arr
 end
 
 function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{Vector{T},N}) where {T,N}
+    @debug "nc_get_vars!: $startp,$countp,$stridep"
     tmp = Array{NCDatasets.nc_vlen_t{T},N}(undef,size(ip))
     nc_get_vars!(ncid,varid,startp,countp,stridep,tmp)
 

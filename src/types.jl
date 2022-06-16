@@ -148,14 +148,16 @@ function Base.setindex!(a::MFAttributes,data,name::AbstractString)
     return data
 end
 
-mutable struct MFVariable{T,N,M,TA,A} <: AbstractVariable{T,N}
+mutable struct MFVariable{T,N,M,TA,A,TDS} <: AbstractVariable{T,N}
+    ds::TDS
     var::CatArrays.CatArray{T,N,M,TA}
     attrib::MFAttributes{A}
     dimnames::NTuple{N,String}
     varname::String
 end
 
-mutable struct MFCFVariable{T,N,M,TA,TV,A} <: AbstractVariable{T,N}
+mutable struct MFCFVariable{T,N,M,TA,TV,A,TDS} <: AbstractVariable{T,N}
+    ds::TDS
     cfvar::CatArrays.CatArray{T,N,M,TA}
     var::TV
     attrib::MFAttributes{A}

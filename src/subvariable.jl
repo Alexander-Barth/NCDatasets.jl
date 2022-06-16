@@ -13,7 +13,9 @@ name(v::SubVariable) = name(v.parent)
 function SubVariable(A::AbstractVariable,indices...)
     var = nothing
     if hasproperty(A,:var)
-        var = SubVariable(A.var,indices...)
+        if hasproperty(A.var,:attrib)
+            var = SubVariable(A.var,indices...)
+        end
     end
     T = eltype(A)
     N = ndims(A)
@@ -93,7 +95,7 @@ Base.view(v::AbstractVariable,indices::Union{Int,Colon,AbstractVector{Int}}...) 
 Base.view(v::SubVariable,indices::CartesianIndex) = view(v,indices.I...)
 Base.view(v::SubVariable,indices::CartesianIndices) = view(v,indices.indices...)
 
-Base.getindex(v::SubVariable,indices::Union{Int,Colon,AbstractVector{Int}}...) = materialize(view(v,indices...))
+Base.getindex(v::SubVariable,indices::Union{Int,Colon,StepRange{Int,Int},UnitRange{Int}}...) = materialize(view(v,indices...))
 Base.getindex(v::SubVariable,indices::CartesianIndex) = getindex(v,indices.I...)
 Base.getindex(v::SubVariable,indices::CartesianIndices) =
     getindex(v,indices.indices...)

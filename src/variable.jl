@@ -100,7 +100,7 @@ load!(ds["temp"].var,data,:,1) # loads the 1st column
 ```
 
 """
-@inline function load!(ncvar::NCDatasets.Variable{T,N}, data, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
+@inline function load!(ncvar::Variable{T,N}, data, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
     sizes = size(ncvar)
     normalizedindices = normalizeindexes(sizes, indices)
     ind = to_indices(ncvar,normalizedindices)
@@ -109,7 +109,7 @@ load!(ds["temp"].var,data,:,1) # loads the 1st column
     nc_get_vars!(ncvar.ds.ncid,ncvar.varid,start,count,stride,data)
 end
 
-@inline function load!(ncvar::NCDatasets.Variable{T,2}, data, i::Colon,j::UnitRange) where T
+@inline function load!(ncvar::Variable{T,2}, data, i::Colon,j::UnitRange) where T
     # reversed and 0-based
     start = [first(j)-1,0]
     count = [length(j),size(ncvar,1)]

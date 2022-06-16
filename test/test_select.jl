@@ -5,7 +5,6 @@ import Base: size, getindex, setindex!
 using NCDatasets: AbstractVariable
 import NCDatasets: dimnames
 
-#using NCDatasets: scan_exp, scan_coordinate_name, split_by_and, coordinate_value, coordinate_names, @select
 import NCDatasets: coordinate_value, coordinate_names
 
 struct SelectableVariable{T,N,NT,TA} <: AbstractArray{T,N} where NT <: NTuple where TA <: AbstractArray{T,N}
@@ -347,4 +346,50 @@ v = NCDatasets.@select(ds["temperature"],Dates.month(time) == 1 && salinity >= 3
 
 v2 = ds["temperature"][findall((Dates.month.(time) .== 1) .& (salinity .>= 35))]
 @test v == v2
+close(ds)
+
+
+
+
+using NCDatasets, Printf, Dates
+
+function url(dt)
+    array = rand(1:99,360,181)
+    fname = tempname()
+    NCDataset(fname,"c") do ds
+        # Dimensions
+
+        ds.dim["lon"] = size(array,1)
+        ds.dim["lat"] = size(array,2)
+        ds.dim["time"] = Inf
+
+        # Declare variables
+
+        ncvar = defVar(ds,varname, Float64, ("lon", "lat", "time"),
+                       fillvalue = -9999)
+        nclat = defVar(ds,"lat", Float64, ("lat",))
+        nclon = defVar(ds,"lon", Float64, ("lon",))
+        nctime = defVar(ds,"time", Float64, ("time",), attrib = OrderedDict(
+            "units" => "days since 2000-01-01 00:00:00",
+        ))
+
+        nctime[1] = dt
+        nclon[:] = 0:359
+        nclat[:] = -90:90
+        ncvar[:,:,:] = array
+    end
+    return fname
+end
+
+
+fname_subset = tempname()
+times = DateTime(1992,1,1):Dates.Day(1):DateTime(1992,1,3)
+ds = NCDataset(url.(times),aggdim = "time",deferopen=false);
+ds_subset = NCDatasets.@select(ds,30 <= lon <= 60 && 40 <= lat <= 90)
+write(fname_subset,ds_subset)
+close(ds)
+
+ds = NCDataset(fname_subset)
+@test all(lon -> 30 <= lon <= 60,ds["lon"][:])
+@test all(lat -> 40 <= lat <= 90,ds["lat"][:])
 close(ds)

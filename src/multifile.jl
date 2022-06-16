@@ -166,11 +166,11 @@ function variable(mfds::MFDataset,varname::SymbolOrString)
         vars = variable.(mfds.ds,varname)
 
         dim = findfirst(dimnames(vars[1]) .== mfds.aggdim)
-        @debug "dim $dim"
+        @debug "dimension $dim"
 
         if (dim != nothing)
             v = CatArrays.CatArray(dim,vars...)
-            return MFVariable(v,MFAttributes([var.attrib for var in vars]),
+            return MFVariable(mfds,v,MFAttributes([var.attrib for var in vars]),
                           dimnames(vars[1]),varname)
         else
             return vars[1]
@@ -201,7 +201,7 @@ function cfvariable(mfds::MFDataset,varname::SymbolOrString)
             cfvar = CatArrays.CatArray(dim,cfvars...)
             var = variable(mfds,varname)
 
-            return MFCFVariable(cfvar,var,var.attrib,
+            return MFCFVariable(mfds,cfvar,var,var.attrib,
                           dimnames(var),varname)
         else
             return cfvars[1]
@@ -211,6 +211,8 @@ end
 
 
 fillvalue(v::Union{MFVariable{T},MFCFVariable{T}}) where T = v.attrib["_FillValue"]::T
+NCDataset(v::Union{MFVariable,MFCFVariable}) = v.ds
+
 
 Base.getindex(v::MFCFVariable,ind...) = v.cfvar[ind...]
 Base.setindex!(v::MFCFVariable,data,ind...) = v.cfvar[ind...] = data

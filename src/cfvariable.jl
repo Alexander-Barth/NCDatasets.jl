@@ -773,6 +773,7 @@ end
 to_range_list(index::Integer,len) = index
 
 to_range_list(index::Colon,len) = [1:len]
+to_range_list(index::AbstractRange,len) = [index]
 
 function to_range_list(index::Vector{T},len) where T <: Integer
     grow(istart) = istart[begin]:(istart[end]+step(istart))
@@ -816,7 +817,7 @@ function _range_indices_dest(of,v,rest...)
 end
 range_indices_dest(ri...) = _range_indices_dest((),ri...)
 
-function Base.getindex(v::NCDatasets.CFVariable,indices::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int},Vector{Int}}...)
+function Base.getindex(v::Union{CFVariable,Variable,MFVariable,SubVariable},indices::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int},Vector{Int}}...)
     @debug "transform vector of indices to ranges"
 
     sz_source = size(v)
@@ -827,6 +828,7 @@ function Base.getindex(v::NCDatasets.CFVariable,indices::Union{Int,Colon,UnitRan
 
     ri_dest = range_indices_dest(ri...)
     @debug "ri_dest $ri_dest"
+    @debug "ri $ri"
 
     if all(==(1),length.(ri))
         # single chunk
@@ -896,13 +898,16 @@ NCDatasets.load!(ncv,data,buffer,:,:,:)
 close(ds)
 ```
 """
-@inline function load!(v::Union{CFVariable{T,N},MFCFVariable{T,N}}, data, buffer, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
+@inline function load!(v::Union{CFVariable{T,N},MFCFVariable{T,N},SubVariable{T,N}}, data, buffer, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
 
-    load!(v.var,buffer,indices...)
-    fmv = fill_and_missing_values(v)
-    return CFtransformdata!(data,buffer,fmv,scale_factor(v),add_offset(v),
-                           time_origin(v),time_factor(v))
-
+    if v.var == nothing
+        return load!(v,indices...)
+    else
+        load!(v.var,buffer,indices...)
+        fmv = fill_and_missing_values(v)
+        return CFtransformdata!(data,buffer,fmv,scale_factor(v),add_offset(v),
+                                time_origin(v),time_factor(v))
+    end
 end
 
 
