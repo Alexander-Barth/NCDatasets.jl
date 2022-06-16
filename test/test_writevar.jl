@@ -16,7 +16,7 @@ defDim(ds,"lat",sz[2])
 # variables
 for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
     #for T in [Float32]
-    local v
+    local v, ref
 
     # write array
     v = defVar(ds,"var-$T",T,("lon","lat"))

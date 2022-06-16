@@ -95,9 +95,9 @@ fnames = example_file.(1:3,A)
 varname = "var"
 
 for deferopen in (false,true)
-    local data
+    local mfds, data
     local lon
-    local buf, ds_merged
+    local buf, ds_merged, fname_merged
 
     mfds = NCDataset(fnames, deferopen = deferopen);
     var = variable(mfds,varname);
