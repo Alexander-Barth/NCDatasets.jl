@@ -389,9 +389,10 @@ function nc_insert_compound(ncid::Integer,xtype::Integer,name,offset::Integer,fi
     check(ccall((:nc_insert_compound,libnetcdf),Cint,(Cint,nc_type,Cstring,Csize_t,nc_type),ncid,xtype,name,offset,field_typeid))
 end
 
-# function nc_insert_array_compound(ncid::Integer,xtype::Integer,name,offset::Integer,field_typeid::Integer,ndims::Integer,dim_sizes)
-#     check(ccall((:nc_insert_array_compound,libnetcdf),Cint,(Cint,nc_type,Cstring,Cint,nc_type,Cint,Ptr{Cint}),ncid,xtype,name,offset,field_typeid,ndims,dim_sizes))
-# end
+function nc_insert_array_compound(ncid::Integer,xtype::Integer,name,offset::Integer,field_typeid::Integer,dim_sizes)
+    ndims = length(dim_sizes)
+    check(ccall((:nc_insert_array_compound,libnetcdf),Cint,(Cint,nc_type,Cstring,Cint,nc_type,Cint,Ptr{Cint}),ncid,xtype,name,offset,field_typeid,ndims,dim_sizes))
+end
 
 # function nc_inq_type(ncid::Integer,xtype::Integer,name,size)
 #     check(ccall((:nc_inq_type,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{Cint}),ncid,xtype,name,size))
