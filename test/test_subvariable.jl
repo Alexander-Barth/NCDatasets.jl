@@ -147,3 +147,23 @@ show(io,sds);
 @test dimnames(view(ncvar,:,1)) == ("lon",)
 
 close(ds)
+
+
+# test view of NCDataset
+ds = NCDataset(tempname(),"c")
+
+# Declare variables
+
+nclon = defVar(ds,"lon", 1:10, ("lon",))
+nclat = defVar(ds,"lat", 1:11, ("lat",))
+ncvar = defVar(ds,"bat", zeros(10,11), ("lon", "lat"), attrib = OrderedDict(
+    "standard_name"             => "height",
+))
+
+ds_subset = view(ds, lon = 2:3, lat = 2:4)
+
+fname_slice = tempname()
+write(fname_slice,ds_subset)
+
+@test isfile(fname_slice)
+close(ds)

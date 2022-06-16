@@ -233,6 +233,7 @@ ds = NCDataset(filename, "c")
 sample_data = [UInt8(1),Int64(2),Float64(3.),"string",'a']
 
 for data = sample_data
+    local ncv
     T = typeof(data)
 
     ncv = defVar(ds, "$(T)_scalar1", T, ())

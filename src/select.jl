@@ -53,14 +53,15 @@ _intersect(r1::Colon,r2::AbstractRange) = r2
 
 """
     vsubset = NCDatasets.@select(v,expression)
+    dssubset = NCDatasets.@select(ds,expression)
 
-Return a subset of the variable `v` following the condition `expression` as a view. The condition
+Return a subset of the variable `v` (or dataset `ds`) following the condition `expression` as a view. The condition
 has the following form:
 
 `condition1 && condition2 && condition3 ... conditionN `
 
-Every condition should involve a single 1D NetCDF variable (typically a coordinate variable, referred as `coord` below)
-and should have a shared dimension with the variable `v`. All local variables (including local functions) need to have a \$ prefix (see examples below) as the condition is evaluated in the scope of the module NCDatasets[^1]. This macro is highly experimental and subjected to change.
+Every condition should involve a single 1D NetCDF variable (typically a coordinate variable, referred as `coord` below). If `v`
+is a variable, the related 1D NetCDF variable should have a shared dimension with the variable `v`. All local variables (including local functions) need to have a \$ prefix (see examples below) as the condition is evaluated in the scope of the module NCDatasets[^1]. This macro is experimental and subjected to change.
 
 Every condition can either perform:
 
@@ -72,9 +73,9 @@ Every condition can either perform:
 
 Only the data which satisfies all conditions is loaded. All conditions must be chained with an `&&` (logical and). They should not contain additional parenthesis or other logical operators such as `||` (logical or).
 
-To convert the view into a regular array one can use `collect` or `Array` for arrays.
+To convert the view into a regular array one can use `collect`, `Array` or regular indexing.
 As in julia, views of scalars are wrapped into a zero dimensional arrays which can be dereferenced by using `[]`. Modifying a view will modify the underlying NetCDF file (if
-the file is opened as writable).
+the file is opened as writable, otherwise an error is issued).
 
 As for any view, one can use `parentindices(vsubset)` to get the indices matching a select query.
 
@@ -106,8 +107,11 @@ latr = (40,90) # latitude range
 
 v = NCDatasets.@select(v,\$lonr[1] <= lon <= \$lonr[2] && \$latr[1] <= lat <= \$latr[2])
 
-# get the indices matching a select query
+# get the indices matching the select query
 (lon_indices,lat_indices,time_indices) = parentindices(v)
+
+# get longitude matchting the select query
+v_lon = v["lon"]
 
 # find the nearest time instance
 v = NCDatasets.@select(ds["SST"],time ≈ DateTime(2000,1,4))
@@ -166,8 +170,14 @@ macro select(v,expression)
     expression_list = split_by_and(expression)
     code = [
         quote
-            coord_names = coordinate_names($(esc(v)))
-            indices = Any[Colon() for _ in 1:ndims($(esc(v)))]
+
+        coord_names = coordinate_names($(esc(v)))
+        if $(esc(v)) isa AbstractArray
+             indices = Any[Colon() for _ in 1:ndims($(esc(v)))]
+        else
+             indices = Dict{Symbol,Any}(((Symbol(d),Colon()) for d in dimnames($(esc(v)))))
+        end
+
         end
     ]
 
@@ -176,10 +186,12 @@ macro select(v,expression)
         exp2 = Meta.quot(e)
         push!(code,
               quote
-                  exp = $(esc(exp2)) # with $ $values are replaced
-                  #exp = $(exp2) # good without $
+
+              exp = $(esc(exp2)) # with $ $values are replaced
+              #exp = $(exp2) # good without $
               param = scan_coordinate_name(exp,coord_names)
               coord,j = coordinate_value($(esc(v)),param)
+
               end)
 
         if (e.head == :call) && (e.args[1] == :≈)
@@ -235,7 +247,18 @@ macro select(v,expression)
         end
     end
 
-    push!(code,:(view($(esc(v)),indices...)))
+    push!(code,
+          quote
+
+          if $(esc(v)) isa AbstractArray
+              view($(esc(v)), indices...)
+          else
+              view($(esc(v)); indices...)
+          end
+
+          end
+          )
+
     return Expr(:block,code...)
 end
 
@@ -263,6 +286,19 @@ function coordinate_names(v::AbstractVariable)
     return [Symbol(varname) for (varname,ncvar) in ds
      if (ndims(ncvar) == 1) && dimnames(ncvar) ⊆ dimension_names]
 end
+
+
+function coordinate_value(ds::AbstractDataset,name_coord::Symbol)
+    ncv = ds[name_coord]
+    @assert ndims(ncv) == 1
+    return Array(ncv),Symbol(dimnames(ncv)[1])
+end
+
+function coordinate_names(ds::AbstractDataset)
+    return [Symbol(varname) for (varname,ncvar) in ds
+       if (ndims(ncvar) == 1)]
+end
+
 
 #  LocalWords:  params vsubset conditionN NetCDF coord NCDatasets lon
 #  LocalWords:  julia dereferenced parentindices fname nc DateTime ds

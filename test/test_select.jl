@@ -3,6 +3,7 @@ using Dates
 using NCDatasets
 import Base: size, getindex, setindex!
 using NCDatasets: AbstractVariable
+import NCDatasets: dimnames
 
 #using NCDatasets: scan_exp, scan_coordinate_name, split_by_and, coordinate_value, coordinate_names, @select
 import NCDatasets: coordinate_value, coordinate_names
@@ -13,6 +14,7 @@ struct SelectableVariable{T,N,NT,TA} <: AbstractArray{T,N} where NT <: NTuple wh
 end
 
 export SelectableVariable
+
 Base.size(v::SelectableVariable) = size(v.data)
 
 Base.getindex(v::SelectableVariable,indices...) = v.data[indices...]
@@ -315,6 +317,16 @@ ilon = findmin(x -> abs(x-3),ds["lon"])[2]
 ilat = findmin(x -> abs(x-6),ds["lat"])[2]
 v2 = ds["SST"][ilon,ilat,end]
 @test v == v2
+
+ds_subset = NCDatasets.SubDataset(ds,(lon = 1:3,))
+@test ds_subset.dim["lon"] == 3
+
+ds_subset = view(ds; lon = 1:3)
+@test ds_subset.dim["lon"] == 3
+
+ds_subset = NCDatasets.@select(ds,30 <= lon <= 60 && 40 <= lat <= 90)
+@test all(x -> 30 <= x <= 60,ds_subset["lon"][:])
+@test all(x -> 40 <= x <= 90,ds_subset["lat"][:])
 
 
 fname = "sample_series.nc"

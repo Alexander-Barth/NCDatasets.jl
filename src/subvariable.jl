@@ -118,17 +118,26 @@ Base.keys(ds::SubDimensions) = keys(ds.dim)
 function Base.getindex(sd::SubDimensions,dimname)
     dn = Symbol(dimname)
     if hasproperty(sd.indices,dn)
-        length(getproperty(sd.indices,dn))
+        ind = getproperty(sd.indices,dn)
+        if ind == Colon()
+            return sd.dim[dimname]
+        else
+            return length(ind)
+        end
     else
-        sd.dim[dimname]
+        return sd.dim[dimname]
     end
 end
 
 unlimited(sd::SubDimensions) = unlimited(sd.dim)
 
-function SubDataset(ds,indices)
+function SubDataset(ds::AbstractDataset,indices)
     dim = SubDimensions(ds.dim,indices)
     SubDataset(ds,indices,dim,ds.attrib,ds.group)
+end
+
+function Base.view(ds::AbstractDataset; indices...)
+    SubDataset(ds,values(indices))
 end
 
 function Base.getindex(ds::SubDataset,varname::Union{AbstractString, Symbol})

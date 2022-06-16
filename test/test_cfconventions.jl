@@ -130,3 +130,44 @@ function myplot(height::NCDatasets.AbstractVariable)
 end
 myplot(height)
 =#
+
+
+fname = tempname()
+
+ds = NCDataset(fname,"c")
+
+ds.dim["xi_u"] = 137
+ds.dim["xi_v"] = 138
+ds.dim["eta_u"] = 75
+ds.dim["eta_v"] = 74
+ds.dim["ocean_time"] = Inf # unlimited dimension
+
+nclon_u = defVar(ds,"lon_u", Float64, ("xi_u", "eta_u"), attrib = OrderedDict(
+    "standard_name"             => "longitude",
+))
+nclat_u = defVar(ds,"lat_u", Float64, ("xi_u", "eta_u"), attrib = OrderedDict(
+    "standard_name"             => "latitude",
+))
+nclon_v = defVar(ds,"lon_v", Float64, ("xi_v", "eta_v"), attrib = OrderedDict(
+    "standard_name"             => "longitude",
+))
+nclat_v = defVar(ds,"lat_v", Float64, ("xi_v", "eta_v"), attrib = OrderedDict(
+    "standard_name"             => "latitude",
+))
+ncubar = defVar(ds,"ubar", Float32, ("xi_u", "eta_u", "ocean_time"), attrib = OrderedDict(
+    "standard_name"             => "barotropic_sea_water_x_velocity",
+))
+ncvbar = defVar(ds,"vbar", Float32, ("xi_v", "eta_v", "ocean_time"), attrib = OrderedDict(
+    "standard_name"             => "barotropic_sea_water_y_velocity",
+))
+close(ds)
+
+
+ds = NCDataset(fname)
+
+# This produces an error because it is unclear if we should load lon_u or lon_v
+@test_throws KeyError ds[CF"longitude"] # error
+
+nclon_u2 = ds["ubar"][CF"longitude"]
+
+@test name(nclon_u2) == "lon_u"

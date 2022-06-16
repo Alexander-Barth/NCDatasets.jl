@@ -111,7 +111,7 @@ function NCDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, def
         aggdim = NCDatasets.unlimited(ds[1].dim)[1]
     end
 
-     attrib = MFAttributes([d.attrib for d in ds])
+    attrib = MFAttributes([d.attrib for d in ds])
     dim = MFDimensions([d.dim for d in ds],aggdim)
     group = MFGroups([d.group for d in ds],aggdim)
 

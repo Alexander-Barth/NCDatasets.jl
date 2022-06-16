@@ -374,6 +374,8 @@ Base.haskey(a::NCIterable,name::AbstractString) = name in keys(a)
 Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
 
 
+dimnames(ds::NCDataset) = keys(ds.dim)
+
 function Base.getindex(ds::Union{AbstractDataset,AbstractVariable},n::CFStdName)
     ncvars = varbyattrib(ds, standard_name = String(n.name))
     if length(ncvars) == 1
