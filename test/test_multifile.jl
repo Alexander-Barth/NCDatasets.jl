@@ -81,10 +81,23 @@ idx_global_local = CatArrays.index_global_local(CA,(1:1,1:1,1:1))
 @test CA[:,1:2:end,:] == C[:,1:2:end,:]
 @test CA[1,1,1] == C[1,1,1]
 
+@test CA[1,1,[1,2]] == C[1,1,[1,2]]
+@test CA[1,1,[1,3]] == C[1,1,[1,3]]
+@test CA[1,[1,3],:] == C[1,[1,3],:]
+
+
 CA[2,2,:] = [1.,2.,3.]
 @test A[1][2,2] == 1.
 @test A[2][2,2] == 2.
 @test A[3][2,2] == 3.
+
+
+
+A = [rand(0:99,2,3,3),rand(0:99,2,3),rand(0:99,2,3)]
+C = cat(A...; dims = 3)
+CA = CatArrays.CatArray(3,A...)
+@test CA[1,1,[1,2,4]] == C[1,1,[1,2,4]]
+@test CA[1,1,[4,1,4]] == C[1,1,[4,1,4]]
 
 
 
