@@ -23,7 +23,7 @@ memory = read(fname)
 ds = NCDataset("some_string","r",memory = memory)
 SST2 = ds["SST"][:,:,:]
 
-@test path(ds) == "some_string"
+@test NCDatasets.path(ds) == "some_string"
 @test SST == SST2
 
 
