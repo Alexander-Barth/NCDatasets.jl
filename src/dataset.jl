@@ -97,6 +97,7 @@ end
               share::Bool = false,
               diskless::Bool = false,
               persist::Bool = false,
+              memory::Union{Vector{UInt8},Nothing} = nothing,
               attrib = [])
 
 Load, create, or even overwrite a NetCDF file at `filename`, depending on `mode`
@@ -128,6 +129,7 @@ vector of pairs (see example below).
 * `:netcdf3_classic`: classic netCDF format supporting only files smaller than 2GB.
 * `:netcdf3_64bit_offset`: improved netCDF format supporting files larger than 2GB.
 
+
 Files can also be open and automatically closed with a `do` block.
 
 ```julia
@@ -144,6 +146,17 @@ NCDataset("file.nc", "c", attrib = OrderedDict("title" => "my first netCDF file"
 end;
 ```
 
+The NetCDF dataset can also be a `memory` as a vector of bytes. A non-empty string
+a `filename` is still required, for example:
+
+```julia
+using NCDataset, HTTP
+resp = HTTP.get("https://www.unidata.ucar.edu/software/netcdf/examples/ECMWF_ERA-40_subset.nc")
+ds = NCDataset("some_string","r",memory = resp.body)
+total_precipitation = ds["tp"][:,:,:]
+close(ds)
+```
+
 `Dataset` is an alias of `NCDataset`.
 """
 function NCDataset(filename::AbstractString,
@@ -152,6 +165,7 @@ function NCDataset(filename::AbstractString,
                    share::Bool = false,
                    diskless::Bool = false,
                    persist::Bool = false,
+                   memory::Union{Vector{UInt8},Nothing} = nothing,
                    attrib = [])
 
     ncid = -1
@@ -184,7 +198,11 @@ function NCDataset(filename::AbstractString,
     @debug "ncmode: $ncmode"
 
     if (mode == "r") || (mode == "a")
-        ncid = nc_open(filename,ncmode)
+        if memory == nothing
+            ncid = nc_open(filename,ncmode)
+        else
+            ncid = nc_open_mem(filename,ncmode,memory)
+        end
     elseif mode == "c"
         if format == :netcdf3_64bit_offset
             ncmode = ncmode | NC_64BIT_OFFSET

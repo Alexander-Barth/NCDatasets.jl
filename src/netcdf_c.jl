@@ -268,9 +268,27 @@ function nc_open(path,mode::Integer)
 
     if code == NC_NOERR
         return ncidp[]
-        # otherwise throw an error message
     else
-        # return a more helpful error message (i.e. with the path)
+        # otherwise throw an error message
+        # with a more helpful error message (i.e. with the path)
+        throw(NetCDFError(code, "Opening path $(path): $(nc_strerror(code))"))
+    end
+end
+
+function nc_open_mem(path,mode::Integer,memory::Vector{UInt8})
+    @debug "nc_open $path with mode $mode"
+    ncidp = Ref(Cint(0))
+
+    code = ccall(
+        (:nc_open_mem,libnetcdf),Cint,
+        (Cstring,Cint,Csize_t,Ptr{UInt8},Ptr{Cint}),
+        path,mode,length(memory),memory,ncidp)
+
+    if code == NC_NOERR
+        return ncidp[]
+    else
+        # otherwise throw an error message
+        # with a more helpful error message (i.e. with the path)
         throw(NetCDFError(code, "Opening path $(path): $(nc_strerror(code))"))
     end
 end
@@ -978,6 +996,7 @@ function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Arr
     for i in eachindex(tmp)
         ip[i] = Char(tmp[i])
     end
+    @debug "end nc_get_vars!"
 end
 
 function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{String,N}) where N
