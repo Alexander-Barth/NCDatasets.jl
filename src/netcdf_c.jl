@@ -2147,6 +2147,15 @@ end
 #     check(ccall((:nc_inq_base_pe,libnetcdf),Cint,(Cint,Ptr{Cint}),ncid,pe))
 # end
 
+function nc_rc_set(key,value)
+    #nc_rc_set(const char* key, const char* value);
+    check(ccall((:nc_rc_set,libnetcdf),Cint,(Cstring,Cstring),key,value))
+end
+
+
+function netcdf_version()
+    VersionNumber(split(nc_inq_libvers())[1])
+end
 
 function init_certificate_authority()
     value = ca_roots()
@@ -2157,22 +2166,28 @@ function init_certificate_authority()
     key = "HTTP.SSL.CAINFO"
     hostport = C_NULL
     path = C_NULL
-    err = @ccall(libnetcdf.NCDISPATCH_initialize()::Cint)
-    err = @ccall(libnetcdf.NC_rcfile_insert(key::Cstring, value::Cstring, hostport::Cstring, path::Cstring)::Cint)
-    @debug "NC_rcfile_insert returns $err"
 
-    if err != NC_NOERR
-        @warn "setting HTTP.SSL.CAINFO using NC_rcfile_insert " *
-            "failed with error $err. See https://github.com/Alexander-Barth/NCDatasets.jl/issues/173 for more information. "
+    if netcdf_version() <= v"4.9.0"
+        err = @ccall(libnetcdf.NCDISPATCH_initialize()::Cint)
+        err = @ccall(libnetcdf.NC_rcfile_insert(key::Cstring, value::Cstring, hostport::Cstring, path::Cstring)::Cint)
+        @debug "NC_rcfile_insert returns $err"
 
-        @debug begin
-            lookup = @ccall(libnetcdf.NC_rclookup(key::Cstring, hostport::Cstring, path::Cstring)::Cstring)
+        if err != NC_NOERR
+            @warn "setting HTTP.SSL.CAINFO using NC_rcfile_insert " *
+                "failed with error $err. See https://github.com/Alexander-Barth/NCDatasets.jl/issues/173 for more information. "
 
-            if lookup !== C_NULL
-                @debug "NC_rclookup: ",unsafe_string(lookup)
-            else
-                @debug "NC_rclookup result pointer: ",lookup
+            @debug begin
+                lookup = @ccall(libnetcdf.NC_rclookup(key::Cstring, hostport::Cstring, path::Cstring)::Cstring)
+
+                if lookup !== C_NULL
+                    @debug "NC_rclookup: ",unsafe_string(lookup)
+                else
+                    @debug "NC_rclookup result pointer: ",lookup
+                end
             end
         end
+    else
+        @info "nc_rc_set: set $key to $value"
+        nc_rc_set(key,value)
     end
 end
