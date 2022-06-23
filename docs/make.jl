@@ -19,6 +19,7 @@ makedocs(
         "Performance tips" => "performance.md",
         "Known issues" => "issues.md",
         "Experimental features" => "experimental.md",
+        "Tutorials" => "tutorials.md",
     ],
 )
 
