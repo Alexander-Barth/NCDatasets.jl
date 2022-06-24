@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/Alexander-Barth/NCDatasets.jl/workflows/CI/badge.svg)](https://github.com/Alexander-Barth/NCDatasets.jl/actions)
 [![codecov.io](http://codecov.io/github/Alexander-Barth/NCDatasets.jl/coverage.svg?branch=master)](http://codecov.io/github/Alexander-Barth/NCDatasets.jl?branch=master)
 [![documentation stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/stable/)
-[![documentation latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/latest/)
+[![documentation dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/dev/)
 
 
 `NCDatasets` allows one to read and create netCDF files.
