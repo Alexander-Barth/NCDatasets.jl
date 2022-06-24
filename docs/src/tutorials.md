@@ -1,4 +1,6 @@
-# Copernicus Marine
+# Tutorials
+
+## Data from Copernicus Marine
 
 This examples shows how to download sea surface temperature from the
 [Mediterranean Sea High Resolution and Ultra High Resolution Sea Surface Temperature Analysis ](https://doi.org/10.48670/moi-00172) provided by
@@ -35,13 +37,13 @@ gca().set_aspect(1/cosd(mean(lat)))
 title("$(ncvar.attrib["long_name"]) $time")
 ```
 
-Alternatively, one can also define the files `.netrc` and `.ncrc` in the your home directory as explained for the NASA EarthData example which allows you to manage your passwords in a central configuration file and reduce the risk to accidentally share your credentials.
+Alternatively, one can also create the files `.netrc` and `.ncrc` in the your home directory with your credentials as explained for the NASA EarthData example which allows you to manage your passwords in a central configuration file and reduce the risk to accidentally share your credentials.
 
 ![example_SST_CMEMS.png](assets/example_SST_CMEMS.png)
 
 
 
-# NASA EarthData
+## Data from NASA EarthData
 
 
 This example shows show to download data via OPeNDAP from the [NASA EarthData](https://www.earthdata.nasa.gov/)
@@ -149,7 +151,7 @@ This script produces the following plot:
 
 ![example_SST.png](assets/example_SST.png)
 
-# Access data from S3 object storage
+## Access data from S3 object storage
 
 NASA EarthData is also available from AWS S3 object storage at the AWS region us-west-2. This example assumes that you have access to an AWS instance in this region (available thought e.g. [Pangeo Cloud](https://pangeo.io/cloud.html) after registration thanks to funding from the NSF and the fine folks at [Pangeo](https://github.com/pangeo-data)).
 
