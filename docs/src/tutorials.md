@@ -9,7 +9,8 @@ The username and password can be added to the URL. For example
 `https://example.org/path` should become `https://username:password@example.org/path`:
 
 ```julia
-using NCDatasets, PyPlot
+using NCDatasets, PyPlot, Statistics
+
 username = "your_username"
 password = "your_password"
 
@@ -29,6 +30,7 @@ clf()
 pcolormesh(lon,lat,nomissing(SST,NaN)')
 cbar = colorbar(orientation="horizontal")
 cbar.set_label(ncvar.attrib["units"])
+gca().set_aspect(1/cosd(mean(lat)))
 
 title("$(ncvar.attrib["long_name"]) $time")
 ```
@@ -201,14 +203,18 @@ ENV["AWS_SESSION_TOKEN"] = cred.sessionToken;
 
 c = AWS.global_aws_config();
 
-resp = S3.list_objects("podaac-ops-cumulus-protected", Dict("prefix" => "MODIS_TERRA_L3_SST_MID-IR_DAILY_4KM_NIGHTTIME_V2019.0/", "delimiter" => '/'))
+resp = S3.list_objects("podaac-ops-cumulus-protected",
+     Dict("prefix" => "MODIS_TERRA_L3_SST_MID-IR_DAILY_4KM_NIGHTTIME_V2019.0/",
+          "delimiter" => '/'))
 
-# load the first object
+# download the first object
 data = S3.get_object("podaac-ops-cumulus-protected",resp["Contents"][1]["Key"]);
-using NCDatasets
+
+# load the NetCDF dataset
 ds = NCDataset("temp-memory","r",memory = data)
 ```
 
+Output:
 ```
 CDataset: temp-memory
 Group: /
