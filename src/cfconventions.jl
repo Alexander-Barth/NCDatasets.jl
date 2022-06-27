@@ -119,7 +119,7 @@ v = ncv[:]
 close(ds)
 ```
 """
-function coord(v::Union{CFVariable,Variable,SubVariable},standard_name)
+function coord(v::Union{CFVariable,Variable,SubVariable,MFCFVariable},standard_name)
     matches = Dict(
         "time" => [r".*since.*"],
         # It is great to have choice!
@@ -137,7 +137,7 @@ function coord(v::Union{CFVariable,Variable,SubVariable},standard_name)
 
     # find by standard name
     for coord in varbyattrib(ds,standard_name = standard_name)
-        if Set(dimnames(coord))  ⊆ dims
+        if Set(dimnames(coord)) ⊆ dims
             return coord
         end
     end
