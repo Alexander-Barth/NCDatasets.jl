@@ -231,8 +231,8 @@ const NCChecksumConstants = Dict(value => key for (key, value) in NCChecksumSymb
 function convert(::Type{Array{nc_vlen_t{T},N}},data::Array{Vector{T},N}) where {T,N}
     tmp = Array{nc_vlen_t{T},N}(undef,size(data))
 
-    for i = 1:length(data)
-        tmp[i] = nc_vlen_t{T}(length(data[i]), pointer(data[i]))
+    for (i,d) in enumerate(data)
+        tmp[i] = nc_vlen_t{T}(length(d), pointer(d))
     end
     return tmp
 end
@@ -261,6 +261,7 @@ end
 # end
 
 function nc_open(path,mode::Integer)
+    @debug "nc_open $path with mode $mode"
     ncidp = Ref(Cint(0))
 
     code = ccall((:nc_open,libnetcdf),Cint,(Cstring,Cint,Ptr{Cint}),path,mode,ncidp)
@@ -388,9 +389,10 @@ function nc_insert_compound(ncid::Integer,xtype::Integer,name,offset::Integer,fi
     check(ccall((:nc_insert_compound,libnetcdf),Cint,(Cint,nc_type,Cstring,Csize_t,nc_type),ncid,xtype,name,offset,field_typeid))
 end
 
-# function nc_insert_array_compound(ncid::Integer,xtype::Integer,name,offset::Integer,field_typeid::Integer,ndims::Integer,dim_sizes)
-#     check(ccall((:nc_insert_array_compound,libnetcdf),Cint,(Cint,nc_type,Cstring,Cint,nc_type,Cint,Ptr{Cint}),ncid,xtype,name,offset,field_typeid,ndims,dim_sizes))
-# end
+function nc_insert_array_compound(ncid::Integer,xtype::Integer,name,offset::Integer,field_typeid::Integer,dim_sizes)
+    ndims = length(dim_sizes)
+    check(ccall((:nc_insert_array_compound,libnetcdf),Cint,(Cint,nc_type,Cstring,Cint,nc_type,Cint,Ptr{Cint}),ncid,xtype,name,offset,field_typeid,ndims,dim_sizes))
+end
 
 # function nc_inq_type(ncid::Integer,xtype::Integer,name,size)
 #     check(ccall((:nc_inq_type,libnetcdf),Cint,(Cint,nc_type,Cstring,Ptr{Cint}),ncid,xtype,name,size))
@@ -574,6 +576,11 @@ function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,typeid::In
                 ncid,varid,name,typeid,length(data),data))
 end
 
+# convert e.g. ranges to vectors
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::AbstractVector)
+    nc_put_att(ncid,varid,name,Vector(data))
+end
+
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data)
     error("attributes can only be scalars or vectors")
 end
@@ -690,7 +697,10 @@ function nc_put_var(ncid::Integer,varid::Integer,data::Array{Char,N}) where N
 end
 
 function nc_put_var(ncid::Integer,varid::Integer,data::Array{String,N}) where N
-    nc_put_var(ncid,varid,pointer.(data))
+    # pointer.(data) is surprisingly a scalar pointer Ptr{UInt8} if data is a
+    # Array{T,0}
+    tmp = map(pointer,data)
+    nc_put_var(ncid,varid,tmp)
 end
 
 function nc_put_var(ncid::Integer,varid::Integer,data::Array{Vector{T},N}) where {T,N}
@@ -804,7 +814,8 @@ function nc_get_var1(::Type{String},ncid::Integer,varid::Integer,indexp)
 end
 
 function nc_get_var1(::Type{T},ncid::Integer,varid::Integer,indexp) where T
-    @debug "nc_get_var1",indexp
+    @debug "AAAnc_get_var1",indexp
+    #error("ll")
     ip = Ref(zero(T))
     check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Nothing}),ncid,varid,indexp,ip))
     return ip[]
@@ -840,7 +851,8 @@ function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,
 end
 
 function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip)
-     check(ccall((:nc_get_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Nothing}),ncid,varid,startp,countp,ip))
+    @debug "nc_get_vara!",startp,indexp
+    check(ccall((:nc_get_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Nothing}),ncid,varid,startp,countp,ip))
 end
 
 function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip::Array{Char,N}) where N
@@ -960,6 +972,7 @@ end
 
 
 function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{Char,N}) where N
+    @debug "nc_get_vars!: $startp,$countp,$stridep"
     tmp = Array{UInt8,N}(undef,size(ip))
     nc_get_vars!(ncid,varid,startp,countp,stridep,tmp)
     for i in eachindex(tmp)
@@ -968,6 +981,7 @@ function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Arr
 end
 
 function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{String,N}) where N
+    @debug "nc_get_vars!: $startp,$countp,$stridep"
     tmp = Array{Ptr{UInt8},N}(undef,size(ip))
     nc_get_vars!(ncid,varid,startp,countp,stridep,tmp)
     for i in eachindex(tmp)
@@ -977,6 +991,7 @@ function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Arr
 end
 
 function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip::Array{Vector{T},N}) where {T,N}
+    @debug "nc_get_vars!: $startp,$countp,$stridep"
     tmp = Array{NCDatasets.nc_vlen_t{T},N}(undef,size(ip))
     nc_get_vars!(ncid,varid,startp,countp,stridep,tmp)
 
@@ -2112,3 +2127,33 @@ end
 # function nc_inq_base_pe(ncid::Integer,pe)
 #     check(ccall((:nc_inq_base_pe,libnetcdf),Cint,(Cint,Ptr{Cint}),ncid,pe))
 # end
+
+
+function init_certificate_authority()
+    value = ca_roots()
+    if value == nothing
+        return
+    end
+
+    key = "HTTP.SSL.CAINFO"
+    hostport = C_NULL
+    path = C_NULL
+    err = @ccall(libnetcdf.NCDISPATCH_initialize()::Cint)
+    err = @ccall(libnetcdf.NC_rcfile_insert(key::Cstring, value::Cstring, hostport::Cstring, path::Cstring)::Cint)
+    @debug "NC_rcfile_insert returns $err"
+
+    if err != NC_NOERR
+        @warn "setting HTTP.SSL.CAINFO using NC_rcfile_insert " *
+            "failed with error $err. See https://github.com/Alexander-Barth/NCDatasets.jl/issues/173 for more information. "
+
+        @debug begin
+            lookup = @ccall(libnetcdf.NC_rclookup(key::Cstring, hostport::Cstring, path::Cstring)::Cstring)
+
+            if lookup !== C_NULL
+                @debug "NC_rclookup: ",unsafe_string(lookup)
+            else
+                @debug "NC_rclookup result pointer: ",lookup
+            end
+        end
+    end
+end

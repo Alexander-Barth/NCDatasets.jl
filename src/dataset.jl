@@ -311,7 +311,7 @@ julia> data = varbyattrib(ds, standard_name = "longitude")[1][:]
 ```
 
 """
-function varbyattrib(ds::NCDataset; kwargs...)
+function varbyattrib(ds::Union{AbstractDataset,AbstractVariable}; kwargs...)
     # Start with an empty list of variables
     varlist = []
 
@@ -347,6 +347,7 @@ end
 export varbyattrib
 
 
+
 """
     haskey(ds::NCDataset,name)
     haskey(d::Dimensions,name)
@@ -373,6 +374,16 @@ Base.haskey(a::NCIterable,name::AbstractString) = name in keys(a)
 Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
 
 
+dimnames(ds::AbstractDataset) = keys(ds.dim)
+
+function Base.getindex(ds::Union{AbstractDataset,AbstractVariable},n::CFStdName)
+    ncvars = varbyattrib(ds, standard_name = String(n.name))
+    if length(ncvars) == 1
+        return ncvars[1]
+    else
+        throw(KeyError("$(length(ncvars)) matches while searching for a variable with standard_name attribute equal to $(n.name)"))
+    end
+end
 
 function Base.show(io::IO,ds::AbstractDataset; indent="")
     try

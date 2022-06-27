@@ -16,7 +16,7 @@ jobs:
         os:
           - ubuntu-latest
           - macOS-latest
-          - windows-latest
+#          - windows-latest
         arch:
           - x64
     steps:
@@ -48,10 +48,21 @@ jobs:
                TOML.print(f,proj)
            end
         shell: julia --color=yes --project=@. {0}
+      - name: check curl
+        run: |
+           using LibCURL_jll
+           if Sys.isapple()
+               run(`otool -L $(LibCURL_jll.libcurl_path)`)
+           end
+        shell: julia --color=yes --project=@. {0}
       - name: Install NetCDF_jll
         run: |
            using Pkg
            Pkg.add(url="https://github.com/Alexander-Barth/NetCDF_jll.jl")
+           if Sys.isapple()
+           #run(`sha256sum /Users/runner/.julia/artifacts/ae95712771ea771cf8a1779162ce95329f840f1d/lib/libnetcdf.19.dylib`)
+           #run(`otool -L /Users/runner/.julia/artifacts/ae95712771ea771cf8a1779162ce95329f840f1d/lib/libnetcdf.19.dylib`)
+           end
            using NetCDF_jll
            @show NetCDF_jll.libnetcdf
         shell: julia --color=yes --project=@. {0}

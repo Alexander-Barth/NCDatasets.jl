@@ -2,7 +2,7 @@
 
 ## NetCDF: Not a valid data type or `_FillValue` type mismatch
 
-Trying to define the `_FillValue`, procudes the following error:
+Trying to define the `_FillValue`, produces the following error:
 
 ```
 ERROR: LoadError: NCDatasets.NetCDFError(-45, "NetCDF: Not a valid data type or _FillValue type mismatch")
@@ -65,9 +65,9 @@ v = defVar(ds,"var_with_all_missing_data",Int32,("lon",), fillvalue = fv, attrib
 
 This change was introduced in `NCDatasets` version 0.10
 
-## Mutiple versions of HDF5 or NetCDF libraries
+## Multiple versions of HDF5 or NetCDF libraries
 
-Having outdated versions of HDF5 or NetCDF libraries installed can be an issue on Windows if they are included in the system `PATH` environement variable. It is advised to adapt the system `PATH` to remove the locations containing these libraries.
+Having outdated versions of HDF5 or NetCDF libraries installed can be an issue on Windows if they are included in the system `PATH` environment variable. It is advised to adapt the system `PATH` to remove the locations containing these libraries.
 
 
 ## Using a custom NetCDF library
@@ -96,11 +96,39 @@ However, the dependencies of the library version `libnetcdf.so.xyz` (in particul
 ldd /path/to/libnetcdf.so.xyz
 ```
 
+
+## OPeNDAP on Windows fails with `Assertion failed: ocpanic`
+
+On windows, NetCDF 4.7.4 can fail with this error:
+
+```
+Assertion failed: ocpanic(("state->auth.curlflags.cookiejar != NULL")), file ocinternal.c, line 566
+```
+
+when accessing OPeNDAP URLs, like these:
+
+```julia
+using NCDatasets
+ds = NCDataset("https://thredds.jpl.nasa.gov/thredds/dodsC/ncml_aggregation/OceanTemperature/modis/terra/11um/4km/aggregate__MODIS_TERRA_L3_SST_THERMAL_DAILY_4KM_DAYTIME_V2019.0.ncml#fillmismatch")
+```
+
+See also the issue report: [https://github.com/Unidata/netcdf-c/issues/2380](https://github.com/Unidata/netcdf-c/issues/2380).
+The work-around is to create a `.dodsrc` in the current working directory with the content:
+
+```
+HTTP.COOKIEJAR=C:\Users\USERNAME\AppData\Local\Temp\
+```
+
+where USERNAME is your username. The directory should exist and be writable by the user.
+You can run `pwd()` to determine the current working directory. Note that the initial current working directory
+can be different depending you how you start julia (from the command line or from jupyter notebook for example).
+Julia need to be restarted after this file is placed in the your working directory.
+
 ## Using non-official julia builds
 
 Julia and NetCDF_jll have several common dependencies (curl, MbedTLS, zlib).
 Non-official julia builds will work only if they use exactly the same library version as those used to compile NetCDF. This is unlikely to be the case in general and outside of our control. Therefore non-official julia builds are not supported.
-Official julia builds are available at https://julialang.org/downloads/.
+Official julia builds are available at [https://julialang.org/downloads/](https://julialang.org/downloads/).
 
 
 ## Corner cases

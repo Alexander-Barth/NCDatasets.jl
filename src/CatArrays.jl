@@ -51,9 +51,9 @@ function CatArray(dim::Int,arrays...)
     # size of concatenated array
     sz = ntuple(j -> (j == dim ? countdim : size(arrays[1],j)), N)
 
-    TA = typeof(arrays[1])
-    T = eltype(arrays[1])
-    for i = 2:length(arrays)
+    TA = typeof(arrays[begin])
+    T = eltype(arrays[begin])
+    for i = (firstindex(arrays)+1):lastindex(arrays)
         T = promote_type(T,eltype(arrays[i]))
         TA = promote_type(TA,typeof(arrays[i]))
     end
@@ -96,7 +96,7 @@ function valid_local_idx(local_idx::Integer,local_idx_rest...)
     return (local_idx > 0) && valid_local_idx(local_idx_rest...)
 end
 
-function valid_local_idx(local_idx::AbstractRange,local_idx_rest...)
+function valid_local_idx(local_idx::AbstractVector,local_idx_rest...)
     return (length(local_idx) > 0) && valid_local_idx(local_idx_rest...)
 end
 
@@ -135,7 +135,7 @@ function _gli(offset,subarray,i,idx_global,idx_local,idx::AbstractRange,idx_rest
     # within bounds of the subarray
     within(j) = 1 <= j <= size(subarray,i)
 
-    # rebase subscribt
+    # rebase subscript
     idx_offset = idx .- offset[i]
 
     n_within = count(within,idx_offset)
@@ -148,6 +148,22 @@ function _gli(offset,subarray,i,idx_global,idx_local,idx::AbstractRange,idx_rest
         idx_local_tmp = idx_offset[findfirst(within,idx_offset):findlast(within,idx_offset)]
         idx_global_tmp = (1:n_within) .+ (findfirst(within,idx_offset) - 1)
     end
+
+    return _gli(offset,subarray,i+1,
+                (idx_global...,idx_global_tmp),
+                (idx_local..., idx_local_tmp),idx_rest...)
+end
+
+function _gli(offset,subarray,i,idx_global,idx_local,idx::Vector{T},idx_rest...) where T <: Integer
+    # within bounds of the subarray
+    within(j) = 1 <= j <= size(subarray,i)
+
+    # rebase subscribt
+    idx_offset = idx .- offset[i]
+
+    # index for getting the data from the local array
+    idx_local_tmp = filter(within,idx_offset)
+    idx_global_tmp = filter(i -> within(idx_offset[i]),1:length(idx))
 
     return _gli(offset,subarray,i+1,
                 (idx_global...,idx_global_tmp),

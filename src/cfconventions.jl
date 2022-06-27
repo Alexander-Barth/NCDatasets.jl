@@ -1,3 +1,15 @@
+
+CFStdName(n::AbstractString) = CFStdName(Symbol(n))
+
+macro CF_str(n)
+    CFStdName(n)
+end
+
+export @CF_str
+import Base.string
+Base.string(n::CFStdName) = string(n.name)
+
+
 """
     ncvar = NCDatasets.ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
 
@@ -15,10 +27,10 @@ function ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
 
     ancillary_variables = split(ncv.attrib["ancillary_variables"])
 
-    for j = 1:length(ancillary_variables)
-        ncv_ancillary = ds[ancillary_variables[j]]
+    for ancillary_variable in ancillary_variables
+        ncv_ancillary = ds[ancillary_variable]
         if occursin(modifier,ncv_ancillary.attrib["standard_name"])
-            @debug ancillary_variables[j]
+            @debug ancillary_variable
             return ncv_ancillary
         end
     end
@@ -30,7 +42,6 @@ end
 
 allowmissing(x::AbstractArray{T}) where {T} = convert(AbstractArray{Union{T, Missing}}, x)
 
-import Base: filter
 """
     data = NCDatasets.filter(ncv, indices...; accepted_status_flags = nothing)
 
@@ -62,7 +73,7 @@ function filter(ncv::Union{Variable,CFVariable}, indices...; accepted_status_fla
         end
 
         accepted_status_flag_values = zeros(eltype(flag_values),length(accepted_status_flags))
-        for i = 1:length(accepted_status_flags)
+        for i = eachindex(accepted_status_flags,accepted_status_flag_values)
             tmp = findfirst(accepted_status_flags[i] .== flag_meanings)
 
             if tmp == nothing
@@ -108,7 +119,7 @@ v = ncv[:]
 close(ds)
 ```
 """
-function coord(v::Union{CFVariable,Variable},standard_name)
+function coord(v::Union{CFVariable,Variable,SubVariable},standard_name)
     matches = Dict(
         "time" => [r".*since.*"],
         # It is great to have choice!

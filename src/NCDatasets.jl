@@ -18,26 +18,20 @@ More information is available at https://github.com/Alexander-Barth/NCDatasets.j
 """
 module NCDatasets
 
-using NetCDF_jll
+import Base: Array, close, collect, convert, delete!, display, filter, getindex,
+    parent, parentindices, setindex!, show, showerror, size, view
+using CFTime
+using DataStructures: OrderedDict
 using Dates
+using NetCDF_jll
+using NetworkOptions
 using Printf
 
-using Base
-using DataStructures: OrderedDict
-import Base.convert
-
-import Base: close
-import Base: Array
-
-using CFTime
-export CFTime
-export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
-export dayofyear, firstdayofyear
-export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
-    DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
+function __init__()
+    init_certificate_authority()
+end
 
 const default_timeunits = "days since 1900-00-00 00:00:00"
-
 const SymbolOrString = Union{Symbol, AbstractString}
 
 include("CatArrays.jl")
@@ -51,12 +45,19 @@ include("dimensions.jl")
 include("groupes.jl")
 include("variable.jl")
 include("cfvariable.jl")
+include("subvariable.jl")
 include("cfconventions.jl")
 include("defer.jl")
 include("multifile.jl")
 include("ncgen.jl")
+include("select.jl")
 include("precompile.jl")
 
 export CatArrays
+export CFTime
+export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
+export dayofyear, firstdayofyear
+export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
+    DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
 
 end # module

@@ -25,7 +25,7 @@ Define a variable with the name `name` in the dataset `ds`.  `vtype` can be
 Julia types in the table below (with the corresponding NetCDF type). The
 parameter `dimnames` is a tuple with the names of the dimension.  For scalar
 this parameter is the empty tuple `()`.
-The variable is returned (of the type CFVariable).
+The variable is returned (of the type `CFVariable`).
 
 Instead of providing the variable type one can directly give also the data `data` which
 will be used to fill the NetCDF variable. In this case, the dimensions with
@@ -67,6 +67,23 @@ set on NetCDF 4 files.
 | NC_STRING   | String |
 
 
+## Dimension ordering
+
+The data is stored in the NetCDF file in the same order as they are stored in
+memory. As julia uses the
+[Column-major ordering](https://en.wikipedia.org/wiki/Row-_and_column-major_order)
+for arrays, the order of dimensions will appear reversed when the data is loaded
+in languages or programs using
+[Row-major ordering](https://en.wikipedia.org/wiki/Row-_and_column-major_order)
+such as C/C++, Python/NumPy or the tools `ncdump`/`ncgen`
+([NetCDF CDL](https://web.archive.org/web/20220513091844/https://docs.unidata.ucar.edu/nug/current/_c_d_l.html)).
+NumPy can also use Column-major ordering but Row-major order is the default. For the column-major
+interpretation of the dimensions (as in Julia), the
+[CF Convention recommends](https://web.archive.org/web/20220328110810/http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#dimensions) the
+order  "longitude" (X), "latitude" (Y), "height or depth" (Z) and
+"date or time" (T) (if applicable). All other dimensions should, whenever
+possible, be placed to the right of the spatiotemporal dimensions.
+
 ## Example:
 
 In this example, `scale_factor` and `add_offset` are applied when the `data`
@@ -90,6 +107,8 @@ julia> NCDataset("test_file.nc","c") do ds
     If the attributes `_FillValue`, `missing_value`, `add_offset`, `scale_factor`,
     `units` and `calendar` are used, they should be defined when calling `defVar`
     by using the parameter `attrib` as shown in the example above.
+
+
 """
 function defVar(ds::NCDataset,name,vtype::DataType,dimnames; kwargs...)
     # all keyword arguments as dictionary
@@ -169,21 +188,26 @@ function defVar(ds::NCDataset,
 end
 
 function defVar(ds::NCDataset,name,data,dimnames; kwargs...)
-    nctype = eltype(data)
+    # eltype of a String would be Char
+    if data isa String
+        nctype = String
+    else
+        nctype = eltype(data)
+    end
     _defVar(ds::NCDataset,name,data,nctype,dimnames; kwargs...)
 end
 
 function _defVar(ds::NCDataset,name,data,nctype,dimnames; attrib = [], kwargs...)
     # define the dimensions if necessary
-    for i = 1:length(dimnames)
-        if !(dimnames[i] in ds.dim)
-            ds.dim[dimnames[i]] = size(data,i)
-        elseif !(dimnames[i] in unlimited(ds.dim))
-            dimlen = ds.dim[dimnames[i]]
+    for (i,dimname) in enumerate(dimnames)
+        if !(dimname in ds.dim)
+            ds.dim[dimname] = size(data,i)
+        elseif !(dimname in unlimited(ds.dim))
+            dimlen = ds.dim[dimname]
 
             if (dimlen !== size(data,i))
                 throw(NetCDFError(
-                    -1,"dimension $(dimnames[i]) is already defined with the " *
+                    -1,"dimension $(dimname) is already defined with the " *
                     "length $dimlen. It cannot be redefined with a length of $(size(data,i))."))
             end
         end
@@ -227,7 +251,7 @@ function _defVar(ds::NCDataset,name,data,nctype,dimnames; attrib = [], kwargs...
 end
 
 
-function defVar(ds::NCDataset,name,data::T; kwargs...) where T <: Number
+function defVar(ds::NCDataset,name,data::T; kwargs...) where T <: Union{Number,String,Char}
     v = defVar(ds,name,T,(); kwargs...)
     v[:] = data
     return v
@@ -419,7 +443,7 @@ Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The following CF convention are honored when the
 variable is indexed:
 * `_FillValue` or `missing_value` (which can be a list) will be returned as `missing`. `NCDatasets` does not use implicitely the default NetCDF fill values when reading data.
-* `scale_factor` and `add_offset` are applied (output = `scale_factor` * data_in_file +  `add_offset`)
+* `scale_factor` and `add_offset` are applied (output = `scale_factor` * `data_in_file` +  `add_offset`)
 * time variables (recognized by the units attribute and possibly the calendar attribute) are returned usually as
   `DateTime` object. Note that `DateTimeAllLeap`, `DateTimeNoLeap` and
   `DateTime360Day` cannot be converted to the proleptic gregorian calendar used in
@@ -492,7 +516,7 @@ dimnames(v::Union{CFVariable,MFCFVariable})  = dimnames(v.var)
     dimsize(v::CFVariable)
 Get the size of a `CFVariable` as a named tuple of dimension → length.
 """
-function dimsize(v::Union{CFVariable,MFCFVariable})
+function dimsize(v::Union{CFVariable,MFCFVariable,SubVariable})
     s = size(v)
     names = Symbol.(dimnames(v))
     return NamedTuple{names}(s)
@@ -579,8 +603,15 @@ end
 @inline asdate(data::Missing,time_origin,time_factor,DTcast) = data
 @inline asdate(data,time_origin::Nothing,time_factor,DTcast) = data
 @inline asdate(data::Missing,time_origin::Nothing,time_factor,DTcast) = data
+
 @inline asdate(data,time_origin,time_factor,DTcast) =
     convert(DTcast,time_origin + Dates.Millisecond(round(Int64,time_factor * data)))
+
+# special case when time variables are stored as single precision,
+# promoted internally to double precision
+@inline asdate(data::Float32,time_origin::Nothing,time_factor,DTcast) = data
+@inline asdate(data::Float32,time_origin,time_factor,DTcast) =
+    convert(DTcast,time_origin + Dates.Millisecond(round(Int64,time_factor * Float64(data))))
 
 
 @inline fromdate(data::TimeType,time_origin,inv_time_factor) =
@@ -737,6 +768,88 @@ function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{In
     return data
 end
 
+# indexing with vector of integers
+
+to_range_list(index::Integer,len) = index
+
+to_range_list(index::Colon,len) = [1:len]
+to_range_list(index::AbstractRange,len) = [index]
+
+function to_range_list(index::Vector{T},len) where T <: Integer
+    grow(istart) = istart[begin]:(istart[end]+step(istart))
+
+    baseindex = 1
+    indices_ranges = UnitRange{T}[]
+
+    while baseindex <= length(index)
+        range = index[baseindex]:index[baseindex]
+        range_test = grow(range)
+        index_view = @view index[baseindex:end]
+
+        while checkbounds(Bool,index_view,length(range_test)) &&
+            (range_test[end] == index_view[length(range_test)])
+
+            range = range_test
+            range_test = grow(range_test)
+        end
+
+        push!(indices_ranges,range)
+        baseindex += length(range)
+    end
+
+    @assert reduce(vcat,indices_ranges) == index
+    return indices_ranges
+end
+
+_range_indices_dest(of) = of
+_range_indices_dest(of,i::Integer,rest...) = _range_indices_dest(of,rest...)
+
+function _range_indices_dest(of,v,rest...)
+    b = 0
+    ind = similar(v,0)
+    for r in v
+        rr = 1:length(r)
+        push!(ind,b .+ rr)
+        b += length(r)
+    end
+
+    _range_indices_dest((of...,ind),rest...)
+end
+range_indices_dest(ri...) = _range_indices_dest((),ri...)
+
+function Base.getindex(v::Union{CFVariable,Variable,MFVariable,SubVariable},indices::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int},Vector{Int}}...)
+    @debug "transform vector of indices to ranges"
+
+    sz_source = size(v)
+    ri = to_range_list.(indices,sz_source)
+    sz_dest = NCDatasets._shape_after_slice(sz_source,indices...)
+
+    N = length(indices)
+
+    ri_dest = range_indices_dest(ri...)
+    @debug "ri_dest $ri_dest"
+    @debug "ri $ri"
+
+    if all(==(1),length.(ri))
+        # single chunk
+        R = first(CartesianIndices(length.(ri)))
+        ind_source = ntuple(i -> ri[i][R[i]],N)
+        ind_dest = ntuple(i -> ri_dest[i][R[i]],length(ri_dest))
+        return v[ind_source...]
+    end
+
+    dest = Array{eltype(v),length(sz_dest)}(undef,sz_dest)
+    for R in CartesianIndices(length.(ri))
+        ind_source = ntuple(i -> ri[i][R[i]],N)
+        ind_dest = ntuple(i -> ri_dest[i][R[i]],length(ri_dest))
+        #dest[ind_dest...] = v[ind_source...]
+        buffer = Array{eltype(v.var),length(ind_dest)}(undef,length.(ind_dest))
+        load!(v,view(dest,ind_dest...),buffer,ind_source...)
+    end
+    return dest
+end
+
+
 ############################################################
 # Convertion to array
 ############################################################
@@ -748,7 +861,7 @@ Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=inde
 # necessary for IJulia if showing a variable from a closed file
 Base.show(io::IO,::MIME"text/plain",v::Union{Variable,CFVariable,MFCFVariable}) = show(io,v)
 
-Base.display(v::Union{Variable,CFVariable,MFCFVariable}) = show(stdout,v)
+Base.display(v::Union{Variable,CFVariable,MFCFVariable,SubVariable}) = show(stdout,v)
 
 
 
@@ -785,11 +898,35 @@ NCDatasets.load!(ncv,data,buffer,:,:,:)
 close(ds)
 ```
 """
-@inline function load!(v::Union{CFVariable{T,N},MFCFVariable{T,N}}, data, buffer, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
+@inline function load!(v::Union{CFVariable{T,N},MFCFVariable{T,N},SubVariable{T,N}}, data, buffer, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
 
-    load!(v.var,buffer,indices...)
-    fmv = fill_and_missing_values(v)
-    return CFtransformdata!(data,buffer,fmv,scale_factor(v),add_offset(v),
-                           time_origin(v),time_factor(v))
+    if v.var == nothing
+        return load!(v,indices...)
+    else
+        load!(v.var,buffer,indices...)
+        fmv = fill_and_missing_values(v)
+        return CFtransformdata!(data,buffer,fmv,scale_factor(v),add_offset(v),
+                                time_origin(v),time_factor(v))
+    end
+end
 
+
+function _isrelated(v1::AbstractVariable,v2::AbstractVariable)
+    dimnames(v1) ⊆ dimnames(v2)
+end
+
+function Base.keys(v::AbstractVariable)
+    ds = NCDataset(v)
+    return [varname for (varname,ncvar) in ds if _isrelated(ncvar,v)]
+end
+
+
+function Base.getindex(v::AbstractVariable,name::AbstractString)
+    ds = NCDataset(v)
+    ncvar = ds[name]
+    if _isrelated(ncvar,v)
+        return ncvar
+    else
+        throw(KeyError(name))
+    end
 end

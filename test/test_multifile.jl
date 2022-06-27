@@ -31,11 +31,12 @@ function example_file(i,array, fname = tempname();
         nclon.attrib["units"] = "degrees_east"
         nclon.attrib["modulo"] = 360.0
 
-        nctime = defVar(ds,"time", Float64, ("time",))
-        nctime.attrib["long_name"] = "surface wind time"
-        nctime.attrib["field"] = "time, scalar, series"
-        nctime.attrib["units"] = "days since 2000-01-01 00:00:00 GMT"
-
+        nctime = defVar(ds,"time", Float64, ("time",), attrib = OrderedDict(
+            "long_name" => "surface wind time",
+            "field" => "time, scalar, series",
+            "units" => "days since 2000-01-01 00:00:00",
+            "standard_name" => "time",
+        ))
         # Global attributes
 
         ds.attrib["history"] = "foo"
@@ -43,18 +44,20 @@ function example_file(i,array, fname = tempname();
         # Define variables
 
         g = defGroup(ds,"group")
-        ncvarg = defVar(g,varname, Float64, ("lon", "lat", "time"))
-        ncvarg.attrib["field"] = "u-wind, scalar, series"
-        ncvarg.attrib["units"] = "meter second-1"
-        ncvarg.attrib["long_name"] = "surface u-wind component"
-        ncvarg.attrib["time"] = "time"
-        ncvarg.attrib["coordinates"] = "lon lat"
+        ncvarg = defVar(g,varname, Float64, ("lon", "lat", "time"),
+                        attrib = OrderedDict(
+                            "field" => "u-wind, scalar, series",
+                            "units" => "meter second-1",
+                            "long_name" => "surface u-wind component",
+                            "time" => "time",
+                            "coordinates" => "lon lat",
+                        ))
 
         ncvar[:,:,1] = array
         ncvarg[:,:,1] = array.+1
         #nclon[:] = 1:size(array,1)
         #nclat[:] = 1:size(array,2)
-        nctime[:] = i
+        nctime.var[:] = i
     end
     return fname
 end
@@ -81,10 +84,23 @@ idx_global_local = CatArrays.index_global_local(CA,(1:1,1:1,1:1))
 @test CA[:,1:2:end,:] == C[:,1:2:end,:]
 @test CA[1,1,1] == C[1,1,1]
 
+@test CA[1,1,[1,2]] == C[1,1,[1,2]]
+@test CA[1,1,[1,3]] == C[1,1,[1,3]]
+@test CA[1,[1,3],:] == C[1,[1,3],:]
+
+
 CA[2,2,:] = [1.,2.,3.]
 @test A[1][2,2] == 1.
 @test A[2][2,2] == 2.
 @test A[3][2,2] == 3.
+
+
+
+A = [rand(0:99,2,3,3),rand(0:99,2,3),rand(0:99,2,3)]
+C = cat(A...; dims = 3)
+CA = CatArrays.CatArray(3,A...)
+@test CA[1,1,[1,2,4]] == C[1,1,[1,2,4]]
+@test CA[1,1,[4,1,4]] == C[1,1,[4,1,4]]
 
 
 
@@ -95,8 +111,9 @@ fnames = example_file.(1:3,A)
 varname = "var"
 
 for deferopen in (false,true)
-    local data
+    local mfds, data
     local lon
+    local buf, ds_merged, fname_merged
 
     mfds = NCDataset(fnames, deferopen = deferopen);
     var = variable(mfds,varname);
@@ -132,6 +149,9 @@ for deferopen in (false,true)
 
     ds_merged = NCDataset(fname_merged)
     @test mfds.dim["time"] == size(C,3)
+
+    @test name(mfds[CF"time"]) == "time"
+
     close(ds_merged)
 
 
@@ -147,19 +167,7 @@ end
 # write
 mfds = NCDataset(fnames,"a",deferopen = false);
 mfds[varname][2,2,:] = 1:length(fnames)
-
-for n = 1:length(fnames)
-    NCDataset(fnames[n]) do ds
-        @test ds[varname][2,2,1] == n
-    end
-end
-
 mfds.attrib["history"] = "foo2"
-sync(mfds)
-
-NCDataset(fnames[1]) do ds
-    @test ds.attrib["history"] == "foo2"
-end
 
 @test_throws NCDatasets.NetCDFError NCDataset(fnames,"not-a-mode")
 
@@ -172,17 +180,27 @@ end
 @test NCDatasets.groupname(mfds.group["group"]) == "group"
 @test fillvalue(mfds[varname]) == -9999.
 @test fillvalue(mfds[varname].var) == -9999.
+@test NCDataset(mfds[varname]) == mfds
 
 
 # create new dimension in all files
 mfds.dim["newdim"] = 123;
-sync(mfds);
+sync(mfds)
+close(mfds)
+
+for n = 1:length(fnames)
+    NCDataset(fnames[n]) do ds
+        @test ds[varname][2,2,1] == n
+    end
+end
+
+NCDataset(fnames[1]) do ds
+    @test ds.attrib["history"] == "foo2"
+end
+
 NCDataset(fnames[1]) do ds
     @test ds.dim["newdim"] == 123
 end
-close(mfds)
-
-
 
 # multi-file merge
 
@@ -232,5 +250,5 @@ for i = 1:2
 end
 
 ds = NCDataset(fnames,aggdim = "time")
-@time ds["time"][:] == times
+ds["time"][:] == times
 close(ds)

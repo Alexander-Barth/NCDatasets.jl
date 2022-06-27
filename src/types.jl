@@ -13,6 +13,11 @@ mutable struct NetCDFError <: Exception
     msg::String
 end
 
+
+struct CFStdName
+    name::Symbol
+end
+
 # base type of attributes list
 # concrete types are Attributes (single NetCDF file) and
 # MFAttributes (multiple NetCDF files)
@@ -143,14 +148,16 @@ function Base.setindex!(a::MFAttributes,data,name::AbstractString)
     return data
 end
 
-mutable struct MFVariable{T,N,M,TA,A} <: AbstractVariable{T,N}
+mutable struct MFVariable{T,N,M,TA,A,TDS} <: AbstractVariable{T,N}
+    ds::TDS
     var::CatArrays.CatArray{T,N,M,TA}
     attrib::MFAttributes{A}
     dimnames::NTuple{N,String}
     varname::String
 end
 
-mutable struct MFCFVariable{T,N,M,TA,TV,A} <: AbstractVariable{T,N}
+mutable struct MFCFVariable{T,N,M,TA,TV,A,TDS} <: AbstractVariable{T,N}
+    ds::TDS
     cfvar::CatArrays.CatArray{T,N,M,TA}
     var::TV
     attrib::MFAttributes{A}
@@ -219,4 +226,29 @@ mutable struct DeferVariable{T,N} <: AbstractVariable{T,N}
     varname::String
     attrib::DeferAttributes
     data::OrderedDict
+end
+
+# view of subsets
+
+
+struct SubVariable{T,N,TA,TI,TAttrib,TV} <: AbstractVariable{T,N}
+    parent::TA
+    indices::TI
+    attrib::TAttrib
+    # unpacked variable
+    var::TV
+end
+
+struct SubDataset{TD,TI,TDIM,TA,TG}  <: AbstractDataset
+    ds::TD
+    indices::TI
+    dim::TDIM
+    attrib::TA
+    group::TG
+end
+
+
+struct SubDimensions{TD,TI} <: AbstractDimensions
+    dim::TD
+    indices::TI
 end

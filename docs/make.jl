@@ -3,24 +3,22 @@ Pkg.activate(@__DIR__)
 CI = get(ENV, "CI", nothing) == "true"
 using Documenter, NCDatasets
 
-makedocs(modules = [NCDatasets], sitename = "NCDatasets.jl")
-
-makedocs(modules = [NCDatasets],
-sitename= "NCDatasets.jl",
-doctest = false,
-format = Documenter.HTML(
-    prettyurls = CI,
+makedocs(
+    modules = [NCDatasets],
+    sitename= "NCDatasets.jl",
+    doctest = false,
+    format = Documenter.HTML(
+        prettyurls = CI,
     ),
-pages = [
-    "Introduction" => "index.md",
-    "Datasets" => "dataset.md",
-    "Dimensions" => "dimensions.md",
-    "Variables" => "variables.md",
-    "Attributes" => "attributes.md",
-    "Performance tips" => "performance.md",
-    "Known issues" => "issues.md",
-    "Experimental features" => "experimental.md",
-
+    pages = [
+        "Introduction" => "index.md",
+        "Datasets" => "dataset.md",
+        "Dimensions" => "dimensions.md",
+        "Variables" => "variables.md",
+        "Attributes" => "attributes.md",
+        "Performance tips" => "performance.md",
+        "Known issues" => "issues.md",
+        "Experimental features" => "experimental.md",
     ],
 )
 
