@@ -401,8 +401,9 @@ function cfvariable(ds,
         end
         try
             time_origin,time_factor = CFTime.timeunits(units, calendar)
-        catch
-            # ignore, warning is emited by CFTime.timeunits
+        catch err
+            calendar = nothing
+            @warn(sprint(showerror,err))
         end
     end
 

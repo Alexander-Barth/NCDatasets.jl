@@ -76,14 +76,13 @@ end
 rm(filename)
 
 
-
 # test non-standard calendars
 filename = tempname()
 NCDataset(filename,"c") do ds
     defDim(ds,"time",3)
-    v = @test_logs (:warn,r".*unsupported.*") defVar(ds,"time",Float64,("time",), attrib = [
+    v = @test_logs (:warn,r".*bogous_calendar.*") defVar(ds,"time",Float64,("time",), attrib = [
         "units" => "days since 2000-01-01 00:00:00",
-        "calendar" => "I_made_this_up"])
+        "calendar" => "bogous_calendar"])
     v.var[:] = [1.,2.,3.]
     # load a "scalar" value
     @test v[1] == 1.
@@ -102,4 +101,15 @@ nctime = defVar(ds,"time",Float32,("time",), attrib = OrderedDict(
 nctime[1] = DateTime(2014,1,1)
 
 @test nctime[1] == DateTime(2014,1,1)
+close(ds)
+
+# issue 181
+filename = tempname()
+ds = NCDataset(filename,"c")
+defDim(ds,"time",1)
+ncvar = @test_logs (:warn,r".*not_a_unit.*") begin
+    defVar(ds,"time",Float32,("time",), attrib = OrderedDict(
+        "units" => "not_a_unit since 1950-01-01 00:00:00"))
+end
+@test eltype(ncvar) == Float32
 close(ds)
