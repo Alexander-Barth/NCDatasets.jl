@@ -66,6 +66,11 @@ jobs:
            using NetCDF_jll
            @show NetCDF_jll.libnetcdf
         shell: julia --color=yes --project=@. {0}
+      - name: Pkg Status
+        run: |
+           using Pkg
+           Pkg.status(;mode = PKGMODE_MANIFEST)
+        shell: julia --color=yes --project=@. {0}
       - name: Test
         run: |
            using NetCDF_jll, NCDatasets
