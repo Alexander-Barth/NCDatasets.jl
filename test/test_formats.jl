@@ -1,20 +1,30 @@
+using NCDatasets
+using Test
+
 sz = (4,5)
 #filename = "/tmp/test-9.nc"
 # The mode "c" stands for creating a new file (clobber)
 
-for format in [:netcdf4, :netcdf4_classic, :netcdf3_classic, :netcdf3_64bit_offset]
+for format in [:netcdf4, :netcdf4_classic,
+               :netcdf3_classic, :netcdf3_64bit_offset,
+               :netcdf5_64bit_data
+               ]
     filenamefmt = tempname()
-    NCDatasets.NCDataset(filenamefmt,"c"; format = format) do ds
+    filenamefmt = "/home/abarth/tmp/netcdf5.nc"
+    NCDataset(filenamefmt,"c"; format = format) do ds
 
         # define the dimension "lon" and "lat"
-        NCDatasets.defDim(ds,"lon",sz[1])
-        NCDatasets.defDim(ds,"lat",sz[2])
+        defDim(ds,"lon",sz[1])
+        defDim(ds,"lat",sz[2])
 
         # variables
-        vfmt = NCDatasets.defVar(ds,"var-Float32",Float32,("lon","lat"))
+        vfmt = defVar(ds,"var-Float32",Float32,("lon","lat"))
+        vfmt.attrib["foob"] = 1
 
         # write array
         vfmt[:,:] = fill(Float32(123),size(vfmt))
+
+        ds.attrib["attrib"] = 1
 
         # check content
         @test all(vfmt[:,:][:] .== 123)
@@ -22,6 +32,6 @@ for format in [:netcdf4, :netcdf4_classic, :netcdf3_classic, :netcdf3_64bit_offs
     rm(filenamefmt)
 end
 
-@test_throws NCDatasets.NetCDFError NCDatasets.NCDataset(
+@test_throws NCDatasets.NetCDFError NCDataset(
     tempname(),"c";
     format = :netcdf3000_perfect_format)

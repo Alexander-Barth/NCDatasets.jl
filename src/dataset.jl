@@ -128,6 +128,7 @@ vector of pairs (see example below).
 * `:netcdf4_classic`: Only netCDF 3 compatible API features will be used.
 * `:netcdf3_classic`: classic netCDF format supporting only files smaller than 2GB.
 * `:netcdf3_64bit_offset`: improved netCDF format supporting files larger than 2GB.
+* `:netcdf5_64bit_data`: improved netCDF format supporting 64-bit integer data types.
 
 
 Files can also be open and automatically closed with a `do` block.
@@ -204,7 +205,9 @@ function NCDataset(filename::AbstractString,
             ncid = nc_open_mem(filename,ncmode,memory)
         end
     elseif mode == "c"
-        if format == :netcdf3_64bit_offset
+        if format == :netcdf5_64bit_data
+            ncmode = ncmode | NC_64BIT_DATA
+        elseif format == :netcdf3_64bit_offset
             ncmode = ncmode | NC_64BIT_OFFSET
         elseif format == :netcdf4_classic
             ncmode = ncmode | NC_NETCDF4 | NC_CLASSIC_MODEL
