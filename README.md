@@ -31,15 +31,6 @@ using Pkg
 Pkg.add("NCDatasets")
 ```
 
-Windows users are required to pin the version of NetCDF_jll until this [issue](https://github.com/JuliaPackaging/Yggdrasil/issues/4511) is resolved (help is more than welcome).
-
-```julia
-using Pkg
-Pkg.add("NetCDF_jll")
-Pkg.pin(name="NetCDF_jll", version="400.702.400")
-```
-
-
 # Manual
 
 This Manual is a quick introduction in using NCDatasets.jl. For more details you can read the [stable](https://alexander-barth.github.io/NCDatasets.jl/stable/) or [latest](https://alexander-barth.github.io/NCDatasets.jl/latest/) documentation.

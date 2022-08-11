@@ -16,7 +16,7 @@ jobs:
         os:
           - ubuntu-latest
           - macOS-latest
-#          - windows-latest
+          - windows-latest
         arch:
           - x64
     steps:
@@ -65,6 +65,11 @@ jobs:
            end
            using NetCDF_jll
            @show NetCDF_jll.libnetcdf
+        shell: julia --color=yes --project=@. {0}
+      - name: Pkg Status
+        run: |
+           using Pkg
+           Pkg.status(;mode = PKGMODE_MANIFEST)
         shell: julia --color=yes --project=@. {0}
       - name: Test
         run: |
