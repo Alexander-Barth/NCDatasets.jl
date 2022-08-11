@@ -10,7 +10,7 @@ for format in [:netcdf4, :netcdf4_classic,
                :netcdf5_64bit_data
                ]
     filenamefmt = tempname()
-    filenamefmt = "/home/abarth/tmp/netcdf5.nc"
+
     NCDataset(filenamefmt,"c"; format = format) do ds
 
         # define the dimension "lon" and "lat"
