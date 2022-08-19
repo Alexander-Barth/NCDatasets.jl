@@ -9,6 +9,13 @@ for format in [:netcdf4, :netcdf4_classic,
                :netcdf3_classic, :netcdf3_64bit_offset,
                :netcdf5_64bit_data
                ]
+
+    #https://github.com/Unidata/netcdf-c/issues/1967
+    if (format == :netcdf5_64bit_data) &&
+        (sizeof(Csize_t) < 8)
+        continue
+    end
+
     filenamefmt = tempname()
 
     NCDataset(filenamefmt,"c"; format = format) do ds
