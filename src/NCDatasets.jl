@@ -28,7 +28,10 @@ using NetworkOptions
 using Printf
 
 function __init__()
-    init_certificate_authority()
+    # https://github.com/JuliaPackaging/Yggdrasil/pull/5319#issuecomment-1221042734
+    if VERSION < v"1.9"
+        init_certificate_authority()
+    end
 end
 
 const default_timeunits = "days since 1900-00-00 00:00:00"
