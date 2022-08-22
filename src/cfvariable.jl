@@ -50,7 +50,8 @@ mixed Julian/Gregorian calendar.
 * `typename` (string): The name of the NetCDF type required for [vlen arrays](https://web.archive.org/save/https://www.unidata.ucar.edu/software/netcdf/netcdf-4/newdocs/netcdf-c/nc_005fdef_005fvlen.html)
 
 `chunksizes`, `deflatelevel`, `shuffle` and `checksum` can only be
-set on NetCDF 4 files.
+set on NetCDF 4 files. Compression of strings and variable-length arrays is not
+supported by the underlying NetCDF library.
 
 ## NetCDF data types
 
