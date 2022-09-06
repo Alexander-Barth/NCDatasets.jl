@@ -19,7 +19,7 @@ More information is available at https://github.com/Alexander-Barth/NCDatasets.j
 module NCDatasets
 
 import Base: Array, close, collect, convert, delete!, display, filter, getindex,
-    parent, parentindices, setindex!, show, showerror, size, view
+    parent, parentindices, setindex!, show, showerror, size, view, cat
 using CFTime
 using DataStructures: OrderedDict
 using Dates

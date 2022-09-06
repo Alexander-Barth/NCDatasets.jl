@@ -168,16 +168,20 @@ end
 mutable struct MFDimensions{T} <: AbstractDimensions where T <: AbstractDimensions
     as::Vector{T}
     aggdim::String
+    isnewdim::Bool
 end
 
 mutable struct MFGroups{T} <: AbstractGroups where T <: AbstractGroups
     as::Vector{T}
     aggdim::String
+    isnewdim::Bool
 end
 
 mutable struct MFDataset{T,N,S<:AbstractString,TA,TD,TG} <: AbstractDataset where T <: AbstractDataset
     ds::Array{T,N}
     aggdim::S
+    isnewdim::Bool
+    constvars::Vector{Symbol}
     attrib::MFAttributes{TA}
     dim::MFDimensions{TD}
     group::MFGroups{TG}

@@ -5,7 +5,11 @@ Base.keys(a::MFAttributes) = keys(a.as[1])
 
 function Base.getindex(a::MFDimensions,name::AbstractString)
     if name == a.aggdim
-        return sum(d[name] for d in a.as)
+        if a.isnewdim
+            return length(a.as)
+        else
+            return sum(d[name] for d in a.as)
+        end
     else
         return a.as[1][name]
     end
@@ -18,17 +22,29 @@ function Base.setindex!(a::MFDimensions,data,name::AbstractString)
     return data
 end
 
-Base.keys(a::Union{MFDimensions,MFGroups}) = keys(a.as[1])
+Base.keys(a::MFGroups) = keys(a.as[1])
+
+
+function Base.keys(a::MFDimensions)
+    k = collect(keys(a.as[1]))
+
+    if a.isnewdim
+        push!(k,a.aggdim)
+    end
+
+    return k
+end
 
 unlimited(a::MFDimensions) = unique(reduce(hcat,unlimited.(a.as)))
 
 function Base.getindex(a::MFGroups,name::AbstractString)
     ds = getindex.(a.as,name)
     attrib = MFAttributes([d.attrib for d in ds])
-    dim = MFDimensions([d.dim for d in ds],a.aggdim)
-    group = MFGroups([d.group for d in ds],a.aggdim)
+    dim = MFDimensions([d.dim for d in ds],a.aggdim,a.isnewdim)
+    group = MFGroups([d.group for d in ds],a.aggdim,a.isnewdim)
+    constvars = Symbol[]
 
-    return MFDataset(ds,a.aggdim,attrib,dim,group)
+    return MFDataset(ds,a.aggdim,a.isnewdim,constvars,attrib,dim,group)
 end
 
 
@@ -37,9 +53,9 @@ Base.Array(v::MFVariable) = Array(v.var)
 iswritable(mfds::MFDataset) = iswritable(mfds.ds[1])
 
 
-function MFDataset(ds,aggdim,attrib,dim,group)
+function MFDataset(ds,aggdim,isnewdim,constvars,attrib,dim,group)
     _boundsmap = Dict{String,String}()
-    mfds = MFDataset(ds,aggdim,attrib,dim,group,_boundsmap)
+    mfds = MFDataset(ds,aggdim,isnewdim,constvars,attrib,dim,group,_boundsmap)
     if !iswritable(mfds)
         initboundsmap!(mfds)
     end
@@ -47,7 +63,9 @@ function MFDataset(ds,aggdim,attrib,dim,group)
 end
 
 """
-    mfds = NCDataset(fnames, mode = "r"; aggdim = nothing, deferopen = true)
+    mfds = NCDataset(fnames, mode = "r"; aggdim = nothing, deferopen = true,
+                  isnewdim = false,
+                  constvars = [])
 
 Opens a multi-file dataset in read-only `"r"` or append mode `"a"`. `fnames` is a
 vector of file names. You can use [Glob.jl](https://github.com/vtjnash/Glob.jl)
@@ -58,7 +76,10 @@ ds = NCDataset(glob("ERA5_monthly3D_reanalysis_*.nc"))
 ```
 
 Variables are aggregated over the first unlimited dimension or over
-the dimension `aggdim` if specified. The append mode is only implemented when
+the dimension `aggdim` if specified. Variables without the dimensions `aggdim` are not aggregated. If variables should be aggregated over a new dimension (not present in the NetCDF file), one should set `isnewdim` to `true`. All NetCDF files should have the same variables, attributes and groupes. Per default, all variables will have an additional dimension unless they are marked as constant using the `constvars` parameter.
+
+
+The append mode is only implemented when
 `deferopen` is `false`.
 
 All variables containing the dimension `aggdim` are aggregated. The variable who
@@ -76,9 +97,31 @@ the data is aggregated. This aggregation dimension can varify from file to file.
 Setting the experimental flag `_aggdimconstant` to `true` means that the
 length of the aggregation dimension is constant. This speeds up the creating of
 a multi-file dataset as only the metadata of the first file has to be loaded.
+
+Example:
+
+
+```julia
+using NCDatasets
+for i = 1:3
+  NCDataset("foo\$i.nc","c") do ds
+    defVar(ds,"data",[10., 11., 12., 13.], ("lon",))
+  end
+end
+
+ds = NCDataset(["foo\$i.nc" for i = 1:3],aggdim = "sample", isnewdim = true)
+size(ds["data"])
+# output
+# (4, 3)
+```
+
+
 """
-function NCDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, deferopen = true,
+function NCDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing,
+                   deferopen = true,
                    _aggdimconstant = false,
+                   isnewdim = false,
+                   constvars = Union{Symbol,String}[],
                    ) where N where TS <: AbstractString
     if !(mode == "r" || mode == "a")
         throw(NetCDFError(-1,"""Unsupported mode for multi-file dataset (mode = $(mode)). Mode must be "r" or "a". """))
@@ -106,16 +149,17 @@ function NCDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing, def
         ds = NCDataset.(fnames,mode);
     end
 
-    if aggdim == nothing
+    if (aggdim == nothing) && !isnewdim
         # first unlimited dimensions
         aggdim = NCDatasets.unlimited(ds[1].dim)[1]
     end
 
     attrib = MFAttributes([d.attrib for d in ds])
-    dim = MFDimensions([d.dim for d in ds],aggdim)
-    group = MFGroups([d.group for d in ds],aggdim)
 
-    mfds = MFDataset(ds,aggdim,attrib,dim,group)
+    dim = MFDimensions([d.dim for d in ds],aggdim,isnewdim)
+    group = MFGroups([d.group for d in ds],aggdim,isnewdim)
+
+    mfds = MFDataset(ds,aggdim,isnewdim,Symbol.(constvars),attrib,dim,group)
     return mfds
 end
 
@@ -152,7 +196,16 @@ name(v::MFVariable) = v.varname
 
 
 function variable(mfds::MFDataset,varname::SymbolOrString)
-    if mfds.aggdim == ""
+    if mfds.isnewdim
+        if Symbol(varname) in mfds.constvars
+            return variable(mfds.ds[1],varname)
+        end
+        # aggregated along a given dimension
+        vars = variable.(mfds.ds,varname)
+        v = CatArrays.CatArray(ndims(vars[1])+1,vars...)
+        return MFVariable(mfds,v,MFAttributes([var.attrib for var in vars]),
+                          (dimnames(vars[1])...,mfds.aggdim) ,varname)
+    elseif mfds.aggdim == ""
         # merge all variables
 
         # the latest dataset should be used if a variable name is present multiple times
@@ -181,7 +234,18 @@ end
 
 
 function cfvariable(mfds::MFDataset,varname::SymbolOrString)
-    if mfds.aggdim == ""
+    if mfds.isnewdim
+        if Symbol(varname) in mfds.constvars
+            return cfvariable(mfds.ds[1],varname)
+        end
+        # aggregated along a given dimension
+        cfvars = cfvariable.(mfds.ds,varname)
+        cfvar = CatArrays.CatArray(ndims(cfvars[1])+1,cfvars...)
+        var = variable(mfds,varname)
+
+        return MFCFVariable(mfds,cfvar,var,var.attrib,
+                            dimnames(var),varname)
+    elseif mfds.aggdim == ""
         # merge all variables
 
         # the latest dataset should be used if a variable name is present multiple times
@@ -216,3 +280,8 @@ NCDataset(v::Union{MFVariable,MFCFVariable}) = v.ds
 
 Base.getindex(v::MFCFVariable,ind...) = v.cfvar[ind...]
 Base.setindex!(v::MFCFVariable,data,ind...) = v.cfvar[ind...] = data
+
+
+function Base.cat(vs::AbstractVariable...; dims::Integer)
+    CatArrays.CatArray(dims,vs...)
+end

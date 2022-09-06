@@ -1,6 +1,7 @@
 using Test
 using NCDatasets
 using Dates
+using DataStructures
 
 function example_file(i,array, fname = tempname();
     varname = "var")
@@ -61,8 +62,6 @@ function example_file(i,array, fname = tempname();
     end
     return fname
 end
-
-
 
 A = [randn(2,3),randn(2,3),randn(2,3)]
 
@@ -251,4 +250,33 @@ end
 
 ds = NCDataset(fnames,aggdim = "time")
 ds["time"][:] == times
+close(ds)
+
+
+# test cat
+
+
+A = [randn(2,3),randn(2,3),randn(2,3)]
+C = cat(A...; dims = 3)
+fnames = example_file.(1:3,A)
+ds =  NCDataset.(fnames)
+vars = getindex.(ds,"var")
+a = cat(vars...,dims=3);
+
+typeof(a)
+close.(ds)
+
+ds = NCDataset(fnames,aggdim = "new_dim", isnewdim = true)
+@test ds.dim["new_dim"] == length(fnames)
+
+@test ds["var"][:,:,:,:] == cat(A...; dims = 4)
+@test size(ds["lon"]) == (size(A[1],1),length(A))
+close(ds)
+
+ds = NCDataset(fnames,aggdim = "new_dim", constvars = ["lon","lat"],
+               isnewdim = true)
+@test ds["var"][:,:,:,:] == cat(A...; dims = 4)
+@test ds.dim["new_dim"] == length(fnames)
+@test size(ds["lon"]) == (size(A[1],1),)
+@test size(ds["lat"]) == (size(A[1],2),)
 close(ds)

@@ -863,7 +863,7 @@ Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=inde
 # necessary for IJulia if showing a variable from a closed file
 Base.show(io::IO,::MIME"text/plain",v::Union{Variable,CFVariable,MFCFVariable}) = show(io,v)
 
-Base.display(v::Union{Variable,CFVariable,MFCFVariable,SubVariable}) = show(stdout,v)
+Base.display(v::Union{Variable,CFVariable,MFCFVariable,MFVariable,SubVariable}) = show(stdout,v)
 
 
 
