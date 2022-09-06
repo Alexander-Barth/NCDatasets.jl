@@ -68,23 +68,16 @@ end
                   constvars = [])
 
 Opens a multi-file dataset in read-only `"r"` or append mode `"a"`. `fnames` is a
-vector of file names. You can use [Glob.jl](https://github.com/vtjnash/Glob.jl)
-to make `fnames`, e.g.
-```julia
-using NCDatasets, Glob
-ds = NCDataset(glob("ERA5_monthly3D_reanalysis_*.nc"))
-```
+vector of file names.
 
 Variables are aggregated over the first unlimited dimension or over
-the dimension `aggdim` if specified. Variables without the dimensions `aggdim` are not aggregated. If variables should be aggregated over a new dimension (not present in the NetCDF file), one should set `isnewdim` to `true`. All NetCDF files should have the same variables, attributes and groupes. Per default, all variables will have an additional dimension unless they are marked as constant using the `constvars` parameter.
-
-
-The append mode is only implemented when
-`deferopen` is `false`.
-
+the dimension `aggdim` if specified. Variables without the dimensions `aggdim` are not aggregated.
 All variables containing the dimension `aggdim` are aggregated. The variable who
 do not contain the dimension `aggdim` are assumed constant.
 
+If variables should be aggregated over a new dimension (not present in the NetCDF file), one should set `isnewdim` to `true`. All NetCDF files should have the same variables, attributes and groupes. Per default, all variables will have an additional dimension unless they are marked as constant using the `constvars` parameter.
+
+The append mode is only implemented when `deferopen` is `false`.
 If deferopen is `false`, all files are opened at the same time.
 However the operating system might limit the number of open files. In Linux,
 the limit can be controled with the [command `ulimit`](https://stackoverflow.com/questions/34588/how-do-i-change-the-number-of-open-files-limit-in-linux).
@@ -98,8 +91,17 @@ Setting the experimental flag `_aggdimconstant` to `true` means that the
 length of the aggregation dimension is constant. This speeds up the creating of
 a multi-file dataset as only the metadata of the first file has to be loaded.
 
-Example:
+Examples:
 
+You can use [Glob.jl](https://github.com/vtjnash/Glob.jl) to make `fnames`
+from a file pattern, e.g.
+
+```julia
+using NCDatasets, Glob
+ds = NCDataset(glob("ERA5_monthly3D_reanalysis_*.nc"))
+```
+
+Aggregation over a new dimension:
 
 ```julia
 using NCDatasets
