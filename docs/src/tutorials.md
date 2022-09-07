@@ -27,6 +27,7 @@ ncvar = ds["analysed_sst"];
 SST = ncvar[:,:,1]
 lon = ds["lon"][:]
 lat = ds["lat"][:]
+time = ds["time"][1]
 
 clf()
 pcolormesh(lon,lat,nomissing(SST,NaN)')
