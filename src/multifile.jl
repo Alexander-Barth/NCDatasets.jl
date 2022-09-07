@@ -71,11 +71,16 @@ Opens a multi-file dataset in read-only `"r"` or append mode `"a"`. `fnames` is 
 vector of file names.
 
 Variables are aggregated over the first unlimited dimension or over
-the dimension `aggdim` if specified. Variables without the dimensions `aggdim` are not aggregated.
-All variables containing the dimension `aggdim` are aggregated. The variable who
-do not contain the dimension `aggdim` are assumed constant.
+the dimension `aggdim` if specified. Variables without the dimensions `aggdim`
+are not aggregated. All variables containing the dimension `aggdim` are
+aggregated. The variable who do not contain the dimension `aggdim` are assumed
+constant.
 
-If variables should be aggregated over a new dimension (not present in the NetCDF file), one should set `isnewdim` to `true`. All NetCDF files should have the same variables, attributes and groupes. Per default, all variables will have an additional dimension unless they are marked as constant using the `constvars` parameter.
+If variables should be aggregated over a new dimension (not present in the
+NetCDF file), one should set `isnewdim` to `true`. All NetCDF files should have
+the same variables, attributes and groupes. Per default, all variables will
+have an additional dimension unless they are marked as constant using the
+`constvars` parameter.
 
 The append mode is only implemented when `deferopen` is `false`.
 If deferopen is `false`, all files are opened at the same time.
