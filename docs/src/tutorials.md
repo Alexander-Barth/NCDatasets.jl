@@ -102,7 +102,7 @@ syntax error, unexpected WORD_WORD, expecting SCAN_ATTR or SCAN_DATASET or SCAN_
 context: HTTP^ Basic: Access denied.
 ```
 
-When there is an error on the service side (500 internal server error), you might get the following error:
+When there is an error on the server side (500 internal server error), you might get the following error:
 
 ```
 syntax error, unexpected $end, expecting SCAN_ATTR or SCAN_DATASET or SCAN_ERROR
