@@ -140,12 +140,13 @@ function loadragged(ncvar,index::Union{Colon,UnitRange})
         throw(NetCDFError(-1, "There should be exactly one NetCDF variable with the attribute 'sample_dimension' equal to '$(dimname)'"))
     end
 
-    ncvarsize = ncvarsizes[1]
+    # ignore _FillValue which can be 0 for WOD
+    ncvarsize = ncvarsizes[1].var
 
     isa(index,Colon)||(index[1]==1) ? n0=1 : n0=1+sum(ncvarsize[1:index[1]-1])
     isa(index,Colon) ? n1=sum(ncvarsize[:]) : n1=sum(ncvarsize[1:index[end]])
 
-    varsize = ncvarsize.var[index]
+    varsize = ncvarsize[index]
 
     istart = 0;
     tmp = ncvar[n0:n1]
