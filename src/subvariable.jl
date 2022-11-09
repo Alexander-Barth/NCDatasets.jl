@@ -95,7 +95,8 @@ Base.view(v::AbstractVariable,indices::Union{Int,Colon,AbstractVector{Int}}...) 
 Base.view(v::SubVariable,indices::CartesianIndex) = view(v,indices.I...)
 Base.view(v::SubVariable,indices::CartesianIndices) = view(v,indices.indices...)
 
-Base.getindex(v::SubVariable,indices::Union{Int,Colon,StepRange{Int,Int},UnitRange{Int}}...) = materialize(view(v,indices...))
+Base.getindex(v::SubVariable,indices::Union{Int,Colon,AbstractRange{<:Integer}}...) = materialize(view(v,indices...))
+
 Base.getindex(v::SubVariable,indices::CartesianIndex) = getindex(v,indices.I...)
 Base.getindex(v::SubVariable,indices::CartesianIndices) =
     getindex(v,indices.indices...)
@@ -173,4 +174,3 @@ function NCDataset(v::SubVariable)
     indices = (;((Symbol(d),i) for (d,i) in zip(dimnames(v),v.indices))...)
     return SubDataset(NCDataset(v.parent),indices)
 end
-

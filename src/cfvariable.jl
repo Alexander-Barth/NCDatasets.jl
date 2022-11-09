@@ -732,21 +732,21 @@ end
 
 
 function Base.getindex(v::CFVariable,
-                       indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
+                       indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     data = v.var[indexes...]
     return CFtransformdata(data,fill_and_missing_values(v),scale_factor(v),add_offset(v),
                            time_origin(v),time_factor(v),eltype(v))
 end
 
-function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N
+function Base.setindex!(v::CFVariable,data::Array{Missing,N},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N
     v.var[indexes...] = fill(fillvalue(v),size(data))
 end
 
-function Base.setindex!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
+function Base.setindex!(v::CFVariable,data::Missing,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     v.var[indexes...] = fillvalue(v)
 end
 
-function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
+function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where N where T <: Union{AbstractCFDateTime,DateTime,Union{Missing,DateTime,AbstractCFDateTime}}
 
     if calendar(v) !== nothing
         # can throw an convertion error if calendar attribute already exists and
@@ -761,7 +761,7 @@ function Base.setindex!(v::CFVariable,data::Union{T,Array{T,N}},indexes::Union{I
 end
 
 
-function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
+function Base.setindex!(v::CFVariable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     v.var[indexes...] = CFinvtransformdata(
         data,fill_and_missing_values(v),
         scale_factor(v),add_offset(v),
@@ -819,7 +819,7 @@ function _range_indices_dest(of,v,rest...)
 end
 range_indices_dest(ri...) = _range_indices_dest((),ri...)
 
-function Base.getindex(v::Union{CFVariable,Variable,MFVariable,SubVariable},indices::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int},Vector{Int}}...)
+function Base.getindex(v::Union{CFVariable,Variable,MFVariable,SubVariable},indices::Union{Int,Colon,AbstractRange{<:Integer},Vector{Int}}...)
     @debug "transform vector of indices to ranges"
 
     sz_source = size(v)
@@ -900,7 +900,7 @@ NCDatasets.load!(ncv,data,buffer,:,:,:)
 close(ds)
 ```
 """
-@inline function load!(v::Union{CFVariable{T,N},MFCFVariable{T,N},SubVariable{T,N}}, data, buffer, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
+@inline function load!(v::Union{CFVariable{T,N},MFCFVariable{T,N},SubVariable{T,N}}, data, buffer, indices::Union{Integer, AbstractRange{<:Integer}, Colon}...) where {T,N}
 
     if v.var == nothing
         return load!(v,indices...)

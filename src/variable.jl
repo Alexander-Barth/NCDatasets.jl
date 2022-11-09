@@ -465,7 +465,7 @@ end
 
 
 
-function Base.getindex(v::Variable{T,N},indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...) where {T,N}
+function Base.getindex(v::Variable{T,N},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where {T,N}
     sz = size(v)
     start,count,stride = ncsub2(sz,indexes...)
     jlshape = _shape_after_slice(sz,indexes...)
@@ -482,7 +482,7 @@ Base.getindex(v::Variable{T, 0}) where T = v[1]
 
 
 
-function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,UnitRange{Int},StepRange{Int,Int}}...)
+function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     ind = normalizeindexes(size(v),indexes)
 
     # make arrays out of scalars
