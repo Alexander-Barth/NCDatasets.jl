@@ -29,8 +29,11 @@ using Printf
 
 function __init__()
     # https://github.com/JuliaPackaging/Yggdrasil/pull/5319#issuecomment-1221042734
-    if VERSION < v"1.9"
-        init_certificate_authority()
+    try
+        if VERSION < v"1.9"
+            init_certificate_authority()
+        end
+    catch
     end
 end
 
