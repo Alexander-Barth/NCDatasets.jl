@@ -29,11 +29,8 @@ using Printf
 
 function __init__()
     # https://github.com/JuliaPackaging/Yggdrasil/pull/5319#issuecomment-1221042734
-    try
-        if VERSION < v"1.9"
-            init_certificate_authority()
-        end
-    catch
+    if VERSION < v"1.9"
+        NetCDF_jll.is_available() && init_certificate_authority()
     end
 end
 
