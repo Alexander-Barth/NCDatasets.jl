@@ -118,8 +118,7 @@ This might be useful in an interactive session. However, the file `test.nc` is n
 An alternative way to ensure the file has been closed is to use a `do` block: the file will be closed automatically when leaving the block.
 
 ```julia
-data =
-Dataset(filename,"r") do ds
+data = Dataset(filename,"r") do ds
     ds["temperature"][:,:]
 end # ds is closed
 ```
