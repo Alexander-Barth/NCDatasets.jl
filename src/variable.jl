@@ -375,7 +375,7 @@ function Base.setindex!(v::Variable{T,N},data::AbstractArray{T2,N},indexes::Colo
     return data
 end
 
-
+_normalizeindex(n,ind::Base.OneTo) = 1:1:ind.stop
 _normalizeindex(n,ind::Colon) = 1:1:n
 _normalizeindex(n,ind::Int) = ind:1:ind
 _normalizeindex(n,ind::UnitRange) = StepRange(ind)
