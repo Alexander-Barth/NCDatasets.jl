@@ -179,7 +179,7 @@ function index_global_local(CA::CatArray{T,N,M,TA},idx) where {T,N,M,TA}
     # number of indices must be equal to dimension
     @assert(length(idx) == N)
 
-    idx_global_local = ntuple(j -> gli(CA.offset[j],CA.arrays[j],idx),Val(M))
+    idx_global_local = ntuple(j -> gli(CA.offset[j],CA.arrays[j],idx),M)
 
     return idx_global_local
 end
