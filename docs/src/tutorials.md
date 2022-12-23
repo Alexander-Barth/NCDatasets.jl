@@ -11,7 +11,7 @@ The username and password can be added to the URL. For example
 `https://example.org/path` should become `https://username:password@example.org/path`:
 
 ```julia
-using NCDatasets, PyPlot, Statistics
+using NCDatasets, PyPlot, Statistics, URIs
 
 username = "your_username"
 password = "your_password"
