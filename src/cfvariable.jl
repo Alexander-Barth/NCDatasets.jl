@@ -206,7 +206,7 @@ function _defVar(ds::NCDataset,name,data,nctype,dimnames; attrib = [], kwargs...
         elseif !(dimname in unlimited(ds.dim))
             dimlen = ds.dim[dimname]
 
-            if (dimlen !== size(data,i))
+            if (dimlen != size(data,i))
                 throw(NetCDFError(
                     -1,"dimension $(dimname) is already defined with the " *
                     "length $dimlen. It cannot be redefined with a length of $(size(data,i))."))
