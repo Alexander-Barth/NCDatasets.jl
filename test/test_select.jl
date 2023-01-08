@@ -1,6 +1,7 @@
 using Test
 using Dates
 using NCDatasets
+using DataStructures
 import Base: size, getindex, setindex!
 using NCDatasets: AbstractVariable
 import NCDatasets: dimnames
@@ -365,7 +366,7 @@ function url(dt)
 
         # Declare variables
 
-        ncvar = defVar(ds,varname, Float64, ("lon", "lat", "time"),
+        ncvar = defVar(ds,"data", Float64, ("lon", "lat", "time"),
                        fillvalue = -9999)
         nclat = defVar(ds,"lat", Float64, ("lat",))
         nclon = defVar(ds,"lon", Float64, ("lon",))
@@ -393,3 +394,24 @@ ds = NCDataset(fname_subset)
 @test all(lon -> 30 <= lon <= 60,ds["lon"][:])
 @test all(lat -> 40 <= lat <= 90,ds["lat"][:])
 close(ds)
+
+
+
+# issue 196
+
+using NCDatasets, Dates
+
+time = DateTime(1000,1,1):Dates.Day(1):DateTime(2000,1,1)
+data = 1:length(time)
+
+fname = tempname()
+NCDataset(fname,"c") do ds
+    defVar(ds,"time",time,("time",))
+    defVar(ds,"data",data,("time",))
+end
+
+data1 = NCDataset(fname) do ds
+    NCDatasets.@select(ds["data"],Dates.month(time) == 1)[:]
+end;
+
+@test data[Dates.month.(time) .== 1] == data1

@@ -239,7 +239,8 @@ macro select(v,expression)
                   quote
                   #fun = $(esc(fun)) # only without $
                   fun = eval(Expr(:->,param,exp)) # only with $
-                  ind = findall(fun,coord)
+                  # avoid world age problem (issue 196)
+                  ind = Base.invokelatest(findall,fun,coord)
                   indices[j] = _intersect(indices[j],ind)
                   end)
         else
