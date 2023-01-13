@@ -486,8 +486,8 @@ Base.getindex(v::Variable{T, 0}) where T = v[1]
 function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     ind = normalizeindexes(size(v),indexes)
 
-    # make arrays out of scalars
-    if ndims(data) == 0
+    # make arrays out of scalars (arrays can have zero dimensions)
+    if (ndims(data) == 0) && !(data isa AbstractArray)
         data = fill(data,length.(ind))
     end
 
