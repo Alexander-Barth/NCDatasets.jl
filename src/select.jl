@@ -228,7 +228,7 @@ macro select(v,expression)
                   indices[j] = _intersect(indices[j],ind)
                   end)
         elseif (e.head == :comparison) || (
-            (e.head == :call) && (e.args[1] in (:>,:>=,:<,:<=,:(==)) ))
+            (e.head == :call) && (e.args[1] in (:>,:>=,:<,:<=,:(==),:∈,:in) ))
 
             # only without $
             #e2 = copy(e)

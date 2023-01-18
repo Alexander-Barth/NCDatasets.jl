@@ -302,6 +302,21 @@ v2 = ds["SST"][ilon,ilat,:]
 @test v == v2
 
 
+using IntervalSets
+lonr = 30..60
+latr = ClosedInterval(40, 90) # latitude range
+v = NCDatasets.@select(v, lon ∈ $lonr && lat in $latr)
+ilon = findall(x -> 30 <= x <= 60,ds["lon"])
+ilat = findall(x -> 40 <= x <= 90,ds["lat"])
+v2 = ds["SST"][ilon,ilat,:]
+@test v == v2
+
+v = NCDatasets.@select(v, lon ∈ $(30..60) && lat ∈ $(40..90))
+ilon = findall(x -> 30 <= x <= 60,ds["lon"])
+ilat = findall(x -> 40 <= x <= 90,ds["lat"])
+v2 = ds["SST"][ilon,ilat,:]
+@test v == v2
+
 
 v = NCDatasets.@select(ds["SST"],lon ≈ 3 && lat ≈ 6)
 
@@ -394,7 +409,6 @@ ds = NCDataset(fname_subset)
 @test all(lon -> 30 <= lon <= 60,ds["lon"][:])
 @test all(lat -> 40 <= lat <= 90,ds["lat"][:])
 close(ds)
-
 
 
 # issue 196
