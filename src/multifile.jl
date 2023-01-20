@@ -211,7 +211,7 @@ function variable(mfds::MFDataset,varname::SymbolOrString)
         vars = variable.(mfds.ds,varname)
         v = CatArrays.CatArray(ndims(vars[1])+1,vars...)
         return MFVariable(mfds,v,MFAttributes([var.attrib for var in vars]),
-                          (dimnames(vars[1])...,mfds.aggdim) ,varname)
+                          (dimnames(vars[1])...,mfds.aggdim),String(varname))
     elseif mfds.aggdim == ""
         # merge all variables
 
@@ -231,7 +231,7 @@ function variable(mfds::MFDataset,varname::SymbolOrString)
         if (dim != nothing)
             v = CatArrays.CatArray(dim,vars...)
             return MFVariable(mfds,v,MFAttributes([var.attrib for var in vars]),
-                          dimnames(vars[1]),varname)
+                          dimnames(vars[1]),String(varname))
         else
             return vars[1]
         end
@@ -273,7 +273,7 @@ function cfvariable(mfds::MFDataset,varname::SymbolOrString)
             var = variable(mfds,varname)
 
             return MFCFVariable(mfds,cfvar,var,var.attrib,
-                          dimnames(var),varname)
+                          dimnames(var),String(varname))
         else
             return cfvars[1]
         end

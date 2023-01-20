@@ -70,5 +70,5 @@ end
 
 @testset "@select macro" begin
     include("test_select.jl")
+    include("test_multifile_select.jl")
 end
-
