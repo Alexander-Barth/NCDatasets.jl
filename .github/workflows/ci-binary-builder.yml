@@ -71,6 +71,7 @@ jobs:
         run: |
            using Pkg
            Pkg.status(;mode = PKGMODE_MANIFEST)
+           Pkg.add("IntervalSets")
         shell: julia --color=yes --project=@. {0}
       - name: Test
         run: |
