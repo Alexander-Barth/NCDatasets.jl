@@ -105,7 +105,14 @@ v = NCDatasets.@select(ds["SST"],30 <= lon <= 60 && 40 <= lat <= 90)
 lonr = (30,60) # longitude range
 latr = (40,90) # latitude range
 
-v = NCDatasets.@select(v,\$lonr[1] <= lon <= \$lonr[2] && \$latr[1] <= lat <= \$latr[2])
+v = NCDatasets.@select(ds["SST"],\$lonr[1] <= lon <= \$lonr[2] && \$latr[1] <= lat <= \$latr[2])
+
+# You can also select based on `ClosedInterval`s from `IntervalSets.jl`.
+# Both 30..60 and 65 ± 25 construct `ClosedInterval`s, see their documentation for details.
+
+lon_interval = 30..60
+lat_interval = 65 ± 25
+v = NCDatasets.@select(ds["SST"], lon ∈ \$lon_interval && lat ∈ \$lat_interval)
 
 # get the indices matching the select query
 (lon_indices,lat_indices,time_indices) = parentindices(v)
