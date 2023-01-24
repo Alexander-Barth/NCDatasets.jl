@@ -130,6 +130,44 @@ Julia and NetCDF_jll have several common dependencies (curl, MbedTLS, zlib).
 Non-official julia builds will work only if they use exactly the same library version as those used to compile NetCDF. This is unlikely to be the case in general and outside of our control. Therefore non-official julia builds are not supported.
 Official julia builds are available at [https://julialang.org/downloads/](https://julialang.org/downloads/).
 
+Using for example the [julia package from on Arch Linux](https://wiki.archlinux.org/title/Julia), leads to this error:
+
+```
+julia> using NCDatasets
+ERROR: LoadError: InitError: could not load library "/root/.julia/artifacts/461703969206dd426cc6b4d99f69f6ffab2a9779/lib/libnetcdf.so"
+/usr/lib/julia/libcurl.so: version `CURL_4' not found (required by /root/.julia/artifacts/461703969206dd426cc6b4d99f69f6ffab2a9779/lib/libnetcdf.so)
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/packages/JLLWrappers/QpMQW/src/products/library_generators.jl:54 [inlined]
+ [2] __init__()
+   @ NetCDF_jll ~/.julia/packages/NetCDF_jll/BYHmI/src/wrappers/x86_64-linux-gnu.jl:12
+ [3] top-level scope
+   @ stdin:1
+during initialization of module NetCDF_jll
+```
+
+You will likely have similar issue with julia installed from other package manager (like Debian/Ubuntu apt, Homebrew...). The only supported solution is to install
+the [offical julia builds](https://julialang.org/downloads/).
+
+
+## version `CURL_4' not found
+
+If you see the following error:
+
+```
+ERROR: LoadError: InitError: could not load library "/home/user/.julia/artifacts/461703969206dd426cc6b4d99f69f6ffab2a9779/lib/libnetcdf.so"
+/usr/lib/x86_64-linux-gnu/libcurl.so: version `CURL_4' not found (required by /home/user/.julia/artifacts/461703969206dd426cc6b4d99f69f6ffab2a9779/lib/libnetcdf.so)
+```
+
+make sure that you are using the [offical julia builds](https://julialang.org/downloads/) (see above) and that your `LD_LIBRARY_PATH` and `LD_PRELOAD` are empty.
+You can verify this by running the following commands in a terminal:
+
+```bash
+echo $LD_PRELOAD
+echo $LD_LIBRARY_PATH
+```
+
+
 
 ## Corner cases
 
