@@ -7,8 +7,8 @@ function scan_exp!(exp::Symbol,varnames,found)
 end
 
 function scan_exp!(exp::Expr,varnames,found)
-    for i = 1:length(exp.args)
-        scan_exp!(exp.args[i],varnames,found)
+    for arg in exp.args
+        scan_exp!(arg,varnames,found)
     end
     return found
 end
