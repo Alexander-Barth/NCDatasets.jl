@@ -234,9 +234,7 @@ macro select(v,expression)
                   end
                   indices[j] = _intersect(indices[j],ind)
                   end)
-        elseif (e.head == :comparison) || (
-            (e.head == :call) && (e.args[1] in (:>,:>=,:<,:<=,:(==),:∈,:in) ))
-
+        else
             # only without $
             #e2 = copy(e)
             #e2.args[3] = :x
@@ -250,8 +248,6 @@ macro select(v,expression)
                   ind = Base.invokelatest(findall,fun,coord)
                   indices[j] = _intersect(indices[j],ind)
                   end)
-        else
-            error("cannot parse expression $e")
         end
     end
 

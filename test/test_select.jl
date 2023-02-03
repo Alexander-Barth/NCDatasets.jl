@@ -1,12 +1,10 @@
-using Test
-using Dates
-using NCDatasets
-using DataStructures
 import Base: size, getindex, setindex!
-using NCDatasets: AbstractVariable
-import NCDatasets: dimnames
-
-import NCDatasets: coordinate_value, coordinate_names
+using DataStructures
+using Dates
+using IntervalSets
+using NCDatasets
+import NCDatasets: AbstractVariable, dimnames, coordinate_value, coordinate_names
+using Test
 
 struct SelectableVariable{T,N,NT,TA} <: AbstractArray{T,N} where NT <: NTuple where TA <: AbstractArray{T,N}
     dims::NT # tuple of named tuple
@@ -302,7 +300,6 @@ v2 = ds["SST"][ilon,ilat,:]
 @test v == v2
 
 
-using IntervalSets
 lonr = 30..60
 latr = ClosedInterval(40, 90) # latitude range
 v = NCDatasets.@select(ds["SST"], lon ∈ $lonr && lat in $latr)
@@ -348,7 +345,8 @@ fname = "sample_series.nc"
 fname = tempname()
 time = DateTime(2000,1,1):Day(1):DateTime(2009,12,31)
 salinity = randn(Int(length(time))) .+ 35
-temperature = randn(Int(length(time)))
+temperature = Vector{Union{Float64,Missing}}(randn(Int(length(time))))
+temperature[end] = missing
 
 NCDataset(fname,"c") do ds
     defVar(ds,"time",time,("time",));
@@ -362,6 +360,10 @@ v = NCDatasets.@select(ds["temperature"],Dates.month(time) == 1 && salinity >= 3
 
 v2 = ds["temperature"][findall((Dates.month.(time) .== 1) .& (salinity .>= 35))]
 @test v == v2
+
+# only value is missing
+v_subset = NCDatasets.@select(ds,ismissing(temperature))
+@test v_subset.dim["time"] == 1
 close(ds)
 
 
