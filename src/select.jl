@@ -223,7 +223,6 @@ macro select(v,expression)
                 value,tolerance = target.args[2:end]
             else
                 value = target
-                #error("unable to understand $e")
             end
 
             push!(code,
