@@ -52,63 +52,6 @@ variable `v`.
 coordinate_names(v::SelectableVariable) = getproperty.(v.dims,:name)
 
 
-function scan_exp!(exp::Symbol,varnames,found)
-    if exp in varnames
-        push!(found,exp)
-    end
-    return found
-end
-
-function scan_exp!(exp::Expr,varnames,found)
-    for i = 1:length(exp.args)
-        scan_exp!(exp.args[i],varnames,found)
-    end
-    return found
-end
-
-function scan_exp!(exp,varnames,found)
-    # do nothing
-end
-
-
-scan_exp(exp::Expr,varnames) = scan_exp!(exp::Expr,varnames,Symbol[])
-
-
-function scan_coordinate_name(exp,coordinate_names)
-    params = scan_exp(exp,coordinate_names)
-    #println("dn",coordinate_names)
-    #println("pp",params)
-    if length(params) != 1
-        error("Multiple (or none) coordinates in expression $exp ($params) while looking for $(coordinate_names).")
-    end
-    param = params[1]
-    return param
-end
-
-
-function split_by_and!(exp,sub_exp)
-    if exp.head == :&&
-        split_by_and!(exp.args[1],sub_exp)
-        split_by_and!(exp.args[2],sub_exp)
-    else
-        push!(sub_exp,exp)
-    end
-    return sub_exp
-end
-
-
-
-split_by_and(exp) = split_by_and!(exp,[])
-
-_intersect(r1::AbstractVector,r2::AbstractVector) = intersect(r1,r2)
-_intersect(r1::AbstractVector,r2::Number) = (r2 in r1 ? r2 : [])
-_intersect(r1::Number,r2::Number) = (r2 == r1 ? r2 : [])
-_intersect(r1::Colon,r2) = r2
-_intersect(r1::Colon,r2::AbstractRange) = r2
-
-
-
-
 lon = 1:9
 data = collect(2:10)
 
