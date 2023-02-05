@@ -143,6 +143,9 @@ a = NCDatasets.@select(v,lon ≈ $target ± 1e-10)
 a = NCDatasets.@select(v,lon > 7.2)
 @test data[lon .> 7.2] == a
 
+a = NCDatasets.@select(v,3 <= lon <= 7.2)
+@test a == data[3 .<= lon .<= 7.2]
+
 a = NCDatasets.@select(v,3 <= lon^2 <= 7.2)
 @test a == data[3 .<= lon.^2 .<= 7.2]
 
@@ -312,6 +315,20 @@ v = NCDatasets.@select(ds["SST"], lon ∈ $(30..60) && lat ∈ $(65 ± 25))
 ilon = findall(x -> 30 <= x <= 60,ds["lon"])
 ilat = findall(x -> 40 <= x <= 90,ds["lat"])
 v2 = ds["SST"][ilon,ilat,:]
+@test v == v2
+
+
+v = NCDatasets.@select(ds["SST"], lon ∈ 30..60 && lat ∈ 65 ± 25)
+ilon = findall(x -> 30 <= x <= 60,ds["lon"])
+ilat = findall(x -> 40 <= x <= 90,ds["lat"])
+v2 = ds["SST"][ilon,ilat,:]
+@test v == v2
+
+
+in_lon_range(lon) = 30 <= lon <= 60
+v = NCDatasets.@select(ds["SST"], in_lon_range(lon))
+ilon = findall(in_lon_range,ds["lon"])
+v2 = ds["SST"][ilon,:,:]
 @test v == v2
 
 

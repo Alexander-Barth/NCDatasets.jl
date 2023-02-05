@@ -1,34 +1,52 @@
 
-function scan_exp!(exp::Symbol,varnames,found)
-    if exp in varnames
-        push!(found,exp)
+function scan_exp!(exp::Symbol,found)
+    newsym = gensym()
+    push!(found,exp => newsym)
+    return newsym
+end
+
+function scan_exp!(exp::Expr,found)
+    if exp.head == :$
+        return exp.args[1]
     end
-    return found
-end
 
-function scan_exp!(exp::Expr,varnames,found)
-    for arg in exp.args
-        scan_exp!(arg,varnames,found)
+    if exp.head == :call
+        # skip function name
+        return Expr(exp.head,exp.args[1],scan_exp!.(exp.args[2:end],Ref(found))...)
+    elseif exp.head == :comparison
+        # :(3 <= lon <= 7.2)
+        args = Vector{Any}(undef,length(exp.args))
+        for i = 1:length(exp.args)
+            if iseven(i)
+                # skip inflix operators
+                args[i] = exp.args[i]
+            else
+                args[i] = scan_exp!(exp.args[i],found)
+            end
+        end
+        return Expr(exp.head,args...)
+    else
+        return Expr(exp.head,scan_exp!.(exp.args[1:end],Ref(found))...)
     end
-    return found
 end
 
-function scan_exp!(exp,varnames,found)
-    # do nothing
+# neither Expr nor Symbol
+scan_exp!(exp,found) = exp
+
+function scan_exp(exp::Expr)
+    found = Pair{Symbol,Symbol}[]
+    exp = scan_exp!(exp,found)
+    return found,exp
 end
 
-
-scan_exp(exp::Expr,varnames) = scan_exp!(exp::Expr,varnames,Symbol[])
-
-
-function scan_coordinate_name(exp,coordinate_names)
-    params = scan_exp(exp,coordinate_names)
+function scan_coordinate_name(exp)
+    params,exp = scan_exp(exp)
 
     if length(params) != 1
         error("Multiple (or none) coordinates in expression $exp ($params) while looking for $(coordinate_names).")
     end
     param = params[1]
-    return param
+    return param,exp
 end
 
 
@@ -61,7 +79,7 @@ has the following form:
 `condition1 && condition2 && condition3 ... conditionN `
 
 Every condition should involve a single 1D NetCDF variable (typically a coordinate variable, referred as `coord` below). If `v`
-is a variable, the related 1D NetCDF variable should have a shared dimension with the variable `v`. All local variables (including local functions) need to have a \$ prefix (see examples below) as the condition is evaluated in the scope of the module NCDatasets[^1]. This macro is experimental and subjected to change.
+is a variable, the related 1D NetCDF variable should have a shared dimension with the variable `v`. All local variables need to have a \$ prefix (see examples below). This macro is experimental and subjected to change.
 
 Every condition can either perform:
 
@@ -171,7 +189,6 @@ close(ds)
     For optimal performance, one should try to load contiguous data ranges, in
     particular when the data is loaded over HTTP/OPeNDAP.
 
-[^1]: Please file an [issue](https://github.com/Alexander-Barth/NCDatasets.jl/issues/) if you know a better solution.
 """
 macro select(v,expression)
     expression_list = split_by_and(expression)
@@ -190,62 +207,41 @@ macro select(v,expression)
 
     # loop over all sub-expressions separated by &&
     for e in expression_list
-        exp2 = Meta.quot(e)
+        (param,newsym),e = scan_coordinate_name(e)
+
         push!(code,
               quote
-
-              exp = $(esc(exp2)) # with $ $values are replaced
-              #exp = $(exp2) # good without $
-              param = scan_coordinate_name(exp,coord_names)
-              coord,j = coordinate_value($(esc(v)),param)
-
+              coord,j = coordinate_value($(esc(v)),$(Meta.quot(param)))
               end)
 
         if (e.head == :call) && (e.args[1] == :≈)
-            # target = e.args[3]
-            # tolerance = nothing
+            target = e.args[3]
+            tolerance = nothing
 
-            # if (hasproperty(target,:head) &&
-            #     (target.head == :call) && (target.args[1] == :±))
-            #     value,tolerance = target.args[2:end]
-            # else
-            #     value = target
-            #     #error("unable to understand $e")
-            # end
+            if (hasproperty(target,:head) &&
+                (target.head == :call) && (target.args[1] == :±))
+                value,tolerance = target.args[2:end]
+            else
+                value = target
+                #error("unable to understand $e")
+            end
 
             push!(code,
                   quote
-                  #value = $(esc(value)) # good without $
-                  target = exp.args[3] # good with $
-                  tolerance = nothing
-                  if (hasproperty(target,:head) &&
-                      (target.head == :call) && (target.args[1] == :±))
-                      value,tolerance = target.args[2:end]
-                      tolerance = eval(tolerance)
-                  else
-                      value = target
-                  end
 
-                  value = eval(value)
-                  diff, ind = findmin(x -> abs(x - value),coord)
+                  diff, ind = findmin(x -> abs(x - $(esc(value))),coord)
 
-                  if (tolerance != nothing) && (diff > tolerance)
+                  if ($tolerance != nothing) && (diff > $tolerance)
                       ind = Int[]
                   end
                   indices[j] = _intersect(indices[j],ind)
                   end)
         else
-            # only without $
-            #e2 = copy(e)
-            #e2.args[3] = :x
-            #fun = Expr(:->,:x,e2)
+            fun = Expr(:->,newsym,e)
 
             push!(code,
                   quote
-                  #fun = $(esc(fun)) # only without $
-                  fun = eval(Expr(:->,param,exp)) # only with $
-                  # avoid world age problem (issue 196)
-                  ind = Base.invokelatest(findall,fun,coord)
+                  ind = findall($(esc(fun)),coord)
                   indices[j] = _intersect(indices[j],ind)
                   end)
         end
