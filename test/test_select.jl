@@ -327,7 +327,7 @@ v = NCDatasets.@select(ds["temperature"],Dates.month(time) == 1 && salinity >= 3
 v2 = ds["temperature"][findall((Dates.month.(time) .== 1) .& (salinity .>= 35))]
 @test v == v2
 
-# only value is missing
+# only values which are missing
 v_subset = NCDatasets.@select(ds,ismissing(temperature))
 @test v_subset.dim["time"] == 1
 close(ds)
