@@ -1,3 +1,22 @@
+import Base: findfirst
+
+struct Near{TTarget,TTolerance}
+    target::TTarget
+    tolerance::TTolerance
+end
+
+Near(target::Number) = Near(target,nothing)
+
+
+function _findfirst(n::Near,v::AbstractVector)
+    diff, ind = findmin(x -> abs(x - n.target),v)
+
+    if (n.tolerance != nothing) && (diff > n.tolerance)
+        return Int[]
+    else
+        return ind
+    end
+end
 
 function scan_exp!(exp::Symbol,found)
     newsym = gensym()
@@ -69,21 +88,24 @@ _intersect(r1::Colon,r2) = r2
 _intersect(r1::Colon,r2::AbstractRange) = r2
 
 
+
+
+
 """
     vsubset = NCDatasets.@select(v,expression)
     dssubset = NCDatasets.@select(ds,expression)
 
-Return a subset of the variable `v` (or dataset `ds`) following the condition `expression` as a view. The condition
+Return a subset of the variable `v` (or dataset `ds`) satisfying the condition `expression` as a view. The condition
 has the following form:
 
-`condition1 && condition2 && condition3 ... conditionN `
+`condition₁ && condition₂ && condition₃ ... conditionₙ`
 
 Every condition should involve a single 1D NetCDF variable (typically a coordinate variable, referred as `coord` below). If `v`
-is a variable, the related 1D NetCDF variable should have a shared dimension with the variable `v`. All local variables need to have a \$ prefix (see examples below). This macro is experimental and subjected to change.
+is a variable, the related 1D NetCDF variable should have a shared dimension with the variable `v`. All local variables need to have a `\$` prefix (see examples below). This macro is experimental and subjected to change.
 
 Every condition can either perform:
 
-* a nearest match: `coord ≈ target_coord`. Only the data corresponding to the index closest to `target_coord` is loaded.
+* a nearest match: `coord ≈ target_coord` (for `≈` type `\\approx` followed by the TAB-key). Only the data corresponding to the index closest to `target_coord` is loaded.
 
 * a nearest match with tolerance: `coord ≈ target_coord ± tolerance`. As before, but if the difference between the closest value in `coord` and `target_coord` is larger (in absolute value) than `tolerance`, an empty array is returned.
 
@@ -146,9 +168,6 @@ v = NCDatasets.@select(ds["SST"],time ≈ DateTime(2000,1,4))
 
 v = NCDatasets.@select(ds["SST"],time ≈ DateTime(2000,1,3,1) ± Hour(2))
 
-# Note DateTime and Hour do not need to a \$ prefix because NCDataset imports
-# the modules Dates and CFTime.
-
 close(ds)
 ```
 
@@ -182,8 +201,6 @@ v2 = ds["temperature"][findall(Dates.month.(time) .== 1 .&& salinity .>= 35)]
 close(ds)
 ```
 
-
-
 !!! note
 
     For optimal performance, one should try to load contiguous data ranges, in
@@ -192,29 +209,14 @@ close(ds)
 """
 macro select(v,expression)
     expression_list = split_by_and(expression)
-    code = [
-        quote
-
-        coord_names = coordinate_names($(esc(v)))
-        if $(esc(v)) isa AbstractArray
-             indices = Any[Colon() for _ in 1:ndims($(esc(v)))]
-        else
-             indices = Dict{Symbol,Any}(((Symbol(d),Colon()) for d in dimnames($(esc(v)))))
-        end
-
-        end
-    ]
+    args = Vector{Any}(undef,length(expression_list))
 
     # loop over all sub-expressions separated by &&
-    for e in expression_list
+    for (i,e) in enumerate(expression_list)
         (param,newsym),e = scan_coordinate_name(e)
 
-        push!(code,
-              quote
-              coord,j = coordinate_value($(esc(v)),$(Meta.quot(param)))
-              end)
-
         if (e.head == :call) && (e.args[1] == :≈)
+            @assert e.args[2] == newsym
             target = e.args[3]
             tolerance = nothing
 
@@ -225,44 +227,47 @@ macro select(v,expression)
                 value = target
             end
 
-            push!(code,
-                  quote
-
-                  diff, ind = findmin(x -> abs(x - $(esc(value))),coord)
-
-                  if ($tolerance != nothing) && (diff > $tolerance)
-                      ind = Int[]
-                  end
-                  indices[j] = _intersect(indices[j],ind)
-                  end)
+            args[i] = quote
+                $(Meta.quot(param)) => Near($(esc(value)),$tolerance)
+            end
         else
             fun = Expr(:->,newsym,e)
-
-            push!(code,
-                  quote
-                  ind = findall($(esc(fun)),coord)
-                  indices[j] = _intersect(indices[j],ind)
-                  end)
+            args[i] = quote
+                $(Meta.quot(param)) => $(esc(fun))
+            end
         end
     end
 
-    push!(code,
-          quote
-
-          if $(esc(v)) isa AbstractArray
-              view($(esc(v)), indices...)
-          else
-              view($(esc(v)); indices...)
-          end
-
-          end
-          )
-
-    return Expr(:block,code...)
+    return Expr(:call,:select,esc(v),args...)
 end
 
 
+function select(v,conditions...)
+    coord_names = coordinate_names(v)
+    if v isa AbstractArray
+        indices = Any[Colon() for _ in 1:ndims(v)]
+    else
+        indices = Dict{Symbol,Any}(((Symbol(d),Colon()) for d in dimnames(v)))
+    end
 
+    for (param,condition) in conditions
+        coord,j = coordinate_value(v,param)
+
+        if isa(condition,Near)
+            ind = _findfirst(condition,coord)
+            indices[j] = _intersect(indices[j],ind)
+        else
+            ind = findall(condition,coord)
+            indices[j] = _intersect(indices[j],ind)
+        end
+    end
+
+    if v isa AbstractArray
+        view(v, indices...)
+    else
+        view(v; indices...)
+    end
+end
 
 function coordinate_value(v::AbstractVariable,name_coord::Symbol)
     ncv = NCDataset(v)[name_coord]

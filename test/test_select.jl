@@ -80,6 +80,9 @@ target = 7.2
 a = NCDatasets.@select(v,lon ≈ $target ± 1)[]
 @test v[findmin(x -> abs(x - target),lon)[2]] == a
 
+a = NCDatasets.select(v,:lon => NCDatasets.Near(target,1))[]
+@test v[findmin(x -> abs(x - target),lon)[2]] == a
+
 a = NCDatasets.@select(v,lon ≈ $target ± 1e-10)
 @test a == []
 
@@ -96,6 +99,9 @@ a = NCDatasets.@select(v,3 <= lon^2 <= 7.2)
 a = NCDatasets.@select(v,lon <= 7.2)
 @test a == data[lon .<= 7.2]
 
+
+a = NCDatasets.select(v,:lon => lon -> lon <= 7.2)
+@test a == data[lon .<= 7.2]
 
 
 
