@@ -1,6 +1,6 @@
 
 
-const NCIterable = Union{BaseAttributes,AbstractDimensions,AbstractDataset,AbstractGroups}
+const NCIterable = Union{BaseAttributes,AbstractDimensions,AbstractNCDataset,AbstractGroups}
 Base.length(a::NCIterable) = length(keys(a))
 
 
@@ -332,7 +332,7 @@ julia> data = varbyattrib(ds, standard_name = "longitude")[1][:]
 ```
 
 """
-function varbyattrib(ds::Union{AbstractDataset,AbstractVariable}; kwargs...)
+function varbyattrib(ds::Union{AbstractNCDataset,AbstractVariable}; kwargs...)
     # Start with an empty list of variables
     varlist = []
 
@@ -395,9 +395,9 @@ Base.haskey(a::NCIterable,name::AbstractString) = name in keys(a)
 Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
 
 
-dimnames(ds::AbstractDataset) = keys(ds.dim)
+dimnames(ds::AbstractNCDataset) = keys(ds.dim)
 
-function Base.getindex(ds::Union{AbstractDataset,AbstractVariable},n::CFStdName)
+function Base.getindex(ds::Union{AbstractNCDataset,AbstractVariable},n::CFStdName)
     ncvars = varbyattrib(ds, standard_name = String(n.name))
     if length(ncvars) == 1
         return ncvars[1]
@@ -406,7 +406,7 @@ function Base.getindex(ds::Union{AbstractDataset,AbstractVariable},n::CFStdName)
     end
 end
 
-function Base.show(io::IO,ds::AbstractDataset; indent="")
+function Base.show(io::IO,ds::AbstractNCDataset; indent="")
     try
         dspath = path(ds)
         printstyled(io, indent, "NCDataset: ",dspath,"\n", color=section_color())
@@ -459,8 +459,8 @@ function Base.show(io::IO,ds::AbstractDataset; indent="")
 end
 
 """
-    write(dest_filename::AbstractString, src::AbstractDataset; include = keys(src), exclude = [], idimensions = Dict())
-    write(dest::NCDataset, src::AbstractDataset; include = keys(src), exclude = [], idimensions = Dict())
+    write(dest_filename::AbstractString, src::AbstractNCDataset; include = keys(src), exclude = [], idimensions = Dict())
+    write(dest::NCDataset, src::AbstractNCDataset; include = keys(src), exclude = [], idimensions = Dict())
 
 Write the variables of `src` dataset into an empty `dest` dataset (which must be opened in mode `"a"` or `"c"`).
 The keywords `include` and `exclude` configure which variable of `src` should be included
@@ -502,7 +502,8 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
         end
     end
 
-    unlimited_dims = unlimited(src.dim)
+    #unlimited_dims = unlimited(src.dim)
+    unlimited_dims = unlimited(src)
 
     for (dimname,dimlength) in src.dim
         isunlimited = dimname in unlimited_dims

@@ -134,12 +134,12 @@ end
 
 unlimited(sd::SubDimensions) = unlimited(sd.dim)
 
-function SubDataset(ds::AbstractDataset,indices)
+function SubDataset(ds::AbstractNCDataset,indices)
     dim = SubDimensions(ds.dim,indices)
     SubDataset(ds,indices,dim,ds.attrib,ds.group)
 end
 
-function Base.view(ds::AbstractDataset; indices...)
+function Base.view(ds::AbstractNCDataset; indices...)
     SubDataset(ds,values(indices))
 end
 

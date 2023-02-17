@@ -25,7 +25,7 @@ end
 abstract type BaseAttributes
 end
 
-abstract type AbstractDataset
+abstract type AbstractNCDataset <: AbstractDataset
 end
 
 
@@ -43,16 +43,16 @@ end
 # List of attributes (for a single NetCDF file)
 # all ids should be Cint
 
-mutable struct Attributes{TDS<:AbstractDataset} <: BaseAttributes
+mutable struct Attributes{TDS<:AbstractNCDataset} <: BaseAttributes
     ds::TDS
     varid::Cint
 end
 
-mutable struct Groups{TDS<:AbstractDataset} <: AbstractGroups
+mutable struct Groups{TDS<:AbstractNCDataset} <: AbstractGroups
     ds::TDS
 end
 
-mutable struct Dimensions{TDS<:AbstractDataset} <: AbstractDimensions
+mutable struct Dimensions{TDS<:AbstractNCDataset} <: AbstractDimensions
     ds::TDS
 end
 
@@ -60,14 +60,14 @@ abstract type AbstractVariable{T,N} <: AbstractArray{T,N} end
 
 # Variable (as stored in NetCDF file, without using
 # add_offset, scale_factor and _FillValue)
-mutable struct Variable{NetCDFType,N,TDS<:AbstractDataset} <: AbstractVariable{NetCDFType, N}
+mutable struct Variable{NetCDFType,N,TDS<:AbstractNCDataset} <: AbstractDatasetVariable{NetCDFType, N}
     ds::TDS
     varid::Cint
     dimids::NTuple{N,Cint}
     attrib::Attributes{TDS}
 end
 
-mutable struct NCDataset{TDS} <: AbstractDataset where TDS <: Union{AbstractDataset,Nothing}
+mutable struct NCDataset{TDS} <: AbstractNCDataset where TDS <: Union{AbstractNCDataset,Nothing}
     # parent_dataset is nothing for the root dataset
     parentdataset::TDS
     ncid::Cint
@@ -120,7 +120,7 @@ const Dataset = NCDataset
 
 
 # Variable (with applied transformations following the CF convention)
-mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractVariable{T, N}
+mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractDatasetVariable{T, N}
     # this var is generally a `Variable` type
     var::TV
     # Dict-like object for all attributes read from disk
@@ -177,7 +177,7 @@ mutable struct MFGroups{T} <: AbstractGroups where T <: AbstractGroups
     isnewdim::Bool
 end
 
-mutable struct MFDataset{T,N,S<:AbstractString,TA,TD,TG} <: AbstractDataset where T <: AbstractDataset
+mutable struct MFDataset{T,N,S<:AbstractString,TA,TD,TG} <: AbstractNCDataset where T <: AbstractNCDataset
     ds::Array{T,N}
     aggdim::S
     isnewdim::Bool
@@ -215,7 +215,7 @@ mutable struct DeferGroups <: AbstractGroups
     data::OrderedDict
 end
 
-mutable struct DeferDataset <: AbstractDataset
+mutable struct DeferDataset <: AbstractNCDataset
     r::Resource
     groupname::String
     attrib::DeferAttributes
@@ -243,7 +243,7 @@ struct SubVariable{T,N,TA,TI,TAttrib,TV} <: AbstractVariable{T,N}
     var::TV
 end
 
-struct SubDataset{TD,TI,TDIM,TA,TG}  <: AbstractDataset
+struct SubDataset{TD,TI,TDIM,TA,TG}  <: AbstractNCDataset
     ds::TD
     indices::TI
     dim::TDIM

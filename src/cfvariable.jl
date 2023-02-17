@@ -474,7 +474,7 @@ because both variables are related thought the bounds attribute following the CF
 
 See also cfvariable
 """
-function Base.getindex(ds::AbstractDataset,varname::SymbolOrString)
+function Base.getindex(ds::AbstractNCDataset,varname::SymbolOrString)
     return cfvariable(ds, varname)
 end
 

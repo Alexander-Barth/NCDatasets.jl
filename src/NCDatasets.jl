@@ -26,6 +26,8 @@ using Dates
 using NetCDF_jll
 using NetworkOptions
 using Printf
+using AbstractDatasets: AbstractDataset, AbstractDatasetVariable
+import AbstractDatasets: unlimited, dimnames
 
 function __init__()
     # https://github.com/JuliaPackaging/Yggdrasil/pull/5319#issuecomment-1221042734

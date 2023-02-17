@@ -292,13 +292,13 @@ function coordinate_names(v::AbstractVariable)
 end
 
 
-function coordinate_value(ds::AbstractDataset,name_coord::Symbol)
+function coordinate_value(ds::AbstractNCDataset,name_coord::Symbol)
     ncv = ds[name_coord]
     @assert ndims(ncv) == 1
     return Array(ncv),Symbol(dimnames(ncv)[1])
 end
 
-function coordinate_names(ds::AbstractDataset)
+function coordinate_names(ds::AbstractNCDataset)
     return [Symbol(varname) for (varname,ncvar) in ds
        if (ndims(ncvar) == 1)]
 end

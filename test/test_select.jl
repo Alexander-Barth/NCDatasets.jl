@@ -103,7 +103,8 @@ a = NCDatasets.@select(v,lon <= 7.2)
 a = NCDatasets.select(v,:lon => lon -> lon <= 7.2)
 @test a == data[lon .<= 7.2]
 
-
+a = NCDatasets.select(v,:lon => <=(7.2))
+@test a == data[lon .<= 7.2]
 
 
 exp = :(lon > 10 && lat < 10 && time > 2 && lon < 20)

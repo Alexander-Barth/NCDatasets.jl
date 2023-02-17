@@ -51,7 +51,7 @@ function defGroup(ds::NCDataset,groupname; attrib = [])
 end
 export defGroup
 
-group(ds::AbstractDataset,groupname) = ds.group[groupname]
+group(ds::AbstractNCDataset,groupname) = ds.group[groupname]
 
 """
     groupname(ds::NCDataset)
