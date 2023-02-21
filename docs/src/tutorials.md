@@ -19,7 +19,10 @@ password = "your_password"
 url = "https://nrt.cmems-du.eu/thredds/dodsC/SST_MED_SST_L4_NRT_OBSERVATIONS_010_004_a_V2"
 
 # add username and password to url
-url2 = string(URI(URI(url),userinfo = string(username,":",password)))
+# username or password can contain special characters
+username_escaped = URIs.escapeuri(username)
+password_escaped = URIs.escapeuri(password)
+url2 = string(URI(URI(url),userinfo = string(username_escaped,":",password_escaped)))
 
 ds = NCDataset(url2)
 
