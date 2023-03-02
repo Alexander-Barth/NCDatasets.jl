@@ -1,34 +1,38 @@
 using NCDatasets
 using Test
 
-# define scalar
-filename = tempname()
-NCDataset(filename,"c") do ds
-    v = defVar(ds,"scalar",Float32,())
-    v[:] = 123.f0
-end
 
-NCDataset(filename,"r") do ds
-    v2 = ds["scalar"][:]
-    @test typeof(v2) == Float32
-    @test v2 == 123.f0
+for (T,data) in ((Float32,123.f0),
+                 (String,"foo"))
+    # define scalar
+    filename = tempname()
+    NCDataset(filename,"c") do ds
+        v = defVar(ds,"scalar",T,())
+        v[:] = data
+    end
 
-    v2 = ds["scalar"][]
-    @test typeof(v2) == Float32
-    @test v2 == 123.f0
-end
-rm(filename)
+    NCDataset(filename,"r") do ds
+        v2 = ds["scalar"][:]
+        @test typeof(v2) == T
+        @test v2 == data
 
-# define scalar with .=
-filename = tempname()
-NCDataset(filename,"c") do ds
-    v = defVar(ds,"scalar",Float32,())
-    v .= 1234.f0
-    nothing
-end
+        v2 = ds["scalar"][]
+        @test typeof(v2) == T
+        @test v2 == data
+    end
+    rm(filename)
 
-NCDataset(filename,"r") do ds
-    v2 = ds["scalar"][:]
-    @test v2 == 1234
+    # define scalar with .=
+    filename = tempname()
+    NCDataset(filename,"c") do ds
+        v = defVar(ds,"scalar",T,())
+        v .= data
+        nothing
+    end
+
+    NCDataset(filename,"r") do ds
+        v2 = ds["scalar"][:]
+        @test v2 == data
+    end
+    rm(filename)
 end
-rm(filename)

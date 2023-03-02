@@ -832,9 +832,8 @@ function nc_get_var1(::Type{String},ncid::Integer,varid::Integer,indexp)
 end
 
 function nc_get_var1(::Type{T},ncid::Integer,varid::Integer,indexp) where T
-    @debug "AAAnc_get_var1",indexp
-    #error("ll")
-    ip = Ref(zero(T))
+    @debug "nc_get_var1" indexp
+    ip = Ref{T}()
     check(ccall((:nc_get_var1,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Nothing}),ncid,varid,indexp,ip))
     return ip[]
 end
@@ -1125,7 +1124,7 @@ function nc_inq_var_fill(ncid::Integer,varid::Integer)
                 ncid,varid,no_fillp,fill_valuep))
         return Bool(no_fillp[]),Char(fill_valuep[])
     else
-        fill_valuep = Ref(zero(T))
+        fill_valuep = Ref{T}()
         check(ccall((:nc_inq_var_fill,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Nothing}),
                 ncid,varid,no_fillp,fill_valuep))
         return Bool(no_fillp[]),fill_valuep[]
