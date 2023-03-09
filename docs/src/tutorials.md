@@ -157,7 +157,7 @@ This script produces the following plot:
 
 ## Access data from S3 object storage
 
-NASA EarthData is also available from AWS S3 object storage at the AWS region us-west-2. This example assumes that you have access to an AWS instance in this region (available thought e.g. [Pangeo Cloud](https://pangeo.io/cloud.html) after registration thanks to funding from the NSF and the fine folks at [Pangeo](https://github.com/pangeo-data)).
+NASA EarthData is also available from AWS S3 object storage at the AWS region us-west-2. This example assumes that you have access to an AWS instance in this region (available thought e.g. [Pangeo Cloud](https://pangeo.io/cloud.html) after registration thanks to funding from the NASA's ACCESS program and AWS Cloud Credits for Research and the fine folks at [Pangeo](https://github.com/pangeo-data)). 
 
 The S3 access token available from [https://archive.podaac.earthdata.nasa.gov/s3credentials](https://archive.podaac.earthdata.nasa.gov/s3credentials) are only valid for 1 hour. It is therefore preferable to get this token programmatically using your EarthData username and password. The function `earthdata_s3credentials` is a translation of ["Sample script to receive credentials"](https://web.archive.org/web/20220623090241/https://nasa.github.io/cumulus-distribution-api/#temporary-s3-credentials) to Julia:
 
