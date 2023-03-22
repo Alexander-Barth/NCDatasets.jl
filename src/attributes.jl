@@ -99,7 +99,9 @@ function Base.delete!(a::Attributes,name::SymbolOrString)
     return nothing
 end
 
-function Base.show(io::IO, a::BaseAttributes; indent = "  ")
+function Base.show(io::IO, a::BaseAttributes)
+    level = get(io, :level, 0)
+    indent = " " ^ level
     try
         # use the same order of attributes than in the NetCDF file
         for (attname,attval) in a

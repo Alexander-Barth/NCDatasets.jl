@@ -858,7 +858,7 @@ end
 
 Base.Array(v::AbstractVariable{T,N}) where {T,N} = v[ntuple(i -> :, Val(N))...]
 
-Base.show(io::IO,v::CFVariable; indent="") = Base.show(io::IO,v.var; indent=indent)
+Base.show(io::IO,v::CFVariable) = Base.show(io::IO,v.var)
 
 # necessary for IJulia if showing a variable from a closed file
 Base.show(io::IO,::MIME"text/plain",v::AbstractVariable) = show(io,v)
