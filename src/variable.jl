@@ -311,14 +311,13 @@ end
 
 function Base.getindex(v::Variable{T,N},indexes::Colon...) where {T,N}
     datamode(v.ds)
+    data = Array{T,N}(undef,size(v))
+    nc_get_var!(v.ds.ncid,v.varid,data)
+
     # special case for scalar NetCDF variable
     if N == 0
-        data = Ref(zero(T))
-        nc_get_var!(v.ds.ncid,v.varid,data)
         return data[]
     else
-        data = Array{T,N}(undef,size(v))
-        nc_get_var!(v.ds.ncid,v.varid,data)
         return data
     end
 end

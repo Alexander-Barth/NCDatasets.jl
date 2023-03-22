@@ -52,63 +52,6 @@ variable `v`.
 coordinate_names(v::SelectableVariable) = getproperty.(v.dims,:name)
 
 
-function scan_exp!(exp::Symbol,varnames,found)
-    if exp in varnames
-        push!(found,exp)
-    end
-    return found
-end
-
-function scan_exp!(exp::Expr,varnames,found)
-    for i = 1:length(exp.args)
-        scan_exp!(exp.args[i],varnames,found)
-    end
-    return found
-end
-
-function scan_exp!(exp,varnames,found)
-    # do nothing
-end
-
-
-scan_exp(exp::Expr,varnames) = scan_exp!(exp::Expr,varnames,Symbol[])
-
-
-function scan_coordinate_name(exp,coordinate_names)
-    params = scan_exp(exp,coordinate_names)
-    #println("dn",coordinate_names)
-    #println("pp",params)
-    if length(params) != 1
-        error("Multiple (or none) coordinates in expression $exp ($params) while looking for $(coordinate_names).")
-    end
-    param = params[1]
-    return param
-end
-
-
-function split_by_and!(exp,sub_exp)
-    if exp.head == :&&
-        split_by_and!(exp.args[1],sub_exp)
-        split_by_and!(exp.args[2],sub_exp)
-    else
-        push!(sub_exp,exp)
-    end
-    return sub_exp
-end
-
-
-
-split_by_and(exp) = split_by_and!(exp,[])
-
-_intersect(r1::AbstractVector,r2::AbstractVector) = intersect(r1,r2)
-_intersect(r1::AbstractVector,r2::Number) = (r2 in r1 ? r2 : [])
-_intersect(r1::Number,r2::Number) = (r2 == r1 ? r2 : [])
-_intersect(r1::Colon,r2) = r2
-_intersect(r1::Colon,r2::AbstractRange) = r2
-
-
-
-
 lon = 1:9
 data = collect(2:10)
 
@@ -137,11 +80,17 @@ target = 7.2
 a = NCDatasets.@select(v,lon ≈ $target ± 1)[]
 @test v[findmin(x -> abs(x - target),lon)[2]] == a
 
+a = NCDatasets.select(v,:lon => NCDatasets.Near(target,1))[]
+@test v[findmin(x -> abs(x - target),lon)[2]] == a
+
 a = NCDatasets.@select(v,lon ≈ $target ± 1e-10)
 @test a == []
 
 a = NCDatasets.@select(v,lon > 7.2)
 @test data[lon .> 7.2] == a
+
+a = NCDatasets.@select(v,3 <= lon <= 7.2)
+@test a == data[3 .<= lon .<= 7.2]
 
 a = NCDatasets.@select(v,3 <= lon^2 <= 7.2)
 @test a == data[3 .<= lon.^2 .<= 7.2]
@@ -150,6 +99,9 @@ a = NCDatasets.@select(v,3 <= lon^2 <= 7.2)
 a = NCDatasets.@select(v,lon <= 7.2)
 @test a == data[lon .<= 7.2]
 
+
+a = NCDatasets.select(v,:lon => lon -> lon <= 7.2)
+@test a == data[lon .<= 7.2]
 
 
 
@@ -315,6 +267,20 @@ v2 = ds["SST"][ilon,ilat,:]
 @test v == v2
 
 
+v = NCDatasets.@select(ds["SST"], lon ∈ 30..60 && lat ∈ 65 ± 25)
+ilon = findall(x -> 30 <= x <= 60,ds["lon"])
+ilat = findall(x -> 40 <= x <= 90,ds["lat"])
+v2 = ds["SST"][ilon,ilat,:]
+@test v == v2
+
+
+in_lon_range(lon) = 30 <= lon <= 60
+v = NCDatasets.@select(ds["SST"], in_lon_range(lon))
+ilon = findall(in_lon_range,ds["lon"])
+v2 = ds["SST"][ilon,:,:]
+@test v == v2
+
+
 v = NCDatasets.@select(ds["SST"],lon ≈ 3 && lat ≈ 6)
 
 ilon = findmin(x -> abs(x-3),ds["lon"])[2]
@@ -361,7 +327,7 @@ v = NCDatasets.@select(ds["temperature"],Dates.month(time) == 1 && salinity >= 3
 v2 = ds["temperature"][findall((Dates.month.(time) .== 1) .& (salinity .>= 35))]
 @test v == v2
 
-# only value is missing
+# only values which are missing
 v_subset = NCDatasets.@select(ds,ismissing(temperature))
 @test v_subset.dim["time"] == 1
 

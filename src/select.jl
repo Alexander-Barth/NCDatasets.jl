@@ -1,34 +1,71 @@
+import Base: findfirst
 
-function scan_exp!(exp::Symbol,varnames,found)
-    if exp in varnames
-        push!(found,exp)
+struct Near{TTarget,TTolerance}
+    target::TTarget
+    tolerance::TTolerance
+end
+
+Near(target::Number) = Near(target,nothing)
+
+
+function _findfirst(n::Near,v::AbstractVector)
+    diff, ind = findmin(x -> abs(x - n.target),v)
+
+    if (n.tolerance != nothing) && (diff > n.tolerance)
+        return Int[]
+    else
+        return ind
     end
-    return found
 end
 
-function scan_exp!(exp::Expr,varnames,found)
-    for arg in exp.args
-        scan_exp!(arg,varnames,found)
+function scan_exp!(exp::Symbol,found)
+    newsym = gensym()
+    push!(found,exp => newsym)
+    return newsym
+end
+
+function scan_exp!(exp::Expr,found)
+    if exp.head == :$
+        return exp.args[1]
     end
-    return found
+
+    if exp.head == :call
+        # skip function name
+        return Expr(exp.head,exp.args[1],scan_exp!.(exp.args[2:end],Ref(found))...)
+    elseif exp.head == :comparison
+        # :(3 <= lon <= 7.2)
+        args = Vector{Any}(undef,length(exp.args))
+        for i = 1:length(exp.args)
+            if iseven(i)
+                # skip inflix operators
+                args[i] = exp.args[i]
+            else
+                args[i] = scan_exp!(exp.args[i],found)
+            end
+        end
+        return Expr(exp.head,args...)
+    else
+        return Expr(exp.head,scan_exp!.(exp.args[1:end],Ref(found))...)
+    end
 end
 
-function scan_exp!(exp,varnames,found)
-    # do nothing
+# neither Expr nor Symbol
+scan_exp!(exp,found) = exp
+
+function scan_exp(exp::Expr)
+    found = Pair{Symbol,Symbol}[]
+    exp = scan_exp!(exp,found)
+    return found,exp
 end
 
-
-scan_exp(exp::Expr,varnames) = scan_exp!(exp::Expr,varnames,Symbol[])
-
-
-function scan_coordinate_name(exp,coordinate_names)
-    params = scan_exp(exp,coordinate_names)
+function scan_coordinate_name(exp)
+    params,exp = scan_exp(exp)
 
     if length(params) != 1
         error("Multiple (or none) coordinates in expression $exp ($params) while looking for $(coordinate_names).")
     end
     param = params[1]
-    return param
+    return param,exp
 end
 
 
@@ -51,21 +88,24 @@ _intersect(r1::Colon,r2) = r2
 _intersect(r1::Colon,r2::AbstractRange) = r2
 
 
+
+
+
 """
     vsubset = NCDatasets.@select(v,expression)
     dssubset = NCDatasets.@select(ds,expression)
 
-Return a subset of the variable `v` (or dataset `ds`) following the condition `expression` as a view. The condition
+Return a subset of the variable `v` (or dataset `ds`) satisfying the condition `expression` as a view. The condition
 has the following form:
 
-`condition1 && condition2 && condition3 ... conditionN `
+`condition₁ && condition₂ && condition₃ ... conditionₙ`
 
 Every condition should involve a single 1D NetCDF variable (typically a coordinate variable, referred as `coord` below). If `v`
-is a variable, the related 1D NetCDF variable should have a shared dimension with the variable `v`. All local variables (including local functions) need to have a \$ prefix (see examples below) as the condition is evaluated in the scope of the module NCDatasets[^1]. This macro is experimental and subjected to change.
+is a variable, the related 1D NetCDF variable should have a shared dimension with the variable `v`. All local variables need to have a `\$` prefix (see examples below). This macro is experimental and subjected to change.
 
 Every condition can either perform:
 
-* a nearest match: `coord ≈ target_coord`. Only the data corresponding to the index closest to `target_coord` is loaded.
+* a nearest match: `coord ≈ target_coord` (for `≈` type `\\approx` followed by the TAB-key). Only the data corresponding to the index closest to `target_coord` is loaded.
 
 * a nearest match with tolerance: `coord ≈ target_coord ± tolerance`. As before, but if the difference between the closest value in `coord` and `target_coord` is larger (in absolute value) than `tolerance`, an empty array is returned.
 
@@ -128,9 +168,6 @@ v = NCDatasets.@select(ds["SST"],time ≈ DateTime(2000,1,4))
 
 v = NCDatasets.@select(ds["SST"],time ≈ DateTime(2000,1,3,1) ± Hour(2))
 
-# Note DateTime and Hour do not need to a \$ prefix because NCDataset imports
-# the modules Dates and CFTime.
-
 close(ds)
 ```
 
@@ -164,110 +201,73 @@ v2 = ds["temperature"][findall(Dates.month.(time) .== 1 .&& salinity .>= 35)]
 close(ds)
 ```
 
-
-
 !!! note
 
     For optimal performance, one should try to load contiguous data ranges, in
     particular when the data is loaded over HTTP/OPeNDAP.
 
-[^1]: Please file an [issue](https://github.com/Alexander-Barth/NCDatasets.jl/issues/) if you know a better solution.
 """
 macro select(v,expression)
     expression_list = split_by_and(expression)
-    code = [
-        quote
-
-        coord_names = coordinate_names($(esc(v)))
-        if $(esc(v)) isa AbstractArray
-             indices = Any[Colon() for _ in 1:ndims($(esc(v)))]
-        else
-             indices = Dict{Symbol,Any}(((Symbol(d),Colon()) for d in dimnames($(esc(v)))))
-        end
-
-        end
-    ]
+    args = Vector{Any}(undef,length(expression_list))
 
     # loop over all sub-expressions separated by &&
-    for e in expression_list
-        exp2 = Meta.quot(e)
-        push!(code,
-              quote
-
-              exp = $(esc(exp2)) # with $ $values are replaced
-              #exp = $(exp2) # good without $
-              param = scan_coordinate_name(exp,coord_names)
-              coord,j = coordinate_value($(esc(v)),param)
-
-              end)
+    for (i,e) in enumerate(expression_list)
+        (param,newsym),e = scan_coordinate_name(e)
 
         if (e.head == :call) && (e.args[1] == :≈)
-            # target = e.args[3]
-            # tolerance = nothing
+            @assert e.args[2] == newsym
+            target = e.args[3]
+            tolerance = nothing
 
-            # if (hasproperty(target,:head) &&
-            #     (target.head == :call) && (target.args[1] == :±))
-            #     value,tolerance = target.args[2:end]
-            # else
-            #     value = target
-            #     #error("unable to understand $e")
-            # end
+            if (hasproperty(target,:head) &&
+                (target.head == :call) && (target.args[1] == :±))
+                value,tolerance = target.args[2:end]
+            else
+                value = target
+            end
 
-            push!(code,
-                  quote
-                  #value = $(esc(value)) # good without $
-                  target = exp.args[3] # good with $
-                  tolerance = nothing
-                  if (hasproperty(target,:head) &&
-                      (target.head == :call) && (target.args[1] == :±))
-                      value,tolerance = target.args[2:end]
-                      tolerance = eval(tolerance)
-                  else
-                      value = target
-                  end
-
-                  value = eval(value)
-                  diff, ind = findmin(x -> abs(x - value),coord)
-
-                  if (tolerance != nothing) && (diff > tolerance)
-                      ind = Int[]
-                  end
-                  indices[j] = _intersect(indices[j],ind)
-                  end)
+            args[i] = quote
+                $(Meta.quot(param)) => Near($(esc(value)),$tolerance)
+            end
         else
-            # only without $
-            #e2 = copy(e)
-            #e2.args[3] = :x
-            #fun = Expr(:->,:x,e2)
-
-            push!(code,
-                  quote
-                  #fun = $(esc(fun)) # only without $
-                  fun = eval(Expr(:->,param,exp)) # only with $
-                  # avoid world age problem (issue 196)
-                  ind = Base.invokelatest(findall,fun,coord)
-                  indices[j] = _intersect(indices[j],ind)
-                  end)
+            fun = Expr(:->,newsym,e)
+            args[i] = quote
+                $(Meta.quot(param)) => $(esc(fun))
+            end
         end
     end
 
-    push!(code,
-          quote
-
-          if $(esc(v)) isa AbstractArray
-              view($(esc(v)), indices...)
-          else
-              view($(esc(v)); indices...)
-          end
-
-          end
-          )
-
-    return Expr(:block,code...)
+    return Expr(:call,:select,esc(v),args...)
 end
 
 
+function select(v,conditions...)
+    coord_names = coordinate_names(v)
+    if v isa AbstractArray
+        indices = Any[Colon() for _ in 1:ndims(v)]
+    else
+        indices = Dict{Symbol,Any}(((Symbol(d),Colon()) for d in dimnames(v)))
+    end
 
+    for (param,condition) in conditions
+        coord,j = coordinate_value(v,param)
+
+        if isa(condition,Near)
+            ind = _findfirst(condition,coord)
+            indices[j] = _intersect(indices[j],ind)
+        else
+            ind = findall(condition,coord)
+            indices[j] = _intersect(indices[j],ind)
+        end
+    end
+
+    if v isa AbstractArray
+        view(v, indices...)
+    else
+        view(v; indices...)
+    end
+end
 
 function coordinate_value(v::AbstractVariable,name_coord::Symbol)
     ncv = NCDataset(v)[name_coord]
