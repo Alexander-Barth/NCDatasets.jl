@@ -498,7 +498,9 @@ Base.getindex(v::Union{MFVariable,CFVariable,DeferVariable,Variable},ci::Cartesi
 Base.setindex!(v::Union{MFVariable,CFVariable,DeferVariable,Variable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
 
 
-function Base.show(io::IO,v::AbstractVariable; indent="")
+function Base.show(io::IO,v::AbstractVariable)
+    level = get(io, :level, 0)
+    indent = " " ^ get(io, :level, 0)
     delim = " × "
     dims =
         try
@@ -525,6 +527,6 @@ function Base.show(io::IO,v::AbstractVariable; indent="")
 
     if length(v.attrib) > 0
         print(io,indent,"  Attributes:\n")
-        show(io,v.attrib; indent = "$(indent)   ")
+        show(IOContext(io,:level=>level+3),v.attrib)
     end
 end

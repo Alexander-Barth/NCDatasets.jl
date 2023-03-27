@@ -18,7 +18,10 @@ function Base.keys(d::Dimensions)
                   for dimid in nc_inq_dimids(d.ds.ncid,false)]
 end
 
-function Base.show(io::IO, d::AbstractDimensions; indent = "")
+function Base.show(io::IO, d::AbstractDimensions)
+    level = get(io, :level, 0)
+    indent = " " ^ level
+
     printstyled(io, indent, "Dimensions\n",color=section_color())
     try
         for (dimname,dimlen) in d

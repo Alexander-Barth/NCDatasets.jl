@@ -406,7 +406,10 @@ function Base.getindex(ds::Union{AbstractNCDataset,AbstractVariable},n::CFStdNam
     end
 end
 
-function Base.show(io::IO,ds::AbstractNCDataset; indent="")
+function Base.show(io::IO,ds::AbstractDataset)
+    level = get(io, :level, 0)
+    indent = " " ^ level
+
     try
         dspath = path(ds)
         printstyled(io, indent, "NCDataset: ",dspath,"\n", color=section_color())
@@ -425,7 +428,7 @@ function Base.show(io::IO,ds::AbstractNCDataset; indent="")
 
     # show dimensions
     if length(ds.dim) > 0
-        show(io, ds.dim; indent = indent)
+        show(io, ds.dim)
         print(io,"\n")
     end
 
@@ -435,7 +438,7 @@ function Base.show(io::IO,ds::AbstractNCDataset; indent="")
         printstyled(io, indent, "Variables\n",color=section_color())
 
         for name in varnames
-            show(io,variable(ds,name); indent = "$(indent)  ")
+            show(IOContext(io,:level=>level+2),variable(ds,name))
             print(io,"\n")
         end
     end
@@ -443,7 +446,7 @@ function Base.show(io::IO,ds::AbstractNCDataset; indent="")
     # global attribues
     if length(ds.attrib) > 0
         printstyled(io, indent, "Global attributes\n",color=section_color())
-        show(io,ds.attrib; indent = "$(indent)  ");
+        show(IOContext(io,:level=>level+2),ds.attrib);
     end
 
     # groups
@@ -452,7 +455,7 @@ function Base.show(io::IO,ds::AbstractNCDataset; indent="")
     if length(groupnames) > 0
         printstyled(io, indent, "Groups\n",color=section_color())
         for groupname in groupnames
-            show(io,group(ds,groupname); indent = "  ")
+            show(IOContext(io,:level=>level+2),group(ds,groupname))
         end
     end
 

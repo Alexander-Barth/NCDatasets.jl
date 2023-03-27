@@ -4,6 +4,7 @@ using Test
 
 for (T,data) in ((Float32,123.f0),
                  (String,"foo"))
+    local filename
     # define scalar
     filename = tempname()
     NCDataset(filename,"c") do ds
