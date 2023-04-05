@@ -120,18 +120,6 @@ end
 const Dataset = NCDataset
 
 
-# Variable (with applied transformations following the CF convention)
-mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractNCVariable{T, N}
-    # this var is generally a `Variable` type
-    var::TV
-    # Dict-like object for all attributes read from disk
-    attrib::TA
-    # a named tuple with fill value, scale factor, offset,...
-    # immutable for type-stability
-    _storage_attrib::TSA
-end
-
-
 # Multi-file related type definitions
 
 mutable struct MFAttributes{T} <: BaseAttributes where T <: BaseAttributes

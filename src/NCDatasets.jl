@@ -29,6 +29,11 @@ using Printf
 using CommonDataModel
 using CommonDataModel: dims, attribs, groups
 import CommonDataModel: AbstractDataset, AbstractVariable,
+    boundsParentVar,
+    fillvalue, fill_and_missing_values,
+    scale_factor, add_offset, time_origin, time_factor,
+    CFtransformdata!,
+    CFVariable, variable, cfvariable,
     path, name, isopen, unlimited,
     groupnames, group,
     dimnames, dim,

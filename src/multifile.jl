@@ -202,7 +202,7 @@ dimnames(v::MFVariable) = v.dimnames
 name(v::MFVariable) = v.varname
 
 
-function variable(mfds::MFDataset,varname::SymbolOrString)
+function _variable(mfds::MFDataset,varname::SymbolOrString)
     if mfds.isnewdim
         if Symbol(varname) in mfds.constvars
             return variable(mfds.ds[1],varname)
@@ -237,10 +237,12 @@ function variable(mfds::MFDataset,varname::SymbolOrString)
         end
     end
 end
+variable(mfds::MFDataset,varname::AbstractString) = _variable(mfds,varname)
+variable(mfds::MFDataset,varname::Symbol) = _variable(mfds,varname)
 
 
 
-function cfvariable(mfds::MFDataset,varname::SymbolOrString)
+function _cfvariable(mfds::MFDataset,varname::SymbolOrString)
     if mfds.isnewdim
         if Symbol(varname) in mfds.constvars
             return cfvariable(mfds.ds[1],varname)
@@ -280,6 +282,9 @@ function cfvariable(mfds::MFDataset,varname::SymbolOrString)
     end
 end
 
+
+cfvariable(mfds::MFDataset,varname::AbstractString) = _cfvariable(mfds,varname)
+cfvariable(mfds::MFDataset,varname::Symbol) = _cfvariable(mfds,varname)
 
 fillvalue(v::Union{MFVariable{T},MFCFVariable{T}}) where T = v.attrib["_FillValue"]::T
 NCDataset(v::Union{MFVariable,MFCFVariable}) = v.ds

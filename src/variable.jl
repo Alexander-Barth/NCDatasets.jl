@@ -65,6 +65,11 @@ function variable(ds::NCDataset,varid::Integer)
 end
 
 
+function _variable(ds::NCDataset,varname)
+    varid = nc_inq_varid(ds.ncid,varname)
+    return variable(ds,varid)
+end
+
 """
     v = variable(ds::NCDataset,varname::String)
 
@@ -72,10 +77,8 @@ Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.Variable`. No scaling or other transformations are applied when the
 variable `v` is indexed.
 """
-function variable(ds::NCDataset,varname::SymbolOrString)
-    varid = nc_inq_varid(ds.ncid,varname)
-    return variable(ds,varid)
-end
+variable(ds::NCDataset,varname::AbstractString) = _variable(ds,varname)
+variable(ds::NCDataset,varname::Symbol) = _variable(ds,varname)
 
 export variable
 
@@ -494,7 +497,7 @@ function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,AbstractRange{
 end
 
 
-Base.getindex(v::Union{MFVariable,CFVariable,DeferVariable,Variable},ci::CartesianIndices) = v[ci.indices...]
-Base.setindex!(v::Union{MFVariable,CFVariable,DeferVariable,Variable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
+Base.getindex(v::Union{MFVariable,DeferVariable,Variable},ci::CartesianIndices) = v[ci.indices...]
+Base.setindex!(v::Union{MFVariable,DeferVariable,Variable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
 
 
