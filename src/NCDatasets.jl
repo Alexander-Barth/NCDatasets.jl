@@ -30,10 +30,7 @@ using CommonDataModel: AbstractDataset, AbstractDatasetVariable
 import CommonDataModel: unlimited, dimnames
 
 function __init__()
-    # https://github.com/JuliaPackaging/Yggdrasil/pull/5319#issuecomment-1221042734
-    if VERSION < v"1.9"
-        NetCDF_jll.is_available() && init_certificate_authority()
-    end
+    NetCDF_jll.is_available() && init_certificate_authority()
 end
 
 const default_timeunits = "days since 1900-00-00 00:00:00"
