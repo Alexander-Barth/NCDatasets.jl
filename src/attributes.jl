@@ -14,6 +14,9 @@ function listAtt(ncid,varid)
 end
 
 
+attribnames(ds::Union{AbstractNCDataset,AbstractNCVariable}) = keys(ds.attrib)
+attrib(ds::Union{AbstractNCDataset,AbstractNCVariable},name::AbstractString) = ds.attrib[name]
+
 function Base.get(a::BaseAttributes, name::SymbolOrString,default)
     if haskey(a,name)
         return a[name]
@@ -99,23 +102,4 @@ function Base.delete!(a::Attributes,name::SymbolOrString)
     return nothing
 end
 
-function Base.show(io::IO, a::BaseAttributes)
-    level = get(io, :level, 0)
-    indent = " " ^ level
-    try
-        # use the same order of attributes than in the NetCDF file
-        for (attname,attval) in a
-            print(io,indent,@sprintf("%-20s = ",attname))
-            printstyled(io, @sprintf("%s",attval),color=attribute_color())
-            print(io,"\n")
-        end
-    catch err
-        if isa(err,NetCDFError)
-            if err.code == NC_EBADID
-                print(io,"NetCDF attributes (file closed)")
-                return
-            end
-        end
-        rethrow()
-    end
-end
+Base.show(io::IO, a::BaseAttributes) = CommonDataModel.show_attrib(io,a)

@@ -26,8 +26,13 @@ using Dates
 using NetCDF_jll
 using NetworkOptions
 using Printf
-using CommonDataModel: AbstractDataset, AbstractDatasetVariable
-import CommonDataModel: unlimited, dimnames
+using CommonDataModel
+using CommonDataModel: dims, attribs, groups
+import CommonDataModel: AbstractDataset, AbstractVariable,
+    path, name, isopen, unlimited,
+    groupnames, group,
+    dimnames, dim,
+    attribnames, attrib
 
 function __init__()
     NetCDF_jll.is_available() && init_certificate_authority()

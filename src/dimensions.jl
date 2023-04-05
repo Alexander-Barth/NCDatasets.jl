@@ -18,25 +18,7 @@ function Base.keys(d::Dimensions)
                   for dimid in nc_inq_dimids(d.ds.ncid,false)]
 end
 
-function Base.show(io::IO, d::AbstractDimensions)
-    level = get(io, :level, 0)
-    indent = " " ^ level
-
-    printstyled(io, indent, "Dimensions\n",color=section_color())
-    try
-        for (dimname,dimlen) in d
-            print(io,indent,"   $(dimname) = $(dimlen)\n")
-        end
-    catch err
-        if isa(err, NetCDFError)
-            if err.code == NC_EBADID
-                print(io, "NetCDF dimensions (file closed)")
-                return
-            end
-        end
-        rethrow()
-    end
-end
+Base.show(io::IO, d::AbstractDimensions) = CommonDataModel.show_dim(io,d)
 
 function Base.getindex(d::Dimensions,name::AbstractString)
     dimid = nc_inq_dimid(d.ds.ncid,name)

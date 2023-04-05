@@ -28,6 +28,9 @@ end
 abstract type AbstractNCDataset <: AbstractDataset
 end
 
+abstract type AbstractNCVariable{T,N} <: AbstractVariable{T,N}
+end
+
 
 abstract type AbstractDimensions
 end
@@ -56,11 +59,9 @@ mutable struct Dimensions{TDS<:AbstractNCDataset} <: AbstractDimensions
     ds::TDS
 end
 
-abstract type AbstractVariable{T,N} <: AbstractArray{T,N} end
-
 # Variable (as stored in NetCDF file, without using
 # add_offset, scale_factor and _FillValue)
-mutable struct Variable{NetCDFType,N,TDS<:AbstractNCDataset} <: AbstractDatasetVariable{NetCDFType, N}
+mutable struct Variable{NetCDFType,N,TDS<:AbstractNCDataset} <: AbstractNCVariable{NetCDFType, N}
     ds::TDS
     varid::Cint
     dimids::NTuple{N,Cint}
@@ -120,7 +121,7 @@ const Dataset = NCDataset
 
 
 # Variable (with applied transformations following the CF convention)
-mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractDatasetVariable{T, N}
+mutable struct CFVariable{T,N,TV,TA,TSA}  <: AbstractNCVariable{T, N}
     # this var is generally a `Variable` type
     var::TV
     # Dict-like object for all attributes read from disk
@@ -148,7 +149,7 @@ function Base.setindex!(a::MFAttributes,data,name::AbstractString)
     return data
 end
 
-mutable struct MFVariable{T,N,M,TA,A,TDS} <: AbstractVariable{T,N}
+mutable struct MFVariable{T,N,M,TA,A,TDS} <: AbstractNCVariable{T,N}
     ds::TDS
     var::CatArrays.CatArray{T,N,M,TA}
     attrib::MFAttributes{A}
@@ -156,7 +157,7 @@ mutable struct MFVariable{T,N,M,TA,A,TDS} <: AbstractVariable{T,N}
     varname::String
 end
 
-mutable struct MFCFVariable{T,N,M,TA,TV,A,TDS} <: AbstractVariable{T,N}
+mutable struct MFCFVariable{T,N,M,TA,TV,A,TDS} <: AbstractNCVariable{T,N}
     ds::TDS
     cfvar::CatArrays.CatArray{T,N,M,TA}
     var::TV
@@ -225,7 +226,7 @@ mutable struct DeferDataset <: AbstractNCDataset
     _boundsmap::Union{Nothing,Dict{String,String}}
 end
 
-mutable struct DeferVariable{T,N} <: AbstractVariable{T,N}
+mutable struct DeferVariable{T,N} <: AbstractNCVariable{T,N}
     r::Resource
     varname::String
     attrib::DeferAttributes
@@ -235,7 +236,7 @@ end
 # view of subsets
 
 
-struct SubVariable{T,N,TA,TI,TAttrib,TV} <: AbstractVariable{T,N}
+struct SubVariable{T,N,TA,TI,TAttrib,TV} <: AbstractNCVariable{T,N}
     parent::TA
     indices::TI
     attrib::TAttrib

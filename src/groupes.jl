@@ -51,11 +51,16 @@ function defGroup(ds::NCDataset,groupname; attrib = [])
 end
 export defGroup
 
-group(ds::AbstractNCDataset,groupname) = ds.group[groupname]
+
+groupnames(ds::AbstractNCDataset) = keys(ds.group)
+group(ds::AbstractNCDataset,groupname::AbstractString) = ds.group[groupname]
 
 """
-    groupname(ds::NCDataset)
+    name(ds::NCDataset)
+
 Return the group name of the NCDataset `ds`
 """
-groupname(ds::NCDataset) = nc_inq_grpname(ds.ncid)
+name(ds::NCDataset) = nc_inq_grpname(ds.ncid)
+groupname(ds::NCDataset) = name(ds)
+
 export groupname

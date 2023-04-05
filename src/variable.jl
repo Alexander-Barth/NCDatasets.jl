@@ -498,35 +498,3 @@ Base.getindex(v::Union{MFVariable,CFVariable,DeferVariable,Variable},ci::Cartesi
 Base.setindex!(v::Union{MFVariable,CFVariable,DeferVariable,Variable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
 
 
-function Base.show(io::IO,v::AbstractVariable)
-    level = get(io, :level, 0)
-    indent = " " ^ get(io, :level, 0)
-    delim = " × "
-    dims =
-        try
-            dimnames(v)
-        catch err
-            if isa(err,NetCDFError)
-                if err.code == NC_EBADID
-                    print(io,"NetCDF variable (file closed)")
-                    return
-                end
-            end
-            rethrow()
-        end
-    sz = size(v)
-
-    printstyled(io, indent, name(v),color=variable_color())
-    if length(sz) > 0
-        print(io,indent," (",join(sz,delim),")\n")
-        print(io,indent,"  Datatype:    ",eltype(v),"\n")
-        print(io,indent,"  Dimensions:  ",join(dims,delim),"\n")
-    else
-        print(io,indent,"\n")
-    end
-
-    if length(v.attrib) > 0
-        print(io,indent,"  Attributes:\n")
-        show(IOContext(io,:level=>level+3),v.attrib)
-    end
-end

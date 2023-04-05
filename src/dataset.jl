@@ -58,6 +58,20 @@ Default fill-value for the given type.
 
 iswritable(ds::NCDataset) = ds.iswritable
 
+function isopen(ds::NCDataset)
+    try
+        dspath = path(ds)
+        return true
+    catch err
+        if isa(err,NetCDFError)
+            if err.code == NC_EBADID
+                return false
+            end
+        end
+        rethrow()
+    end
+end
+
 "Make sure that a dataset is in data mode"
 function datamode(ds)
     if ds.isdefmode[]
@@ -396,6 +410,7 @@ Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
 
 
 dimnames(ds::AbstractNCDataset) = keys(ds.dim)
+dim(ds::AbstractNCDataset,name::AbstractString) = ds.dim[name]
 
 function Base.getindex(ds::Union{AbstractNCDataset,AbstractVariable},n::CFStdName)
     ncvars = varbyattrib(ds, standard_name = String(n.name))
@@ -404,61 +419,6 @@ function Base.getindex(ds::Union{AbstractNCDataset,AbstractVariable},n::CFStdNam
     else
         throw(KeyError("$(length(ncvars)) matches while searching for a variable with standard_name attribute equal to $(n.name)"))
     end
-end
-
-function Base.show(io::IO,ds::AbstractDataset)
-    level = get(io, :level, 0)
-    indent = " " ^ level
-
-    try
-        dspath = path(ds)
-        printstyled(io, indent, "NCDataset: ",dspath,"\n", color=section_color())
-    catch err
-        if isa(err,NetCDFError)
-            if err.code == NC_EBADID
-                print(io,"closed NetCDF NCDataset")
-                return
-            end
-        end
-        rethrow()
-    end
-
-    print(io,indent,"Group: ",groupname(ds),"\n")
-    print(io,"\n")
-
-    # show dimensions
-    if length(ds.dim) > 0
-        show(io, ds.dim)
-        print(io,"\n")
-    end
-
-    varnames = keys(ds)
-
-    if length(varnames) > 0
-        printstyled(io, indent, "Variables\n",color=section_color())
-
-        for name in varnames
-            show(IOContext(io,:level=>level+2),variable(ds,name))
-            print(io,"\n")
-        end
-    end
-
-    # global attribues
-    if length(ds.attrib) > 0
-        printstyled(io, indent, "Global attributes\n",color=section_color())
-        show(IOContext(io,:level=>level+2),ds.attrib);
-    end
-
-    # groups
-    groupnames = keys(ds.group)
-
-    if length(groupnames) > 0
-        printstyled(io, indent, "Groups\n",color=section_color())
-        for groupname in groupnames
-            show(IOContext(io,:level=>level+2),group(ds,groupname))
-        end
-    end
-
 end
 
 """
@@ -508,7 +468,7 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
     #unlimited_dims = unlimited(src.dim)
     unlimited_dims = unlimited(src)
 
-    for (dimname,dimlength) in src.dim
+    for (dimname,dimlength) in dims(src)
         isunlimited = dimname in unlimited_dims
 
         # if haskey(dest.dim,dimname)
@@ -537,24 +497,32 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
         cfvar = src[varname]
         dimension_names = dimnames(cfvar)
 
+        var = if hasproperty(cfvar,:var)
+            cfvar.var
+        else
+            # TEST
+            cfvar
+        end
+
         # indices for subset
         index = ntuple(i -> torange(get(idimensions,dimension_names[i],:)),length(dimension_names))
 
-        destvar = defVar(dest, varname, eltype(cfvar.var), dimension_names; attrib = cfvar.attrib)
+        destvar = defVar(dest, varname, eltype(var), dimension_names; attrib = attribs(cfvar))
         # copy data
-        destvar.var[:] = cfvar.var[index...]
+        destvar.var[:] = var[index...]
     end
 
     # loop over all global attributes
-    for (attribname,attribval) in src.attrib
+    for (attribname,attribval) in attribs(src)
         dest.attrib[attribname] = attribval
     end
 
     # loop over all groups
-    for (groupname,groupsrc) in src.group
+    for (groupname,groupsrc) in groups(src)
         groupdest = defGroup(dest,groupname)
         write(groupdest,groupsrc; idimensions = idimensions)
     end
+
     return dest
 end
 
