@@ -444,12 +444,6 @@ end
 
 Base.Array(v::AbstractVariable{T,N}) where {T,N} = v[ntuple(i -> :, Val(N))...]
 
-# necessary for IJulia if showing a variable from a closed file
-Base.show(io::IO,::MIME"text/plain",v::AbstractVariable) = show(io,v)
-
-Base.display(v::AbstractVariable) = show(stdout,v)
-
-
 
 """
     NCDatasets.load!(ncvar::CFVariable, data, buffer, indices)
