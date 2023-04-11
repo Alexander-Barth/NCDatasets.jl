@@ -496,20 +496,13 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
 
         cfvar = src[varname]
         dimension_names = dimnames(cfvar)
-
-        var = if hasproperty(cfvar,:var)
-            cfvar.var
-        else
-            # TEST
-            cfvar
-        end
-
+        var = cfvar.var
         # indices for subset
         index = ntuple(i -> torange(get(idimensions,dimension_names[i],:)),length(dimension_names))
 
         destvar = defVar(dest, varname, eltype(var), dimension_names; attrib = attribs(cfvar))
         # copy data
-        destvar.var[:] = var[index...]
+        destvar.var[:] = cfvar.var[index...]
     end
 
     # loop over all global attributes
