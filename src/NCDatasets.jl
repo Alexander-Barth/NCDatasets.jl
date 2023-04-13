@@ -34,7 +34,7 @@ import CommonDataModel: AbstractDataset, AbstractVariable,
     scale_factor, add_offset, time_origin, time_factor,
     CFtransformdata!,
     CFVariable, variable, cfvariable,
-    path, name, isopen, unlimited,
+    path, name, isopen, unlimited, dataset,
     groupnames, group,
     dimnames, dim,
     attribnames, attrib

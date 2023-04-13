@@ -270,7 +270,7 @@ function select(v,conditions...)
 end
 
 function coordinate_value(v::AbstractVariable,name_coord::Symbol)
-    ncv = NCDataset(v)[name_coord]
+    ncv = dataset(v)[name_coord]
     @assert ndims(ncv) == 1
     dimension_name = dimnames(ncv)[1]
     i = findfirst(==(dimension_name),dimnames(v))
@@ -284,7 +284,7 @@ end
 
 
 function coordinate_names(v::AbstractVariable)
-    ds = NCDataset(v)
+    ds = dataset(v)
     dimension_names = dimnames(v)
 
     return [Symbol(varname) for (varname,ncvar) in ds

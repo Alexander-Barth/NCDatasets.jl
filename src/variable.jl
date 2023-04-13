@@ -14,12 +14,15 @@ listVar(ncid) = String[nc_inq_varname(ncid,varid)
 
 
 """
-    ds = NCDataset(var::CFVariable)
-    ds = NCDataset(var::Variable)
+    ds = dataset(var::Union{Variable,CFVariable})
+    ds = NCDataset(var::Union{Variable,CFVariable})
 
 Return the `NCDataset` containing the variable `var`.
 """
-NCDataset(var::Variable) = var.ds
+dataset(var::Variable) = var.ds
+
+# old function call, replace by CommonDataModel.dataset
+NCDataset(v::Union{AbstractNCVariable,CFVariable}) = dataset(v)
 
 """
     sz = size(var::Variable)
@@ -130,7 +133,7 @@ or time series of different length each.
 The [indexed ragged array representation](https://web.archive.org/web/20190111092546/http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#_indexed_ragged_array_representation) is currently not supported.
 """
 function loadragged(ncvar,index::Union{Colon,UnitRange})
-    ds = NCDataset(ncvar)
+    ds = dataset(ncvar)
 
     dimensionnames = dimnames(ncvar)
     if length(dimensionnames) !== 1
@@ -182,6 +185,14 @@ function dimnames(v::Variable{T,N}) where {T,N}
     return ntuple(i -> nc_inq_dimname(v.ds.ncid,v.dimids[i]),Val(N))
 end
 export dimnames
+
+
+function dim(v::AbstractNCVariable,dimname::AbstractString)
+    if !(dimname in dimnames(v))
+        error("$dimname is not among the dimensions of $(name(v))")
+    end
+    return dim(dataset(v),dimname)
+end
 
 """
     name(v::Variable)

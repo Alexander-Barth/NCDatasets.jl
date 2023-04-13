@@ -119,7 +119,7 @@ end
 
 variable(dds::DeferDataset,varname::Symbol) = variable(dds,string(varname))
 
-NCDataset(dv::DeferVariable) = DeferDataset(dv.r.filename)
+dataset(dv::DeferVariable) = DeferDataset(dv.r.filename)
 
 function Base.getindex(dv::DeferVariable,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     Variable(dv) do v

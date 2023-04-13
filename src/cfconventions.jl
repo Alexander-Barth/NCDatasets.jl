@@ -18,7 +18,7 @@ standard name modifier `modifier`. It can be used for example to access
 related variable like status flags.
 """
 function ancillaryvariables(ncv::NCDatasets.CFVariable,modifier)
-    ds = NCDataset(ncv)
+    ds = dataset(ncv)
     varname = name(ncv)
 
     if !haskey(ncv.attrib,"ancillary_variables")
@@ -132,7 +132,7 @@ function coord(v::Union{CFVariable,Variable,SubVariable,MFCFVariable},standard_n
                        r"degreesN"],
     )
 
-    ds = NCDataset(v)
+    ds = dataset(v)
     dims = Set(dimnames(v))
 
     # find by standard name
@@ -182,8 +182,8 @@ The time units and calendar from the `ncvar` are used but not the
 attributes controling the
 packing of data `scale_factor`, `add_offset` and `_FillValue`.
 """
-function bounds(ncvar::NCDatasets.CFVariable)
-    ds = NCDataset(ncvar)
+function bounds(ncvar::CFVariable)
+    ds = dataset(ncvar)
     varname = ncvar.attrib["bounds"]
     return ds[varname]
 end

@@ -1,5 +1,3 @@
-NCDataset(var::CFVariable) = NCDataset(var.var)
-
 ############################################################
 # Creating variables
 ############################################################
@@ -496,13 +494,13 @@ function _isrelated(v1::AbstractVariable,v2::AbstractVariable)
 end
 
 function Base.keys(v::AbstractVariable)
-    ds = NCDataset(v)
+    ds = dataset(v)
     return [varname for (varname,ncvar) in ds if _isrelated(ncvar,v)]
 end
 
 
 function Base.getindex(v::AbstractVariable,name::AbstractString)
-    ds = NCDataset(v)
+    ds = dataset(v)
     ncvar = ds[name]
     if _isrelated(ncvar,v)
         return ncvar

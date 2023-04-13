@@ -287,7 +287,7 @@ cfvariable(mfds::MFDataset,varname::AbstractString) = _cfvariable(mfds,varname)
 cfvariable(mfds::MFDataset,varname::Symbol) = _cfvariable(mfds,varname)
 
 fillvalue(v::Union{MFVariable{T},MFCFVariable{T}}) where T = v.attrib["_FillValue"]::T
-NCDataset(v::Union{MFVariable,MFCFVariable}) = v.ds
+dataset(v::Union{MFVariable,MFCFVariable}) = v.ds
 
 
 Base.getindex(v::MFCFVariable,ind...) = v.cfvar[ind...]
