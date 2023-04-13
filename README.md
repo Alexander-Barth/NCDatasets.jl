@@ -1,13 +1,13 @@
 # NCDatasets
 
 [![Build Status](https://github.com/Alexander-Barth/NCDatasets.jl/workflows/CI/badge.svg)](https://github.com/Alexander-Barth/NCDatasets.jl/actions)
-[![codecov.io](http://codecov.io/github/Alexander-Barth/NCDatasets.jl/coverage.svg?branch=master)](http://codecov.io/github/Alexander-Barth/NCDatasets.jl?branch=master)
+[![codecov.io](http://codecov.io/github/Alexander-Barth/NCDatasets.jl/coverage.svg?branch=master)](http://app.codecov.io/github/Alexander-Barth/NCDatasets.jl?branch=master)
 [![documentation stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/stable/)
 [![documentation dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/dev/)
 
 
 `NCDatasets` allows one to read and create netCDF files.
-NetCDF data set and attribute list behave like Julia dictionaries and variables like Julia arrays.
+NetCDF data set and attribute list behave like Julia dictionaries and variables like Julia arrays. This package implements the [CommonDataModel.jl](https://github.com/JuliaGeo/CommonDataModel.jl) interface, which mean that the datasets can be accessed in the same way as GRIB files opened with [GRIBDatasets.jl](https://github.com/JuliaGeo/GRIBDatasets.jl).
 
 
 The module `NCDatasets` provides support for the following [netCDF CF conventions](http://cfconventions.org/):
@@ -221,6 +221,8 @@ The package [NetCDF.jl](https://github.com/JuliaGeo/NetCDF.jl) from Fabian Gans 
 # Credits
 
 `netcdf_c.jl`, `build.jl` and the error handling code of the NetCDF C API are from NetCDF.jl by Fabian Gans (Max-Planck-Institut für Biogeochemie, Jena, Germany) released under the MIT license.
+
+
 
 <!--  LocalWords:  NCDatasets codecov io NetCDF FillValue DataArrays
  -->
