@@ -403,7 +403,7 @@ function _range_indices_dest(of,v,rest...)
 end
 range_indices_dest(ri...) = _range_indices_dest((),ri...)
 
-function Base.getindex(v::Union{CFVariable,Variable,MFVariable,SubVariable},indices::Union{Int,Colon,AbstractRange{<:Integer},Vector{Int}}...)
+function readblock!(v::Union{CFVariable,Variable,MFVariable,SubVariable}, aout, indices::Union{Int,Colon,AbstractRange{<:Integer},Vector{Int}}...)
     @debug "transform vector of indices to ranges"
 
     sz_source = size(v)
@@ -421,7 +421,7 @@ function Base.getindex(v::Union{CFVariable,Variable,MFVariable,SubVariable},indi
         R = first(CartesianIndices(length.(ri)))
         ind_source = ntuple(i -> ri[i][R[i]],N)
         ind_dest = ntuple(i -> ri_dest[i][R[i]],length(ri_dest))
-        return v[ind_source...]
+        return aout[indics...] .= v[ind_source...]
     end
 
     dest = Array{eltype(v),length(sz_dest)}(undef,sz_dest)
@@ -432,7 +432,7 @@ function Base.getindex(v::Union{CFVariable,Variable,MFVariable,SubVariable},indi
         buffer = Array{eltype(v.var),length(ind_dest)}(undef,length.(ind_dest))
         load!(v,view(dest,ind_dest...),buffer,ind_source...)
     end
-    return dest
+    return aout[indices...] .= dest
 end
 
 

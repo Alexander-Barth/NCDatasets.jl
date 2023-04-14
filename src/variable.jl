@@ -310,12 +310,12 @@ nomissing(a::AbstractArray,value) = a
 export nomissing
 
 
-function Base.getindex(v::Variable,indexes::Int...)
+function readblock!(v::Variable, aout, indexes::Int...)
     datamode(v.ds)
-    return nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
+    aout[indexes...] .= nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
 end
 
-function Base.setindex!(v::Variable{T,N},data,indexes::Int...) where N where T
+function writeblock!(v::Variable{T,N},data,indexes::Int...) where N where T
     @debug "$(@__LINE__)"
     datamode(v.ds)
     # use zero-based indexes and reversed order
@@ -323,20 +323,20 @@ function Base.setindex!(v::Variable{T,N},data,indexes::Int...) where N where T
     return data
 end
 
-function Base.getindex(v::Variable{T,N},indexes::Colon...) where {T,N}
+function readblock!(v::Variable{T,N}, aout, indexes::Colon...) where {T,N}
     datamode(v.ds)
     data = Array{T,N}(undef,size(v))
     nc_get_var!(v.ds.ncid,v.varid,data)
 
     # special case for scalar NetCDF variable
     if N == 0
-        return data[]
+        aout[indexes...] .= data[]
     else
-        return data
+        aout[indexes...] .= data
     end
 end
 
-function Base.setindex!(v::Variable{T,N},data::T,indexes::Colon...) where {T,N}
+function writeblock!(v::Variable{T,N},data::T,indexes::Colon...) where {T,N}
     @debug "setindex! colon $data"
     datamode(v.ds) # make sure that the file is in data mode
     tmp = fill(data,size(v))
@@ -348,7 +348,7 @@ end
 for data_type = [Number, String, Char]
     @eval begin
         # call to v .= 123
-        function Base.setindex!(v::Variable{T,N},data::$data_type) where {T,N}
+        function writeblock!(v::Variable{T,N},data::$data_type) where {T,N}
             @debug "setindex! $data"
             datamode(v.ds) # make sure that the file is in data mode
             tmp = fill(convert(T,data),size(v))
@@ -356,9 +356,9 @@ for data_type = [Number, String, Char]
             return data
         end
 
-        Base.setindex!(v::Variable,data::$data_type,indexes::Colon...) = setindex!(v::Variable,data)
+        writeblock!(v::Variable,data::$data_type,indexes::Colon...) = setindex!(v::Variable,data)
 
-        function Base.setindex!(v::Variable{T,N},data::$data_type,indexes::StepRange{Int,Int}...) where {T,N}
+        function writeblock!(v::Variable{T,N},data::$data_type,indexes::StepRange{Int,Int}...) where {T,N}
             datamode(v.ds) # make sure that the file is in data mode
             start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
             tmp = fill(convert(T,data),jlshape)
@@ -368,14 +368,14 @@ for data_type = [Number, String, Char]
     end
 end
 
-function Base.setindex!(v::Variable{T,N},data::AbstractArray{T,N},indexes::Colon...) where {T,N}
+function writeblock!(v::Variable{T,N},data::AbstractArray{T,N},indexes::Colon...) where {T,N}
     datamode(v.ds) # make sure that the file is in data mode
 
     nc_put_var(v.ds.ncid,v.varid,data)
     return data
 end
 
-function Base.setindex!(v::Variable{T,N},data::AbstractArray{T2,N},indexes::Colon...) where {T,T2,N}
+function writeblock!(v::Variable{T,N},data::AbstractArray{T2,N},indexes::Colon...) where {T,T2,N}
     datamode(v.ds) # make sure that the file is in data mode
     tmp =
         if T <: Integer
@@ -441,16 +441,16 @@ end
     return start,count,stride
 end
 
-function Base.getindex(v::Variable{T,N},indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
+function readblock!(v::Variable{T,N}, aout, indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
     start,count,stride,jlshape = ncsub(indexes[1:N])
     data = Array{T,N}(undef,jlshape)
 
     datamode(v.ds)
-    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
+    aout[indexes...] .= nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
     return data
 end
 
-function Base.setindex!(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...) where {T,N}
+function writeblock!(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...) where {T,N}
     datamode(v.ds) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
     tmp = fill(data,jlshape)
@@ -458,7 +458,7 @@ function Base.setindex!(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...)
     return data
 end
 
-function Base.setindex!(v::Variable{T,N},data::Array{T,N},indexes::StepRange{Int,Int}...) where {T,N}
+function writeblock!(v::Variable{T,N},data::Array{T,N},indexes::StepRange{Int,Int}...) where {T,N}
     datamode(v.ds) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
     nc_put_vars(v.ds.ncid,v.varid,start,count,stride,data)
@@ -466,7 +466,7 @@ function Base.setindex!(v::Variable{T,N},data::Array{T,N},indexes::StepRange{Int
 end
 
 # data can be Array{T2,N} or BitArray{N}
-function Base.setindex!(v::Variable{T,N},data::AbstractArray,indexes::StepRange{Int,Int}...) where {T,N}
+function writeblock!(v::Variable{T,N},data::AbstractArray,indexes::StepRange{Int,Int}...) where {T,N}
     datamode(v.ds) # make sure that the file is in data mode
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
 
@@ -479,7 +479,7 @@ end
 
 
 
-function Base.getindex(v::Variable{T,N},indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where {T,N}
+function readblock!(v::Variable{T,N}, aout, indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where {T,N}
     sz = size(v)
     start,count,stride = ncsub2(sz,indexes...)
     jlshape = _shape_after_slice(sz,indexes...)
@@ -487,16 +487,15 @@ function Base.getindex(v::Variable{T,N},indexes::Union{Int,Colon,AbstractRange{<
 
     datamode(v.ds)
     nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
-
-    return data
+    aout[indexes...] .= data
 end
 
 # NetCDF scalars indexed as []
-Base.getindex(v::Variable{T, 0}) where T = v[1]
+readblock!(v::Variable{T, 0}, aout) where T = aout[1] = v[1]
 
 
 
-function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
+function writeblock!(v::Variable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
     ind = normalizeindexes(size(v),indexes)
 
     # make arrays out of scalars (arrays can have zero dimensions)
@@ -508,7 +507,7 @@ function Base.setindex!(v::Variable,data,indexes::Union{Int,Colon,AbstractRange{
 end
 
 
-Base.getindex(v::Union{MFVariable,DeferVariable,Variable},ci::CartesianIndices) = v[ci.indices...]
-Base.setindex!(v::Union{MFVariable,DeferVariable,Variable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
+readblock!(v::Union{MFVariable,DeferVariable,Variable}, aout, ci::CartesianIndices) = aout[ci.indices...] .= v[ci.indices...]
+writeblock!(v::Union{MFVariable,DeferVariable,Variable},data,ci::CartesianIndices) = writeblock!(v,data,ci.indices...)
 
 

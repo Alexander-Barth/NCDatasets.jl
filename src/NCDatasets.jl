@@ -38,6 +38,7 @@ import CommonDataModel: AbstractDataset, AbstractVariable,
     groupnames, group,
     dimnames, dim,
     attribnames, attrib
+import DiskArrays: readblock!, writeblock!
 
 function __init__()
     NetCDF_jll.is_available() && init_certificate_authority()
