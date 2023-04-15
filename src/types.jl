@@ -61,7 +61,7 @@ end
 
 # Variable (as stored in NetCDF file, without using
 # add_offset, scale_factor and _FillValue)
-mutable struct Variable{NetCDFType,N,TDS<:AbstractNCDataset} <: AbstractNCVariable{NetCDFType, N}
+mutable struct Variable{NetCDFType,N,TDS<:AbstractNCDataset} <: AbstractDiskArray{NetCDFType, N}
     ds::TDS
     varid::Cint
     dimids::NTuple{N,Cint}
