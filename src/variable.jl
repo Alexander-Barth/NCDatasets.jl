@@ -312,6 +312,8 @@ export nomissing
 
 function readblock!(v::Variable, aout, indexes::Int...)
     datamode(v.ds)
+    @debug "nc_get_var1"
+
     aout[indexes...] .= nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
 end
 
@@ -326,6 +328,8 @@ end
 function readblock!(v::Variable{T,N}, aout, indexes::Colon...) where {T,N}
     datamode(v.ds)
     data = Array{T,N}(undef,size(v))
+
+    @debug "nc_get_var!"
     nc_get_var!(v.ds.ncid,v.varid,data)
 
     # special case for scalar NetCDF variable
@@ -485,9 +489,10 @@ function readblock!(v::Variable{T,N}, aout, indexes::Union{Int,Colon,AbstractRan
     jlshape = _shape_after_slice(sz,indexes...)
     data = Array{T}(undef,jlshape)
 
+    @debug "nc_get_vars!"
     datamode(v.ds)
-    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
-    aout[indexes...] .= data
+    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
+    #aout[indexes...] .= data
 end
 
 # NetCDF scalars indexed as []
