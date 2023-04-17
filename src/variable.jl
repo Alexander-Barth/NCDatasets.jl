@@ -443,11 +443,11 @@ end
 
 function readblock!(v::Variable{T,N}, aout, indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
     start,count,stride,jlshape = ncsub(indexes[1:N])
-    # data = Array{T,N}(undef,jlshape)
+    data = Array{T,N}(undef,jlshape)
     datamode(v.ds)
-    # nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
-    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
-    # aout .= data
+    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
+    # nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
+    aout .= data
     return aout
 end
 
@@ -504,7 +504,7 @@ function writeblock!(v::Variable,data,indexes::Union{Int,Colon,AbstractRange{<:I
         data = fill(data,length.(ind))
     end
 
-    return v[ind...] = data
+    return writeblock!(v, data, ind...)
 end
 
 
