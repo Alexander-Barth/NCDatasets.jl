@@ -443,12 +443,12 @@ end
 
 function readblock!(v::Variable{T,N}, aout, indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
     start,count,stride,jlshape = ncsub(indexes[1:N])
-    data = Array{T,N}(undef,jlshape)
-
+    # data = Array{T,N}(undef,jlshape)
     datamode(v.ds)
-    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
-    aout .= data
-    return data
+    # nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
+    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
+    # aout .= data
+    return aout
 end
 
 function writeblock!(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...) where {T,N}
@@ -488,7 +488,7 @@ function readblock!(v::Variable{T,N}, aout, indexes::Union{Int,Colon,AbstractRan
 
     datamode(v.ds)
     nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
-    aout[indexes...] .= data
+    aout .= data
 end
 
 # NetCDF scalars indexed as []
@@ -508,7 +508,7 @@ function writeblock!(v::Variable,data,indexes::Union{Int,Colon,AbstractRange{<:I
 end
 
 
-readblock!(v::Union{MFVariable,DeferVariable,Variable}, aout, ci::CartesianIndices) = aout[ci.indices...] .= v[ci.indices...]
+readblock!(v::Union{MFVariable,DeferVariable,Variable}, aout, ci::CartesianIndices) = aout .= v[ci.indices...]
 writeblock!(v::Union{MFVariable,DeferVariable,Variable},data,ci::CartesianIndices) = writeblock!(v,data,ci.indices...)
 
 
