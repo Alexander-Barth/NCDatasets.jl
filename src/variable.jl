@@ -446,7 +446,8 @@ function readblock!(v::Variable{T,N}, aout, indexes::TR...) where {T,N} where TR
     data = Array{T,N}(undef,jlshape)
 
     datamode(v.ds)
-    aout[indexes...] .= nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
+    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
+    aout .= data
     return data
 end
 
