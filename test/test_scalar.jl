@@ -9,11 +9,11 @@ for (T,data) in ((Float32,123.f0),
     filename = tempname()
     NCDataset(filename,"c") do ds
         v = defVar(ds,"scalar",T,())
-        v[:] = data
+        v[1] = data
     end
 
     NCDataset(filename,"r") do ds
-        v2 = ds["scalar"][:]
+        v2 = ds["scalar"][1]
         @test typeof(v2) == T
         @test v2 == data
 
