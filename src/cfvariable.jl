@@ -421,7 +421,7 @@ function readblock!(v::Union{CFVariable,Variable,MFVariable,SubVariable}, aout, 
         R = first(CartesianIndices(length.(ri)))
         ind_source = ntuple(i -> ri[i][R[i]],N)
         ind_dest = ntuple(i -> ri_dest[i][R[i]],length(ri_dest))
-        return aout[indics...] .= v[ind_source...]
+        return aout[indices...] .= v[ind_source...]
     end
 
     dest = Array{eltype(v),length(sz_dest)}(undef,sz_dest)
