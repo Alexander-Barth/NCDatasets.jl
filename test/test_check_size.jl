@@ -29,11 +29,11 @@ end
 ds["w"][:,:] = ones(10,10)
 
 # w should grow along the unlimited dimension
-ds["w"][:,:] = ones(10,15)
+ds["w"][:,1:15] = ones(10,15)
 @test size(ds["w"]) == (10,15)
 
 # w cannot grow along a fixed dimension
-@test_throws NCDatasets.NetCDFError ds["w"][:,:] = ones(11,15)
+@test_throws DimensionMismatch ds["w"][:,:] = ones(11,15)
 
 # NetCDF: Index exceeds dimension bound
 @test_throws NCDatasets.NetCDFError ds["u"][100,100]
@@ -46,7 +46,7 @@ ds = NCDataset(filename, "c")
 ds.dim["z"] = 4
 ds.dim["time"] = Inf
 defVar(ds, "temp", Float64, ("z", "time"))
-ds["temp"][:, :, 1] = rand(4)
+ds["temp"][:, 1] = rand(4)
 close(ds)
 
 rm(filename)
