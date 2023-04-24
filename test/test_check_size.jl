@@ -17,10 +17,10 @@ defVar(ds, "w", Float64, ("x", "Time"))
 
 for i in 1:10
     ds["Time"][i] = i
-    ds["a"][:,i] = 1
-    @test_throws NCDatasets.NetCDFError ds["u"][:,i] = collect(1:9)
-    @test_throws NCDatasets.NetCDFError ds["v"][:,i] = collect(1:11)
-    @test_throws NCDatasets.NetCDFError ds["w"][:,i] = reshape(collect(1:20), 10, 2)
+    ds["a"][:,i] .= 1
+    @test_throws DimensionMismatch ds["u"][:,i] = collect(1:9)
+    @test_throws DimensionMismatch ds["v"][:,i] = collect(1:11)
+    @test_throws DimensionMismatch ds["w"][:,i] = reshape(collect(1:20), 10, 2)
 
     # ignore singleton dimension
     ds["w"][:,i] = reshape(collect(1:10), 1, 1, 10, 1)
