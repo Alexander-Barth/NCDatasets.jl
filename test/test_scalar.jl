@@ -32,7 +32,7 @@ for (T,data) in ((Float32,123.f0),
     end
 
     NCDataset(filename,"r") do ds
-        v2 = ds["scalar"][:]
+        v2 = ds["scalar"][1]
         @test v2 == data
     end
     rm(filename)

@@ -19,7 +19,7 @@ NCDatasets.NCDataset(filename,"c") do ds
 
     v = NCDatasets.defVar(ds,"small",Float64,("lon","lat"))
 #    @test_throws Union{NCDatasets.NetCDFError,DimensionMismatch} v[:] = zeros(sz[1]+1,sz[2])
-    @test_throws NCDatasets.NetCDFError v[1:sz[1],1:sz[2]] = zeros(sz[1]+1,sz[2])
+    @test_throws DimensionMismatch v[1:sz[1],1:sz[2]] = zeros(sz[1]+1,sz[2])
     @test_throws NCDatasets.NetCDFError v[sz[1]+1,1] = 1
     @test_throws NCDatasets.NetCDFError v[-1,1] = 1
 
@@ -149,10 +149,10 @@ NCDataset(filename,"c") do ds
     end
 
     defVar(ds,"scalar",123.)
-    @test ds["scalar"][:] == 123.
+    @test ds["scalar"][1] == 123.
 
     # test indexing with symbols #101
-    @test ds[:scalar][:] == 123.
+    @test ds[:scalar][1] == 123.
 end
 rm(filename)
 

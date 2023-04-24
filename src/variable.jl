@@ -312,7 +312,7 @@ export nomissing
 
 function readblock!(v::Variable, aout, indexes::Int...)
     datamode(v.ds)
-    aout[indexes...] .= nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
+    aout[indexes...] = nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
 end
 
 function writeblock!(v::Variable{T,N},data,indexes::Int...) where N where T
@@ -356,7 +356,7 @@ for data_type = [Number, String, Char]
             return data
         end
 
-        writeblock!(v::Variable,data::$data_type,indexes::Colon...) = setindex!(v::Variable,data)
+        writeblock!(v::Variable,data::$data_type,indexes::Colon...) = writeblock!(v::Variable,data)
 
         function writeblock!(v::Variable{T,N},data::$data_type,indexes::StepRange{Int,Int}...) where {T,N}
             datamode(v.ds) # make sure that the file is in data mode
@@ -492,7 +492,8 @@ function readblock!(v::Variable{T,N}, aout, indexes::Union{Int,Colon,AbstractRan
 end
 
 # NetCDF scalars indexed as []
-readblock!(v::Variable{T, 0}, aout) where T = aout[1] = v[1]
+readblock!(v::Variable{T, 0}, aout) where T = readblock!(v, aout, 1)
+writeblock!(v::Variable{T, 0}, data::Array{T, 0}) where T = writeblock!(v, data[1])
 
 
 
