@@ -508,7 +508,40 @@ function writeblock!(v::Variable,data,indexes::Union{Int,Colon,AbstractRange{<:I
 end
 
 
-readblock!(v::Union{MFVariable,DeferVariable,Variable}, aout, ci::CartesianIndices) = aout .= v[ci.indices...]
-writeblock!(v::Union{MFVariable,DeferVariable,Variable},data,ci::CartesianIndices) = writeblock!(v,data,ci.indices...)
+readblock!(v::Variable, aout, ci::CartesianIndices) = aout .= v[ci.indices...]
+writeblock!(v::Variable, data, ci::CartesianIndices) = writeblock!(v,data,ci.indices...)
 
+Base.getindex(v::Union{MFVariable,DeferVariable},ci::CartesianIndices) = v[ci.indices...]
+Base.setindex!(v::Union{MFVariable,DeferVariable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
 
+function readblock!(v::Variable, aout, indices::Union{Int,Colon,AbstractRange{<:Integer},Vector{Int}}...)
+    @debug "transform vector of indices to ranges"
+
+    sz_source = size(v)
+    ri = to_range_list.(indices,sz_source)
+    sz_dest = NCDatasets._shape_after_slice(sz_source,indices...)
+
+    N = length(indices)
+
+    ri_dest = range_indices_dest(ri...)
+    @debug "ri_dest $ri_dest"
+    @debug "ri $ri"
+
+    if all(==(1),length.(ri))
+        # single chunk
+        R = first(CartesianIndices(length.(ri)))
+        ind_source = ntuple(i -> ri[i][R[i]],N)
+        ind_dest = ntuple(i -> ri_dest[i][R[i]],length(ri_dest))
+        return aout[indices...] .= v[ind_source...]
+    end
+
+    dest = Array{eltype(v),length(sz_dest)}(undef,sz_dest)
+    for R in CartesianIndices(length.(ri))
+        ind_source = ntuple(i -> ri[i][R[i]],N)
+        ind_dest = ntuple(i -> ri_dest[i][R[i]],length(ri_dest))
+        #dest[ind_dest...] = v[ind_source...]
+        buffer = Array{eltype(v.var),length(ind_dest)}(undef,length.(ind_dest))
+        load!(v,view(dest,ind_dest...),buffer,ind_source...)
+    end
+    return aout[indices...] .= dest
+end

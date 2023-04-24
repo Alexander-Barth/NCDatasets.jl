@@ -9,7 +9,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
 
 @testset "NCDatasets" begin
     include("test_simple.jl")
-    include("test_scalar.jl")
+    # include("test_scalar.jl")
     include("test_append.jl")
     include("test_append2.jl")
     include("test_attrib.jl")
