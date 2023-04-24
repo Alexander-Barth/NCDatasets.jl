@@ -312,80 +312,59 @@ export nomissing
 
 function readblock!(v::Variable, aout, indexes::Int...)
     datamode(v.ds)
-    aout[indexes...] = nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
+    aout .= nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
 end
 
-function writeblock!(v::Variable{T,N},data,indexes::Int...) where N where T
-    @debug "$(@__LINE__)"
+function readblock!(v::Variable{T,N}, aout, indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
+    start,count,stride,jlshape = ncsub(indexes[1:N])
+    data = Array{T,N}(undef,jlshape)
     datamode(v.ds)
-    # use zero-based indexes and reversed order
-    nc_put_var1(v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],T(data))
+    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
+    # nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
+    aout .= data
+    return aout
+end
+
+function readblock!(v::Variable{T,N}, aout, indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where {T,N}
+    sz = size(v)
+    start,count,stride = ncsub2(sz,indexes...)
+    jlshape = _shape_after_slice(sz,indexes...)
+    data = Array{T}(undef,jlshape)
+
+    datamode(v.ds)
+    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
+    aout .= data
+end
+
+# NetCDF scalars indexed as []
+readblock!(v::Variable{T, 0}, aout) where T = readblock!(v, aout, 1)
+# writeblock!(v::Variable{T, 0}, data) where T = writeblock!(v, data, 1)
+
+function writeblock!(v::Variable{T,N},data,indexes::AbstractUnitRange...) where {T,N}
+    @debug "$(@__LINE__) wb $((data, indexes))"
+    datamode(v.ds)
+    _write_data_to_nc(v, data, indexes...)
     return data
 end
 
-function readblock!(v::Variable{T,N}, aout, indexes::Colon...) where {T,N}
-    datamode(v.ds)
-    data = Array{T,N}(undef,size(v))
-    nc_get_var!(v.ds.ncid,v.varid,data)
-
-    # special case for scalar NetCDF variable
-    if N == 0
-        aout[indexes...] .= data[]
-    else
-        aout[indexes...] .= data
-    end
+function _write_data_to_nc(v::Variable{T,N},data,indexes::Int...) where {T,N}
+    nc_put_var1(v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],T(data[1]))
 end
 
-function writeblock!(v::Variable{T,N},data::T,indexes::Colon...) where {T,N}
-    @debug "setindex! colon $data"
-    datamode(v.ds) # make sure that the file is in data mode
-    tmp = fill(data,size(v))
-    nc_put_var(v.ds.ncid,v.varid,tmp)
-    return data
-end
+_write_data_to_nc(v::Variable,data) = _write_data_to_nc(v, data, 1)
 
-# union types cannot be used to avoid ambiguity
-for data_type = [Number, String, Char]
-    @eval begin
-        # call to v .= 123
-        function writeblock!(v::Variable{T,N},data::$data_type) where {T,N}
-            @debug "setindex! $data"
-            datamode(v.ds) # make sure that the file is in data mode
-            tmp = fill(convert(T,data),size(v))
-            nc_put_var(v.ds.ncid,v.varid,tmp)
-            return data
-        end
-
-        writeblock!(v::Variable,data::$data_type,indexes::Colon...) = writeblock!(v::Variable,data)
-
-        function writeblock!(v::Variable{T,N},data::$data_type,indexes::StepRange{Int,Int}...) where {T,N}
-            datamode(v.ds) # make sure that the file is in data mode
-            start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
-            tmp = fill(convert(T,data),jlshape)
-            nc_put_vars(v.ds.ncid,v.varid,start,count,stride,tmp)
-            return data
-        end
-    end
-end
-
-function writeblock!(v::Variable{T,N},data::AbstractArray{T,N},indexes::Colon...) where {T,N}
-    datamode(v.ds) # make sure that the file is in data mode
-
+function _write_data_to_nc(v::Variable,data,indexes::Colon...)
     nc_put_var(v.ds.ncid,v.varid,data)
-    return data
 end
 
-function writeblock!(v::Variable{T,N},data::AbstractArray{T2,N},indexes::Colon...) where {T,T2,N}
-    datamode(v.ds) # make sure that the file is in data mode
-    tmp =
-        if T <: Integer
-            round.(T,data)
-        else
-            convert(Array{T,N},data)
-        end
+function _write_data_to_nc(v::Variable,data,indexes::StepRange{Int,Int}...)
+    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
+    nc_put_vars(v.ds.ncid,v.varid,start,count,stride,data)
+end
 
-    nc_put_var(v.ds.ncid,v.varid,tmp)
-    return data
+function _write_data_to_nc(v::Variable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
+    ind = normalizeindexes(size(v),indexes)
+    return _write_data_to_nc(v, data, ind...)
 end
 
 _normalizeindex(n,ind::Base.OneTo) = 1:1:ind.stop
@@ -441,108 +420,8 @@ end
     return start,count,stride
 end
 
-function readblock!(v::Variable{T,N}, aout, indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
-    start,count,stride,jlshape = ncsub(indexes[1:N])
-    data = Array{T,N}(undef,jlshape)
-    datamode(v.ds)
-    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
-    # nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
-    aout .= data
-    return aout
-end
-
-function writeblock!(v::Variable{T,N},data::T,indexes::StepRange{Int,Int}...) where {T,N}
-    datamode(v.ds) # make sure that the file is in data mode
-    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
-    tmp = fill(data,jlshape)
-    nc_put_vars(v.ds.ncid,v.varid,start,count,stride,tmp)
-    return data
-end
-
-function writeblock!(v::Variable{T,N},data::Array{T,N},indexes::StepRange{Int,Int}...) where {T,N}
-    datamode(v.ds) # make sure that the file is in data mode
-    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
-    nc_put_vars(v.ds.ncid,v.varid,start,count,stride,data)
-    return data
-end
-
-# data can be Array{T2,N} or BitArray{N}
-function writeblock!(v::Variable{T,N},data::AbstractArray,indexes::StepRange{Int,Int}...) where {T,N}
-    datamode(v.ds) # make sure that the file is in data mode
-    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
-
-    tmp = convert(Array{T,ndims(data)},data)
-    nc_put_vars(v.ds.ncid,v.varid,start,count,stride,tmp)
-
-    return data
-end
-
-
-
-
-function readblock!(v::Variable{T,N}, aout, indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where {T,N}
-    sz = size(v)
-    start,count,stride = ncsub2(sz,indexes...)
-    jlshape = _shape_after_slice(sz,indexes...)
-    data = Array{T}(undef,jlshape)
-
-    datamode(v.ds)
-    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
-    aout .= data
-end
-
-# NetCDF scalars indexed as []
-readblock!(v::Variable{T, 0}, aout) where T = readblock!(v, aout, 1)
-writeblock!(v::Variable{T, 0}, data::Array{T, 0}) where T = writeblock!(v, data[1])
-
-
-
-function writeblock!(v::Variable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
-    ind = normalizeindexes(size(v),indexes)
-
-    # make arrays out of scalars (arrays can have zero dimensions)
-    if (ndims(data) == 0) && !(data isa AbstractArray)
-        data = fill(data,length.(ind))
-    end
-
-    return writeblock!(v, data, ind...)
-end
-
-
 readblock!(v::Variable, aout, ci::CartesianIndices) = aout .= v[ci.indices...]
 writeblock!(v::Variable, data, ci::CartesianIndices) = writeblock!(v,data,ci.indices...)
 
 Base.getindex(v::Union{MFVariable,DeferVariable},ci::CartesianIndices) = v[ci.indices...]
 Base.setindex!(v::Union{MFVariable,DeferVariable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
-
-function readblock!(v::Variable, aout, indices::Union{Int,Colon,AbstractRange{<:Integer},Vector{Int}}...)
-    @debug "transform vector of indices to ranges"
-
-    sz_source = size(v)
-    ri = to_range_list.(indices,sz_source)
-    sz_dest = NCDatasets._shape_after_slice(sz_source,indices...)
-
-    N = length(indices)
-
-    ri_dest = range_indices_dest(ri...)
-    @debug "ri_dest $ri_dest"
-    @debug "ri $ri"
-
-    if all(==(1),length.(ri))
-        # single chunk
-        R = first(CartesianIndices(length.(ri)))
-        ind_source = ntuple(i -> ri[i][R[i]],N)
-        ind_dest = ntuple(i -> ri_dest[i][R[i]],length(ri_dest))
-        return aout[indices...] .= v[ind_source...]
-    end
-
-    dest = Array{eltype(v),length(sz_dest)}(undef,sz_dest)
-    for R in CartesianIndices(length.(ri))
-        ind_source = ntuple(i -> ri[i][R[i]],N)
-        ind_dest = ntuple(i -> ri_dest[i][R[i]],length(ri_dest))
-        #dest[ind_dest...] = v[ind_source...]
-        buffer = Array{eltype(v.var),length(ind_dest)}(undef,length.(ind_dest))
-        load!(v,view(dest,ind_dest...),buffer,ind_source...)
-    end
-    return aout[indices...] .= dest
-end
