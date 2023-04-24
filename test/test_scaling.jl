@@ -30,10 +30,11 @@ for T in [Int32,Float32]
     @test v.var[:,:] ≈ (data .- offset)/factor atol=1e-4
 
     # write/read without transformation (offset/scaling)
-    v.var[:,:] = data
     if eltype(v.var) <: Integer
+        v.var[:,:] = round.(Int,data)
         @test v.var[:,:] == round.(Int,data)
     else
+        v.var[:,:] = data
         @test v.var[:,:] ≈ data
     end
 end
