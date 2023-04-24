@@ -341,7 +341,6 @@ readblock!(v::Variable{T, 0}, aout) where T = readblock!(v, aout, 1)
 # writeblock!(v::Variable{T, 0}, data) where T = writeblock!(v, data, 1)
 
 function writeblock!(v::Variable{T,N},data,indexes::AbstractUnitRange...) where {T,N}
-    @debug "$(@__LINE__) wb $((data, indexes))"
     datamode(v.ds)
     _write_data_to_nc(v, data, indexes...)
     return data
@@ -351,19 +350,20 @@ function _write_data_to_nc(v::Variable{T,N},data,indexes::Int...) where {T,N}
     nc_put_var1(v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],T(data[1]))
 end
 
-_write_data_to_nc(v::Variable,data) = _write_data_to_nc(v, data, 1)
+_write_data_to_nc(v::Variable, data) = _write_data_to_nc(v, data, 1)
 
-function _write_data_to_nc(v::Variable,data,indexes::Colon...)
+function _write_data_to_nc(v::Variable, data, indexes::Colon...)
+    @info "Am I even getting here ?"
     nc_put_var(v.ds.ncid,v.varid,data)
 end
 
-function _write_data_to_nc(v::Variable,data,indexes::StepRange{Int,Int}...)
+function _write_data_to_nc(v::Variable{T, N}, data, indexes::StepRange{Int,Int}...) where {T, N}
     start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
-    nc_put_vars(v.ds.ncid,v.varid,start,count,stride,data)
+    nc_put_vars(v.ds.ncid,v.varid,start,count,stride,T.(data))
 end
 
-function _write_data_to_nc(v::Variable,data,indexes::Union{Int,Colon,AbstractRange{<:Integer}}...)
-    ind = normalizeindexes(size(v),indexes)
+function _write_data_to_nc(v::Variable, data, indexes::AbstractRange{<:Integer}...)
+    ind = prod(length.(indexes)) == 1 ? first.(indexes) : normalizeindexes(size(v),indexes)
     return _write_data_to_nc(v, data, ind...)
 end
 
@@ -419,9 +419,6 @@ end
 
     return start,count,stride
 end
-
-readblock!(v::Variable, aout, ci::CartesianIndices) = aout .= v[ci.indices...]
-writeblock!(v::Variable, data, ci::CartesianIndices) = writeblock!(v,data,ci.indices...)
 
 Base.getindex(v::Union{MFVariable,DeferVariable},ci::CartesianIndices) = v[ci.indices...]
 Base.setindex!(v::Union{MFVariable,DeferVariable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
