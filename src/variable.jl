@@ -316,11 +316,11 @@ function readblock!(v::Variable, aout, indexes::AbstractUnitRange...)
 end
 
 function _read_data_from_nc!(v::Variable, aout, indexes::Int...)
-    aout .= nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
+    aout .= nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in reverse(indexes)])
 end
 
 function _read_data_from_nc!(v::Variable{T,N}, aout, indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
-    start,count,stride,jlshape = ncsub(indexes[1:N])
+    start,count,stride,jlshape = ncsub(indexes)
     nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
 end
 
@@ -344,7 +344,7 @@ function writeblock!(v::Variable{T,N},data,indexes::AbstractUnitRange...) where 
 end
 
 function _write_data_to_nc(v::Variable{T,N},data,indexes::Int...) where {T,N}
-    nc_put_var1(v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]],T(data[1]))
+    nc_put_var1(v.ds.ncid,v.varid,[i-1 for i in reverse(indexes)],T(data[1]))
 end
 
 _write_data_to_nc(v::Variable, data) = _write_data_to_nc(v, data, 1)
@@ -355,7 +355,7 @@ function _write_data_to_nc(v::Variable, data, indexes::Colon...)
 end
 
 function _write_data_to_nc(v::Variable{T, N}, data, indexes::StepRange{Int,Int}...) where {T, N}
-    start,count,stride,jlshape = ncsub(indexes[1:ndims(v)])
+    start,count,stride,jlshape = ncsub(indexes)
     nc_put_vars(v.ds.ncid,v.varid,start,count,stride,T.(data))
 end
 
