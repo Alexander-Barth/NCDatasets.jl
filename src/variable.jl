@@ -309,35 +309,32 @@ end
 nomissing(a::AbstractArray,value) = a
 export nomissing
 
-
-function readblock!(v::Variable, aout, indexes::Int...)
+function readblock!(v::Variable, aout, indexes::AbstractUnitRange...)
     datamode(v.ds)
-    aout .= nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
-end
-
-function readblock!(v::Variable{T,N}, aout, indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
-    start,count,stride,jlshape = ncsub(indexes[1:N])
-    data = Array{T,N}(undef,jlshape)
-    datamode(v.ds)
-    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
-    # nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
-    aout .= data
+    _read_data_from_nc!(v, aout, indexes...)
     return aout
 end
 
-function readblock!(v::Variable{T,N}, aout, indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where {T,N}
+function _read_data_from_nc!(v::Variable, aout, indexes::Int...)
+    aout .= nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in indexes[ndims(v):-1:1]])
+end
+
+function _read_data_from_nc!(v::Variable{T,N}, aout, indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
+    start,count,stride,jlshape = ncsub(indexes[1:N])
+    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
+end
+
+function _read_data_from_nc!(v::Variable{T,N}, aout, indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where {T,N}
     sz = size(v)
     start,count,stride = ncsub2(sz,indexes...)
     jlshape = _shape_after_slice(sz,indexes...)
-    data = Array{T}(undef,jlshape)
-
-    datamode(v.ds)
-    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,data)
-    aout .= data
+    nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
 end
 
+_read_data_from_nc!(v::Variable, aout) = _read_data_from_nc!(v, aout, 1)
+
 # NetCDF scalars indexed as []
-readblock!(v::Variable{T, 0}, aout) where T = readblock!(v, aout, 1)
+# readblock!(v::Variable{T, 0}, aout) where T = readblock!(v, aout, 1)
 # writeblock!(v::Variable{T, 0}, data) where T = writeblock!(v, data, 1)
 
 function writeblock!(v::Variable{T,N},data,indexes::AbstractUnitRange...) where {T,N}
