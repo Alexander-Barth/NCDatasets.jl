@@ -38,7 +38,8 @@ import CommonDataModel: AbstractDataset, AbstractVariable,
     groupnames, group,
     dimnames, dim,
     attribnames, attrib
-import DiskArrays: readblock!, writeblock!
+import DiskArrays
+import DiskArrays: readblock!, writeblock!, eachchunk, haschunks
 using DiskArrays: @implement_diskarray
 
 function __init__()

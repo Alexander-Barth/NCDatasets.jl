@@ -364,6 +364,13 @@ function _write_data_to_nc(v::Variable, data, indexes::Union{AbstractRange{<:Int
     return _write_data_to_nc(v, data, ind...)
 end
 
+getchunksize(v::Variable) = getchunksize(haschunks(v),v)
+getchunksize(::DiskArrays.Chunked, v::Variable) = chunking(v)[2]
+# getchunksize(::DiskArrays.Unchunked, v::Variable) = DiskArrays.estimate_chunksize(v)
+getchunksize(::DiskArrays.Unchunked, v::Variable) = size(v)
+eachchunk(v::Variable) = DiskArrays.GridChunks(v, getchunksize(v))
+haschunks(v::Variable) = (chunking(v)[1] == :contiguous ? DiskArrays.Unchunked() : DiskArrays.Chunked())
+
 _normalizeindex(n,ind::Base.OneTo) = 1:1:ind.stop
 _normalizeindex(n,ind::Colon) = 1:1:n
 _normalizeindex(n,ind::Int) = ind:1:ind
