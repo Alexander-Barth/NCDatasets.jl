@@ -22,7 +22,7 @@ NCDatasets.NCDataset(filename,"c") do ds
 
         for j = 1:sz[2]
             data[:,j] .= T(j)
-            v[:,j] .= T(j)
+            v[:,j] = fill(T(j), sz[1])
         end
 
         @test all(v[:,:] == data)
@@ -39,7 +39,7 @@ defDim(ds,"lon",Inf)
 defDim(ds,"lat",110)
 v = defVar(ds,"temperature",Float32,("lon","lat"))
 data = [Float32(i+j) for i = 1:100, j = 1:110]
-v[:,1] = data[:,1]
+v[1:100,1] = data[:,1]
 v[:,:] = data
 close(ds)
 rm(filename)
