@@ -78,7 +78,7 @@ NCDataset(filename,"c") do ds
         "units" => "degree_Celsius",
         "long_name" => "Temperature"
     ])
-    @test ds["temp"][:] == data
+    @test ds["temp"][:] == data[:]
     @test eltype(ds["temp"].var) == Int32
     @test ds.dim["lon"] == sz[1]
     @test ds.dim["lat"] == sz[2]
