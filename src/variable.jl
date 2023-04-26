@@ -309,7 +309,7 @@ end
 nomissing(a::AbstractArray,value) = a
 export nomissing
 
-function readblock!(v::Variable, aout, indexes::AbstractUnitRange...)
+function readblock!(v::Variable, aout, indexes::AbstractVector...)
     datamode(v.ds)
     _read_data_from_nc!(v, aout, indexes...)
     return aout
@@ -337,7 +337,7 @@ _read_data_from_nc!(v::Variable, aout) = _read_data_from_nc!(v, aout, 1)
 # readblock!(v::Variable{T, 0}, aout) where T = readblock!(v, aout, 1)
 # writeblock!(v::Variable{T, 0}, data) where T = writeblock!(v, data, 1)
 
-function writeblock!(v::Variable{T,N},data,indexes::AbstractUnitRange...) where {T,N}
+function writeblock!(v::Variable, data, indexes::AbstractVector...)
     datamode(v.ds)
     _write_data_to_nc(v, data, indexes...)
     return data
@@ -359,7 +359,7 @@ function _write_data_to_nc(v::Variable{T, N}, data, indexes::StepRange{Int,Int}.
     nc_put_vars(v.ds.ncid,v.varid,start,count,stride,T.(data))
 end
 
-function _write_data_to_nc(v::Variable, data, indexes::AbstractRange{<:Integer}...)
+function _write_data_to_nc(v::Variable, data, indexes::Union{AbstractRange{<:Integer}}...)
     ind = prod(length.(indexes)) == 1 ? first.(indexes) : normalizeindexes(size(v),indexes)
     return _write_data_to_nc(v, data, ind...)
 end
