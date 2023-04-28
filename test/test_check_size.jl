@@ -46,7 +46,7 @@ ds = NCDataset(filename, "c")
 ds.dim["z"] = 4
 ds.dim["time"] = Inf
 defVar(ds, "temp", Float64, ("z", "time"))
-ds["temp"][:, :, 1] = rand(4)
+ds["temp"][:, 1] = rand(4)
 close(ds)
 
 rm(filename)
