@@ -1,3 +1,6 @@
+using NCDatasets
+using Test
+
 sz = (4,5)
 filename = tempname()
 #filename = "/tmp/test-6.nc"
@@ -39,7 +42,7 @@ defDim(ds,"lon",Inf)
 defDim(ds,"lat",110)
 v = defVar(ds,"temperature",Float32,("lon","lat"))
 data = [Float32(i+j) for i = 1:100, j = 1:110]
-v[:,1] = data[:,1]
-v[:,:] = data
+v[1:100,1] = data[:,1]
+v[1:100,:] = data
 close(ds)
 rm(filename)
