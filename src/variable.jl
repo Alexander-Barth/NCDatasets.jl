@@ -349,11 +349,6 @@ end
 
 _write_data_to_nc(v::Variable, data) = _write_data_to_nc(v, data, 1)
 
-function _write_data_to_nc(v::Variable, data, indexes::Colon...)
-    @info "Am I even getting here ?"
-    nc_put_var(v.ds.ncid,v.varid,data)
-end
-
 function _write_data_to_nc(v::Variable{T, N}, data, indexes::StepRange{Int,Int}...) where {T, N}
     start,count,stride,jlshape = ncsub(indexes)
     nc_put_vars(v.ds.ncid,v.varid,start,count,stride,T.(data))
