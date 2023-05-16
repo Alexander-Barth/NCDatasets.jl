@@ -362,7 +362,7 @@ function url(dt)
         nctime[1] = dt
         nclon[:] = 0:359
         nclat[:] = -90:90
-        ncvar[:,:,:] = array
+        ncvar[:,:,1:size(array,3)] = array
     end
     return fname
 end
