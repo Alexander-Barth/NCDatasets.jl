@@ -368,7 +368,9 @@ getchunksize(v::Variable) = getchunksize(haschunks(v),v)
 getchunksize(::DiskArrays.Chunked, v::Variable) = chunking(v)[2]
 # getchunksize(::DiskArrays.Unchunked, v::Variable) = DiskArrays.estimate_chunksize(v)
 getchunksize(::DiskArrays.Unchunked, v::Variable) = size(v)
-eachchunk(v::Variable) = DiskArrays.GridChunks(v, getchunksize(v))
+eachchunk(v::CFVariable) = eachchunk(v.var)
+haschunks(v::CFVariable) = haschunks(v.var)
+eachchunk(v::Variable) = DiskArrays.GridChunks(v, Tuple(getchunksize(v)))
 haschunks(v::Variable) = (chunking(v)[1] == :contiguous ? DiskArrays.Unchunked() : DiskArrays.Chunked())
 
 _normalizeindex(n,ind::Base.OneTo) = 1:1:ind.stop
