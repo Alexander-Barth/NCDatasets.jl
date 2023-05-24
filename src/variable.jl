@@ -309,7 +309,7 @@ end
 nomissing(a::AbstractArray,value) = a
 export nomissing
 
-function readblock!(v::Variable, aout, indexes::AbstractVector...)
+function readblock!(v::Variable, aout, indexes::TI...) where TI <: Union{AbstractUnitRange,StepRange}
     datamode(v.ds)
     _read_data_from_nc!(v, aout, indexes...)
     return aout
@@ -337,7 +337,7 @@ _read_data_from_nc!(v::Variable, aout) = _read_data_from_nc!(v, aout, 1)
 # readblock!(v::Variable{T, 0}, aout) where T = readblock!(v, aout, 1)
 # writeblock!(v::Variable{T, 0}, data) where T = writeblock!(v, data, 1)
 
-function writeblock!(v::Variable, data, indexes::AbstractVector...)
+function writeblock!(v::Variable, data, indexes::TI...) where TI <: Union{AbstractUnitRange,StepRange}
     datamode(v.ds)
     _write_data_to_nc(v, data, indexes...)
     return data
