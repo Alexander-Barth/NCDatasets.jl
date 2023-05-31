@@ -2194,7 +2194,7 @@ function init_certificate_authority()
             end
         end
     else
-        @info "nc_rc_set: set $key to $value"
+        @debug "nc_rc_set: set $key to $value"
         nc_rc_set(key,value)
     end
 end
