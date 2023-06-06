@@ -39,6 +39,7 @@ println("NetCDF version: ",NCDatasets.nc_inq_libvers())
     include("test_missing_value.jl")
     include("test_override_attrib.jl")
     include("test_memory.jl")
+    include("test_https.jl")
 end
 
 @testset "NetCDF4 groups" begin

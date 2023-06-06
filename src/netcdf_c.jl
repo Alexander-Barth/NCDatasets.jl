@@ -2151,6 +2151,14 @@ function nc_rc_set(key,value)
     check(ccall((:nc_rc_set,libnetcdf),Cint,(Cstring,Cstring),key,value))
 end
 
+function nc_rc_get(key)
+    p = ccall((:nc_rc_get,libnetcdf),Cstring,(Cstring,),key)
+    if p !== C_NULL
+        unsafe_string(p)
+    else
+        error("NetCDF: nc_rc_get: unable to get key $key")
+    end
+end
 
 function netcdf_version()
     VersionNumber(split(nc_inq_libvers())[1])
@@ -2186,7 +2194,7 @@ function init_certificate_authority()
             end
         end
     else
-        @info "nc_rc_set: set $key to $value"
+        @debug "nc_rc_set: set $key to $value"
         nc_rc_set(key,value)
     end
 end
