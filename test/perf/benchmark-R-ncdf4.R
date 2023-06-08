@@ -1,4 +1,6 @@
-# install.packages("rbenchmark")
+# Install dependencies via:
+#
+# install.packages("microbenchmark")
 # install.packages("ncdf4")
 
 library(ncdf4)
