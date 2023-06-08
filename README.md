@@ -185,12 +185,12 @@ The code is available at https://github.com/Alexander-Barth/NCDatasets.jl/tree/m
 
 | Module           | median | minimum |  mean | std. dev. |
 |:---------------- | ------:| -------:| -----:| ---------:|
-| R-ncdf4          |  0.572 |   0.550 | 0.575 |     0.023 |
-| python-netCDF4   |  0.504 |   0.498 | 0.505 |     0.003 |
-| julia-NCDatasets |  0.228 |   0.212 | 0.226 |     0.005 |
+| R-ncdf4          |  0.362 |   0.342 | 0.364 |     0.013 |
+| python-netCDF4   |  0.557 |   0.534 | 0.561 |     0.013 |
+| julia-NCDatasets |  0.164 |   0.161 | 0.170 |     0.011 |
 
 All runtimes are in seconds.
-Julia 1.6.0 (with NCDatasets b953bf5), R 3.4.4 (with ncdf4 1.17) and Python 3.6.9 (with netCDF4 1.5.4).
+Julia 1.9.0 (with NCDatasets 0.12.16), R 4.1.2 (with ncdf4 1.21) and Python 3.10.6 (with netCDF4 1.6.1).
 This CPU is a i7-7700.
 
 
