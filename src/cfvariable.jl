@@ -403,7 +403,7 @@ function _range_indices_dest(of,v,rest...)
 end
 range_indices_dest(ri...) = _range_indices_dest((),ri...)
 
-function Base.getindex(v::Union{CFVariable,MFVariable,SubVariable},indices::Union{Int,Colon,AbstractRange{<:Integer},Vector{Int}}...)
+function Base.getindex(v::Union{MFVariable,SubVariable},indices::Union{Int,Colon,AbstractRange{<:Integer},Vector{Int}}...)
     @debug "transform vector of indices to ranges"
 
     sz_source = size(v)
