@@ -29,7 +29,7 @@ ncv1 = defVar(ds,"v1", UInt8, ("longitude", "latitude", "time"), fillvalue = UIn
 for n = 1:sz[3]
     @show n
     ncv1[:,:,n] = rand(1:100,sz[1],sz[2])
-    ncv1[:,1,n] = missing
+    ncv1[:,1,n] .= missing
 end
 
 close(ds)
