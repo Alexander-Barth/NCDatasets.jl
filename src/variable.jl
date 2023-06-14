@@ -309,11 +309,21 @@ end
 nomissing(a::AbstractArray,value) = a
 export nomissing
 
-function readblock!(v::Variable, aout, indexes::TI...) where TI <: Union{AbstractUnitRange,StepRange}
+# This method needs to be duplicated instead of using an Union. Otherwise a DiskArrays fallback is called instead which impacts performances 
+# (see https://github.com/Alexander-Barth/NCDatasets.jl/pull/205#issuecomment-1589575041)
+function readblock!(v::Variable, aout, indexes::AbstractUnitRange...)
     datamode(v.ds)
     _read_data_from_nc!(v, aout, indexes...)
     return aout
 end
+
+function readblock!(v::Variable, aout, indexes::StepRange...)
+    datamode(v.ds)
+    _read_data_from_nc!(v, aout, indexes...)
+    return aout
+end
+
+readblock!(v::Variable, aout) = _read_data_from_nc!(v::Variable, aout)
 
 function _read_data_from_nc!(v::Variable, aout, indexes::Int...)
     aout .= nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in reverse(indexes)])
