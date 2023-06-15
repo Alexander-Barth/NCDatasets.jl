@@ -93,14 +93,14 @@ ds["unlimited_variable"][:,:,:] = randn(10,10,4)
 close(ds)
 ```
 """
-function defDim(ds::NCDataset,name,len)
+function defDim(ds::NCDataset,name::SymbolOrString,len)
     defmode(ds) # make sure that the file is in define mode
     dimid = nc_def_dim(ds.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
     return nothing
 end
 export defDim
 
-function renameDim(ds::NCDataset,oldname,newname)
+function renameDim(ds::NCDataset,oldname::SymbolOrString,newname::SymbolOrString)
     defmode(ds) # make sure that the file is in define mode
     dimid = nc_inq_dimid(ds.ncid,oldname)
     nc_rename_dim(ds.ncid,dimid,newname)
