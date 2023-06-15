@@ -96,7 +96,7 @@ julia> NCDataset("test_file.nc","c") do ds
 
 
 """
-function defVar(ds::NCDataset,name,vtype::DataType,dimnames; kwargs...)
+function defVar(ds::NCDataset,name::SymbolOrString,vtype::DataType,dimnames; kwargs...)
     # all keyword arguments as dictionary
     kw = Dict(k => v for (k,v) in kwargs)
 
@@ -155,7 +155,7 @@ end
 
 # data has the type e.g. Array{Union{Missing,Float64},3}
 function defVar(ds::NCDataset,
-                name,
+                name::SymbolOrString,
                 data::AbstractArray{Union{Missing,nctype},N},
                 dimnames;
                 kwargs...) where nctype <: Union{Int8,UInt8,Int16,Int32,Int64,Float32,Float64} where N
@@ -166,14 +166,14 @@ end
 # Vector{DateTime360Day}
 # Data is always stored as Float64 in the NetCDF file
 function defVar(ds::NCDataset,
-                name,
+                name::SymbolOrString,
                 data::AbstractArray{<:Union{Missing,nctype},N},
                 dimnames;
                 kwargs...) where nctype <: Union{DateTime,AbstractCFDateTime} where N
     _defVar(ds::NCDataset,name,data,Float64,dimnames; kwargs...)
 end
 
-function defVar(ds::NCDataset,name,data,dimnames; kwargs...)
+function defVar(ds::NCDataset,name::SymbolOrString,data,dimnames; kwargs...)
     # eltype of a String would be Char
     if data isa String
         nctype = String
@@ -237,7 +237,7 @@ function _defVar(ds::NCDataset,name,data,nctype,dimnames; attrib = [], kwargs...
 end
 
 
-function defVar(ds::NCDataset,name,data::T; kwargs...) where T <: Union{Number,String,Char}
+function defVar(ds::NCDataset,name::SymbolOrString,data::T; kwargs...) where T <: Union{Number,String,Char}
     v = defVar(ds,name,T,(); kwargs...)
     v[:] = data
     return v
