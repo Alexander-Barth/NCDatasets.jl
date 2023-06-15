@@ -33,11 +33,11 @@ import CommonDataModel: AbstractDataset, AbstractVariable,
     fillvalue, fill_and_missing_values,
     scale_factor, add_offset, time_origin, time_factor,
     CFtransformdata!,
-    CFVariable, variable, cfvariable,
+    CFVariable, variable, cfvariable, defVar,
     path, name, isopen, unlimited, dataset,
-    groupnames, group,
-    dimnames, dim,
-    attribnames, attrib
+    groupnames, group, defGroup,
+    dimnames, dim, defDim,
+    attribnames, attrib, defAttrib
 
 function __init__()
     NetCDF_jll.is_available() && init_certificate_authority()
