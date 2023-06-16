@@ -260,4 +260,9 @@ v_src = defVar(ds_src,"time",data,("time",), attrib = OrderedDict(
 
 filename_dest = tempname()
 ds_dest = NCDataset(filename_dest, "c")
-defVar(ds_dest,v_src)
+v_dest = defVar(ds_dest,v_src)
+name(v_src) == name(v_dest)
+@test v_src[:] == v_dest[:]
+
+close(ds_src)
+close(ds_dest)
