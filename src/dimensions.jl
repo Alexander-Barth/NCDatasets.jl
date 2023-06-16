@@ -27,6 +27,7 @@ end
 
 """
     unlimited(d::Dimensions)
+    unlimited(ds::AbstractNCDataset)
 
 Return the names of all unlimited dimensions.
 """
@@ -34,6 +35,7 @@ function unlimited(d::Dimensions)
     return String[nc_inq_dimname(d.ds.ncid,dimid)
                   for dimid in nc_inq_unlimdims(d.ds.ncid)]
 end
+unlimited(ds::AbstractNCDataset) = unlimited(ds.dim)
 
 export unlimited
 
