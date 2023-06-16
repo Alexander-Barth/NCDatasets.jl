@@ -261,8 +261,9 @@ v_src = defVar(ds_src,"time",data,("time",), attrib = OrderedDict(
 filename_dest = tempname()
 ds_dest = NCDataset(filename_dest, "c")
 v_dest = defVar(ds_dest,v_src)
-name(v_src) == name(v_dest)
-@test v_src[:] == v_dest[:]
+v_dest[:] = v_dest[:] .+ Dates.Minute(30)
+@test name(v_dest) == name(v_src)
+@test v_dest[:] == v_src[:] .+ Dates.Minute(30)
 
 close(ds_src)
 close(ds_dest)
