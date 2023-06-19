@@ -293,7 +293,7 @@ function to_range_list(index::Vector{T},len) where T <: Integer
         baseindex += length(range)
     end
 
-    @assert reduce(vcat,indices_ranges) == index
+    @assert reduce(vcat,indices_ranges,init=T[]) == index
     return indices_ranges
 end
 

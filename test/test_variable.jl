@@ -267,3 +267,11 @@ v_dest[:] = v_dest[:] .+ Dates.Minute(30)
 
 close(ds_src)
 close(ds_dest)
+
+# issue 209
+filename_src = tempname()
+ds = NCDataset(filename_src, "c")
+data = [1,2,3]
+ncv = defVar(ds,"data",data,("data",))
+@test isempty(ncv[Int[]])
+close(ds)
