@@ -275,3 +275,16 @@ data = [1,2,3]
 ncv = defVar(ds,"data",data,("data",))
 @test isempty(ncv[Int[]])
 close(ds)
+
+# issue 211
+filename = tempname()
+ds = NCDataset(filename, "c")
+data = [1,2,3]
+ncv = defVar(ds,"data",data,("data",))
+data2 = zeros(Int,1)
+# data2 too small
+@test_throws DimensionMismatch NCDatasets.load!(ds["data"].var,data2,:)
+
+data2 = zeros(Int,10)
+# asking too many elements
+@test_throws BoundsError NCDatasets.load!(ds["data"].var,data2,1:10)
