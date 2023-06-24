@@ -254,7 +254,7 @@ export deflate
 checksum(v::Variable,checksummethod) = nc_def_var_fletcher32(v.ds.ncid,v.varid,checksummethod)
 
 """
-   checksummethod = checksum(v::Variable)
+    checksummethod = checksum(v::Variable)
 
 Return the checksum method of the variable `v` which can be either
 be `:fletcher32` or `:nochecksum`.
