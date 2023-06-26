@@ -96,17 +96,22 @@ julia> NCDataset("test_file.nc","c") do ds
 
 
 """
-function defVar(ds::NCDataset,name::SymbolOrString,vtype::DataType,dimnames; kwargs...)
-    # all keyword arguments as dictionary
-    kw = Dict(k => v for (k,v) in kwargs)
-
+function defVar(ds::NCDataset,name::SymbolOrString,vtype::DataType,dimnames;
+                chunksizes = nothing,
+                shuffle = false,
+                deflatelevel = nothing,
+                checksum = nothing,
+                fillvalue = nothing,
+                nofill = false,
+                typename = nothing,
+                attrib = ())
     defmode(ds) # make sure that the file is in define mode
     dimids = Cint[nc_inq_dimid(ds.ncid,dimname) for dimname in dimnames[end:-1:1]]
 
     typeid =
         if vtype <: Vector
             # variable-length type
-            typeid = nc_def_vlen(ds.ncid, kw[:typename], ncType[eltype(vtype)])
+            typeid = nc_def_vlen(ds.ncid, typename, ncType[eltype(vtype)])
         else
             # base-type
             ncType[vtype]
@@ -114,41 +119,34 @@ function defVar(ds::NCDataset,name::SymbolOrString,vtype::DataType,dimnames; kwa
 
     varid = nc_def_var(ds.ncid,name,typeid,dimids)
 
-    if haskey(kw,:chunksizes)
+    if chunksizes !== nothing
         storage = :chunked
-        chunksizes = kw[:chunksizes]
-
         # this will fail on NetCDF-3 files
         nc_def_var_chunking(ds.ncid,varid,storage,reverse(chunksizes))
     end
 
-    if haskey(kw,:shuffle) || haskey(kw,:deflatelevel)
-        shuffle = get(kw,:shuffle,false)
-        deflate = haskey(kw,:deflatelevel)
-        deflate_level = get(kw,:deflatelevel,0)
+    if shuffle || (deflatelevel !== nothing)
+        deflate = deflatelevel !== nothing
 
         # this will fail on NetCDF-3 files
-        nc_def_var_deflate(ds.ncid,varid,shuffle,deflate,deflate_level)
+        nc_def_var_deflate(ds.ncid,varid,shuffle,deflate,deflatelevel)
     end
 
-    if haskey(kw,:checksum)
-        checksum = kw[:checksum]
+    if checksum !== nothing
         nc_def_var_fletcher32(ds.ncid,varid,checksum)
     end
 
-    if haskey(kw,:fillvalue)
-        fillvalue = kw[:fillvalue]
-        nofill = get(kw,:nofill,false)
+    if fillvalue !== nothing
         nc_def_var_fill(ds.ncid, varid, nofill, vtype(fillvalue))
     end
 
-    if haskey(kw,:attrib)
-        v = ds[name]
-        for (attname,attval) in kw[:attrib]
-            v.attrib[attname] = attval
-        end
+    v = ds[name]
+    for (attname,attval) in attrib
+        v.attrib[attname] = attval
     end
 
+    # note: element type of ds[name] potentially changed
+    # we cannot return v here
     return ds[name]
 end
 
