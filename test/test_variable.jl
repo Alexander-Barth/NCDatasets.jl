@@ -2,6 +2,7 @@ using Test
 using Dates
 using Printf
 using NCDatasets
+using DataStructures
 
 sz = (4,5)
 filename = tempname()
@@ -160,7 +161,7 @@ rm(filename)
 filename = tempname()
 NCDataset(filename,"c") do ds
     defVar(ds,"temp",randn(10,11),("lon","lat"))
-    @test_throws NCDatasets.NetCDFError defVar(ds,"salt",randn(10,12),("lon","lat"))
+    @test_throws ErrorException defVar(ds,"salt",randn(10,12),("lon","lat"))
 end
 rm(filename)
 
@@ -247,3 +248,43 @@ for data = sample_data
     @test ncv[] == data
 end
 close(ds)
+
+
+# issue 207
+filename_src = tempname()
+ds_src = NCDataset(filename_src, "c")
+data = [DateTime(2000,1,1),DateTime(2000,1,2)]
+v_src = defVar(ds_src,"time",data,("time",), attrib = OrderedDict(
+    "units" => "days since 2000-01-01",
+))
+
+filename_dest = tempname()
+ds_dest = NCDataset(filename_dest, "c")
+v_dest = defVar(ds_dest,v_src)
+v_dest[:] = v_dest[:] .+ Dates.Minute(30)
+@test name(v_dest) == name(v_src)
+@test v_dest[:] == v_src[:] .+ Dates.Minute(30)
+
+close(ds_src)
+close(ds_dest)
+
+# issue 209
+filename_src = tempname()
+ds = NCDataset(filename_src, "c")
+data = [1,2,3]
+ncv = defVar(ds,"data",data,("data",))
+@test isempty(ncv[Int[]])
+close(ds)
+
+# issue 211
+filename = tempname()
+ds = NCDataset(filename, "c")
+data = [1,2,3]
+ncv = defVar(ds,"data",data,("data",))
+data2 = zeros(Int,1)
+# data2 too small
+@test_throws DimensionMismatch NCDatasets.load!(ds["data"].var,data2,:)
+
+data2 = zeros(Int,10)
+# asking too many elements
+@test_throws BoundsError NCDatasets.load!(ds["data"].var,data2,1:10)

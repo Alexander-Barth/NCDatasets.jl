@@ -27,6 +27,7 @@ end
 
 """
     unlimited(d::Dimensions)
+    unlimited(ds::AbstractNCDataset)
 
 Return the names of all unlimited dimensions.
 """
@@ -34,6 +35,7 @@ function unlimited(d::Dimensions)
     return String[nc_inq_dimname(d.ds.ncid,dimid)
                   for dimid in nc_inq_unlimdims(d.ds.ncid)]
 end
+unlimited(ds::AbstractNCDataset) = unlimited(ds.dim)
 
 export unlimited
 
@@ -93,14 +95,14 @@ ds["unlimited_variable"][:,:,:] = randn(10,10,4)
 close(ds)
 ```
 """
-function defDim(ds::NCDataset,name,len)
+function defDim(ds::NCDataset,name::SymbolOrString,len)
     defmode(ds) # make sure that the file is in define mode
     dimid = nc_def_dim(ds.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
     return nothing
 end
 export defDim
 
-function renameDim(ds::NCDataset,oldname,newname)
+function renameDim(ds::NCDataset,oldname::SymbolOrString,newname::SymbolOrString)
     defmode(ds) # make sure that the file is in define mode
     dimid = nc_inq_dimid(ds.ncid,oldname)
     nc_rename_dim(ds.ncid,dimid,newname)

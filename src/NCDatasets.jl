@@ -33,11 +33,11 @@ import CommonDataModel: AbstractDataset, AbstractVariable,
     fillvalue, fill_and_missing_values,
     scale_factor, add_offset, time_origin, time_factor,
     CFtransformdata!,
-    CFVariable, variable, cfvariable,
+    CFVariable, variable, cfvariable, defVar,
     path, name, isopen, unlimited, dataset,
-    groupnames, group,
-    dimnames, dim,
-    attribnames, attrib
+    groupnames, group, defGroup,
+    dimnames, dim, defDim,
+    attribnames, attrib, defAttrib
 import DiskArrays
 import DiskArrays: readblock!, writeblock!, eachchunk, haschunks
 using DiskArrays: @implement_diskarray

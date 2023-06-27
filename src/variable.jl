@@ -86,11 +86,19 @@ variable(ds::NCDataset,varname::Symbol) = _variable(ds,varname)
 export variable
 
 
+function checkbuffer(len,data)
+    if length(data) != len
+        throw(DimensionMismatch("expected an array with $(len) elements, but got an arrow with $(length(data)) elements"))
+    end
+end
+
 """
     NCDatasets.load!(ncvar::Variable, data, indices)
 
 Loads a NetCDF variables `ncvar` in-place and puts the result in `data` along the
-specified `indices`.
+specified `indices`. One can use @inbounds annotate code where
+bounds checking can be elided by the compiler (which typically require
+type-stable code).
 
 ```julia
 ds = Dataset("file.nc")
@@ -98,6 +106,8 @@ ncv = ds["vgos"].var;
 # data must have the right shape and type
 data = zeros(eltype(ncv),size(ncv));
 NCDatasets.load!(ncv,data,:,:,:)
+# or
+# @inbounds NCDatasets.load!(ncv,data,:,:,:)
 close(ds)
 
 # loading a subset
@@ -106,19 +116,31 @@ load!(ds["temp"].var,data,:,1) # loads the 1st column
 ```
 
 """
-@inline function load!(ncvar::Variable{T,N}, data, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
+@inline function load!(ncvar::Variable{T,N}, data::AbstractArray{T}, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
     sizes = size(ncvar)
     normalizedindices = normalizeindexes(sizes, indices)
     ind = to_indices(ncvar,normalizedindices)
 
     start,count,stride,jlshape = ncsub(ind)
+
+    @boundscheck begin
+        checkbounds(ncvar,indices...)
+        checkbuffer(prod(count),data)
+    end
+
     nc_get_vars!(ncvar.ds.ncid,ncvar.varid,start,count,stride,data)
 end
 
-@inline function load!(ncvar::Variable{T,2}, data, i::Colon,j::UnitRange) where T
+@inline function load!(ncvar::Variable{T,2}, data::AbstractArray{T}, i::Colon,j::UnitRange) where T
     # reversed and 0-based
     start = [first(j)-1,0]
     count = [length(j),size(ncvar,1)]
+
+    @boundscheck begin
+        checkbounds(ncvar,i,j)
+        checkbuffer(prod(count),data)
+    end
+
     nc_get_vara!(ncvar.ds.ncid,ncvar.varid,start,count,data)
 end
 
@@ -232,7 +254,7 @@ export deflate
 checksum(v::Variable,checksummethod) = nc_def_var_fletcher32(v.ds.ncid,v.varid,checksummethod)
 
 """
-   checksummethod = checksum(v::Variable)
+    checksummethod = checksum(v::Variable)
 
 Return the checksum method of the variable `v` which can be either
 be `:fletcher32` or `:nochecksum`.
