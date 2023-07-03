@@ -337,8 +337,12 @@ function Base.getindex(v::Union{CFVariable,Variable,MFVariable,SubVariable},indi
         ind_source = ntuple(i -> ri[i][R[i]],N)
         ind_dest = ntuple(i -> ri_dest[i][R[i]],length(ri_dest))
         #dest[ind_dest...] = v[ind_source...]
-        buffer = Array{eltype(v.var),length(ind_dest)}(undef,length.(ind_dest))
-        load!(v,view(dest,ind_dest...),buffer,ind_source...)
+        if hasproperty(v,:var)
+            buffer = Array{eltype(v.var),length(ind_dest)}(undef,length.(ind_dest))
+            load!(v,view(dest,ind_dest...),buffer,ind_source...)
+        else
+            dest[ind_dest...] = v[ind_source...]
+        end
     end
     return dest
 end
