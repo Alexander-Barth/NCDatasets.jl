@@ -387,18 +387,6 @@ function _write_data_to_nc(v::Variable, data, indexes::Union{AbstractRange{<:Int
     return _write_data_to_nc(v, data, ind...)
 end
 
-function grow!(v::CFVariable, data, indexes::Union{Integer, Colon}...)
-    unlimdims = unlimited(Dimensions(CommonDataModel.dataset(v)))
-    length(unlimdims) == 1 || error("Only 1 unlimited dimension is supported") 
-    alldims = dimnames(v)
-    iunlimdim = findfirst(==(unlimdims[1]), alldims)
-    icol = findfirst(x -> x isa Colon, indexes)
-    iunlimdim == icol || ArgumentError("The Colon in the arguments must match the unlimited dimension.")
-    inds = replace(indexes, Colon() => 1:length(data))
-    v[inds...] = data
-    return v
-end
-
 getchunksize(v::Variable) = getchunksize(haschunks(v),v)
 getchunksize(::DiskArrays.Chunked, v::Variable) = chunking(v)[2]
 # getchunksize(::DiskArrays.Unchunked, v::Variable) = DiskArrays.estimate_chunksize(v)
