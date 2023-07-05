@@ -489,20 +489,32 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
         # end
     end
 
+    function _destindex(ind, dimname, dimlength, unlimdims)
+        nind = _normalizeindex(dimlength, ind)
+        if dimname in unlimdims
+            nind[1]:dimlength
+        else
+            nind
+        end
+    end
+    _maxrange(dimname, idimensions, dimlength) = haskey(idimensions, dimname) ? idimensions[dimname][end] : dimlength
+
     # loop over variables
     for varname in include
         (varname ∈ exclude) && continue
         @debug "Writing variable $varname..."
 
         cfvar = src[varname]
+        cfsz = size(cfvar)
         dimension_names = dimnames(cfvar)
         var = cfvar.var
         # indices for subset
         index = ntuple(i -> torange(get(idimensions,dimension_names[i],:)),length(dimension_names))
+        destindex = ntuple(i -> _destindex(index[i], dimension_names[i], _maxrange(dimension_names[i], idimensions, cfsz[i]), unlimited_dims), length(dimension_names))
 
         destvar = defVar(dest, varname, eltype(var), dimension_names; attrib = attribs(cfvar))
         # copy data
-        destvar.var[:] = cfvar.var[index...]
+        destvar.var[destindex...] = cfvar.var[index...]
     end
 
     # loop over all global attributes
