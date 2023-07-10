@@ -75,7 +75,7 @@ Variables
 [...]
 ```
 
-This creates the central structure of NCDatasets.jl, `NCDataset`, which represents the contents of the netCDF file (without immediatelly loading everything in memory).
+This creates the central structure of NCDatasets.jl, `NCDataset`, which represents the contents of the netCDF file (without immediately loading everything in memory).
 
 The following displays the information just for the variable `varname`:
 
@@ -187,7 +187,7 @@ end
 ### Edit an existing netCDF file
 
 When you need to modify the variables or the attributes of a netCDF, you have
-to open it with the `"a"` option. Here of instance we add a global attribute *creator* to the
+to open it with the `"a"` option. Here, for instance, we add a global attribute *creator* to the
 file created in the previous step.
 
 ```julia
@@ -231,7 +231,7 @@ ncarea.attrib["units"] = "meter2";
 
 ### Get one or several variables by specifying the value of an attribute
 
-The variable name are not always standardized, for example the longitude we can
+The variable names are not always standardized. For example, for the longitude we can
 find: `lon`, `LON`, `longitude`, ...
 
 The solution implemented in the function `varbyattrib` consists in searching for the
@@ -242,7 +242,7 @@ nclon = varbyattrib(ds, standard_name = "longitude");
 ```
 will return the list of variables of the dataset `ds` that have "longitude"
 as standard name. To directly load the data of the first variable with the
-attribute `standard_name` equal to `"longitude"` one can the following:
+attribute `standard_name` equal to `"longitude"` one can do the following:
 
 ```julia
 data = varbyattrib(ds, standard_name = "longitude")[1][:]

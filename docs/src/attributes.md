@@ -23,7 +23,7 @@ typeof(attributes_as_dictionary)
 
 ## Possible type promotion in Julia
 
-There is a subtile problem with the following code:
+There is a subtle problem with the following code:
 
 ```julia
 ncv1 = defVar(ds,"v1", UInt8, ("longitude", "latitude", "time"), attrib = [
@@ -48,7 +48,7 @@ Julia effectively promotes the `_FillValue` to Float64 which leads to a `"NetCDF
 #   "_FillValue" => 255.0
 ```
 
-Note that the type of the second element of the `Pair`.
+Note the type of the second element of the `Pair`.
 
 Using a Julia `Dict` does not show this behaviour:
 

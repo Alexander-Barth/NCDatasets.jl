@@ -2,7 +2,7 @@
 
 ## Multi-file support
 
-Multiple files can also be aggregated over a given dimensions (or the record dimension). In this example, 3 sea surface temperature fields from the
+Multiple files can also be aggregated over a given dimension (or the record dimension). In this example, 3 sea surface temperature fields from the
 1992-01-01 to 1992-01-03 are aggregated using the OPeNDAP service from PODAAC.
 
 ```julia
@@ -51,7 +51,7 @@ name(ncbat)
 
 If there are multiple variables with the `standard_name` equal to `height`, an error is returned because it is ambiguous which variable should be accessed.
 
-All variables whose dimensions are also dimensions of `ncbat` are considered as related and can also be accessed by sub-setting `ncbar` with their variable names
+All variables whose dimensions are also dimensions of `ncbat` are considered as related and can also be accessed by sub-setting `ncbat` with their variable names
 of CF Standard name:
 
 ```jldoctest mylabel
@@ -67,7 +67,7 @@ The previous call to `ncbat[CF"longitude"]` would also worked if there are multi
 
 ## Views
 
-In Julia, a [view of an array](https://docs.julialang.org/en/v1/base/arrays/#Views-(SubArrays-and-other-view-types)) is a subset of an array but whose elements still point to the original parent array. If one modifies an element of a view, the corresponding element is the parent array is modified too:
+In Julia, a [view of an array](https://docs.julialang.org/en/v1/base/arrays/#Views-(SubArrays-and-other-view-types)) is a subset of an array but whose elements still point to the original parent array. If one modifies an element of a view, the corresponding element in the parent array is modified too:
 
 ```jldoctest example_view_julia
 A = zeros(4,4)
@@ -81,7 +81,7 @@ A[2,2]
 2.0
 ```
 
-Views do not use copy of the array. The parent array and the indices of the view and the obtained via the function [`parent`](https://docs.julialang.org/en/v1/base/arrays/#Base.parent) and [`parentindices`](https://docs.julialang.org/en/v1/base/arrays/#Base.parentindices).
+Views do not use copy of the array. The parent array and the indices of the view are obtained via the function [`parent`](https://docs.julialang.org/en/v1/base/arrays/#Base.parent) and [`parentindices`](https://docs.julialang.org/en/v1/base/arrays/#Base.parentindices).
 
 ```jldoctest example_view_julia
 parent(subset) == A
@@ -129,7 +129,7 @@ lon_subset[:] == [2, 3, 4]
 true
 ```
 
-A view of a NetCDF variable, also implement the function `parent` and `parentindices` with the same meaning as for julia `Array`s.
+A view of a NetCDF variable also implements the function `parent` and `parentindices` with the same meaning as for julia `Array`s.
 
 A whole dataset can also be sliced using a `view(ds, dim1=range1, dim2=range2...)`. For example:
 
@@ -149,8 +149,8 @@ Such sliced datasets can for example be saved into a new NetCDF file using `writ
 write("slice.nc",ds_subset)
 ```
 
-Any dimensions not mentioned in the `@view` call is not sliced.
-While `@view` produces a slices based on indices, the `NCDatasets.@select` macro produces a slice (of an NetCDF variable or dataset)
+Any dimension not mentioned in the `@view` call is not sliced.
+While `@view` produces a slice based on indices, the `NCDatasets.@select` macro produces a slice (of an NetCDF variable or dataset)
 based on the values of other related variables (typically coordinates).
 
 ## Data selection based on values
