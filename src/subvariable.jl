@@ -66,7 +66,7 @@ function Base.view(v::SubVariable,indices::Union{Int,Colon,AbstractVector{Int}}.
 end
 
 """
-    sv = view(v::NCDatasets.AbstractVariable,indices...)
+    sv = view(v::SubVariable,indices...)
 
 Returns a view of the variable `v` where indices are only lazily applied.
 No data is actually copied or loaded.
@@ -91,7 +91,7 @@ close(ds)
 ```
 
 """
-Base.view(v::AbstractVariable,indices::Union{Int,Colon,AbstractVector{Int}}...) = SubVariable(v,indices...)
+Base.view(v::SubVariable,indices::Union{Int,Colon,AbstractVector{Int}}...) = SubVariable(v,indices...)
 Base.view(v::SubVariable,indices::CartesianIndex) = view(v,indices.I...)
 Base.view(v::SubVariable,indices::CartesianIndices) = view(v,indices.indices...)
 
