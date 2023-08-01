@@ -146,7 +146,7 @@ Stacktrace:
 during initialization of module NetCDF_jll
 ```
 
-You will likely have similar issue with julia installed from other package manager (like Debian/Ubuntu apt, Homebrew...). The only supported solution is to install
+You will likely have similar issues with julia installed from other package managers (like Debian/Ubuntu apt, Homebrew...). The only supported solution is to install
 the [offical julia builds](https://julialang.org/downloads/).
 
 
