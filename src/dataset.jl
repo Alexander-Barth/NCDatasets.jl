@@ -192,7 +192,7 @@ function NCDataset(filename::AbstractString,
         elseif mode == "a"
             NC_WRITE
         elseif mode == "c"
-            ncmode  = NC_CLOBBER
+            NC_CLOBBER
         else
             throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
         end
