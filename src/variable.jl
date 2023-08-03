@@ -101,7 +101,8 @@ bounds checking can be elided by the compiler (which typically require
 type-stable code).
 
 ```julia
-ds = Dataset("file.nc")
+using NCDatasets
+ds = NCDataset("file.nc")
 ncv = ds["vgos"].var;
 # data must have the right shape and type
 data = zeros(eltype(ncv),size(ncv));
@@ -115,8 +116,21 @@ data = zeros(5); # must have the right shape and type
 load!(ds["temp"].var,data,:,1) # loads the 1st column
 ```
 
+!!! note
+
+    For a netCDF variable of type `NC_CHAR`, the element type of the `data`
+    array must be `UInt8` and cannot be the julia `Char` type, because the
+    julia `Char` type uses 4 bytes and the NetCDF `NC_CHAR` only 1 byte.
 """
 @inline function load!(ncvar::Variable{T,N}, data::AbstractArray{T}, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
+    @inline unsafe_load!(ncvar, data, indices...)
+end
+
+@inline function load!(ncvar::Variable{Char,N}, data::AbstractArray{UInt8}, indices::Union{Integer, UnitRange, StepRange, Colon}...) where N
+    @inline unsafe_load!(ncvar, data, indices...)
+end
+
+@inline function unsafe_load!(ncvar::Variable, data, indices::Union{Integer, UnitRange, StepRange, Colon}...)
     sizes = size(ncvar)
     normalizedindices = normalizeindexes(sizes, indices)
     ind = to_indices(ncvar,normalizedindices)
@@ -532,5 +546,3 @@ end
 
 Base.getindex(v::Union{MFVariable,DeferVariable,Variable},ci::CartesianIndices) = v[ci.indices...]
 Base.setindex!(v::Union{MFVariable,DeferVariable,Variable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)
-
-
