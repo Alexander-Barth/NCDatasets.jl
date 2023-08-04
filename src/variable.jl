@@ -138,11 +138,11 @@ load!(ds["temp"].var,data,:,1) # loads the 1st column
     julia `Char` type uses 4 bytes and the NetCDF `NC_CHAR` only 1 byte.
 """
 @inline function load!(ncvar::Variable{T,N}, data::AbstractArray{T}, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
-    @inline unsafe_load!(ncvar, data, indices...)
+    unsafe_load!(ncvar, data, indices...)
 end
 
 @inline function load!(ncvar::Variable{Char,N}, data::AbstractArray{UInt8}, indices::Union{Integer, UnitRange, StepRange, Colon}...) where N
-    @inline unsafe_load!(ncvar, data, indices...)
+    unsafe_load!(ncvar, data, indices...)
 end
 
 @inline function load!(ncvar::Variable{T,2}, data::AbstractArray{T}, i::Colon,j::UnitRange) where T
