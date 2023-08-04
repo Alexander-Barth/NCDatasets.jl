@@ -1,6 +1,6 @@
 # Dimensions
 
-In the NetCDF data model, dimension have names and a length (but possibly an unlimited length) and are defined for a NetCDF dataset (or group).
+In the NetCDF data model, dimensions have names and a length (but possibly an unlimited length) and are defined for a NetCDF dataset (or group).
 For a given `Variable` or `CFVariable`,the names of the corresponding dimensions are obtained with using [`dimnames`](@ref).
 
 ```@docs

@@ -1,6 +1,6 @@
 # [Performance tips](@id performance_tips)
 
-* Reading data from a file is not type-stable, because the type of the output of the read operation does depedent on the type defined in the NetCDF files and the value of various attribute (like `scale_factor`, `add_offset` and `units` for time conversion). All this information cannot be inferred from a static analysis of the source code. It is therefore recommended to use [type annotation](https://docs.julialang.org/en/v1/manual/types/index.html#Type-Declarations-1) if resulting type of a read operation in known:
+* Reading data from a file is not type-stable, because the type of the output of the read operation is dependent on the type defined in the NetCDF files and the value of various attribute (like `scale_factor`, `add_offset` and `units` for time conversion). All this information cannot be inferred from a static analysis of the source code. It is therefore recommended to use [type annotation](https://docs.julialang.org/en/v1/manual/types/index.html#Type-Declarations-1) if resulting type of a read operation in known:
 
 ```julia
 ds = NCDataset("file.nc")
@@ -8,11 +8,11 @@ nctemp = ds["temp"]
 temp = nctemp[:,:] :: Array{Float64,2}
 # or
 # call_barrier_function(nctemp)
+
+Alternatively, one can also use so called "[function barriers](https://docs.julialang.org/en/v1/manual
 # call_barrier_function(temp)
 close(ds)
-```
-
-Alternatively, one can also use so called "[function barriers](https://docs.julialang.org/en/v1/manual/performance-tips/index.html#kernel-functions-1)" or the in-place `NCDatasets.load!` function (which is unexported, so it has to be prefixed with the module name):
+```/performance-tips/index.html#kernel-functions-1)" or the in-place `NCDatasets.load!` function (which is unexported, so it has to be prefixed with the module name):
 
 ```julia
 ds = NCDataset("file.nc")
@@ -36,7 +36,7 @@ ds = NCDataset("file.nc")
 close(ds)
 ```
 
-* Avoid when possible indexing with arrays and `CartesianIndex` as they also result in loading the data element-wise.
+* Avoid, when possible, indexing with arrays and `CartesianIndex` as they also result in loading the data element-wise.
 
 ```julia
 ds = NCDataset("dataset.nc");

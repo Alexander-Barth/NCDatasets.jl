@@ -92,6 +92,21 @@ function checkbuffer(len,data)
     end
 end
 
+@inline function unsafe_load!(ncvar::Variable, data, indices::Union{Integer, UnitRange, StepRange, Colon}...)
+    sizes = size(ncvar)
+    normalizedindices = normalizeindexes(sizes, indices)
+    ind = to_indices(ncvar,normalizedindices)
+
+    start,count,stride,jlshape = ncsub(ind)
+
+    @boundscheck begin
+        checkbounds(ncvar,indices...)
+        checkbuffer(prod(count),data)
+    end
+
+    nc_get_vars!(ncvar.ds.ncid,ncvar.varid,start,count,stride,data)
+end
+
 """
     NCDatasets.load!(ncvar::Variable, data, indices)
 
@@ -101,7 +116,8 @@ bounds checking can be elided by the compiler (which typically require
 type-stable code).
 
 ```julia
-ds = Dataset("file.nc")
+using NCDatasets
+ds = NCDataset("file.nc")
 ncv = ds["vgos"].var;
 # data must have the right shape and type
 data = zeros(eltype(ncv),size(ncv));
@@ -115,20 +131,18 @@ data = zeros(5); # must have the right shape and type
 load!(ds["temp"].var,data,:,1) # loads the 1st column
 ```
 
+!!! note
+
+    For a netCDF variable of type `NC_CHAR`, the element type of the `data`
+    array must be `UInt8` and cannot be the julia `Char` type, because the
+    julia `Char` type uses 4 bytes and the NetCDF `NC_CHAR` only 1 byte.
 """
 @inline function load!(ncvar::Variable{T,N}, data::AbstractArray{T}, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
-    sizes = size(ncvar)
-    normalizedindices = normalizeindexes(sizes, indices)
-    ind = to_indices(ncvar,normalizedindices)
+    @inline unsafe_load!(ncvar, data, indices...)
+end
 
-    start,count,stride,jlshape = ncsub(ind)
-
-    @boundscheck begin
-        checkbounds(ncvar,indices...)
-        checkbuffer(prod(count),data)
-    end
-
-    nc_get_vars!(ncvar.ds.ncid,ncvar.varid,start,count,stride,data)
+@inline function load!(ncvar::Variable{Char,N}, data::AbstractArray{UInt8}, indices::Union{Integer, UnitRange, StepRange, Colon}...) where N
+    @inline unsafe_load!(ncvar, data, indices...)
 end
 
 @inline function load!(ncvar::Variable{T,2}, data::AbstractArray{T}, i::Colon,j::UnitRange) where T
@@ -312,11 +326,11 @@ nomissing(a::AbstractArray) = a
 """
     a = nomissing(da,value)
 
-Retun the values of the array `da` of type `Array{Union{T,Missing},N}`
+Retun the values of the array `da` of type `AbstractArray{Union{T,Missing},N}`
 as a regular Julia array `a` by replacing all missing value by `value`
 (converted to type `T`).
 This function is identical to `coalesce.(da,T(value))` where T is the element
-tyoe of `da`.
+type of `da`.
 ## Example:
 
 ```julia-repl
@@ -324,7 +338,7 @@ julia> nomissing([missing,1.,2.],NaN)
 # returns [NaN, 1.0, 2.0]
 ```
 """
-function nomissing(da::Array{Union{T,Missing},N},value) where {T,N}
+function nomissing(da::AbstractArray{Union{T,Missing},N},value) where {T,N}
     return replace(da, missing => T(value))
 end
 
