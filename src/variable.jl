@@ -92,6 +92,21 @@ function checkbuffer(len,data)
     end
 end
 
+@inline function unsafe_load!(ncvar::Variable, data, indices::Union{Integer, UnitRange, StepRange, Colon}...)
+    sizes = size(ncvar)
+    normalizedindices = normalizeindexes(sizes, indices)
+    ind = to_indices(ncvar,normalizedindices)
+
+    start,count,stride,jlshape = ncsub(ind)
+
+    @boundscheck begin
+        checkbounds(ncvar,indices...)
+        checkbuffer(prod(count),data)
+    end
+
+    nc_get_vars!(ncvar.ds.ncid,ncvar.varid,start,count,stride,data)
+end
+
 """
     NCDatasets.load!(ncvar::Variable, data, indices)
 
@@ -128,21 +143,6 @@ end
 
 @inline function load!(ncvar::Variable{Char,N}, data::AbstractArray{UInt8}, indices::Union{Integer, UnitRange, StepRange, Colon}...) where N
     @inline unsafe_load!(ncvar, data, indices...)
-end
-
-@inline function unsafe_load!(ncvar::Variable, data, indices::Union{Integer, UnitRange, StepRange, Colon}...)
-    sizes = size(ncvar)
-    normalizedindices = normalizeindexes(sizes, indices)
-    ind = to_indices(ncvar,normalizedindices)
-
-    start,count,stride,jlshape = ncsub(ind)
-
-    @boundscheck begin
-        checkbounds(ncvar,indices...)
-        checkbuffer(prod(count),data)
-    end
-
-    nc_get_vars!(ncvar.ds.ncid,ncvar.varid,start,count,stride,data)
 end
 
 @inline function load!(ncvar::Variable{T,2}, data::AbstractArray{T}, i::Colon,j::UnitRange) where T
