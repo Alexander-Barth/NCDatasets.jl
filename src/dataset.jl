@@ -453,7 +453,10 @@ It is assumed that all the variable of the output file can be loaded in memory.
 function Base.write(dest::NCDataset, src::AbstractDataset;
                     include = keys(src),
                     exclude = String[],
-                    idimensions = Dict())
+                    idimensions = Dict(),
+                    chunk_max_length = 10_000_000,
+                    _ignore_checksum = false,
+                    )
 
     torange(indices::Colon) = indices
     function torange(indices)
@@ -500,9 +503,34 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
         # indices for subset
         index = ntuple(i -> torange(get(idimensions,dimension_names[i],:)),length(dimension_names))
 
+        var_slice = view(var,index...)
+
+
         destvar = defVar(dest, varname, eltype(var), dimension_names; attrib = attribs(cfvar))
+
+        if hasmethod(chunking,Tuple{typeof(var_slice)})
+            storage,chunksizes = chunking(var_slice)
+            @debug "chunking " storage chunksizes
+            chunking(destvar,storage,chunksizes)
+        end
+
+        if hasmethod(deflate,Tuple{typeof(var_slice)})
+            isshuffled,isdeflated,deflate_level = deflate(var_slice)
+            @debug "compression" isshuffled isdeflated deflate_level
+            deflate(destvar,isshuffled,isdeflated,deflate_level)
+        end
+
+        if hasmethod(checksum,Tuple{typeof(var_slice)}) && !_ignore_checksum
+            checksummethod = checksum(var_slice)
+            @debug "check-sum" checksummethod
+            checksum(destvar,checksummethod)
+        end
+
         # copy data
-        destvar.var[:] = cfvar.var[index...]
+        for ci in each_chunk_index(var_slice,chunk_max_length)
+            @debug "indices" ci
+            destvar.var[ci] = var_slice[ci]
+        end
     end
 
     # loop over all global attributes
