@@ -116,5 +116,31 @@ end
 
 
 
+# NetCDF chunking
+
+# storage chunks: chunks as they are stored on disk using  e.g. nc_def_var_chunking
+# processing chunks: chunks that can be processed in RAM
+# processing chunks can be multiple storage chunks if sufficient RAM is available
+# processing chunks are aligned with storage chunks
+function good_chunk_size(v::CommonDataModel.AbstractVariable{T,N},chunk_max_length) where {T,N}
+
+    storage,storage_chunksizes_ = chunking(v)
+    storage_chunksizes = (storage_chunksizes_...,)
+
+    if storage == :chunked
+        sz = size(v) .÷ storage_chunksizes
+        storage_chunklen = prod(storage_chunksizes)
+
+        if chunk_max_length <= storage_chunklen
+            # split storage chunks
+            return good_chunk_size(storage_chunksizes,chunk_max_length)
+        else
+            return good_chunk_size(sz,chunk_max_length ÷ storage_chunklen) .* storage_chunksizes
+        end
+    else
+        return good_chunk_size(size(v),chunk_max_length)
+    end
+end
+
 
 #  LocalWords:  sz OffsetArrays Sys sizeof eltype julia parentindices
