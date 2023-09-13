@@ -89,9 +89,9 @@ mutable struct NCDataset{TDS} <: AbstractNCDataset where TDS <: Union{AbstractNC
                        )
 
         function _finalize(ds)
-            @debug begin
-                ccall(:jl_, Cvoid, (Any,), "finalize $ncid $timeid \n")
-            end
+            #@debug begin
+            #    ccall(:jl_, Cvoid, (Any,), "finalize $ncid $timeid \n")
+            #end
             # only close open root group
             if (ds.ncid != -1) && (ds.parentdataset == nothing)
                 close(ds)
@@ -110,7 +110,7 @@ mutable struct NCDataset{TDS} <: AbstractNCDataset where TDS <: Union{AbstractNC
             initboundsmap!(ds)
         end
         timeid = Dates.now()
-        @debug "add finalizer $ncid $(timeid)"
+        #@debug "add finalizer $ncid $(timeid)"
         finalizer(_finalize, ds)
         return ds
     end
