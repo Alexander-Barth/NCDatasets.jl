@@ -5,7 +5,7 @@ using Documenter, NCDatasets, CommonDataModel
 
 makedocs(
     modules = [NCDatasets, CommonDataModel],
-    sitename= "NCDatasets.jl",
+    sitename = "NCDatasets.jl",
     doctest = false,
     format = Documenter.HTML(
         prettyurls = CI,
