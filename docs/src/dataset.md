@@ -31,10 +31,9 @@ Otherwise, we attempt to use standard structures from the Julia standard library
 ## Groups
 
 ```@docs
-defGroup(ds::NCDataset,groupname)
+defGroup
 getindex(g::NCDatasets.Groups,groupname::AbstractString)
 Base.keys(g::NCDatasets.Groups)
-    groupname(ds::NCDataset)
 ```
 
 ## Common methods

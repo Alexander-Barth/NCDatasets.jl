@@ -1,11 +1,11 @@
 using Pkg
 Pkg.activate(@__DIR__)
 CI = get(ENV, "CI", nothing) == "true"
-using Documenter, NCDatasets
+using Documenter, NCDatasets, CommonDataModel
 
 makedocs(
-    modules = [NCDatasets],
-    sitename= "NCDatasets.jl",
+    modules = [NCDatasets, CommonDataModel],
+    sitename = "NCDatasets.jl",
     doctest = false,
     format = Documenter.HTML(
         prettyurls = CI,
@@ -21,6 +21,7 @@ makedocs(
         "Experimental features" => "experimental.md",
         "Tutorials" => "tutorials.md",
     ],
+    checkdocs = :none,
 )
 
 if CI

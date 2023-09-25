@@ -122,6 +122,7 @@ subdata = NCDataset("/tmp/test.nc")["temperature"][10:30,30:5:end]
 ```
 
 This might be useful in an interactive session. However, the file `test.nc` is not closed, which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
+(open files will get closed eventually when the dataset variable is finalized by julia's garbage collector).
 
 An alternative way to ensure the file has been closed is to use a `do` block: the file will be closed automatically when leaving the block.
 

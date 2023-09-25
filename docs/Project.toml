@@ -1,4 +1,8 @@
 [deps]
+CommonDataModel = "1fbeeb36-5f17-413c-809b-666fb144f157"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
-DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+
+[compat]
+Documenter = "0.27"
