@@ -454,6 +454,7 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
                     include = keys(src),
                     exclude = String[],
                     idimensions = Dict(),
+                    chunk_max_length = 10_000_000,
                     _ignore_checksum = false,
                     )
 
@@ -526,7 +527,10 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
         end
 
         # copy data
-        destvar.var[:] = var_slice[index...]
+        for ci in each_chunk_index(var_slice,chunk_max_length)
+            @debug "indices" ci
+            destvar.var[ci] = var_slice[ci]
+        end
     end
 
     # loop over all global attributes
