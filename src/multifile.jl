@@ -297,3 +297,24 @@ Base.setindex!(v::MFCFVariable,data,ind...) = v.cfvar[ind...] = data
 function Base.cat(vs::AbstractVariable...; dims::Integer)
     CatArrays.CatArray(dims,vs...)
 end
+
+"""
+    storage,chunksizes = chunking(v::MFVariable)
+
+Return the storage type (`:contiguous` or `:chunked`) and the chunk sizes of the varable
+`v` corresponding to the first NetCDF file. If the first NetCDF file in the collection
+is chunked then this storage attributes are returns. If not the first NetCDF file is not contiguous, then multi-file variable is still reported as chunked with chunk size equal to the variable size.
+"""
+function chunking(v::MFVariable)
+    storage,chunksizes = chunking(v.ds.ds[1][name(v)])
+
+    if chunksizes == :contiguous
+        return (:chunked, collect(size(v)))
+    else
+        return storage,chunksizes
+    end
+end
+
+deflate(v::MFVariable) = deflate(v.ds.ds[1][name(v)])
+
+checksum(v::MFVariable) = checksum(v.ds.ds[1][name(v)])
