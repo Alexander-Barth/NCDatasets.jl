@@ -63,6 +63,7 @@ include("defer.jl")
 include("multifile.jl")
 include("ncgen.jl")
 include("select.jl")
+include("chunks.jl")
 include("precompile.jl")
 
 export CatArrays
