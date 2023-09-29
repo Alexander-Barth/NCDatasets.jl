@@ -508,20 +508,20 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
 
         destvar = defVar(dest, varname, eltype(var), dimension_names; attrib = attribs(cfvar))
 
-        if hasmethod(chunking,Tuple{typeof(var_slice)})
-            storage,chunksizes = chunking(var_slice)
+        if hasmethod(chunking,Tuple{typeof(var)})
+            storage,chunksizes = chunking(var)
             @debug "chunking " storage chunksizes
             chunking(destvar,storage,chunksizes)
         end
 
-        if hasmethod(deflate,Tuple{typeof(var_slice)})
-            isshuffled,isdeflated,deflate_level = deflate(var_slice)
+        if hasmethod(deflate,Tuple{typeof(var)})
+            isshuffled,isdeflated,deflate_level = deflate(var)
             @debug "compression" isshuffled isdeflated deflate_level
             deflate(destvar,isshuffled,isdeflated,deflate_level)
         end
 
-        if hasmethod(checksum,Tuple{typeof(var_slice)}) && !_ignore_checksum
-            checksummethod = checksum(var_slice)
+        if hasmethod(checksum,Tuple{typeof(var)}) && !_ignore_checksum
+            checksummethod = checksum(var)
             @debug "check-sum" checksummethod
             checksum(destvar,checksummethod)
         end
