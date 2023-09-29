@@ -91,7 +91,7 @@ close(ds)
 ```
 
 """
-Base.view(v::AbstractVariable,indices::Union{Int,Colon,AbstractVector{Int}}...) = SubVariable(v,indices...)
+Base.view(v::Union{CFVariable, DeferVariable, MFCFVariable},indices::Union{Int,Colon,AbstractVector{Int}}...) = SubVariable(v,indices...)
 Base.view(v::SubVariable,indices::CartesianIndex) = view(v,indices.I...)
 Base.view(v::SubVariable,indices::CartesianIndices) = view(v,indices.indices...)
 

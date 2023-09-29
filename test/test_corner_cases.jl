@@ -46,7 +46,7 @@ b = dropdims([1.], dims=(1,))
 NCDataset(fname,"c") do ds
     time = defDim(ds,"time",Inf)
     v = defVar(ds,"temp",Float32,("time",))
-    ds["temp"][1:1] = b
+    ds["temp"][1] = b
     @test ds["temp"][1] == 1
 end
 

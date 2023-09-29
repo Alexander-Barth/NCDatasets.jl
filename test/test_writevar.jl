@@ -26,7 +26,7 @@ for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
     @test all(v[:,:][:] .== 123)
 
     # write scalar
-    v[:,:] = T(100)
+    v[:,:] .= T(100)
     @test all(v[:,:][:] .== 100)
 
     # write array (different type)
@@ -34,7 +34,7 @@ for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
     @test all(v[:,:][:] .== 123)
 
     # write scalar (different type)
-    v[:,:] = 100
+    v[:,:] .= 100
     @test all(v[:,:][:] .== 100)
 
     # using StepRange as index
@@ -43,7 +43,7 @@ for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
     @test all(v[:,:][:] .== 123)
 
     # write scalar
-    v[1:end,1:end] = T(100)
+    v[1:end,1:end] .= T(100)
     @test all(v[:,:][:] .== 100)
 
     # write array (different type)
@@ -51,21 +51,21 @@ for T in [UInt8,Int8,UInt16,Int16,UInt32,Int32,UInt64,Int64,Float32,Float64]
     @test all(v[:,:][:] .== 123)
 
     # write scalar (different type)
-    v[1:end,1:end] = 100
+    v[1:end,1:end] .= 100
     @test all(v[:,:][:] .== 100)
 
 
     # step range
     ref = zeros(sz)
-    v[:,:] = 0
+    v[:,:] .= 0
 
     ref[1:2:end,2:2:end] .= 1
-    v[1:2:end,2:2:end] = 1
+    v[1:2:end,2:2:end] .= 1
     @test v[:,:] == ref
 
     # write scalar (different type)
     ref[1:2:end,2:2:end] .= UInt8(2)
-    v[1:2:end,2:2:end] = UInt8(2)
+    v[1:2:end,2:2:end] .= UInt8(2)
     @test v[:,:] == ref
 
     ref[1,1] = 3

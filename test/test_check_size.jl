@@ -17,10 +17,10 @@ defVar(ds, "w", Float64, ("x", "Time"))
 
 for i in 1:10
     ds["Time"][i] = i
-    ds["a"][:,i] = 1
-    @test_throws NCDatasets.NetCDFError ds["u"][:,i] = collect(1:9)
-    @test_throws NCDatasets.NetCDFError ds["v"][:,i] = collect(1:11)
-    @test_throws NCDatasets.NetCDFError ds["w"][:,i] = reshape(collect(1:20), 10, 2)
+    ds["a"][:,i] .= 1
+    @test_throws DimensionMismatch ds["u"][:,i] = collect(1:9)
+    @test_throws DimensionMismatch ds["v"][:,i] = collect(1:11)
+    @test_throws DimensionMismatch ds["w"][:,i] = reshape(collect(1:20), 10, 2)
 
     # ignore singleton dimension
     ds["w"][:,i] = reshape(collect(1:10), 1, 1, 10, 1)
@@ -29,11 +29,11 @@ end
 ds["w"][:,:] = ones(10,10)
 
 # w should grow along the unlimited dimension
-ds["w"][:,:] = ones(10,15)
+ds["w"][:,1:15] = ones(10,15)
 @test size(ds["w"]) == (10,15)
 
 # w cannot grow along a fixed dimension
-@test_throws NCDatasets.NetCDFError ds["w"][:,:] = ones(11,15)
+@test_throws DimensionMismatch ds["w"][:,:] = ones(11,15)
 
 # NetCDF: Index exceeds dimension bound
 @test_throws NCDatasets.NetCDFError ds["u"][100,100]

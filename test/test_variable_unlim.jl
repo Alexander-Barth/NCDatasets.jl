@@ -19,7 +19,7 @@ NCDatasets.NCDataset(filename,"c") do ds
 
         for j = 1:sz[2]
             data[:,j] .= T(j)
-            v[:,j] = T(j)
+            v[:,j] = fill(T(j), sz[1])
         end
 
         @test all(v[:,:] == data)

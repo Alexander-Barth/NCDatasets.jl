@@ -38,6 +38,9 @@ import CommonDataModel: AbstractDataset, AbstractVariable,
     groupnames, group, defGroup,
     dimnames, dim, defDim,
     attribnames, attrib, defAttrib
+import DiskArrays
+import DiskArrays: readblock!, writeblock!, eachchunk, haschunks
+using DiskArrays: @implement_diskarray
 
 function __init__()
     NetCDF_jll.is_available() && init_certificate_authority()
@@ -64,6 +67,8 @@ include("multifile.jl")
 include("ncgen.jl")
 include("select.jl")
 include("precompile.jl")
+
+@implement_diskarray NCDatasets.Variable
 
 export CatArrays
 export CFTime
