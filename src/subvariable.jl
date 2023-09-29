@@ -174,3 +174,11 @@ function dataset(v::SubVariable)
     indices = (;((Symbol(d),i) for (d,i) in zip(dimnames(v),v.indices))...)
     return SubDataset(dataset(v.parent),indices)
 end
+
+function chunking(v::SubVariable)
+    storage, chunksizes = chunking(v.parent)
+    return storage, min.(chunksizes,collect(size(v)))
+end
+
+deflate(v::SubVariable) = deflate(v.parent)
+checksum(v::SubVariable) = checksum(v.parent)
