@@ -20,6 +20,7 @@ function metadata(ds::NCDataset)
     for (varname,ncvar) in ds
         storage,chunksizes = chunking(ncvar.var)
         isshuffled,isdeflated,deflatelevel = deflate(ncvar.var)
+        checksummethod = checksum(ncvar.var)
 
         vars[varname] = OrderedDict(
             "name" => varname,
@@ -28,9 +29,12 @@ function metadata(ds::NCDataset)
             "attrib" => OrderedDict(ncvar.attrib),
             "dimensions" => dimnames(ncvar),
             "chunksize" => chunksizes,
+            "storage" => storage,
             "fillvalue" => fillvalue(ncvar.var),
             "shuffle" => isshuffled,
-            "deflatelevel" => deflatelevel
+            "deflate" => isdeflated,
+            "deflatelevel" => deflatelevel,
+            "checksummethod" => checksummethod,
         )
     end
 
@@ -151,3 +155,18 @@ function Base.getindex(dg::DeferGroups,name::AbstractString)
     dg = DeferGroups(dg.r,data["group"])
     return DeferDataset(dg.r,name,da,dd,dg,data)
 end
+
+
+_storage_attributes(dv) = dv.r.metadata["var"][name(dv)]
+
+function chunking(dv::DeferVariable)
+    sa = _storage_attributes(dv)
+    return sa["storage"],sa["chunksize"]
+end
+
+function deflate(dv::DeferVariable)
+    sa = _storage_attributes(dv)
+    return sa["shuffle"],sa["deflate"],sa["deflatelevel"]
+end
+
+checksum(dv::DeferVariable) = _storage_attributes(dv)["checksummethod"]
