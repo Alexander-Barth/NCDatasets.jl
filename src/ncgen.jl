@@ -48,8 +48,9 @@ function ncgen(io::IO,fname; newfname = "filename.nc")
 
     print(io,"\n# Define variables\n\n")
 
-    for d in keys(ds)
-        print(io,"# nc$(escapevar(d))[:] = ...\n")
+    for (d,v) in ds
+        dims = join(fill(':',ndims(v)),',')
+        print(io,"# nc$(escapevar(d))[$dims] = ...\n")
     end
 
     print(io,"\nclose(ds)\n")

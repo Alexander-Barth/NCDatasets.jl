@@ -8,6 +8,7 @@ jlfile = tempname()
 
 ds = NCDatasets.NCDataset(ncfile1,"c")
 ds.dim["lon"] = 3;
+ds.dim["lat"] = 4;
 ds.dim["unlimited"] = Inf;
 nclon = NCDatasets.defVar(ds,"variable with space", Float32, ("lon",))
 nclon.attrib["string"] = "degrees_east";
@@ -17,13 +18,15 @@ nclon.attrib["float32_vector"] = Float32[1.,2.,3.]
 nclon.attrib["float64_vector"] = [1.,2.,3.]
 nclon.attrib["int32_vector"] = Int32[1,2,3]
 
+
 ds.attrib["dollar"] = "a dollar \$ stop";
 ds.attrib["backslash"] = "a backslash \\ stop";
 ds.attrib["doublequote"] = "a doublequote \" stop";
 
-close(ds)
+ncmatrix = NCDatasets.defVar(ds,"matrix", Float32,("lon","lat"))
 
-#ncfile1 = "/tmp/sresa1b_ncar_ccsm3-example.nc"
+
+close(ds)
 
 NCDatasets.ncgen(ncfile1,jlfile; newfname = ncfile2)
 include(jlfile)
