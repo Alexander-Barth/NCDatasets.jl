@@ -136,7 +136,8 @@ unlimited(sd::SubDimensions) = unlimited(sd.dim)
 
 function SubDataset(ds::AbstractNCDataset,indices)
     dim = SubDimensions(ds.dim,indices)
-    SubDataset(ds,indices,dim,ds.attrib,ds.group)
+    group = OrderedDict((n => SubDataset(g,indices) for (n,g) in ds.group)...)
+    SubDataset(ds,indices,dim,ds.attrib,group)
 end
 
 function Base.view(ds::AbstractNCDataset; indices...)
