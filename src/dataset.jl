@@ -428,17 +428,6 @@ function _write(dest::NCDataset, src::AbstractDataset;
                     _ignore_checksum = false,
                     )
 
-    torange(indices::Colon) = indices
-    function torange(indices)
-        i = indices[1]:indices[end]
-        if i == indices
-            return i
-        else
-            error("indices cannot be converted to range")
-        end
-    end
-
-    #unlimited_dims = unlimited(src.dim)
     unlimited_dims = unlimited(src)
 
     for (dimname,dimlength) in dims(src)
