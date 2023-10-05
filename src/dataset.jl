@@ -547,6 +547,12 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
                     _ignore_checksum = false,
                     )
 
+    if !isempty(idimensions)
+        Base.depwarn(
+            "The parameter `idimensions` is deprecated. Please use views instead",
+            :write)
+    end
+
     src_subset = view(src;((Symbol(k)=>v) for (k,v) in idimensions)...)
     _write(dest, src_subset;
           include = include,
