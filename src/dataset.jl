@@ -452,35 +452,38 @@ function _write(dest::NCDataset, src::AbstractDataset;
         (varname ∈ exclude) && continue
         @debug "Writing variable $varname..."
 
-        cfvar = src[varname]
-        cfsz = size(cfvar)
-
-        dimension_names = dimnames(cfvar)
-        var = cfvar.var
-
-        destvar = defVar(dest, varname, eltype(var), dimension_names; attrib = attribs(cfvar))
+        var = variable(src,varname)
+        dimension_names = dimnames(var)
+        cfdestvar = defVar(dest, varname, eltype(var), dimension_names;
+                           attrib = attribs(var))
+        destvar = variable(dest,varname)
 
         if hasmethod(chunking,Tuple{typeof(var)})
             storage,chunksizes = chunking(var)
-            @debug "chunking " name(var) size(var) size(cfvar) size(destvar) storage chunksizes
-            chunking(destvar,storage,chunksizes)
+            @debug "chunking " name(var) size(var) size(cfdestvar) storage chunksizes
+            chunking(cfdestvar,storage,chunksizes)
         end
 
         if hasmethod(deflate,Tuple{typeof(var)})
             isshuffled,isdeflated,deflate_level = deflate(var)
             @debug "compression" isshuffled isdeflated deflate_level
-            deflate(destvar,isshuffled,isdeflated,deflate_level)
+            deflate(cfdestvar,isshuffled,isdeflated,deflate_level)
         end
 
         if hasmethod(checksum,Tuple{typeof(var)}) && !_ignore_checksum
             checksummethod = checksum(var)
             @debug "check-sum" checksummethod
-            checksum(destvar,checksummethod)
+            checksum(cfdestvar,checksummethod)
         end
 
         # copy data
-        for indices = eachchunk(var)
-            destvar.var[indices...] = var[indices...]
+        if hasmethod(eachchunk,Tuple{typeof(var)})
+            for indices in eachchunk(var)
+                destvar[indices...] = var[indices...]
+            end
+        else
+            indices = ntuple(i -> :,ndims(var))
+            destvar[indices...] = var[indices...]
         end
     end
 
