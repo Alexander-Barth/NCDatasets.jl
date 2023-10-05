@@ -491,8 +491,6 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
         # end
     end
 
-    _maxrange(dimname, idimensions, dimlength) = haskey(idimensions, dimname) ? idimensions[dimname][end] : dimlength
-
     # loop over variables
     for varname in include
         (varname ∈ exclude) && continue
