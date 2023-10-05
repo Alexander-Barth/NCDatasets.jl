@@ -491,14 +491,6 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
         # end
     end
 
-    function _destindex(ind, dimname, dimlength, unlimdims)
-        nind = _normalizeindex(dimlength, ind)
-        if dimname in unlimdims
-            nind[1]:dimlength
-        else
-            nind
-        end
-    end
     _maxrange(dimname, idimensions, dimlength) = haskey(idimensions, dimname) ? idimensions[dimname][end] : dimlength
 
     # loop over variables
@@ -512,7 +504,6 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
         var = cfvar.var
         # indices for subset
         index = ntuple(i -> torange(get(idimensions,dimension_names[i],:)),length(dimension_names))
-        destindex = ntuple(i -> _destindex(index[i], dimension_names[i], _maxrange(dimension_names[i], idimensions, cfsz[i]), unlimited_dims), length(dimension_names))
 
         var_slice = view(var,index...)
 
@@ -538,7 +529,9 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
         end
 
         # copy data
-        destvar.var[destindex...] = var_slice[index...]
+        for indices = eachchunk(var_slice)
+            destvar.var[indices...] = var_slice[indices...]
+        end
     end
 
     # loop over all global attributes
