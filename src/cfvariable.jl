@@ -150,6 +150,66 @@ function defVar(ds::NCDataset,name::SymbolOrString,vtype::DataType,dimnames;
     return ds[name]
 end
 
+
+function defVar(dest::AbstractDataset,srcvar::AbstractNCVariable;
+                _ignore_checksum = false,
+                )
+    src = dataset(srcvar)
+    varname = name(srcvar)
+
+    # dimensions
+    unlimited_dims = unlimited(src)
+
+    for dimname in dimnames(srcvar)
+        if dimname in dimnames(dest,parents = true)
+            # dimension is already defined
+            continue
+        end
+
+        if dimname in unlimited_dims
+            defDim(dest, dimname, Inf)
+        else
+            defDim(dest, dimname, dim(src,dimname))
+        end
+    end
+
+    var = variable(src,varname)
+    dimension_names = dimnames(var)
+    cfdestvar = defVar(dest, varname, eltype(var), dimension_names;
+                       attrib = attribs(var))
+    destvar = variable(dest,varname)
+
+    if hasmethod(chunking,Tuple{typeof(var)})
+        storage,chunksizes = chunking(var)
+        @debug "chunking " name(var) size(var) size(cfdestvar) storage chunksizes
+        chunking(cfdestvar,storage,chunksizes)
+    end
+
+    if hasmethod(deflate,Tuple{typeof(var)})
+        isshuffled,isdeflated,deflate_level = deflate(var)
+        @debug "compression" isshuffled isdeflated deflate_level
+        deflate(cfdestvar,isshuffled,isdeflated,deflate_level)
+    end
+
+    if hasmethod(checksum,Tuple{typeof(var)}) && !_ignore_checksum
+        checksummethod = checksum(var)
+        @debug "check-sum" checksummethod
+        checksum(cfdestvar,checksummethod)
+    end
+
+    # copy data
+    if hasmethod(eachchunk,Tuple{typeof(var)})
+        for indices in eachchunk(var)
+            destvar[indices...] = var[indices...]
+        end
+    else
+        indices = ntuple(i -> :,ndims(var))
+        destvar[indices...] = var[indices...]
+    end
+
+    return cfdestvar
+end
+
 export defVar
 
 

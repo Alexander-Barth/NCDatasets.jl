@@ -64,3 +64,6 @@ name(ds::NCDataset) = nc_inq_grpname(ds.ncid)
 groupname(ds::NCDataset) = name(ds)
 
 export groupname
+
+
+parentdataset(ds::NCDataset) = ds.parentdataset

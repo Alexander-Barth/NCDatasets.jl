@@ -409,7 +409,19 @@ Base.haskey(a::NCIterable,name::AbstractString) = name in keys(a)
 Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
 
 
-dimnames(ds::AbstractNCDataset) = keys(ds.dim)
+function dimnames(ds::AbstractNCDataset; parents = false)
+    dn = keys(ds.dim)
+
+    if parents
+        pd = parentdataset(ds)
+        if pd !== nothing
+            append!(dn,dimnames(pd,parents=parents))
+        end
+    end
+
+    return dn
+end
+
 dim(ds::AbstractNCDataset,name::AbstractString) = ds.dim[name]
 
 function Base.getindex(ds::Union{AbstractNCDataset,AbstractVariable},n::CFStdName)
@@ -452,39 +464,8 @@ function _write(dest::NCDataset, src::AbstractDataset;
         (varname ∈ exclude) && continue
         @debug "Writing variable $varname..."
 
-        var = variable(src,varname)
-        dimension_names = dimnames(var)
-        cfdestvar = defVar(dest, varname, eltype(var), dimension_names;
-                           attrib = attribs(var))
-        destvar = variable(dest,varname)
-
-        if hasmethod(chunking,Tuple{typeof(var)})
-            storage,chunksizes = chunking(var)
-            @debug "chunking " name(var) size(var) size(cfdestvar) storage chunksizes
-            chunking(cfdestvar,storage,chunksizes)
-        end
-
-        if hasmethod(deflate,Tuple{typeof(var)})
-            isshuffled,isdeflated,deflate_level = deflate(var)
-            @debug "compression" isshuffled isdeflated deflate_level
-            deflate(cfdestvar,isshuffled,isdeflated,deflate_level)
-        end
-
-        if hasmethod(checksum,Tuple{typeof(var)}) && !_ignore_checksum
-            checksummethod = checksum(var)
-            @debug "check-sum" checksummethod
-            checksum(cfdestvar,checksummethod)
-        end
-
-        # copy data
-        if hasmethod(eachchunk,Tuple{typeof(var)})
-            for indices in eachchunk(var)
-                destvar[indices...] = var[indices...]
-            end
-        else
-            indices = ntuple(i -> :,ndims(var))
-            destvar[indices...] = var[indices...]
-        end
+        defVar(dest,variable(src,varname),
+               _ignore_checksum = _ignore_checksum)
     end
 
     # loop over all global attributes
