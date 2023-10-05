@@ -421,39 +421,10 @@ function Base.getindex(ds::Union{AbstractNCDataset,AbstractVariable},n::CFStdNam
     end
 end
 
-"""
-    write(dest_filename::AbstractString, src::AbstractNCDataset; include = keys(src), exclude = [], idimensions = Dict())
-    write(dest::NCDataset, src::AbstractNCDataset; include = keys(src), exclude = [], idimensions = Dict())
 
-Write the variables of `src` dataset into an empty `dest` dataset (which must be opened in mode `"a"` or `"c"`).
-The keywords `include` and `exclude` configure which variable of `src` should be included
-(by default all), or which should be `excluded` (by default none).
-
-If the first argument is a file name, then the dataset is open in create mode (`"c"`).
-
-This function is useful when you want to save the dataset from a multi-file dataset.
-
-`idimensions` is a dictionary with dimension names mapping to a list of
-indices if only a subset of the dataset should be saved.
-
-## Example
-
-```
-NCDataset(fname_src) do ds
-    write(fname_slice,ds,idimensions = Dict("lon" => 2:3))
-end
-```
-
-All variables in the source file `fname_src` with a dimension `lon` will be sliced
-along the indices `2:3` for the `lon` dimension. All attributes (and variables
-without a dimension `lon`) will be copied over unmodified.
-
-It is assumed that all the variable of the output file can be loaded in memory.
-"""
-function Base.write(dest::NCDataset, src::AbstractDataset;
+function _write(dest::NCDataset, src::AbstractDataset;
                     include = keys(src),
                     exclude = String[],
-                    idimensions = Dict(),
                     _ignore_checksum = false,
                     )
 
@@ -482,10 +453,6 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
             if isunlimited
                 defDim(dest, dimname, Inf)
             else
-                if haskey(idimensions,dimname)
-                    dimlength = length(idimensions[dimname])
-                    @debug "subset $dimname $(idimensions[dimname])"
-                end
                 defDim(dest, dimname, dimlength)
             end
         # end
@@ -498,37 +465,33 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
 
         cfvar = src[varname]
         cfsz = size(cfvar)
+
         dimension_names = dimnames(cfvar)
         var = cfvar.var
-        # indices for subset
-        index = ntuple(i -> torange(get(idimensions,dimension_names[i],:)),length(dimension_names))
-
-        var_slice = view(var,index...)
-
 
         destvar = defVar(dest, varname, eltype(var), dimension_names; attrib = attribs(cfvar))
 
-        if hasmethod(chunking,Tuple{typeof(var_slice)})
-            storage,chunksizes = chunking(var_slice)
-            @debug "chunking " storage chunksizes
+        if hasmethod(chunking,Tuple{typeof(var)})
+            storage,chunksizes = chunking(var)
+            @debug "chunking " name(var) size(var) size(cfvar) size(destvar) storage chunksizes
             chunking(destvar,storage,chunksizes)
         end
 
-        if hasmethod(deflate,Tuple{typeof(var_slice)})
-            isshuffled,isdeflated,deflate_level = deflate(var_slice)
+        if hasmethod(deflate,Tuple{typeof(var)})
+            isshuffled,isdeflated,deflate_level = deflate(var)
             @debug "compression" isshuffled isdeflated deflate_level
             deflate(destvar,isshuffled,isdeflated,deflate_level)
         end
 
-        if hasmethod(checksum,Tuple{typeof(var_slice)}) && !_ignore_checksum
-            checksummethod = checksum(var_slice)
+        if hasmethod(checksum,Tuple{typeof(var)}) && !_ignore_checksum
+            checksummethod = checksum(var)
             @debug "check-sum" checksummethod
             checksum(destvar,checksummethod)
         end
 
         # copy data
-        for indices = eachchunk(var_slice)
-            destvar.var[indices...] = var_slice[indices...]
+        for indices = eachchunk(var)
+            destvar.var[indices...] = var[indices...]
         end
     end
 
@@ -540,10 +503,55 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
     # loop over all groups
     for (groupname,groupsrc) in groups(src)
         groupdest = defGroup(dest,groupname)
-        write(groupdest,groupsrc; idimensions = idimensions)
+        write(groupdest,groupsrc)
     end
 
     return dest
+end
+
+
+
+"""
+    write(dest_filename::AbstractString, src::AbstractNCDataset; include = keys(src), exclude = [], idimensions = Dict())
+    write(dest::NCDataset, src::AbstractNCDataset; include = keys(src), exclude = [], idimensions = Dict())
+
+Write the variables of `src` dataset into an empty `dest` dataset (which must be opened in mode `"a"` or `"c"`).
+The keywords `include` and `exclude` configure which variable of `src` should be included
+(by default all), or which should be `excluded` (by default none).
+
+If the first argument is a file name, then the dataset is open in create mode (`"c"`).
+
+This function is useful when you want to save the dataset from a multi-file dataset.
+
+To save a subset, one can use the view function `view` to virtually slice
+a dataset:
+
+## Example
+
+```
+NCDataset(fname_src) do ds
+    write(fname_slice,view(ds, lon = 2:3))
+    # deprecated
+    # write(fname_slice,ds,idimensions = Dict("lon" => 2:3))
+end
+```
+
+All variables in the source file `fname_src` with a dimension `lon` will be sliced
+along the indices `2:3` for the `lon` dimension. All attributes (and variables
+without a dimension `lon`) will be copied over unmodified.
+"""
+function Base.write(dest::NCDataset, src::AbstractDataset;
+                    include = keys(src),
+                    exclude = String[],
+                    idimensions = Dict(),
+                    _ignore_checksum = false,
+                    )
+
+    src_subset = view(src;((Symbol(k)=>v) for (k,v) in idimensions)...)
+    _write(dest, src_subset;
+          include = include,
+          exclude = exclude,
+          _ignore_checksum = _ignore_checksum)
 end
 
 function Base.write(dest_filename::AbstractString, src::AbstractDataset; kwargs...)

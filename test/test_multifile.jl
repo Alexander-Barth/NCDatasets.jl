@@ -160,8 +160,15 @@ for deferopen in (false,true)
 
     # save subset of aggregated file
     fname_merged = tempname()
-    write(fname_merged,mfds,idimensions = Dict("lon" => 1:1))
+    write(fname_merged,view(mfds,lon = 1:1))
+    ds_merged = NCDataset(fname_merged)
+    @test mfds["lon"][1:1] == ds_merged["lon"][:]
+    close(ds_merged)
 
+
+    # save subset of aggregated file (deprecated)
+    fname_merged = tempname()
+    write(fname_merged,mfds,idimensions = Dict("lon" => 1:1))
     ds_merged = NCDataset(fname_merged)
     @test mfds["lon"][1:1] == ds_merged["lon"][:]
     close(ds_merged)
