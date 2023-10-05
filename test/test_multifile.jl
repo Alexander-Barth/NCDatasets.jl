@@ -59,6 +59,9 @@ function example_file(i,array, fname = tempname();
         #nclon[:] = 1:size(array,1)
         #nclat[:] = 1:size(array,2)
         nctime.var[:] = i
+
+        nclon[:] = 1:size(array,1)
+        nclat[:] = 1:size(array,2)
     end
     return fname
 end
@@ -147,12 +150,21 @@ for deferopen in (false,true)
     write(fname_merged,mfds)
 
     ds_merged = NCDataset(fname_merged)
+
     @test mfds.dim["time"] == size(C,3)
-
+    @test mfds["time"][:] == ds_merged["time"][:]
+    @test mfds["lon"][:] == ds_merged["lon"][:]
     @test name(mfds[CF"time"]) == "time"
-
     close(ds_merged)
 
+
+    # save subset of aggregated file
+    fname_merged = tempname()
+    write(fname_merged,mfds,idimensions = Dict("lon" => 1:1))
+
+    ds_merged = NCDataset(fname_merged)
+    @test mfds["lon"][1:1] == ds_merged["lon"][:]
+    close(ds_merged)
 
     # show
     buf = IOBuffer()
