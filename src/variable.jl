@@ -401,7 +401,7 @@ end
 getchunksize(v::Variable) = getchunksize(haschunks(v),v)
 getchunksize(::DiskArrays.Chunked, v::Variable) = chunking(v)[2]
 # getchunksize(::DiskArrays.Unchunked, v::Variable) = DiskArrays.estimate_chunksize(v)
-getchunksize(::DiskArrays.Unchunked, v::Variable) = size(v)
+getchunksize(::DiskArrays.Unchunked, v::Variable) = max.(1,size(v))
 eachchunk(v::CFVariable) = eachchunk(v.var)
 haschunks(v::CFVariable) = haschunks(v.var)
 eachchunk(v::Variable) = DiskArrays.GridChunks(v, Tuple(getchunksize(v)))
