@@ -221,9 +221,9 @@ end
 ds = NCDataset(fname,"r")
 
 v = ds["SST"]
-coord_value,dim = coordinate_value(v,:lon)
+coord_value,dim_number = coordinate_value(v,:lon)
 @test coord_value == lon
-@test dim == 1
+@test dim_number == 1
 
 
 @test coordinate_names(ds["SST"]) == [:lon, :lat, :time]

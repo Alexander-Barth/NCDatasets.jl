@@ -464,8 +464,14 @@ function _write(dest::NCDataset, src::AbstractDataset;
         (varname ∈ exclude) && continue
         @debug "Writing variable $varname..."
 
-        defVar(dest,variable(src,varname),
-               _ignore_checksum = _ignore_checksum)
+        kwargs =
+            if _ignore_checksum
+                (checksum = nothing,)
+            else
+                ()
+            end
+
+        defVar(dest,variable(src,varname); kwargs...)
     end
 
     # loop over all global attributes
@@ -524,9 +530,12 @@ function Base.write(dest::NCDataset, src::AbstractDataset;
         Base.depwarn(
             "The parameter `idimensions` is deprecated. Please use views instead",
             :write)
+
+        src_subset = view(src;((Symbol(k)=>v) for (k,v) in idimensions)...)
+    else
+        src_subset = src
     end
 
-    src_subset = view(src;((Symbol(k)=>v) for (k,v) in idimensions)...)
     _write(dest, src_subset;
           include = include,
           exclude = exclude,

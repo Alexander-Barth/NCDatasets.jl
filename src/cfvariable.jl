@@ -151,9 +151,12 @@ function defVar(ds::NCDataset,name::SymbolOrString,vtype::DataType,dimnames;
 end
 
 
-function defVar(dest::AbstractDataset,srcvar::AbstractNCVariable;
-                _ignore_checksum = false,
-                )
+function defVar(dest::AbstractDataset,srcvar::AbstractNCVariable; kwargs...)
+    _ignore_checksum = false
+    if haskey(kwargs,:checksum)
+        _ignore_checksum = kwargs[:checksum] === nothing
+    end
+
     src = dataset(srcvar)
     varname = name(srcvar)
 

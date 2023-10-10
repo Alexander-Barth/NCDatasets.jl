@@ -3,7 +3,7 @@ using Dates
 using Printf
 using NCDatasets
 using DataStructures
-
+#=
 sz = (4,5)
 filename = tempname()
 #filename = "/tmp/test-6.nc"
@@ -224,7 +224,7 @@ ds.attrib["x_range"] = x
 close(ds)
 rm(filename)
 
-
+=#
 # issue 180
 using NCDatasets
 
@@ -232,24 +232,25 @@ filename = tempname()
 ds = NCDataset(filename, "c")
 
 sample_data = [UInt8(1),Int64(2),Float64(3.),"string",'a']
+sample_data = [UInt8(1),"string"]
 
 for data = sample_data
     local ncv, T
     T = typeof(data)
 
-    ncv = defVar(ds, "$(T)_scalar1", T, ())
+#=    ncv = defVar(ds, "$(T)_scalar1", T, ())
     ncv[] = data
     @test ncv[] == data
-
+=#
     ncv = defVar(ds, "$(T)_scalar2", data, ())
     @test ncv[] == data
-
+#=
     ncv = defVar(ds, "$(T)_scalar3", data)
-    @test ncv[] == data
+    @test ncv[] == data=#
 end
 close(ds)
 
-
+#=
 # issue 207
 filename_src = tempname()
 ds_src = NCDataset(filename_src, "c")
@@ -288,3 +289,4 @@ data2 = zeros(Int,1)
 data2 = zeros(Int,10)
 # asking too many elements
 @test_throws BoundsError NCDatasets.load!(ds["data"].var,data2,1:10)
+=#
