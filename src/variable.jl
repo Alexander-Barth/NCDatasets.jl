@@ -345,7 +345,7 @@ end
 nomissing(a::AbstractArray,value) = a
 export nomissing
 
-# This method needs to be duplicated instead of using an Union. Otherwise a DiskArrays fallback is called instead which impacts performances 
+# This method needs to be duplicated instead of using an Union. Otherwise a DiskArrays fallback is called instead which impacts performances
 # (see https://github.com/Alexander-Barth/NCDatasets.jl/pull/205#issuecomment-1589575041)
 function readblock!(v::Variable, aout, indexes::TI...) where TI <: Union{AbstractUnitRange,StepRange}
     datamode(v.ds)
@@ -399,7 +399,7 @@ function _write_data_to_nc(v::Variable, data, indexes::Union{AbstractRange{<:Int
 end
 
 getchunksize(v::Variable) = getchunksize(haschunks(v),v)
-getchunksize(::DiskArrays.Chunked, v::Variable) = chunking(v)[2]
+getchunksize(::DiskArrays.Chunked, v::Variable) = Tuple(chunking(v)[2])
 # getchunksize(::DiskArrays.Unchunked, v::Variable) = DiskArrays.estimate_chunksize(v)
 getchunksize(::DiskArrays.Unchunked, v::Variable) = size(v)
 eachchunk(v::CFVariable) = eachchunk(v.var)
