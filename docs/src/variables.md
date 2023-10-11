@@ -16,7 +16,8 @@ To load the variable `v_cf` in memory as numeric data you can convert it into an
 ```julia
 Array(v_cf)
 ```
-The syntax `v_cf[:]` is equivalent with the above, it doesn't make a `Vector` (like it does on normal Julia arrays).
+
+Since NCDatasets 0.13, the syntax `v_cf[:]` flattens the array, and is not equivalent with the above (unless `v_cf` is a vector).
 
 You can only load sub-parts of it in memory via indexing each dimension:
 ```julia
