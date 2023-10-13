@@ -19,11 +19,24 @@ Array(v_cf)
 
 Since NCDatasets 0.13, the syntax `v_cf[:]` flattens the array, and is not equivalent with the above (unless `v_cf` is a vector).
 
+
 You can only load sub-parts of it in memory via indexing each dimension:
 ```julia
 v_cf[1:5, 10:20]
 ```
-(here you must know the number of dimensions of the variable, as you must access all of them).
+(here you must know the number of dimensions of the variable, as you must access all of them). A scalar variable can be loaded using `[]`, for example:
+
+``` julia
+using NCDatasets
+NCDataset("test_scalar.nc","c") do ds
+    defVar(ds,"scalar",42,())
+end
+
+ds = NCDataset("test_scalar.nc")
+value = ds["scalar"][] # 42
+```
+
+
 
 !!! note
     `NCDatasets.Variable` and `NCDatasets.CFVariable` implement the interface of `AbstractArray`. It is thus possible to call any function that accepts an `AbstractArray`. But functions like `mean`, `sum` (and many more) would load every element individually which is very inefficient for large fields read from disk. You should instead convert such a variable to a standard Julia `Array` and then do computations with it. See also the [performance tips](@ref performance_tips) for more information.
