@@ -62,4 +62,8 @@ for f = [:netcdf3_64bit_offset,:netcdf4]
     v[:,:,j] = fill(T(j), sz[1:2])
 
     @test size(v) == sz
+
+    storage,chunksizes = NCDatasets._chunking(v)
+    @test storage == :chunked
+    @test chunksizes == sz
 end
