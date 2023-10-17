@@ -250,6 +250,7 @@ therefore [considers variables with unlimited dimension as `:contiguous`](https:
 """
 function chunking(v::Variable)
     storage,chunksizes = nc_inq_var_chunking(v.ds.ncid,v.varid)
+    # TODO: NCDatasets 0.14: return a tuple for chunksizes
     return storage,reverse(chunksizes)
 end
 
@@ -259,6 +260,7 @@ export chunking
 # same as `chunking` except that for NetCDF3 file the unlimited dimension is considered
 # as chunked
 # https://github.com/Unidata/netcdf-c/discussions/2224
+# Also the chunksizes is always a tuple.
 function _chunking(v::Variable{T,N}) where {T,N}
     ncid = v.ds.ncid
     varid = v.varid
@@ -445,14 +447,20 @@ function _write_data_to_nc(v::Variable, data, indexes::Union{AbstractRange{<:Int
     return _write_data_to_nc(v, data, ind...)
 end
 
-getchunksize(v::Variable) = getchunksize(haschunks(v),v)
-getchunksize(::DiskArrays.Chunked, v::Variable) = _chunking(v)[2]
-# getchunksize(::DiskArrays.Unchunked, v::Variable) = DiskArrays.estimate_chunksize(v)
-getchunksize(::DiskArrays.Unchunked, v::Variable) = size(v)
+function eachchunk(v::Variable)
+    # storage will be reported as chunked for variables with unlimited dimension
+    # by _chunking and chunksizes will 1 for the unlimited dimensions
+    storage, chunksizes = _chunking(v)
+    if storage == :contiguous
+        return DiskArrays.estimate_chunksize(v)
+    else
+        return DiskArrays.GridChunks(v, chunksizes)
+    end
+end
+haschunks(v::Variable) = (_chunking(v)[1] == :contiguous ? DiskArrays.Unchunked() : DiskArrays.Chunked())
+
 eachchunk(v::CFVariable) = eachchunk(v.var)
 haschunks(v::CFVariable) = haschunks(v.var)
-eachchunk(v::Variable) = DiskArrays.GridChunks(v, Tuple(getchunksize(v)))
-haschunks(v::Variable) = (_chunking(v)[1] == :contiguous ? DiskArrays.Unchunked() : DiskArrays.Chunked())
 
 _normalizeindex(n,ind::Base.OneTo) = 1:1:ind.stop
 _normalizeindex(n,ind::Colon) = 1:1:n
