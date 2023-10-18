@@ -160,7 +160,7 @@ end
 
 
 """
-     data = loadragged(ncvar,index::Union{Colon,UnitRange,Int})
+     data = loadragged(ncvar,index::Union{Colon,UnitRange,Integer})
 
 Load data from `ncvar` in the [contiguous ragged array representation](https://web.archive.org/web/20190111092546/http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#_contiguous_ragged_array_representation) as a
 vector of vectors. It is typically used to load a list of profiles
@@ -203,7 +203,7 @@ function loadragged(ncvar,index::Union{Colon,UnitRange})
     return data
 end
 
-loadragged(ncvar,index::Int) = loadragged(ncvar,index:index)
+loadragged(ncvar,index::Integer) = loadragged(ncvar,index:index)
 
 export loadragged
 
@@ -358,16 +358,16 @@ _readblock!(v::Variable, aout, indexes::StepRange...) = _read_data_from_nc!(v, a
 
 readblock!(v::Variable, aout) = _read_data_from_nc!(v::Variable, aout)
 
-function _read_data_from_nc!(v::Variable, aout, indexes::Int...)
+function _read_data_from_nc!(v::Variable, aout, indexes::Integer...)
     aout .= nc_get_var1(eltype(v),v.ds.ncid,v.varid,[i-1 for i in reverse(indexes)])
 end
 
-function _read_data_from_nc!(v::Variable{T,N}, aout, indexes::TR...) where {T,N} where TR <: Union{StepRange{Int,Int},UnitRange{Int}}
+function _read_data_from_nc!(v::Variable{T,N}, aout, indexes::TR...) where {T,N} where TR <: Union{StepRange{<:Integer,<:Integer},UnitRange{<:Integer}}
     start,count,stride,jlshape = ncsub(indexes)
     nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
 end
 
-function _read_data_from_nc!(v::Variable{T,N}, aout, indexes::Union{Int,Colon,AbstractRange{<:Integer}}...) where {T,N}
+function _read_data_from_nc!(v::Variable{T,N}, aout, indexes::Union{Integer,Colon,AbstractRange{<:Integer}}...) where {T,N}
     sz = size(v)
     start,count,stride = ncsub2(sz,indexes...)
     jlshape = _shape_after_slice(sz,indexes...)
@@ -382,13 +382,13 @@ function writeblock!(v::Variable, data, indexes::TI...) where TI <: Union{Abstra
     return data
 end
 
-function _write_data_to_nc(v::Variable{T,N},data,indexes::Int...) where {T,N}
+function _write_data_to_nc(v::Variable{T,N},data,indexes::Integer...) where {T,N}
     nc_put_var1(v.ds.ncid,v.varid,[i-1 for i in reverse(indexes)],T(data[1]))
 end
 
 _write_data_to_nc(v::Variable, data) = _write_data_to_nc(v, data, 1)
 
-function _write_data_to_nc(v::Variable{T, N}, data, indexes::StepRange{Int,Int}...) where {T, N}
+function _write_data_to_nc(v::Variable{T, N}, data, indexes::StepRange{<:Integer,<:Integer}...) where {T, N}
     start,count,stride,jlshape = ncsub(indexes)
     nc_put_vars(v.ds.ncid,v.varid,start,count,stride,T.(data))
 end
@@ -409,7 +409,7 @@ haschunks(v::Variable) = (chunking(v)[1] == :contiguous ? DiskArrays.Unchunked()
 
 _normalizeindex(n,ind::Base.OneTo) = 1:1:ind.stop
 _normalizeindex(n,ind::Colon) = 1:1:n
-_normalizeindex(n,ind::Int) = ind:1:ind
+_normalizeindex(n,ind::Integer) = ind:1:ind
 _normalizeindex(n,ind::UnitRange) = StepRange(ind)
 _normalizeindex(n,ind::StepRange) = ind
 _normalizeindex(n,ind) = error("unsupported index")
