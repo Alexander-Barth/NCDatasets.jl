@@ -436,7 +436,7 @@ function ncsub(indexes::NTuple{N,T}) where N where T
     count  = Int[length(i)  for i in rindexes]
     start  = Int[first(i)-1 for i in rindexes]     # use zero-based indexes
     stride = Int[step(i)    for i in rindexes]
-    jlshape = length.(indexes)::NTuple{N,Int}
+    jlshape = Int.(length.(indexes))::NTuple{N,Int}
     return start,count,stride,jlshape
 end
 
