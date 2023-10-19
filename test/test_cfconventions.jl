@@ -169,5 +169,11 @@ ds = NCDataset(fname)
 @test_throws KeyError ds[CF"longitude"] # error
 
 nclon_u2 = ds["ubar"][CF"longitude"]
+@test name(nclon_u2) == "lon_u"
 
+
+nclon_u2 = ds["ubar"]["lon_u"]
+@test name(nclon_u2) == "lon_u"
+
+nclon_u2 = ds["ubar"][:lon_u]
 @test name(nclon_u2) == "lon_u"

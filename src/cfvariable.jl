@@ -474,7 +474,7 @@ function Base.keys(v::AbstractVariable)
 end
 
 
-function Base.getindex(v::AbstractVariable,name::AbstractString)
+function Base.getindex(v::AbstractVariable,name::SymbolOrString)
     ds = dataset(v)
     ncvar = ds[name]
     if _isrelated(ncvar,v)
