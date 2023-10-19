@@ -399,3 +399,19 @@ data1 = NCDataset(fname) do ds
 end;
 
 @test data[Dates.month.(time) .== 1] == data1
+
+ds = NCDataset(fname)
+ds1 = NCDatasets.@select(ds,Dates.month(time) == 1)
+outfname = tempname()
+write(outfname,ds1)
+close(ds)
+
+ds = NCDataset(outfname)
+@test all(Dates.month.(ds["time"][:]) .== 1)
+close(ds)
+
+ds = NCDataset(fname)
+data1 = NCDatasets.@select(ds["data"],Dates.month(time) == 1)
+t = data1["time"][:]
+@test all(Dates.month.(t) .== 1)
+close(ds)
