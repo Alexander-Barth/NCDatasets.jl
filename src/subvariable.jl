@@ -54,7 +54,7 @@ function collect(v::SubVariable{T,N}) where T where N
         A[] = v.parent[v.indices...]
         return A
     else
-        v.parent[v.indices...]
+        return v.parent[v.indices...]
     end
 end
 
