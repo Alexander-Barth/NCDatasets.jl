@@ -245,12 +245,61 @@ chunking(v::Variable,storage,chunksizes) = nc_def_var_chunking(v.ds.ncid,v.varid
 
 Return the storage type (`:contiguous` or `:chunked`) and the chunk sizes
 of the varable `v`.
+Note that `chunking` reports the same information as `nc_inq_var_chunking` and
+therefore [considers variables with unlimited dimension as `:contiguous`](https://github.com/Unidata/netcdf-c/discussions/2224).
 """
 function chunking(v::Variable)
     storage,chunksizes = nc_inq_var_chunking(v.ds.ncid,v.varid)
+    # TODO: NCDatasets 0.14: return a tuple for chunksizes
     return storage,reverse(chunksizes)
 end
+
+
 export chunking
+
+# same as `chunking` except that for NetCDF3 file the unlimited dimension is considered
+# as chunked
+# https://github.com/Unidata/netcdf-c/discussions/2224
+# Also the chunksizes is always a tuple.
+function _chunking(v::Variable{T,N}) where {T,N}
+    ncid = v.ds.ncid
+    varid = v.varid
+    sz = size(v)
+
+    format = nc_inq_format(ncid)
+
+    if format in (NC_FORMAT_NC3, NC_FORMAT_64BIT, NC_FORMAT_CDF5)
+        # normally there should be max. 1 unlimited dimension for NetCDF 3 files
+        unlimdim_ids = nc_inq_unlimdims(ncid)
+
+        if length(unlimdim_ids) > 0
+            dimids = reverse(nc_inq_vardimid(ncid,varid))
+
+            if !isempty(intersect(dimids,unlimdim_ids))
+
+                chunksizes = ntuple(N) do i
+                    if dimids[i] in unlimdim_ids
+                        1
+                    else
+                        sz[i]
+                    end
+                end
+
+                return :chunked, chunksizes
+            end
+        end
+    end
+
+    storage,chunksizes = chunking(v)
+    return storage,NTuple{N}(chunksizes)
+end
+
+_chunking(v::CFVariable) = _chunking(v.var)
+
+function _chunking(v)
+    storage,chunksizes = chunking(v)
+    return storage,Tuple(chunksizes)
+end
 
 """
     isshuffled,isdeflated,deflate_level = deflate(v::Variable)
@@ -398,14 +447,20 @@ function _write_data_to_nc(v::Variable, data, indexes::Union{AbstractRange{<:Int
     return _write_data_to_nc(v, data, ind...)
 end
 
-getchunksize(v::Variable) = getchunksize(haschunks(v),v)
-getchunksize(::DiskArrays.Chunked, v::Variable) = Tuple(chunking(v)[2])
-# getchunksize(::DiskArrays.Unchunked, v::Variable) = DiskArrays.estimate_chunksize(v)
-getchunksize(::DiskArrays.Unchunked, v::Variable) = size(v)
+function eachchunk(v::Variable)
+    # storage will be reported as chunked for variables with unlimited dimension
+    # by _chunking and chunksizes will 1 for the unlimited dimensions
+    storage, chunksizes = _chunking(v)
+    if storage == :contiguous
+        return DiskArrays.estimate_chunksize(v)
+    else
+        return DiskArrays.GridChunks(v, chunksizes)
+    end
+end
+haschunks(v::Variable) = (_chunking(v)[1] == :contiguous ? DiskArrays.Unchunked() : DiskArrays.Chunked())
+
 eachchunk(v::CFVariable) = eachchunk(v.var)
 haschunks(v::CFVariable) = haschunks(v.var)
-eachchunk(v::Variable) = DiskArrays.GridChunks(v, Tuple(getchunksize(v)))
-haschunks(v::Variable) = (chunking(v)[1] == :contiguous ? DiskArrays.Unchunked() : DiskArrays.Chunked())
 
 _normalizeindex(n,ind::Base.OneTo) = 1:1:ind.stop
 _normalizeindex(n,ind::Colon) = 1:1:n
