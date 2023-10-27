@@ -227,7 +227,6 @@ coord_value,dim_number = coordinate_value(v,:lon)
 
 
 @test coordinate_names(ds["SST"]) == [:lon, :lat, :time]
-v = nothing
 v = NCDatasets.@select(ds["SST"],30 <= lon <= 60)
 
 ilon = findall(x -> 30 <= x <= 60,ds["lon"])
