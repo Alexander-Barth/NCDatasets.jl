@@ -370,7 +370,7 @@ function dimnames(ds::AbstractNCDataset; parents = false)
     return dn
 end
 
-dim(ds::AbstractNCDataset,name::AbstractString) = ds.dim[name]
+dim(ds::AbstractNCDataset,name::SymbolOrString) = ds.dim[name]
 
 function _write(dest::NCDataset, src::AbstractDataset;
                     include = keys(src),

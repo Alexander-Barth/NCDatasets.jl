@@ -130,24 +130,17 @@ mutable struct MFCFVariable{T,N,M,TA,TV,TDS} <: AbstractNCVariable{T,N}
     varname::String
 end
 
-mutable struct MFDimensions{T} <: AbstractDimensions where T <: AbstractDimensions
-    as::Vector{T}
-    aggdim::String
-    isnewdim::Bool
-end
-
 mutable struct MFGroups{T} <: AbstractGroups where T <: AbstractGroups
     as::Vector{T}
     aggdim::String
     isnewdim::Bool
 end
 
-mutable struct MFDataset{T,N,S<:AbstractString,TD,TG} <: AbstractNCDataset where T <: AbstractNCDataset
+mutable struct MFDataset{T,N,S<:AbstractString,TG} <: AbstractNCDataset where T <: AbstractNCDataset
     ds::Array{T,N}
     aggdim::S
     isnewdim::Bool
     constvars::Vector{Symbol}
-    dim::MFDimensions{TD}
     group::MFGroups{TG}
     _boundsmap::Dict{String,String}
 end

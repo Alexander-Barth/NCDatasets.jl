@@ -1,20 +1,20 @@
 
 
-function Base.getindex(a::MFDimensions,name::AbstractString)
-    if name == a.aggdim
-        if a.isnewdim
-            return length(a.as)
+function dim(ds::MFDataset,name::SymbolOrString)
+    if name == ds.aggdim
+        if ds.isnewdim
+            return length(ds.ds)
         else
-            return sum(d[name] for d in a.as)
+            return sum(dim(_ds,name) for _ds in ds.ds)
         end
     else
-        return a.as[1][name]
+        return dim(ds.ds[1],name)
     end
 end
 
-function Base.setindex!(a::MFDimensions,data,name::AbstractString)
-    for a in a.as
-        a[name] = data
+function defDim(ds::MFDataset,name::SymbolOrString,data)
+    for _ds in ds.ds
+        defDim(_ds,name,data)
     end
     return data
 end
@@ -22,25 +22,24 @@ end
 Base.keys(a::MFGroups) = keys(a.as[1])
 
 
-function Base.keys(a::MFDimensions)
-    k = collect(keys(a.as[1]))
+function dimnames(ds::MFDataset)
+    k = collect(dimnames(ds.ds[1]))
 
-    if a.isnewdim
-        push!(k,a.aggdim)
+    if ds.isnewdim
+        push!(k,ds.aggdim)
     end
 
     return k
 end
 
-unlimited(a::MFDimensions) = unique(reduce(hcat,unlimited.(a.as)))
+unlimited(ds::MFDataset) = unique(reduce(hcat,unlimited.(ds.ds)))
 
 function Base.getindex(a::MFGroups,name::AbstractString)
     ds = getindex.(a.as,name)
-    dim = MFDimensions([d.dim for d in ds],a.aggdim,a.isnewdim)
     group = MFGroups([d.group for d in ds],a.aggdim,a.isnewdim)
     constvars = Symbol[]
 
-    return MFDataset(ds,a.aggdim,a.isnewdim,constvars,dim,group)
+    return MFDataset(ds,a.aggdim,a.isnewdim,constvars,group)
 end
 
 
@@ -49,9 +48,9 @@ Base.Array(v::MFVariable) = Array(v.var)
 iswritable(mfds::MFDataset) = iswritable(mfds.ds[1])
 
 
-function MFDataset(ds,aggdim,isnewdim,constvars,dim,group)
+function MFDataset(ds,aggdim,isnewdim,constvars,group)
     _boundsmap = Dict{String,String}()
-    mfds = MFDataset(ds,aggdim,isnewdim,constvars,dim,group,_boundsmap)
+    mfds = MFDataset(ds,aggdim,isnewdim,constvars,group,_boundsmap)
     if !iswritable(mfds)
         initboundsmap!(mfds)
     end
@@ -157,10 +156,9 @@ function NCDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing,
         aggdim = NCDatasets.unlimited(ds[1].dim)[1]
     end
 
-    dim = MFDimensions([d.dim for d in ds],aggdim,isnewdim)
     group = MFGroups([d.group for d in ds],aggdim,isnewdim)
 
-    mfds = MFDataset(ds,aggdim,isnewdim,Symbol.(constvars),dim,group)
+    mfds = MFDataset(ds,aggdim,isnewdim,Symbol.(constvars),group)
     return mfds
 end
 
