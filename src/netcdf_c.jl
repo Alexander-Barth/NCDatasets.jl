@@ -1070,7 +1070,6 @@ function nc_inq_var_fletcher32(ncid::Integer,varid::Integer)
 end
 
 function nc_def_var_chunking(ncid::Integer,varid::Integer,storage,chunksizes)
-
     check(ccall((:nc_def_var_chunking,libnetcdf),Cint,(Cint,Cint,Cint,Ptr{Csize_t}),ncid,varid,NCConstants[storage],chunksizes))
 end
 
@@ -1236,13 +1235,20 @@ function nc_inq_unlimdims(ncid::Integer)
     return unlimdimids
 end
 
-# function nc_inq_format(ncid::Integer,formatp)
-#     check(ccall((:nc_inq_format,libnetcdf),Cint,(Cint,Ptr{Cint}),ncid,formatp))
-# end
+function nc_inq_format(ncid::Integer)
+    formatp = Ref(Cint(0))
+    check(ccall((:nc_inq_format,libnetcdf),Cint,(Cint,Ptr{Cint}),ncid,formatp))
+    return formatp[]
+end
 
-# function nc_inq_format_extended(ncid::Integer,formatp,modep)
-#     check(ccall((:nc_inq_format_extended,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,formatp,modep))
-# end
+function nc_inq_format_extended(ncid::Integer)
+    formatp = Ref(Cint(0))
+    modep = Ref(Cint(0))
+
+    check(ccall((:nc_inq_format_extended,libnetcdf),Cint,(Cint,Ptr{Cint},Ptr{Cint}),ncid,formatp,modep))
+
+    return formatp[], modep[]
+end
 
 """
 Define the dimension with the name NAME and the length LEN in the

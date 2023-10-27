@@ -28,7 +28,15 @@ for sampledata in samples
     rm(filename;force=true)
 
     # write data
-    ncid = NCDatasets.nc_create(filename,NCDatasets.NC_CLOBBER | NCDatasets.NC_NETCDF4)
+    mode = NCDatasets.NC_CLOBBER | NCDatasets.NC_NETCDF4
+    ncid = NCDatasets.nc_create(filename,mode)
+
+    format = NCDatasets.nc_inq_format(ncid)
+    @test format == NCDatasets.NC_FORMAT_NETCDF4
+
+    format,mode2 = NCDatasets.nc_inq_format_extended(ncid)
+    @test format == NCDatasets.NC_FORMATX_NC4
+    @test mode2 == mode
 
     dimids = zeros(Cint,ndims(sampledata))
     for i = 1:ndims(sampledata)

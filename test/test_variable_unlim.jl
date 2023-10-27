@@ -40,3 +40,30 @@ v[1:100,1] = data[:,1]
 v[1:100,:] = data
 close(ds)
 rm(filename)
+
+
+# issue 231
+
+using NCDatasets
+using Test
+sz = (4,5,1)
+filename = tempname()
+
+for f = [:netcdf3_64bit_offset,:netcdf4]
+    ds = NCDataset(filename,"c",format=f)
+    ds.dim["lon"] = sz[1]
+    ds.dim["lat"] = sz[2]
+    ds.dim["time"] = Inf
+
+    T = Float32
+    v = defVar(ds,"var-$T",T,("lon","lat","time"))
+
+    j = 1
+    v[:,:,j] = fill(T(j), sz[1:2])
+
+    @test size(v) == sz
+
+    storage,chunksizes = NCDatasets._chunking(v)
+    @test storage == :chunked
+    @test chunksizes == sz
+end
