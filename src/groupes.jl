@@ -53,7 +53,7 @@ export defGroup
 
 
 groupnames(ds::AbstractNCDataset) = keys(ds.group)
-group(ds::AbstractNCDataset,groupname::AbstractString) = ds.group[groupname]
+group(ds::AbstractNCDataset,groupname::SymbolOrString) = ds.group[groupname]
 
 """
     name(ds::NCDataset)
