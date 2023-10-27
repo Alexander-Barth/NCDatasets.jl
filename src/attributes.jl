@@ -15,7 +15,7 @@ end
 
 
 attribnames(ds::Union{AbstractNCDataset,AbstractNCVariable}) = keys(ds.attrib)
-attrib(ds::Union{AbstractNCDataset,AbstractNCVariable},name::AbstractString) = ds.attrib[name]
+attrib(ds::Union{AbstractNCDataset,AbstractNCVariable},name::SymbolOrString) = ds.attrib[name]
 
 function Base.get(a::BaseAttributes, name::SymbolOrString,default)
     if haskey(a,name)
@@ -40,6 +40,12 @@ title = ds.attrib["title"]
 """
 function Base.getindex(a::Attributes,name::SymbolOrString)
     return nc_get_att(a.ds.ncid,a.varid,name)
+end
+
+
+function defAttrib(ds::Dataset,name::SymbolOrString,data)
+    defmode(ds) # make sure that the file is in define mode
+    return nc_put_att(ds.ncid,NC_GLOBAL,name,data)
 end
 
 

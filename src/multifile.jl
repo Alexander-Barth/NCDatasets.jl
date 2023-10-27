@@ -1,7 +1,4 @@
 
-Base.keys(a::MFAttributes) = keys(a.as[1])
-
-
 
 function Base.getindex(a::MFDimensions,name::AbstractString)
     if name == a.aggdim
@@ -39,12 +36,11 @@ unlimited(a::MFDimensions) = unique(reduce(hcat,unlimited.(a.as)))
 
 function Base.getindex(a::MFGroups,name::AbstractString)
     ds = getindex.(a.as,name)
-    attrib = MFAttributes([d.attrib for d in ds])
     dim = MFDimensions([d.dim for d in ds],a.aggdim,a.isnewdim)
     group = MFGroups([d.group for d in ds],a.aggdim,a.isnewdim)
     constvars = Symbol[]
 
-    return MFDataset(ds,a.aggdim,a.isnewdim,constvars,attrib,dim,group)
+    return MFDataset(ds,a.aggdim,a.isnewdim,constvars,dim,group)
 end
 
 
@@ -53,9 +49,9 @@ Base.Array(v::MFVariable) = Array(v.var)
 iswritable(mfds::MFDataset) = iswritable(mfds.ds[1])
 
 
-function MFDataset(ds,aggdim,isnewdim,constvars,attrib,dim,group)
+function MFDataset(ds,aggdim,isnewdim,constvars,dim,group)
     _boundsmap = Dict{String,String}()
-    mfds = MFDataset(ds,aggdim,isnewdim,constvars,attrib,dim,group,_boundsmap)
+    mfds = MFDataset(ds,aggdim,isnewdim,constvars,dim,group,_boundsmap)
     if !iswritable(mfds)
         initboundsmap!(mfds)
     end
@@ -161,12 +157,10 @@ function NCDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing,
         aggdim = NCDatasets.unlimited(ds[1].dim)[1]
     end
 
-    attrib = MFAttributes([d.attrib for d in ds])
-
     dim = MFDimensions([d.dim for d in ds],aggdim,isnewdim)
     group = MFGroups([d.group for d in ds],aggdim,isnewdim)
 
-    mfds = MFDataset(ds,aggdim,isnewdim,Symbol.(constvars),attrib,dim,group)
+    mfds = MFDataset(ds,aggdim,isnewdim,Symbol.(constvars),dim,group)
     return mfds
 end
 
@@ -210,7 +204,7 @@ function _variable(mfds::MFDataset,varname::SymbolOrString)
         # aggregated along a given dimension
         vars = variable.(mfds.ds,varname)
         v = CatArrays.CatArray(ndims(vars[1])+1,vars...)
-        return MFVariable(mfds,v,MFAttributes([var.attrib for var in vars]),
+        return MFVariable(mfds,v,
                           (dimnames(vars[1])...,mfds.aggdim),String(varname))
     elseif mfds.aggdim == ""
         # merge all variables
@@ -230,7 +224,7 @@ function _variable(mfds::MFDataset,varname::SymbolOrString)
 
         if (dim != nothing)
             v = CatArrays.CatArray(dim,vars...)
-            return MFVariable(mfds,v,MFAttributes([var.attrib for var in vars]),
+            return MFVariable(mfds,v,
                           dimnames(vars[1]),String(varname))
         else
             return vars[1]
@@ -252,7 +246,7 @@ function _cfvariable(mfds::MFDataset,varname::SymbolOrString)
         cfvar = CatArrays.CatArray(ndims(cfvars[1])+1,cfvars...)
         var = variable(mfds,varname)
 
-        return MFCFVariable(mfds,cfvar,var,var.attrib,
+        return MFCFVariable(mfds,cfvar,var,
                             dimnames(var),varname)
     elseif mfds.aggdim == ""
         # merge all variables
@@ -274,7 +268,7 @@ function _cfvariable(mfds::MFDataset,varname::SymbolOrString)
             cfvar = CatArrays.CatArray(dim,cfvars...)
             var = variable(mfds,varname)
 
-            return MFCFVariable(mfds,cfvar,var,var.attrib,
+            return MFCFVariable(mfds,cfvar,var,
                           dimnames(var),String(varname))
         else
             return cfvars[1]

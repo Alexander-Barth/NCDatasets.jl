@@ -14,8 +14,6 @@ mutable struct NetCDFError <: Exception
 end
 
 # base type of attributes list
-# concrete types are Attributes (single NetCDF file) and
-# MFAttributes (multiple NetCDF files)
 
 abstract type BaseAttributes
 end
@@ -117,34 +115,17 @@ const Dataset = NCDataset
 
 # Multi-file related type definitions
 
-mutable struct MFAttributes{T} <: BaseAttributes where T <: BaseAttributes
-    as::Vector{T}
-end
-
-function Base.getindex(a::MFAttributes,name::AbstractString)
-    return a.as[1][name]
-end
-
-function Base.setindex!(a::MFAttributes,data,name::AbstractString)
-    for a in a.as
-        a[name] = data
-    end
-    return data
-end
-
-mutable struct MFVariable{T,N,M,TA,A,TDS} <: AbstractNCVariable{T,N}
+mutable struct MFVariable{T,N,M,TA,TDS} <: AbstractNCVariable{T,N}
     ds::TDS
     var::CatArrays.CatArray{T,N,M,TA}
-    attrib::MFAttributes{A}
     dimnames::NTuple{N,String}
     varname::String
 end
 
-mutable struct MFCFVariable{T,N,M,TA,TV,A,TDS} <: AbstractNCVariable{T,N}
+mutable struct MFCFVariable{T,N,M,TA,TV,TDS} <: AbstractNCVariable{T,N}
     ds::TDS
     cfvar::CatArrays.CatArray{T,N,M,TA}
     var::TV
-    attrib::MFAttributes{A}
     dimnames::NTuple{N,String}
     varname::String
 end
@@ -161,16 +142,40 @@ mutable struct MFGroups{T} <: AbstractGroups where T <: AbstractGroups
     isnewdim::Bool
 end
 
-mutable struct MFDataset{T,N,S<:AbstractString,TA,TD,TG} <: AbstractNCDataset where T <: AbstractNCDataset
+mutable struct MFDataset{T,N,S<:AbstractString,TD,TG} <: AbstractNCDataset where T <: AbstractNCDataset
     ds::Array{T,N}
     aggdim::S
     isnewdim::Bool
     constvars::Vector{Symbol}
-    attrib::MFAttributes{TA}
     dim::MFDimensions{TD}
     group::MFGroups{TG}
     _boundsmap::Dict{String,String}
 end
+
+
+attribnames(ds::MFDataset) = attribnames(ds.ds[1])
+attrib(ds::MFDataset,name::SymbolOrString) = attrib(ds.ds[1],name)
+
+
+attribnames(v::Union{MFCFVariable,MFVariable}) = attribnames(variable(v.ds.ds[1],v.varname))
+
+
+attrib(v::Union{MFCFVariable,MFVariable},name::SymbolOrString) = attrib(variable(v.ds.ds[1],v.varname),name)
+
+function defAttrib(v::Union{MFCFVariable,MFVariable},name::SymbolOrString,data)
+    for ds in v.ds.ds
+        defAttrib(variable(v.ds,v.varname),name,data)
+    end
+    return data
+end
+
+function defAttrib(ds::MFDataset,name::SymbolOrString,data)
+    for _ds in ds.ds
+        defAttrib(_ds,name,data)
+    end
+    return data
+end
+
 
 
 # DeferDataset are Dataset which are open only when there are accessed and
