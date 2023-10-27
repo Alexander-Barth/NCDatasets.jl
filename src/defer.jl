@@ -52,9 +52,9 @@ function metadata(ds::NCDataset)
 end
 
 
-function DeferDataset(r::Resource,groupname::String,attrib::DeferAttributes,dim::DeferDimensions,group::DeferGroups,data::OrderedDict)
+function DeferDataset(r::Resource,groupname::String,dim::DeferDimensions,group::DeferGroups,data::OrderedDict)
    _boundsmap = nothing
-   dds = DeferDataset(r,groupname,attrib,dim,group,data,_boundsmap)
+   dds = DeferDataset(r,groupname,dim,group,data,_boundsmap)
    if (r.mode == "r")
        initboundsmap!(dds)
    end
@@ -65,10 +65,9 @@ function DeferDataset(filename,mode,info)
     NCDataset(filename,mode) do ds
         r = Resource(filename,mode,info)
         groupname = "/"
-        da = DeferAttributes(r,"/",r.metadata["attrib"])
         dd = DeferDimensions(r,r.metadata["dim"])
         dg = DeferGroups(r,r.metadata["group"])
-        return DeferDataset(r,groupname,da,dd,dg,info)
+        return DeferDataset(r,groupname,dd,dg,info)
     end
 end
 
@@ -77,10 +76,9 @@ function DeferDataset(filename,mode = "r")
         info = metadata(ds)
         r = Resource(filename,mode,info)
         groupname = "/"
-        da = DeferAttributes(r,"/",r.metadata["attrib"])
         dd = DeferDimensions(r,r.metadata["dim"])
         dg = DeferGroups(r,r.metadata["group"])
-        return DeferDataset(r,groupname,da,dd,dg,info)
+        return DeferDataset(r,groupname,dd,dg,info)
     end
 end
 export DeferDataset
@@ -116,9 +114,8 @@ function variable(dds::DeferDataset,varname::AbstractString)
     end
     T = data["eltype"]
     N = length(data["dimensions"])
-    da = DeferAttributes(dds.r,varname,data["attrib"])
 
-    return DeferVariable{T,N}(dds.r,varname,da,data)
+    return DeferVariable{T,N}(dds.r,varname,data)
 end
 
 variable(dds::DeferDataset,varname::Symbol) = variable(dds,string(varname))
@@ -142,18 +139,21 @@ Base.getindex(dd::DeferDimensions,name::AbstractString) = dd.data[name]["length"
 unlimited(dd::DeferDimensions) = [dimname for (dimname,dim) in dd.data if dim["unlimited"]]
 
 
-Base.keys(da::DeferAttributes) = collect(keys(da.data))
-Base.getindex(da::DeferAttributes,name::AbstractString) = da.data[name]
+attribnames(dds::DeferDataset) = collect(keys(dds.r.metadata["attrib"]))
+attrib(dds::DeferDataset,name::SymbolOrString) = dds.r.metadata["attrib"][String(name)]
+
+
+attribnames(dv::DeferVariable) = collect(keys(dv.data["attrib"]))
+attrib(dv::DeferVariable,name::SymbolOrString) = dv.data["attrib"][String(name)]
 
 #------------------------------------------------
 
 Base.keys(dg::DeferGroups) = collect(keys(dg.data))
 function Base.getindex(dg::DeferGroups,name::AbstractString)
     data = dg.data[name]
-    da = DeferAttributes(dg.r,"/",data["attrib"])
     dd = DeferDimensions(dg.r,data["dim"])
     dg = DeferGroups(dg.r,data["group"])
-    return DeferDataset(dg.r,name,da,dd,dg,data)
+    return DeferDataset(dg.r,name,dd,dg,data)
 end
 
 

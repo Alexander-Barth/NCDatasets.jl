@@ -148,12 +148,6 @@ struct Resource
     metadata::OrderedDict
 end
 
-mutable struct DeferAttributes <: BaseAttributes
-    r::Resource
-    varname::String # "/" for global attributes
-    data::OrderedDict
-end
-
 mutable struct DeferDimensions <: AbstractDimensions
     r::Resource
     data::OrderedDict
@@ -167,7 +161,6 @@ end
 mutable struct DeferDataset <: AbstractNCDataset
     r::Resource
     groupname::String
-    attrib::DeferAttributes
     dim::DeferDimensions
     group::DeferGroups
     data::OrderedDict
@@ -177,7 +170,6 @@ end
 mutable struct DeferVariable{T,N} <: AbstractNCVariable{T,N}
     r::Resource
     varname::String
-    attrib::DeferAttributes
     data::OrderedDict
 end
 
