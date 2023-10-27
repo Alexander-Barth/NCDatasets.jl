@@ -462,24 +462,3 @@ close(ds)
                                 time_origin(v),time_factor(v))
     end
 end
-
-
-function _isrelated(v1::AbstractVariable,v2::AbstractVariable)
-    dimnames(v1) ⊆ dimnames(v2)
-end
-
-function Base.keys(v::AbstractVariable)
-    ds = dataset(v)
-    return [varname for (varname,ncvar) in ds if _isrelated(ncvar,v)]
-end
-
-
-function Base.getindex(v::AbstractVariable,name::SymbolOrString)
-    ds = dataset(v)
-    ncvar = ds[name]
-    if _isrelated(ncvar,v)
-        return ncvar
-    else
-        throw(KeyError(name))
-    end
-end

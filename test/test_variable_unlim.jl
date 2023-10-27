@@ -50,6 +50,7 @@ sz = (4,5,1)
 filename = tempname()
 
 for f = [:netcdf3_64bit_offset,:netcdf4]
+    local ds, v
     ds = NCDataset(filename,"c",format=f)
     ds.dim["lon"] = sz[1]
     ds.dim["lat"] = sz[2]

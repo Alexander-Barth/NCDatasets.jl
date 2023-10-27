@@ -327,58 +327,6 @@ function Base.iterate(a::NCIterable, state = keys(a))
     return (state[1] => a[popfirst!(state)], state)
 end
 
-"""
-    varbyattrib(ds, attname = attval)
-
-Returns a list of variable(s) which has the attribute `attname` matching the value `attval`
-in the dataset `ds`.
-The list is empty if the none of the variables has the match.
-The output is a list of `CFVariable`s.
-
-# Examples
-
-Load all the data of the first variable with standard name "longitude" from the
-NetCDF file `results.nc`.
-
-```julia-repl
-julia> ds = NCDataset("results.nc", "r");
-julia> data = varbyattrib(ds, standard_name = "longitude")[1][:]
-```
-
-"""
-function varbyattrib(ds::Union{AbstractNCDataset,AbstractVariable}; kwargs...)
-    # Start with an empty list of variables
-    varlist = []
-
-    # Loop on the variables
-    for v in keys(ds)
-        var = ds[v]
-
-        matchall = true
-
-        for (attsym,attval) in kwargs
-            attname = String(attsym)
-
-            # Check if the variable has the desired attribute
-            if haskey(var.attrib, attname)
-                # Check if the attribute value is the selected one
-                if var.attrib[attname] != attval
-                    matchall = false
-                    break
-                end
-            else
-                matchall = false
-                break
-            end
-        end
-
-        if matchall
-            push!(varlist, var)
-        end
-    end
-
-    return varlist
-end
 export varbyattrib
 
 
@@ -423,16 +371,6 @@ function dimnames(ds::AbstractNCDataset; parents = false)
 end
 
 dim(ds::AbstractNCDataset,name::AbstractString) = ds.dim[name]
-
-function Base.getindex(ds::Union{AbstractNCDataset,AbstractVariable},n::CFStdName)
-    ncvars = varbyattrib(ds, standard_name = String(n.name))
-    if length(ncvars) == 1
-        return ncvars[1]
-    else
-        throw(KeyError("$(length(ncvars)) matches while searching for a variable with standard_name attribute equal to $(n.name)"))
-    end
-end
-
 
 function _write(dest::NCDataset, src::AbstractDataset;
                     include = keys(src),

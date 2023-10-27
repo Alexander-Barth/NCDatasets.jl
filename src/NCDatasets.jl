@@ -37,7 +37,8 @@ import CommonDataModel: AbstractDataset, AbstractVariable,
     path, name, isopen, unlimited, dataset,
     groupnames, group, defGroup,
     dimnames, dim, defDim,
-    attribnames, attrib, defAttrib
+    attribnames, attrib, defAttrib,
+    varbyattrib, CFStdName, @CF_str, ancillaryvariables, filter, coord, bounds
 import DiskArrays
 import DiskArrays: readblock!, writeblock!, eachchunk, haschunks
 using DiskArrays: @implement_diskarray
@@ -76,5 +77,9 @@ export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
 export dayofyear, firstdayofyear
 export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
     DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
+
+export coord
+export bounds
+export @CF_str
 
 end # module

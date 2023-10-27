@@ -115,7 +115,7 @@ varname = "var"
 for deferopen in (false,true)
     local mfds, data
     local lon
-    local buf, ds_merged, fname_merged
+    local buf, ds_merged, fname_merged, var
 
     mfds = NCDataset(fnames, deferopen = deferopen);
     var = variable(mfds,varname);
