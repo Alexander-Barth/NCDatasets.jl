@@ -1,5 +1,33 @@
 
 
+
+
+attribnames(ds::MFDataset) = attribnames(ds.ds[1])
+attrib(ds::MFDataset,name::SymbolOrString) = attrib(ds.ds[1],name)
+
+
+attribnames(v::Union{MFCFVariable,MFVariable}) = attribnames(variable(v.ds.ds[1],v.varname))
+
+
+attrib(v::Union{MFCFVariable,MFVariable},name::SymbolOrString) = attrib(variable(v.ds.ds[1],v.varname),name)
+
+function defAttrib(v::Union{MFCFVariable,MFVariable},name::SymbolOrString,data)
+    for ds in v.ds.ds
+        defAttrib(variable(v.ds,v.varname),name,data)
+    end
+    return data
+end
+
+function defAttrib(ds::MFDataset,name::SymbolOrString,data)
+    for _ds in ds.ds
+        defAttrib(_ds,name,data)
+    end
+    return data
+end
+
+
+
+
 function dim(ds::MFDataset,name::SymbolOrString)
     if name == ds.aggdim
         if ds.isnewdim

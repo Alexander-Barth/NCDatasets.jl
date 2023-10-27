@@ -145,32 +145,6 @@ mutable struct MFDataset{T,N,S<:AbstractString,TG} <: AbstractNCDataset where T 
     _boundsmap::Dict{String,String}
 end
 
-
-attribnames(ds::MFDataset) = attribnames(ds.ds[1])
-attrib(ds::MFDataset,name::SymbolOrString) = attrib(ds.ds[1],name)
-
-
-attribnames(v::Union{MFCFVariable,MFVariable}) = attribnames(variable(v.ds.ds[1],v.varname))
-
-
-attrib(v::Union{MFCFVariable,MFVariable},name::SymbolOrString) = attrib(variable(v.ds.ds[1],v.varname),name)
-
-function defAttrib(v::Union{MFCFVariable,MFVariable},name::SymbolOrString,data)
-    for ds in v.ds.ds
-        defAttrib(variable(v.ds,v.varname),name,data)
-    end
-    return data
-end
-
-function defAttrib(ds::MFDataset,name::SymbolOrString,data)
-    for _ds in ds.ds
-        defAttrib(_ds,name,data)
-    end
-    return data
-end
-
-
-
 # DeferDataset are Dataset which are open only when there are accessed and
 # closed directly after. This is necessary to work with a large number
 # of NetCDF files (e.g. more than 1000).
