@@ -52,9 +52,9 @@ function metadata(ds::NCDataset)
 end
 
 
-function DeferDataset(r::Resource,groupname::String,dim::DeferDimensions,group::DeferGroups,data::OrderedDict)
+function DeferDataset(r::Resource,groupname::String,data::OrderedDict)
    _boundsmap = nothing
-   dds = DeferDataset(r,groupname,dim,group,data,_boundsmap)
+   dds = DeferDataset(r,groupname,data,_boundsmap)
    if (r.mode == "r")
        initboundsmap!(dds)
    end
@@ -65,9 +65,7 @@ function DeferDataset(filename,mode,info)
     NCDataset(filename,mode) do ds
         r = Resource(filename,mode,info)
         groupname = "/"
-        dd = DeferDimensions(r,r.metadata["dim"])
-        dg = DeferGroups(r,r.metadata["group"])
-        return DeferDataset(r,groupname,dd,dg,info)
+        return DeferDataset(r,groupname,info)
     end
 end
 
@@ -76,9 +74,7 @@ function DeferDataset(filename,mode = "r")
         info = metadata(ds)
         r = Resource(filename,mode,info)
         groupname = "/"
-        dd = DeferDimensions(r,r.metadata["dim"])
-        dg = DeferGroups(r,r.metadata["group"])
-        return DeferDataset(r,groupname,dd,dg,info)
+        return DeferDataset(r,groupname,info)
     end
 end
 export DeferDataset
@@ -134,9 +130,13 @@ dimnames(dv::DeferVariable) = dv.data["dimensions"]
 name(dv::DeferVariable) = dv.varname
 
 #----------------------------------------------
-Base.keys(dd::DeferDimensions) = collect(keys(dd.data))
-Base.getindex(dd::DeferDimensions,name::AbstractString) = dd.data[name]["length"]
-unlimited(dd::DeferDimensions) = [dimname for (dimname,dim) in dd.data if dim["unlimited"]]
+
+dimnames(dds::DeferDataset) = collect(keys(dds.r.metadata["dim"]))
+
+dim(dds::DeferDataset,name::SymbolOrString) =
+    dds.r.metadata["dim"][String(name)]["length"]
+
+unlimited(dd::DeferDataset) = [dimname for (dimname,dim) in dd.data["dim"] if dim["unlimited"]]
 
 
 attribnames(dds::DeferDataset) = collect(keys(dds.r.metadata["attrib"]))
@@ -148,12 +148,11 @@ attrib(dv::DeferVariable,name::SymbolOrString) = dv.data["attrib"][String(name)]
 
 #------------------------------------------------
 
-Base.keys(dg::DeferGroups) = collect(keys(dg.data))
-function Base.getindex(dg::DeferGroups,name::AbstractString)
-    data = dg.data[name]
-    dd = DeferDimensions(dg.r,data["dim"])
-    dg = DeferGroups(dg.r,data["group"])
-    return DeferDataset(dg.r,name,dd,dg,data)
+groupnames(dds::DeferDataset) = collect(keys(dds.data["group"]))
+
+function group(dds::DeferDataset,name::SymbolOrString)
+    data = dds.data["group"][String(name)]
+    return DeferDataset(dds.r,String(name),data)
 end
 
 

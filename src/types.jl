@@ -148,21 +148,9 @@ struct Resource
     metadata::OrderedDict
 end
 
-mutable struct DeferDimensions <: AbstractDimensions
-    r::Resource
-    data::OrderedDict
-end
-
-mutable struct DeferGroups <: AbstractGroups
-    r::Resource
-    data::OrderedDict
-end
-
 mutable struct DeferDataset <: AbstractNCDataset
     r::Resource
     groupname::String
-    dim::DeferDimensions
-    group::DeferGroups
     data::OrderedDict
     _boundsmap::Union{Nothing,Dict{String,String}}
 end
