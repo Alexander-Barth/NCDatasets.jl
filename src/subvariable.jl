@@ -114,31 +114,30 @@ Base.setindex!(v::SubVariable,data,indices::CartesianIndices) =
 
 
 
+dimnames(ds::SubDataset) = dimnames(ds.ds)
+defDim(ds::SubDataset,name::SymbolOrString,len) = defDim(ds.ds,name,len)
 
 
-
-Base.keys(ds::SubDimensions) = keys(ds.dim)
-
-function Base.getindex(sd::SubDimensions,dimname)
+function dim(ds::SubDataset,dimname::SymbolOrString)
     dn = Symbol(dimname)
-    if hasproperty(sd.indices,dn)
-        ind = getproperty(sd.indices,dn)
+    if hasproperty(ds.indices,dn)
+        ind = getproperty(ds.indices,dn)
         if ind == Colon()
-            return sd.dim[dimname]
+            return ds.ds.dim[dimname]
         else
             return length(ind)
         end
     else
-        return sd.dim[dimname]
+        return ds.ds.dim[dimname]
     end
 end
 
-unlimited(sd::SubDimensions) = unlimited(sd.dim)
+unlimited(ds::SubDataset) = unlimited(ds.ds)
+
 
 function SubDataset(ds::AbstractNCDataset,indices)
-    dim = SubDimensions(ds.dim,indices)
     group = OrderedDict((n => SubDataset(g,indices) for (n,g) in ds.group)...)
-    SubDataset(ds,indices,dim,ds.attrib,group)
+    SubDataset(ds,indices,ds.attrib,group)
 end
 
 function Base.view(ds::AbstractNCDataset; indices...)

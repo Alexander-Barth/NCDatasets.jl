@@ -172,16 +172,9 @@ struct SubVariable{T,N,TA,TI,TAttrib,TV} <: AbstractNCVariable{T,N}
     var::TV
 end
 
-struct SubDataset{TD,TI,TDIM,TA,TG}  <: AbstractNCDataset
+struct SubDataset{TD,TI,TA,TG}  <: AbstractNCDataset
     ds::TD
     indices::TI
-    dim::TDIM
     attrib::TA
     group::TG
-end
-
-
-struct SubDimensions{TD,TI} <: AbstractDimensions
-    dim::TD
-    indices::TI
 end
