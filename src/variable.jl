@@ -61,10 +61,9 @@ function variable(ds::NCDataset,varid::Integer)
     dimids = nc_inq_vardimid(ds.ncid,varid)
     nctype = _jltype(ds.ncid,nc_inq_vartype(ds.ncid,varid))
     ndims = length(dimids)
-    attrib = Attributes(ds,varid)
 
     # reverse dimids to have the dimension order in Fortran style
-    return Variable{nctype,ndims,typeof(ds)}(ds,varid, (reverse(dimids)...,), attrib)
+    return Variable{nctype,ndims,typeof(ds)}(ds,varid, (reverse(dimids)...,))
 end
 
 

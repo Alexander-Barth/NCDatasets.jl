@@ -1,6 +1,6 @@
 
 
-const NCIterable = Union{BaseAttributes,AbstractDimensions,AbstractNCDataset,AbstractGroups}
+const NCIterable = AbstractNCDataset
 Base.length(a::NCIterable) = length(keys(a))
 
 
@@ -73,7 +73,7 @@ function isopen(ds::NCDataset)
 end
 
 "Make sure that a dataset is in data mode"
-function datamode(ds)
+function datamode(ds::Dataset)
     if ds.isdefmode[]
         nc_enddef(ds.ncid)
         ds.isdefmode[] = false
@@ -81,7 +81,7 @@ function datamode(ds)
 end
 
 "Make sure that a dataset is in define mode"
-function defmode(ds)
+function defmode(ds::Dataset)
     if !ds.isdefmode[]
         nc_redef(ds.ncid)
         ds.isdefmode[] = true

@@ -1,11 +1,4 @@
-#=
-Core type of `NCDatasets`
-the `Attributes` and `Group` parts as well.
-and the `Attributes` part of it.
-
-High-level interface is at the "High-level" section about actually
-loading/reading/making datasets.
-=#
+# All types using in `NCDatasets`
 
 # Exception type for error thrown by the NetCDF library
 mutable struct NetCDFError <: Exception
@@ -32,33 +25,13 @@ abstract type AbstractGroups
 end
 
 
-############################################################
-# Types and subtypes
-############################################################
-
-# List of attributes (for a single NetCDF file)
-# all ids should be Cint
-
-mutable struct Attributes{TDS<:AbstractNCDataset} <: BaseAttributes
-    ds::TDS
-    varid::Cint
-end
-
-mutable struct Groups{TDS<:AbstractNCDataset} <: AbstractGroups
-    ds::TDS
-end
-
-mutable struct Dimensions{TDS<:AbstractNCDataset} <: AbstractDimensions
-    ds::TDS
-end
-
 # Variable (as stored in NetCDF file, without using
 # add_offset, scale_factor and _FillValue)
-mutable struct Variable{NetCDFType,N,TDS<:AbstractNCDataset} <: AbstractNCVariable{NetCDFType, N}
+mutable struct Variable{NetCDFType,N,TDS} <: AbstractNCVariable{NetCDFType, N}
     ds::TDS
     varid::Cint
     dimids::NTuple{N,Cint}
-    attrib::Attributes{TDS}
+#    attrib::Attributes{TDS}
 end
 
 mutable struct NCDataset{TDS} <: AbstractNCDataset where TDS <: Union{AbstractNCDataset,Nothing}
@@ -69,9 +42,6 @@ mutable struct NCDataset{TDS} <: AbstractNCDataset where TDS <: Union{AbstractNC
     # true of the NetCDF is in define mode (i.e. metadata can be added, but not data)
     # need to be a reference, so that remains syncronised when copied
     isdefmode::Ref{Bool}
-    attrib::Attributes{NCDataset{TDS}}
-    dim::Dimensions{NCDataset{TDS}}
-    group::Groups{NCDataset{TDS}}
     # mapping between variables related via the bounds attribute
     # It is only used for read-only datasets to improve performance
     _boundsmap::Dict{String,String}
@@ -95,14 +65,11 @@ mutable struct NCDataset{TDS} <: AbstractNCDataset where TDS <: Union{AbstractNC
         ds.ncid = ncid
         ds.iswritable = iswritable
         ds.isdefmode = isdefmode
-        ds.attrib = Attributes(ds,NC_GLOBAL)
-        ds.dim = Dimensions(ds)
-        ds.group = Groups(ds)
         ds._boundsmap = Dict{String,String}()
         if !iswritable
             initboundsmap!(ds)
         end
-        timeid = Dates.now()
+        #timeid = Dates.now()
         #@debug "add finalizer $ncid $(timeid)"
         finalizer(_finalize, ds)
         return ds

@@ -5,22 +5,11 @@ if VERSION >= v"1.6"
         DS = NCDataset{Nothing}
         precompile(defVar, (DS, String, T))
         for N in (1, 2, 3, 4, 5)
-            A = NCDatasets.Attributes{DS}
             Var = NCDatasets.Variable{T,N,DS}
-            St = Dict{Symbol,Any}
-            CF = NCDatasets.CFVariable{T,N,Var,A,St}
-            precompile(Var, (DS, Cint, NTuple{N,Cint}, A))
-            precompile(CF, (Var, A, St))
-            precompile(dimsize, (CF,))
-            precompile(getindex, (CF, Colon))
-            precompile(getindex, (CF, Int))
-            precompile(getindex, (CF, ntuple(Int, N)...))
-            precompile(Array, (CF,))
+            precompile(Var, (DS, Cint, NTuple{N,Cint}))
             precompile(Array, (Var,))
             precompile(show, (IO, Var,))
-            precompile(show, (IO, CF,))
             precompile(show, (IO, MIME"text/plain", Var,))
-            precompile(show, (IO, MIME"text/plain", CF,))
         end
     end
 

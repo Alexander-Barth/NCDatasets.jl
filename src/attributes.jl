@@ -1,7 +1,7 @@
-# `Attributes` is a collection of named attributes
+# `Attributes` is a collection of name and value pairs.
+# Dataset (including groups) and variables can have attributes.
 
-
-"Return all attribute names"
+# Return all attribute names
 function listAtt(ncid,varid)
     natts = nc_inq_varnatts(ncid,varid)
     names = Vector{String}(undef,natts)
@@ -14,20 +14,33 @@ function listAtt(ncid,varid)
 end
 
 
-attribnames(ds::Union{AbstractNCDataset,AbstractNCVariable}) = keys(ds.attrib)
-attrib(ds::Union{AbstractNCDataset,AbstractNCVariable},name::SymbolOrString) = ds.attrib[name]
+# helper function to treat Dataset and Variable uniformly
 
-function Base.get(a::BaseAttributes, name::SymbolOrString,default)
-    if haskey(a,name)
-        return a[name]
-    else
-        return default
-    end
-end
+_ncid(ds::Dataset) = ds.ncid
+_varid(ds::Dataset) = NC_GLOBAL
+_dataset(ds::Dataset) = ds
+
+_ncid(v::Variable) = v.ds.ncid
+_varid(v::Variable) = v.varid
+_dataset(v::Variable) = v.ds
 
 
 """
-    getindex(a::Attributes,name::SymbolOrString)
+    attribnames(ds::Union{Dataset,Variable})
+
+Return a list of the names of all attributes. Generally the attributes are loaded
+using the `attrib` property of NetCDF datasets and variables:
+
+```julia
+ds = NCDataset("file.nc")
+all_attribute_names = keys(ds.attrib)
+```
+"""
+attribnames(ds::Union{Dataset,Variable}) = listAtt(_ncid(ds),_varid(ds))
+
+
+"""
+    attrib(ds::Union{Dataset,Variable},name::SymbolOrString)
 
 Return the value of the attribute called `name` from the
 attribute list `a`. Generally the attributes are loaded by
@@ -38,19 +51,12 @@ ds = NCDataset("file.nc")
 title = ds.attrib["title"]
 ```
 """
-function Base.getindex(a::Attributes,name::SymbolOrString)
-    return nc_get_att(a.ds.ncid,a.varid,name)
-end
+attrib(ds::Union{Dataset,Variable},name::SymbolOrString) = nc_get_att(_ncid(ds),_varid(ds),name)
 
-
-function defAttrib(ds::Dataset,name::SymbolOrString,data)
-    defmode(ds) # make sure that the file is in define mode
-    return nc_put_att(ds.ncid,NC_GLOBAL,name,data)
-end
 
 
 """
-    Base.setindex!(a::Attributes,data,name::SymbolOrString)
+    defAttrib(ds::Union{Dataset,Variable},name::SymbolOrString,data)
 
 Set the attribute called `name` to the value `data` in the
 attribute list `a`. `data` can be a vector or a scalar. A scalar
@@ -72,40 +78,30 @@ as a string (`NC_STRING`) you can use the following:
 ds = NCDataset("file.nc","c")
 ds.attrib["title"] = ["my title"]
 close(ds)
-```
-
-
 """
-function Base.setindex!(a::Attributes,data,name::SymbolOrString)
-    defmode(a.ds) # make sure that the file is in define mode
-    return nc_put_att(a.ds.ncid,a.varid,name,data)
+function defAttrib(ds::Union{Dataset,Variable},name::SymbolOrString,data)
+    defmode(_dataset(ds)) # make sure that the file is in define mode
+    return nc_put_att(_ncid(ds),_varid(ds),name,data)
 end
 
-"""
-    Base.keys(a::Attributes)
-
-Return a list of the names of all attributes.
-"""
-Base.keys(a::Attributes) = listAtt(a.ds.ncid,a.varid)
-
 
 """
-    Base.haskey(a::Attributes,name)
+    Base.haskey(a::Attributes,name::SymbolOrString)
 
-Check if name is an attribute
+Check if `name` is an attribute
 """
-Base.haskey(a::Attributes{NCDataset},name::SymbolOrString) = _nc_has_att(a.ds.ncid,a.varid,name)
-
+Base.haskey(a::CommonDataModel.Attributes{<:Union{Dataset,Variable}},name::SymbolOrString) =
+    _nc_has_att(_ncid(a.ds),_varid(a.ds),name)
 
 """
     Base.delete!(a::Attributes, name)
 
 Delete the attribute `name` from the attribute list `a`.
 """
-function Base.delete!(a::Attributes,name::SymbolOrString)
-    defmode(a.ds)
-    nc_del_att(a.ds.ncid,a.varid,name)
+function Base.delete!(a::CommonDataModel.Attributes{<:Union{Dataset,Variable}},name::SymbolOrString)
+    ds = _dataset(a.ds)
+    defmode(ds)
+
+    nc_del_att(_ncid(a.ds),_varid(a.ds),name)
     return nothing
 end
-
-Base.show(io::IO, a::BaseAttributes) = CommonDataModel.show_attrib(io,a)

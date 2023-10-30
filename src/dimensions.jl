@@ -1,63 +1,25 @@
-# `Dimensions` is a collection of named dimensions
-# each dimension has a name and a size (possibly unlimited)
+# Dimension is a name tag for the size of an array along a given dimension
+# A dimension can be unlimited.
 
-"""
-    keys(d::Dimensions)
 
-Return a list of all dimension names in NCDataset `ds`.
-
-# Examples
-
-```julia-repl
-julia> ds = NCDataset("results.nc", "r");
-julia> dimnames = keys(ds.dim)
-```
-"""
-function Base.keys(d::Dimensions)
-    return String[nc_inq_dimname(d.ds.ncid,dimid)
-                  for dimid in nc_inq_dimids(d.ds.ncid,false)]
+function dimnames(ds::NCDataset)
+    return String[nc_inq_dimname(ds.ncid,dimid)
+                  for dimid in nc_inq_dimids(ds.ncid,false)]
 end
 
-Base.show(io::IO, d::AbstractDimensions) = CommonDataModel.show_dim(io,d)
-
-function Base.getindex(d::Dimensions,name::AbstractString)
-    dimid = nc_inq_dimid(d.ds.ncid,name)
-    return nc_inq_dimlen(d.ds.ncid,dimid)
+function dim(ds::NCDataset,name::SymbolOrString)
+    dimid = nc_inq_dimid(ds.ncid,name)
+    return nc_inq_dimlen(ds.ncid,dimid)
 end
 
-"""
-    unlimited(d::Dimensions)
-    unlimited(ds::AbstractNCDataset)
 
-Return the names of all unlimited dimensions.
-"""
-function unlimited(d::Dimensions)
-    return String[nc_inq_dimname(d.ds.ncid,dimid)
-                  for dimid in nc_inq_unlimdims(d.ds.ncid)]
+function unlimited(ds::NCDataset)
+    return String[nc_inq_dimname(ds.ncid,dimid)
+                  for dimid in nc_inq_unlimdims(ds.ncid)]
 end
-unlimited(ds::AbstractNCDataset) = unlimited(ds.dim)
+
 
 export unlimited
-
-"""
-    Base.setindex!(d::Dimensions,len,name::AbstractString)
-
-Defines the dimension called `name` to the length `len`.
-Generally dimension are defined by indexing, for example:
-
-```julia
-ds = NCDataset("file.nc","c")
-ds.dim["longitude"] = 100
-```
-
-If `len` is the special value `Inf`, then the dimension is considered as
-`unlimited`, i.e. it will grow as data is added to the NetCDF file.
-"""
-function Base.setindex!(d::Dimensions,len,name::AbstractString)
-    defmode(d.ds) # make sure that the file is in define mode
-    dimid = nc_def_dim(d.ds.ncid,name,(isinf(len) ? NC_UNLIMITED : len))
-    return len
-end
 
 """
     defDim(ds::NCDataset,name,len)
@@ -102,6 +64,11 @@ function defDim(ds::NCDataset,name::SymbolOrString,len)
 end
 export defDim
 
+"""
+    renameDim(ds::NCDataset,oldname::SymbolOrString,newname::SymbolOrString)
+
+Renames the dimenion `oldname` in the dataset `ds` with the name `newname`.
+"""
 function renameDim(ds::NCDataset,oldname::SymbolOrString,newname::SymbolOrString)
     defmode(ds) # make sure that the file is in define mode
     dimid = nc_inq_dimid(ds.ncid,oldname)

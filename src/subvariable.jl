@@ -10,6 +10,10 @@ end
 
 name(v::SubVariable) = name(v.parent)
 
+attribnames(v::SubVariable) = attribnames(v.parent)
+attrib(v::SubVariable,name::SymbolOrString) = attrib(v.parent,name)
+defAttrib(v::SubVariable,name::SymbolOrString,data) = defAttrib(v.parent,name,data)
+
 function SubVariable(A::AbstractVariable,indices...)
     var = nothing
     if hasproperty(A,:var)

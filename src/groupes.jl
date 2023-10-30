@@ -1,35 +1,36 @@
-############################################################
-# Groups
-############################################################
-"""
-    Base.keys(g::NCDatasets.Groups)
+# Groups is a collection of dimension, variables, attributes and sub-groups.
 
-Return the names of all subgroubs of the group `g`.
 """
-function Base.keys(g::Groups)
+    groupnames(ds::NCDataset)
+
+Return the names of all subgroubs of the group `ds`.
+`ds` can be the root group (dataset) or a subgroub.
+"""
+function groupnames(ds::NCDataset)
     return String[nc_inq_grpname(ncid)
-                  for ncid in nc_inq_grps(g.ds.ncid)]
+                  for ncid in nc_inq_grps(ds.ncid)]
 end
 
 
 """
-    group = getindex(g::NCDatasets.Groups,groupname::AbstractString)
+    group = group(ds::NCDataset,groupname::SymbolOrString)
 
 Return the NetCDF `group` with the name `groupname`.
+The group can also be accessed via the `group` property:
 For example:
 
-```julia-repl
-julia> ds = NCDataset("results.nc", "r");
-julia> forecast_group = ds.group["forecast"]
-julia> forecast_temp = forecast_group["temperature"]
+```julia
+ds = NCDataset("results.nc", "r");
+forecast_group = ds.group["forecast"]
+forecast_temp = forecast_group["temperature"]
 ```
-
 """
-function Base.getindex(g::Groups,groupname::SymbolOrString)
-    grp_ncid = nc_inq_grp_ncid(g.ds.ncid,groupname)
-    ds = NCDataset(grp_ncid,g.ds.iswritable,g.ds.isdefmode; parentdataset = g.ds)
+function group(ds::NCDataset,groupname::SymbolOrString)
+    grp_ncid = nc_inq_grp_ncid(ds.ncid,groupname)
+    ds = NCDataset(grp_ncid,ds.iswritable,ds.isdefmode; parentdataset = ds)
     return ds
 end
+
 
 """
     defGroup(ds::NCDataset,groupname; attrib = []))
@@ -50,10 +51,6 @@ function defGroup(ds::NCDataset,groupname::SymbolOrString; attrib = [])
     return ds
 end
 export defGroup
-
-
-groupnames(ds::AbstractNCDataset) = keys(ds.group)
-group(ds::AbstractNCDataset,groupname::SymbolOrString) = ds.group[groupname]
 
 """
     name(ds::NCDataset)
