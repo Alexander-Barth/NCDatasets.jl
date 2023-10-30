@@ -222,8 +222,8 @@ end
 export dimnames
 
 
-function dim(v::AbstractNCVariable,dimname::AbstractString)
-    if !(dimname in dimnames(v))
+function dim(v::AbstractNCVariable,dimname::SymbolOrString)
+    if !(String(dimname) in dimnames(v))
         error("$dimname is not among the dimensions of $(name(v))")
     end
     return dim(dataset(v),dimname)

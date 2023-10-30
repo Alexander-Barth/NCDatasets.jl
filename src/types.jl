@@ -1,14 +1,12 @@
 # All types using in `NCDatasets`
+# Note in CommonDataModel the special properties `attrib`, `dim` and `group`
+# are made available.
+
 
 # Exception type for error thrown by the NetCDF library
 mutable struct NetCDFError <: Exception
     code::Cint
     msg::String
-end
-
-# base type of attributes list
-
-abstract type BaseAttributes
 end
 
 abstract type AbstractNCDataset <: AbstractDataset
@@ -17,21 +15,12 @@ end
 abstract type AbstractNCVariable{T,N} <: AbstractVariable{T,N}
 end
 
-
-abstract type AbstractDimensions
-end
-
-abstract type AbstractGroups
-end
-
-
 # Variable (as stored in NetCDF file, without using
 # add_offset, scale_factor and _FillValue)
 mutable struct Variable{NetCDFType,N,TDS} <: AbstractNCVariable{NetCDFType, N}
     ds::TDS
     varid::Cint
     dimids::NTuple{N,Cint}
-#    attrib::Attributes{TDS}
 end
 
 mutable struct NCDataset{TDS} <: AbstractNCDataset where TDS <: Union{AbstractNCDataset,Nothing}
@@ -129,7 +118,6 @@ mutable struct DeferVariable{T,N} <: AbstractNCVariable{T,N}
 end
 
 # view of subsets
-
 
 struct SubVariable{T,N,TA,TI,TAttrib,TV} <: AbstractNCVariable{T,N}
     parent::TA
