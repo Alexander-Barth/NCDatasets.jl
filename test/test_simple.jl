@@ -85,7 +85,6 @@ ds = NCDataset(filename,"r")
 
 # check if a file has a variable with a given name
 @test haskey(ds,"temperature")
-@test "temperature" in ds
 
 # get an list of all variable names
 @test "temperature" in keys(ds)

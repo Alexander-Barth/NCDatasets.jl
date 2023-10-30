@@ -354,7 +354,6 @@ This example checks if the file `/tmp/test.nc` has a variable with the
 name `temperature` and a dimension with the name `lon`.
 """
 Base.haskey(a::NCIterable,name::AbstractString) = name in keys(a)
-Base.in(name::AbstractString,a::NCIterable) = name in keys(a)
 
 
 function dimnames(ds::AbstractNCDataset; parents = false)

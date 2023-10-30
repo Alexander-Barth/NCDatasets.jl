@@ -20,7 +20,6 @@ NCDatasets.NCDataset(filename,"c") do ds
 
     # check presence of attribute
     @test NCDatasets.haskey(v.attrib,"comment")
-    @test "comment" in v.attrib
     @test v.attrib["long_name"] == "Temperature"
     @test v.attrib[:long_name] == "Temperature"
     @test v.attrib["test_vector_attrib"] == [1,2,3]
