@@ -243,7 +243,7 @@ end
 export cfvariable
 
 """
-    v = getindex(ds::NCDataset,varname::AbstractString)
+    v = getindex(ds::NCDataset, varname::AbstractString)
 
 Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The following CF convention are honored when the
@@ -254,10 +254,10 @@ variable is indexed:
   `DateTime` object. Note that `DateTimeAllLeap`, `DateTimeNoLeap` and
   `DateTime360Day` cannot be converted to the proleptic gregorian calendar used in
   julia and are returned as such. If a calendar is defined but not among the
-ones specified in the CF convention, then the data in the NetCDF file is not
-converted into a date structure.
+  ones specified in the CF convention, then the data in the NetCDF file is not
+  converted into a date structure.
 
-A call `getindex(ds,varname)` is usually written as `ds[varname]`.
+A call `getindex(ds, varname)` is usually written as `ds[varname]`.
 
 If variable represents a cell boundary, the attributes `calendar` and `units` of the related NetCDF variables are used, if they are not specified. For example:
 
@@ -276,13 +276,11 @@ variables:
 In this case, the variable `time_bnds` uses the units and calendar of `time`
 because both variables are related thought the bounds attribute following the CF conventions.
 
-See also cfvariable
+See also [`cfvariable(ds, varname)`](@ref).
 """
 function Base.getindex(ds::AbstractNCDataset,varname::SymbolOrString)
     return cfvariable(ds, varname)
 end
-
-
 
 """
     dimnames(v::CFVariable)
