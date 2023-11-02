@@ -243,7 +243,7 @@ end
 export cfvariable
 
 """
-    v = getindex(ds::NCDataset,varname::AbstractString)
+    v = getindex(ds::NCDataset, varname::AbstractString)
 
 Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.CFVariable`. The following CF convention are honored when the
@@ -251,13 +251,14 @@ variable is indexed:
 * `_FillValue` or `missing_value` (which can be a list) will be returned as `missing`. `NCDatasets` does not use implicitely the default NetCDF fill values when reading data.
 * `scale_factor` and `add_offset` are applied (output = `scale_factor` * `data_in_file` +  `add_offset`)
 * time variables (recognized by the units attribute and possibly the calendar attribute) are returned usually as
-  `DateTime` object. Note that `DateTimeAllLeap`, `DateTimeNoLeap` and
-  `DateTime360Day` cannot be converted to the proleptic gregorian calendar used in
-  julia and are returned as such. If a calendar is defined but not among the
-ones specified in the CF convention, then the data in the NetCDF file is not
-converted into a date structure.
+  `DateTime` object. Note that `CFTime.DateTimeAllLeap`, `CFTime.DateTimeNoLeap` and
+  `CF.TimeDateTime360Day` cannot be converted to the proleptic gregorian calendar used in
+  julia and are returned as such. (See [`CFTime.jl`](https://github.com/JuliaGeo/CFTime.jl)
+  for more information about those date types.) If a calendar is defined but not among the
+  ones specified in the CF convention, then the data in the NetCDF file is not
+  converted into a date structure.
 
-A call `getindex(ds,varname)` is usually written as `ds[varname]`.
+A call `getindex(ds, varname)` is usually written as `ds[varname]`.
 
 If variable represents a cell boundary, the attributes `calendar` and `units` of the related NetCDF variables are used, if they are not specified. For example:
 
@@ -276,13 +277,11 @@ variables:
 In this case, the variable `time_bnds` uses the units and calendar of `time`
 because both variables are related thought the bounds attribute following the CF conventions.
 
-See also cfvariable
+See also [`cfvariable(ds, varname)`](@ref).
 """
 function Base.getindex(ds::AbstractNCDataset,varname::SymbolOrString)
     return cfvariable(ds, varname)
 end
-
-
 
 """
     dimnames(v::CFVariable)
