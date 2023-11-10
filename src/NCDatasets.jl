@@ -67,9 +67,10 @@ include("defer.jl")
 include("multifile.jl")
 include("ncgen.jl")
 include("select.jl")
-include("precompile.jl")
 
 @implement_diskarray NCDatasets.Variable
+
+include("precompile.jl")
 
 export CatArrays
 export CFTime
@@ -77,5 +78,6 @@ export daysinmonth, daysinyear, yearmonthday, yearmonth, monthday
 export dayofyear, firstdayofyear
 export DateTimeStandard, DateTimeJulian, DateTimeProlepticGregorian,
     DateTimeAllLeap, DateTimeNoLeap, DateTime360Day, AbstractCFDateTime
+
 
 end # module
