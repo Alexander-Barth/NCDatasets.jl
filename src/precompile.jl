@@ -1,32 +1,21 @@
-# julia 1.3 crashes with some precompile calls
+@compile_workload begin
+    println("Precompile NCDatasets");
 
-if VERSION >= v"1.6"
-    for T in (Float16, Float32, Float64, Int16, Int32, Int64, UInt8, UInt16, UInt32)
-        DS = NCDataset{Nothing}
-        precompile(defVar, (DS, String, T))
-        for N in (1, 2, 3, 4, 5)
-            A = NCDatasets.Attributes{DS}
-            Var = NCDatasets.Variable{T,N,DS}
-            St = Dict{Symbol,Any}
-            CF = NCDatasets.CFVariable{T,N,Var,A,St}
-            precompile(Var, (DS, Cint, NTuple{N,Cint}, A))
-            precompile(CF, (Var, A, St))
-            precompile(dimsize, (CF,))
-            precompile(getindex, (CF, Colon))
-            precompile(getindex, (CF, Int))
-            precompile(getindex, (CF, ntuple(Int, N)...))
-            precompile(Array, (CF,))
-            precompile(Array, (Var,))
-            precompile(show, (IO, Var,))
-            precompile(show, (IO, CF,))
-            precompile(show, (IO, MIME"text/plain", Var,))
-            precompile(show, (IO, MIME"text/plain", CF,))
-        end
-    end
+    fname = tempname()
+    ds = NCDataset(fname,"c");
+    lon = -180:180
+    lat = -90:90
+    time2 = DateTime(2000,1,1):Day(1):DateTime(2000,1,3)
+    SST = randn(length(lon),length(lat),length(time2))
 
-    precompile(NCDataset{Nothing}, (String,))
-    precompile(keys, (NCDataset{Nothing},))
-    precompile(show, (IO, NCDataset{Nothing},))
-    precompile(getindex, (NCDataset{Nothing}, String))
-    precompile(getindex, (NCDataset{Nothing}, Symbol))
+    defVar(ds,"lon",lon,("lon",));
+    defVar(ds,"lat",lat,("lat",));
+    defVar(ds,"time",time2,("time",));
+    defVar(ds,"SST",SST,("lon","lat","time"));
+
+    io = IOBuffer();
+    show(io,ds);
+    sum(ds["SST"][:,:,:])
+    close(ds);
 end
+

@@ -41,6 +41,7 @@ import CommonDataModel: AbstractDataset, AbstractVariable,
 import DiskArrays
 import DiskArrays: readblock!, writeblock!, eachchunk, haschunks
 using DiskArrays: @implement_diskarray
+using PrecompileTools
 
 function __init__()
     NetCDF_jll.is_available() && init_certificate_authority()
