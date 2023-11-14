@@ -1,13 +1,9 @@
 
-
-
-
 attribnames(ds::MFDataset) = attribnames(ds.ds[1])
+
 attrib(ds::MFDataset,name::SymbolOrString) = attrib(ds.ds[1],name)
 
-
 attribnames(v::Union{MFCFVariable,MFVariable}) = attribnames(variable(v.ds.ds[1],v.varname))
-
 
 attrib(v::Union{MFCFVariable,MFVariable},name::SymbolOrString) = attrib(variable(v.ds.ds[1],v.varname),name)
 
@@ -24,9 +20,6 @@ function defAttrib(ds::MFDataset,name::SymbolOrString,data)
     end
     return data
 end
-
-
-
 
 function dim(ds::MFDataset,name::SymbolOrString)
     if name == ds.aggdim
@@ -47,7 +40,6 @@ function defDim(ds::MFDataset,name::SymbolOrString,data)
     return data
 end
 
-
 function dimnames(ds::MFDataset)
     k = collect(dimnames(ds.ds[1]))
 
@@ -60,8 +52,8 @@ end
 
 unlimited(ds::MFDataset) = unique(reduce(hcat,unlimited.(ds.ds)))
 
-
 groupnames(ds::MFDataset) = groupnames(ds.ds[1])
+
 function group(mfds::MFDataset,name::SymbolOrString)
     ds = group.(mfds.ds,name)
     constvars = Symbol[]
@@ -71,7 +63,6 @@ end
 Base.Array(v::MFVariable) = Array(v.var)
 
 iswritable(mfds::MFDataset) = iswritable(mfds.ds[1])
-
 
 function MFDataset(ds,aggdim,isnewdim,constvars)
     _boundsmap = Dict{String,String}()
@@ -217,7 +208,7 @@ dimnames(v::MFVariable) = v.dimnames
 name(v::MFVariable) = v.varname
 
 
-function _variable(mfds::MFDataset,varname::SymbolOrString)
+function variable(mfds::MFDataset,varname::SymbolOrString)
     if mfds.isnewdim
         if Symbol(varname) in mfds.constvars
             return variable(mfds.ds[1],varname)
@@ -252,12 +243,8 @@ function _variable(mfds::MFDataset,varname::SymbolOrString)
         end
     end
 end
-variable(mfds::MFDataset,varname::AbstractString) = _variable(mfds,varname)
-variable(mfds::MFDataset,varname::Symbol) = _variable(mfds,varname)
 
-
-
-function _cfvariable(mfds::MFDataset,varname::SymbolOrString)
+function cfvariable(mfds::MFDataset,varname::SymbolOrString)
     if mfds.isnewdim
         if Symbol(varname) in mfds.constvars
             return cfvariable(mfds.ds[1],varname)
@@ -297,9 +284,6 @@ function _cfvariable(mfds::MFDataset,varname::SymbolOrString)
     end
 end
 
-
-cfvariable(mfds::MFDataset,varname::AbstractString) = _cfvariable(mfds,varname)
-cfvariable(mfds::MFDataset,varname::Symbol) = _cfvariable(mfds,varname)
 
 fillvalue(v::Union{MFVariable{T},MFCFVariable{T}}) where T = v.attrib["_FillValue"]::T
 dataset(v::Union{MFVariable,MFCFVariable}) = v.ds
