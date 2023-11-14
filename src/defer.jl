@@ -8,9 +8,9 @@ function metadata(ds::NCDataset)
 
     for (dimname,dimlen) in ds.dim
         dim[dimname] = Dict(
-            "name" => dimname,
-            "length" => dimlen,
-            "unlimited" => dimname in unlimited_dims
+            :name => dimname,
+            :length => dimlen,
+            :unlimited => dimname in unlimited_dims
         )
     end
 
@@ -23,18 +23,18 @@ function metadata(ds::NCDataset)
         checksummethod = checksum(ncvar.var)
 
         vars[varname] = OrderedDict(
-            "name" => varname,
-            "size" => size(ncvar),
-            "eltype" => eltype(ncvar.var),
-            "attrib" => OrderedDict(ncvar.attrib),
-            "dimensions" => dimnames(ncvar),
-            "chunksize" => chunksizes,
-            "storage" => storage,
-            "fillvalue" => fillvalue(ncvar.var),
-            "shuffle" => isshuffled,
-            "deflate" => isdeflated,
-            "deflatelevel" => deflatelevel,
-            "checksummethod" => checksummethod,
+            :name => varname,
+            :size => size(ncvar),
+            :eltype => eltype(ncvar.var),
+            :attrib => OrderedDict(ncvar.attrib),
+            :dimensions => dimnames(ncvar),
+            :chunksize => chunksizes,
+            :storage => storage,
+            :fillvalue => fillvalue(ncvar.var),
+            :shuffle => isshuffled,
+            :deflate => isdeflated,
+            :deflatelevel => deflatelevel,
+            :checksummethod => checksummethod,
         )
     end
 
@@ -44,10 +44,10 @@ function metadata(ds::NCDataset)
     end
 
     return OrderedDict(
-        "dim" => dim,
-        "var" => vars,
-        "attrib" => OrderedDict(ds.attrib),
-        "group" => group
+        :dim => dim,
+        :var => vars,
+        :attrib => OrderedDict(ds.attrib),
+        :group => group
         )
 end
 
@@ -83,7 +83,7 @@ export DeferDataset
 close(dds::DeferDataset) = nothing
 groupname(dds::DeferDataset) = dds.groupname
 path(dds::DeferDataset) = dds.r.filename
-Base.keys(dds::DeferDataset) = collect(keys(dds.data["var"]))
+Base.keys(dds::DeferDataset) = collect(keys(dds.data[:var]))
 
 function NCDataset(f::Function, r::Resource)
     NCDataset(r.filename,r.mode) do ds
@@ -104,12 +104,12 @@ function Variable(f::Function, dv::DeferVariable)
 end
 
 function variable(dds::DeferDataset,varname::AbstractString)
-    data = get(dds.data["var"],varname,nothing)
+    data = get(dds.data[:var],varname,nothing)
     if data == nothing
         error("Dataset $(dds.r.filename) does not contain the variable $varname")
     end
-    T = data["eltype"]
-    N = length(data["dimensions"])
+    T = data[:eltype]
+    N = length(data[:dimensions])
 
     return DeferVariable{T,N}(dds.r,varname,data)
 end
@@ -125,47 +125,47 @@ function Base.getindex(dv::DeferVariable,indexes::Union{Int,Colon,AbstractRange{
 end
 
 
-Base.size(dv::DeferVariable) = dv.data["size"]
-dimnames(dv::DeferVariable) = dv.data["dimensions"]
+Base.size(dv::DeferVariable) = dv.data[:size]
+dimnames(dv::DeferVariable) = dv.data[:dimensions]
 name(dv::DeferVariable) = dv.varname
 
 #----------------------------------------------
 
-dimnames(dds::DeferDataset) = collect(keys(dds.r.metadata["dim"]))
+dimnames(dds::DeferDataset) = collect(keys(dds.r.metadata[:dim]))
 
 dim(dds::DeferDataset,name::SymbolOrString) =
-    dds.r.metadata["dim"][String(name)]["length"]
+    dds.r.metadata[:dim][String(name)][:length]
 
-unlimited(dd::DeferDataset) = [dimname for (dimname,dim) in dd.data["dim"] if dim["unlimited"]]
-
-
-attribnames(dds::DeferDataset) = collect(keys(dds.r.metadata["attrib"]))
-attrib(dds::DeferDataset,name::SymbolOrString) = dds.r.metadata["attrib"][String(name)]
+unlimited(dd::DeferDataset) = [dimname for (dimname,dim) in dd.data[:dim] if dim[:unlimited]]
 
 
-attribnames(dv::DeferVariable) = collect(keys(dv.data["attrib"]))
-attrib(dv::DeferVariable,name::SymbolOrString) = dv.data["attrib"][String(name)]
+attribnames(dds::DeferDataset) = collect(keys(dds.r.metadata[:attrib]))
+attrib(dds::DeferDataset,name::SymbolOrString) = dds.r.metadata[:attrib][String(name)]
+
+
+attribnames(dv::DeferVariable) = collect(keys(dv.data[:attrib]))
+attrib(dv::DeferVariable,name::SymbolOrString) = dv.data[:attrib][String(name)]
 
 #------------------------------------------------
 
-groupnames(dds::DeferDataset) = collect(keys(dds.data["group"]))
+groupnames(dds::DeferDataset) = collect(keys(dds.data[:group]))
 
 function group(dds::DeferDataset,name::SymbolOrString)
-    data = dds.data["group"][String(name)]
+    data = dds.data[:group][String(name)]
     return DeferDataset(dds.r,String(name),data)
 end
 
 
-_storage_attributes(dv) = dv.r.metadata["var"][name(dv)]
+_storage_attributes(dv) = dv.r.metadata[:var][name(dv)]
 
 function chunking(dv::DeferVariable)
     sa = _storage_attributes(dv)
-    return sa["storage"],sa["chunksize"]
+    return sa[:storage],sa[:chunksize]
 end
 
 function deflate(dv::DeferVariable)
     sa = _storage_attributes(dv)
-    return sa["shuffle"],sa["deflate"],sa["deflatelevel"]
+    return sa[:shuffle],sa[:deflate],sa[:deflatelevel]
 end
 
-checksum(dv::DeferVariable) = _storage_attributes(dv)["checksummethod"]
+checksum(dv::DeferVariable) = _storage_attributes(dv)[:checksummethod]
