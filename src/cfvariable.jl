@@ -467,13 +467,13 @@ function _isrelated(v1::AbstractVariable,v2::AbstractVariable)
     dimnames(v1) ⊆ dimnames(v2)
 end
 
-function Base.keys(v::AbstractVariable)
+function Base.keys(v::AbstractNCVariable)
     ds = dataset(v)
     return [varname for (varname,ncvar) in ds if _isrelated(ncvar,v)]
 end
 
 
-function Base.getindex(v::AbstractVariable,name::SymbolOrString)
+function Base.getindex(v::AbstractNCVariable,name::SymbolOrString)
     ds = dataset(v)
     ncvar = ds[name]
     if _isrelated(ncvar,v)
