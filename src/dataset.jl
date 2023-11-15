@@ -88,19 +88,6 @@ function defmode(ds::Dataset)
     end
 end
 
-"Initialize the ds._boundsmap variable"
-function initboundsmap!(ds)
-    ds._boundsmap = Dict{String,String}()
-    for vname in keys(ds)
-        v = variable(ds,vname)
-        bounds = get(v.attrib,"bounds",nothing)
-
-        if bounds !== nothing
-            ds._boundsmap[bounds] = vname
-        end
-    end
-end
-
 ############################################################
 # High-level
 ############################################################

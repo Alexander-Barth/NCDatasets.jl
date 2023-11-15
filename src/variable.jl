@@ -37,6 +37,7 @@ Return a tuple of integers with the size of the variable `var`.
 Base.size(v::Variable{T,N}) where {T,N} = ntuple(i -> nc_inq_dimlen(v.ds.ncid,v.dimids[i]),Val(N))
 
 
+Base.view(v::Variable,indices::Union{Int,Colon,AbstractVector{Int}}...) = SubVariable(v,indices...)
 
 """
     renameVar(ds::NCDataset,oldname,newname)
@@ -513,6 +514,3 @@ end
 
     return start,count,stride
 end
-
-Base.getindex(v::Union{MFVariable,DeferVariable},ci::CartesianIndices) = v[ci.indices...]
-Base.setindex!(v::Union{MFVariable,DeferVariable},data,ci::CartesianIndices) = setindex!(v,data,ci.indices...)

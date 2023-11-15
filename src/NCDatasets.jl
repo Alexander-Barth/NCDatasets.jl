@@ -29,16 +29,24 @@ using Printf
 using CommonDataModel
 using CommonDataModel: dims, attribs, groups
 import CommonDataModel: AbstractDataset, AbstractVariable,
-    boundsParentVar,
+    boundsParentVar, initboundsmap!,
     fillvalue, fill_and_missing_values,
     scale_factor, add_offset, time_origin, time_factor,
     CFtransformdata!,
     CFVariable, variable, cfvariable, defVar,
     path, name, isopen, unlimited, dataset,
-    groupnames, group, defGroup,
+    groupname, groupnames, group, defGroup,
     dimnames, dim, defDim,
     attribnames, attrib, defAttrib,
-    varbyattrib, CFStdName, @CF_str, ancillaryvariables, filter, coord, bounds
+    varbyattrib, CFStdName, @CF_str, ancillaryvariables, filter, coord, bounds,
+    MFDataset, MFCFVariable,
+    DeferDataset, metadata, Resource,
+    SubDataset, SubVariable, subsub,
+    chunking, deflate, checksum, fillmode,
+    iswritable, sync, CatArrays,
+    SubDataset,
+    @select, select, Near, coordinate_value, coordinate_names, split_by_and
+
 import DiskArrays
 import DiskArrays: readblock!, writeblock!, eachchunk, haschunks
 using DiskArrays: @implement_diskarray
