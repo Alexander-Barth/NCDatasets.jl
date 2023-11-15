@@ -97,7 +97,7 @@ end
     normalizedindices = normalizeindexes(sizes, indices)
     ind = to_indices(ncvar,normalizedindices)
 
-    start,count,stride,jlshape = ncsub(ind)
+    start,count,stride,jlshape = ncsub(size(ncvar),ind)
 
     @boundscheck begin
         checkbounds(ncvar,indices...)
@@ -404,14 +404,12 @@ function _read_data_from_nc!(v::Variable, aout, indexes::Integer...)
 end
 
 function _read_data_from_nc!(v::Variable{T,N}, aout, indexes::TR...) where {T,N} where TR <: Union{StepRange{<:Integer,<:Integer},UnitRange{<:Integer}}
-    start,count,stride,jlshape = ncsub(indexes)
+    start,count,stride,jlshape = ncsub(size(v),indexes)
     nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
 end
 
 function _read_data_from_nc!(v::Variable{T,N}, aout, indexes::Union{Integer,Colon,AbstractRange{<:Integer}}...) where {T,N}
-    sz = size(v)
-    start,count,stride = ncsub2(sz,indexes...)
-    jlshape = _shape_after_slice(sz,indexes...)
+    start,count,stride,jlshape = ncsub(size(v),indexes)
     nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
 end
 
@@ -430,7 +428,7 @@ end
 _write_data_to_nc(v::Variable, data) = _write_data_to_nc(v, data, 1)
 
 function _write_data_to_nc(v::Variable{T, N}, data, indexes::StepRange{<:Integer,<:Integer}...) where {T, N}
-    start,count,stride,jlshape = ncsub(indexes)
+    start,count,stride,jlshape = ncsub(size(v),indexes)
     nc_put_vars(v.ds.ncid,v.varid,start,count,stride,T.(data))
 end
 
@@ -477,21 +475,11 @@ end
 @inline __sh(sz,sh,n,i,         indexes...) = __sh(sz,(sh...,length(i)),n+1,indexes...)
 @inline __sh(sz,sh,n) = sh
 
-
-function ncsub(indexes::NTuple{N,T}) where N where T
-    rindexes = reverse(indexes)
-    count  = Int[length(i)  for i in rindexes]
-    start  = Int[first(i)-1 for i in rindexes]     # use zero-based indexes
-    stride = Int[step(i)    for i in rindexes]
-    jlshape = Int.(length.(indexes))::NTuple{N,Int}
-    return start,count,stride,jlshape
-end
-
 @inline start_count_stride(n,ind::AbstractRange) = (first(ind)-1,length(ind),step(ind))
 @inline start_count_stride(n,ind::Integer) = (ind-1,1,1)
 @inline start_count_stride(n,ind::Colon) = (0,n,1)
 
-@inline function ncsub2(sz,indexes...)
+@inline function ncsub(sz,indexes)
     N = length(sz)
 
     start = Vector{Int}(undef,N)
@@ -504,5 +492,7 @@ end
         @inbounds start[ri],count[ri],stride[ri] = start_count_stride(sz[i],ind)
     end
 
-    return start,count,stride
+    jlshape = _shape_after_slice(sz,indexes...)
+
+    return start,count,stride,jlshape
 end
