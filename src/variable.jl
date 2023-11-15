@@ -222,14 +222,6 @@ function dimnames(v::Variable{T,N}) where {T,N}
 end
 export dimnames
 
-
-function dim(v::AbstractNCVariable,dimname::SymbolOrString)
-    if !(String(dimname) in dimnames(v))
-        error("$dimname is not among the dimensions of $(name(v))")
-    end
-    return dim(dataset(v),dimname)
-end
-
 """
     name(v::Variable)
 
