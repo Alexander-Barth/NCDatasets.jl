@@ -25,6 +25,7 @@ _varid(v::Variable) = v.varid
 _dataset(v::Variable) = v.ds
 
 
+
 """
     attribnames(ds::Union{Dataset,Variable})
 
@@ -93,15 +94,14 @@ Check if `name` is an attribute
 Base.haskey(a::CommonDataModel.Attributes{<:Union{Dataset,Variable}},name::SymbolOrString) =
     _nc_has_att(_ncid(a.ds),_varid(a.ds),name)
 
-"""
-    Base.delete!(a::Attributes, name)
 
-Delete the attribute `name` from the attribute list `a`.
 """
-function Base.delete!(a::CommonDataModel.Attributes{<:Union{Dataset,Variable}},name::SymbolOrString)
-    ds = _dataset(a.ds)
-    defmode(ds)
+    delAttrib(ds::Union{Dataset,Variable},name::SymbolOrString)
 
-    nc_del_att(_ncid(a.ds),_varid(a.ds),name)
+Delete the attribute `name` in the dataset or variable.
+"""
+function delAttrib(ds::Union{Dataset,Variable},name::SymbolOrString)
+    defmode(_dataset(ds)) # make sure that the file is in define mode
+    nc_del_att(_ncid(ds),_varid(ds),name)
     return nothing
 end
