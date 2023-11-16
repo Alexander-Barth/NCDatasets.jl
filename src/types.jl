@@ -4,7 +4,7 @@
 
 
 # Exception type for error thrown by the NetCDF library
-mutable struct NetCDFError <: Exception
+struct NetCDFError <: Exception
     code::Cint
     msg::String
 end
@@ -17,12 +17,13 @@ end
 
 # Variable (as stored in NetCDF file, without using
 # add_offset, scale_factor and _FillValue)
-mutable struct Variable{NetCDFType,N,TDS} <: AbstractNCVariable{NetCDFType, N}
+struct Variable{NetCDFType,N,TDS} <: AbstractNCVariable{NetCDFType, N}
     ds::TDS
     varid::Cint
     dimids::NTuple{N,Cint}
 end
 
+# must be mutable to register a finalizer
 mutable struct NCDataset{TDS} <: AbstractNCDataset where TDS <: Union{AbstractNCDataset,Nothing}
     # parent_dataset is nothing for the root dataset
     parentdataset::TDS
