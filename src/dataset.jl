@@ -88,6 +88,36 @@ function defmode(ds::Dataset)
     end
 end
 
+
+
+function NCDataset(ncid::Integer,
+                   iswritable::Bool,
+                   isdefmode::Ref{Bool};
+                   parentdataset = nothing)
+
+    function _finalize(ds)
+        # only close open root group
+        if (ds.ncid != -1) && (ds.parentdataset == nothing)
+            close(ds)
+        end
+    end
+
+    ds = NCDataset{typeof(parentdataset)}(
+        parentdataset,
+        ncid,
+        iswritable,
+        isdefmode,
+        Dict{String,String}())
+
+    if !iswritable
+        initboundsmap!(ds)
+    end
+
+    finalizer(_finalize, ds)
+    return ds
+end
+
+
 ############################################################
 # High-level
 ############################################################
