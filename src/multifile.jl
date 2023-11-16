@@ -60,46 +60,8 @@ size(ds["data"])
 
 
 """
-function NCDataset(fnames::AbstractArray{TS,N},mode = "r"; aggdim = nothing,
-                   deferopen = true,
-                   _aggdimconstant = false,
-                   isnewdim = false,
-                   constvars = Union{Symbol,String}[],
-                   ) where N where TS <: AbstractString
-    if !(mode == "r" || mode == "a")
-        throw(NetCDFError(-1,"""Unsupported mode for multi-file dataset (mode = $(mode)). Mode must be "r" or "a". """))
-    end
-
-    if deferopen
-        @assert mode == "r"
-
-        if _aggdimconstant
-            # load only metadata from master
-            master_index = 1
-            ds_master = NCDataset(fnames[master_index],mode);
-            data_master = metadata(ds_master)
-            ds = Vector{Union{NCDataset,DeferDataset}}(undef,length(fnames))
-            #ds[master_index] = ds_master
-            for (i,fname) in enumerate(fnames)
-                #if i !== master_index
-                ds[i] = DeferDataset(fname,mode,data_master)
-                #end
-            end
-        else
-            ds = DeferDataset.(fnames,mode)
-        end
-    else
-        ds = NCDataset.(fnames,mode);
-    end
-
-    if (aggdim == nothing) && !isnewdim
-        # first unlimited dimensions
-        aggdim = NCDatasets.unlimited(ds[1].dim)[1]
-    end
-
-    mfds = MFDataset(ds,aggdim,isnewdim,Symbol.(constvars))
-    return mfds
-end
+NCDataset(fnames::AbstractArray{<:AbstractString,N}, args...; kwargs...) where N =
+   MFDataset(NCDataset,fnames, args...; kwargs...)
 
 
 NCDataset(ds::MFCFVariable) = dataset(ds)
