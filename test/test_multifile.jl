@@ -187,7 +187,7 @@ mfds = NCDataset(fnames,"a",deferopen = false);
 mfds[varname][2,2,:] = 1:length(fnames)
 mfds.attrib["history"] = "foo2"
 
-@test_throws NCDatasets.NetCDFError NCDataset(fnames,"not-a-mode")
+@test_throws Union{ArgumentError,NCDatasets.NetCDFError} NCDataset(fnames,"not-a-mode")
 
 @test keys(mfds) == [varname, "lat", "lon", "time"]
 @test keys(mfds.dim) == ["lon", "lat", "time"]

@@ -14,15 +14,15 @@ listVar(ncid) = String[nc_inq_varname(ncid,varid)
 
 
 """
-    ds = dataset(var::Union{Variable,CFVariable})
-    ds = NCDataset(var::Union{Variable,CFVariable})
+    ds = dataset(var::Variable)
+    ds = NCDataset(var::Variable)
 
 Return the `NCDataset` containing the variable `var`.
 """
 dataset(var::Variable) = var.ds
 
 # old function call, replace by CommonDataModel.dataset
-NCDataset(v::Union{AbstractNCVariable,CFVariable}) = dataset(v)
+NCDataset(v::AbstractNCVariable) = dataset(v)
 
 """
     sz = size(var::Variable)
@@ -286,7 +286,7 @@ function _chunking(v::Variable{T,N}) where {T,N}
     return storage,NTuple{N}(chunksizes)
 end
 
-_chunking(v::CFVariable) = _chunking(v.var)
+_chunking(v::CFVariable{T,N,<:Variable}) where {T,N} = _chunking(v.var)
 
 function _chunking(v)
     storage,chunksizes = chunking(v)
@@ -449,8 +449,8 @@ function eachchunk(v::Variable)
 end
 haschunks(v::Variable) = (_chunking(v)[1] == :contiguous ? DiskArrays.Unchunked() : DiskArrays.Chunked())
 
-eachchunk(v::CFVariable) = eachchunk(v.var)
-haschunks(v::CFVariable) = haschunks(v.var)
+eachchunk(v::CFVariable{T,N,<:Variable}) where {T,N} = eachchunk(v.var)
+haschunks(v::CFVariable{T,N,<:Variable}) where {T,N} = haschunks(v.var)
 
 _normalizeindex(n,ind::Base.OneTo) = 1:1:ind.stop
 _normalizeindex(n,ind::Colon) = 1:1:n

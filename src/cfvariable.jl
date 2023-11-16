@@ -246,7 +246,7 @@ export cfvariable
     v = getindex(ds::NCDataset, varname::AbstractString)
 
 Return the NetCDF variable `varname` in the dataset `ds` as a
-`NCDataset.CFVariable`. The following CF convention are honored when the
+`CFVariable`. The following CF convention are honored when the
 variable is indexed:
 * `_FillValue` or `missing_value` (which can be a list) will be returned as `missing`. `NCDatasets` does not use implicitely the default NetCDF fill values when reading data.
 * `scale_factor` and `add_offset` are applied (output = `scale_factor` * `data_in_file` +  `add_offset`)
@@ -287,7 +287,7 @@ end
     dimsize(v::CFVariable)
 Get the size of a `CFVariable` as a named tuple of dimension → length.
 """
-function dimsize(v::Union{CFVariable,MFCFVariable,SubVariable})
+function dimsize(v::Union{CFVariable{T,N,<:Variable},MFCFVariable,SubVariable}) where {T,N}
     s = size(v)
     names = Symbol.(dimnames(v))
     return NamedTuple{names}(s)
