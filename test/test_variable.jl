@@ -290,4 +290,3 @@ data2 = zeros(Int,1)
 data2 = zeros(Int,10)
 # asking too many elements
 @test_throws BoundsError NCDatasets.load!(ds["data"].var,data2,1:10)
-
