@@ -3,7 +3,7 @@ using Dates
 using Printf
 using NCDatasets
 using DataStructures
-#=
+
 sz = (4,5)
 filename = tempname()
 #filename = "/tmp/test-6.nc"
@@ -224,7 +224,7 @@ ds.attrib["x_range"] = x
 close(ds)
 rm(filename)
 
-=#
+
 # issue 180
 using NCDatasets
 
@@ -250,7 +250,6 @@ for data = sample_data
 end
 close(ds)
 
-#=
 # issue 207
 filename_src = tempname()
 ds_src = NCDataset(filename_src, "c")
@@ -289,4 +288,3 @@ data2 = zeros(Int,1)
 data2 = zeros(Int,10)
 # asking too many elements
 @test_throws BoundsError NCDatasets.load!(ds["data"].var,data2,1:10)
-=#
