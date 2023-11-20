@@ -61,7 +61,6 @@ jobs:
       - run: |
           julia --project=docs -e '
             using Pkg
-            Pkg.develop("CommonDataModel")
             Pkg.develop(PackageSpec(path=pwd()))
             Pkg.instantiate()
             Pkg.build()'
