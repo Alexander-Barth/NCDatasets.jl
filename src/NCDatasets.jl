@@ -45,11 +45,12 @@ import CommonDataModel: AbstractDataset, AbstractVariable,
     chunking, deflate, checksum, fillmode,
     iswritable, sync, CatArrays,
     SubDataset,
-    @select, select, Near, coordinate_value, coordinate_names, split_by_and
+    @select, select, Near, coordinate_value, coordinate_names, split_by_and,
+    chunking, deflate, checksum
+
 
 import DiskArrays
-import DiskArrays: readblock!, writeblock!, eachchunk, haschunks
-using DiskArrays: @implement_diskarray
+import DiskArrays: readblock!, writeblock!, eachchunk, haschunks, batchgetindex
 
 function __init__()
     NetCDF_jll.is_available() && init_certificate_authority()
@@ -73,7 +74,8 @@ include("multifile.jl")
 include("ncgen.jl")
 include("precompile.jl")
 
-@implement_diskarray NCDatasets.Variable
+DiskArrays.@implement_diskarray NCDatasets.Variable
+
 
 export CatArrays
 export CFTime

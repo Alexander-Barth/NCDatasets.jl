@@ -268,14 +268,11 @@ close(ds_src)
 close(ds_dest)
 
 # issue 209
-# broken
-# maybe related to
-# https://github.com/meggart/DiskArrays.jl/issues/131
 filename_src = tempname()
 ds = NCDataset(filename_src, "c")
 data = [1,2,3]
 ncv = defVar(ds,"data",data,("data",))
-@test_broken isempty(ncv[Int[]])
+@test isempty(ncv[Int[]])
 close(ds)
 
 # issue 211

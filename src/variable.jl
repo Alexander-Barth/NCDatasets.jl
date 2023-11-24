@@ -498,7 +498,6 @@ end
 end
 
 
-#=
 
 # indexing with vector of integers
 
@@ -549,7 +548,10 @@ function _range_indices_dest(of,v,rest...)
 end
 range_indices_dest(ri...) = _range_indices_dest((),ri...)
 
-function Base.getindex(v::Union{MFVariable,SubVariable},indices::Union{Int,Colon,AbstractRange{<:Integer},Vector{<:Integer}}...)
+function _batchgetindex(
+    v::Variable{T},
+    indices::Union{<:Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) where T
+
     @debug "transform vector of indices to ranges"
 
     sz_source = size(v)
@@ -574,15 +576,10 @@ function Base.getindex(v::Union{MFVariable,SubVariable},indices::Union{Int,Colon
     for R in CartesianIndices(length.(ri))
         ind_source = ntuple(i -> ri[i][R[i]],N)
         ind_dest = ntuple(i -> ri_dest[i][R[i]],length(ri_dest))
-        #dest[ind_dest...] = v[ind_source...]
-        if hasproperty(v,:var)
-            buffer = Array{eltype(v.var),length(ind_dest)}(undef,length.(ind_dest))
-            load!(v,view(dest,ind_dest...),buffer,ind_source...)
-        else
-            dest[ind_dest...] = v[ind_source...]
-        end
+        dest[ind_dest...] = v[ind_source...]
     end
     return dest
 end
 
-=#
+DiskArrays.batchgetindex(v::Variable,indices::Union{<:Integer,Colon,AbstractRange{<:Integer},AbstractVector{<:Integer}}...) = _batchgetindex(v,indices...)
+DiskArrays.batchgetindex(v::Variable,index::AbstractVector{Int}) = _batchgetindex(v,index)

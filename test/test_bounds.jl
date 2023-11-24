@@ -30,7 +30,7 @@ nctime_bounds[:,:] = time_bounds
 close(ds)
 
 
-# issue 170
+# NCDatasets issue 170
 
 fname = tempname()
 ds = NCDataset(fname,"c")
