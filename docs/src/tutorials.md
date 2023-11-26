@@ -43,7 +43,7 @@ title("$(ncvar.attrib["long_name"]) $time")
 
 Alternatively, one can also create the files `.netrc` and `.ncrc` in the your home directory with your credentials as explained for the NASA EarthData example which allows you to manage your passwords in a central configuration file and reduce the risk to accidentally share your credentials.
 
-![example_SST_CMEMS.png](assets/example_SST_CMEMS.png)
+![example_SST_CMEMS_fix.png](assets/example_SST_CMEMS_fix.png)
 
 
 
