@@ -142,6 +142,7 @@ function defVar(ds::NCDataset,name::SymbolOrString,vtype::DataType,dimnames;
 
     v = ds[name]
     for (attname,attval) in attrib
+        @debug "variable $name: setting $attname" attval typeof(attval) eltype(v)
         v.attrib[attname] = attval
     end
 
