@@ -97,7 +97,7 @@ end
     normalizedindices = normalizeindexes(sizes, indices)
     ind = to_indices(ncvar,normalizedindices)
 
-    start,count,stride,jlshape = ncsub(size(ncvar),ind)
+    start,count,stride,jlshape = ncsub(ncvar,ind)
 
     @boundscheck begin
         checkbounds(ncvar,indices...)
@@ -230,7 +230,7 @@ Return the name of the NetCDF variable `v`.
 name(v::Variable) = nc_inq_varname(v.ds.ncid,v.varid)
 export name
 
-chunking(v::Variable,storage,chunksizes) = nc_def_var_chunking(v.ds.ncid,v.varid,storage,reverse(chunksizes))
+chunking(v::Variable,storage,chunksizes) = nc_def_var_chunking(v.ds.ncid,v.varid,storage,reverse(collect(chunksizes)))
 
 """
     storage,chunksizes = chunking(v::Variable)
@@ -404,12 +404,12 @@ function _read_data_from_nc!(v::Variable, aout, indexes::Integer...)
 end
 
 function _read_data_from_nc!(v::Variable{T,N}, aout, indexes::TR...) where {T,N} where TR <: Union{StepRange{<:Integer,<:Integer},UnitRange{<:Integer}}
-    start,count,stride,jlshape = ncsub(size(v),indexes)
+    start,count,stride,jlshape = ncsub(v,indexes)
     nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
 end
 
 function _read_data_from_nc!(v::Variable{T,N}, aout, indexes::Union{Integer,Colon,AbstractRange{<:Integer}}...) where {T,N}
-    start,count,stride,jlshape = ncsub(size(v),indexes)
+    start,count,stride,jlshape = ncsub(v,indexes)
     nc_get_vars!(v.ds.ncid,v.varid,start,count,stride,aout)
 end
 
@@ -428,7 +428,7 @@ end
 _write_data_to_nc(v::Variable, data) = _write_data_to_nc(v, data, 1)
 
 function _write_data_to_nc(v::Variable{T, N}, data, indexes::StepRange{<:Integer,<:Integer}...) where {T, N}
-    start,count,stride,jlshape = ncsub(size(v),indexes)
+    start,count,stride,jlshape = ncsub(v,indexes)
     nc_put_vars(v.ds.ncid,v.varid,start,count,stride,T.(data))
 end
 
@@ -465,21 +465,26 @@ function normalizeindexes(sz,indexes)
 end
 
 
-# computes the shape of the array of size `sz` after applying the indexes
-# size(a[indexes...]) == _shape_after_slice(size(a),indexes...)
+# computes the size of the array `a` after applying the indexes
+# size(a[indexes...]) == size_getindex(a,indexes...)
 
+# Note there can more indices than dimension, e.g.
+# size(zeros(3,3)[:,:,1:1]) == (3,3,1)
 # the difficulty here is to make the size inferrable by the compiler
-@inline _shape_after_slice(sz,indexes...) = __sh(sz,(),1,indexes...)
-@inline __sh(sz,sh,n,i::Integer,indexes...) = __sh(sz,sh,               n+1,indexes...)
-@inline __sh(sz,sh,n,i::Colon,  indexes...) = __sh(sz,(sh...,sz[n]),    n+1,indexes...)
-@inline __sh(sz,sh,n,i,         indexes...) = __sh(sz,(sh...,length(i)),n+1,indexes...)
-@inline __sh(sz,sh,n) = sh
+
+@inline size_getindex(array,indexes...) = _size_getindex(array,(),1,indexes...)
+@inline _size_getindex(array,sh,n,i::Integer,indexes...) = _size_getindex(array,sh,                   n+1,indexes...)
+@inline _size_getindex(array,sh,n,i::Colon,  indexes...) = _size_getindex(array,(sh...,size(array,n)),n+1,indexes...)
+@inline _size_getindex(array,sh,n,i,         indexes...) = _size_getindex(array,(sh...,length(i)),    n+1,indexes...)
+@inline _size_getindex(array,sh,n) = sh
+
 
 @inline start_count_stride(n,ind::AbstractRange) = (first(ind)-1,length(ind),step(ind))
 @inline start_count_stride(n,ind::Integer) = (ind-1,1,1)
 @inline start_count_stride(n,ind::Colon) = (0,n,1)
 
-@inline function ncsub(sz,indexes)
+@inline function ncsub(v,indexes)
+    sz = size(v)
     N = length(sz)
 
     start = Vector{Int}(undef,N)
@@ -492,7 +497,7 @@ end
         @inbounds start[ri],count[ri],stride[ri] = start_count_stride(sz[i],ind)
     end
 
-    jlshape = _shape_after_slice(sz,indexes...)
+    jlshape = size_getindex(v,indexes...)
 
     return start,count,stride,jlshape
 end
@@ -556,7 +561,7 @@ function _batchgetindex(
 
     sz_source = size(v)
     ri = to_range_list.(indices,sz_source)
-    sz_dest = _shape_after_slice(sz_source,indices...)
+    sz_dest = size_getindex(v,indices...)
 
     N = length(indices)
 
