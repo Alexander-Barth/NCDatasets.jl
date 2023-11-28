@@ -20,7 +20,7 @@ NCDataset(filename,"c") do ds
 
         v = defVar(ds,"var-$T",T,("lon","lat");
                               shuffle = true,
-                              chunksizes = [20,5],
+                              chunksizes = (20,5),
                               deflatelevel = 9,
                               checksum = :nochecksum
                               )
@@ -39,7 +39,7 @@ NCDataset(filename,"c") do ds
         @test chunksizes[1] == 20
 
         # change chunking
-        chunking(v,:chunked,[3,3])
+        chunking(v,:chunked,(3,3))
         storage,chunksizes = chunking(v)
         @test storage == :chunked
         #@show chunksizes
@@ -66,7 +66,7 @@ NCDataset(filename,"c") do ds
 
         v = defVar(ds,"var2-$T",T,("lon","lat");
                               shuffle = true,
-                              chunksizes = [20,5],
+                              chunksizes = (20,5),
                               deflatelevel = 9,
                               checksum = :fletcher32
                               )
