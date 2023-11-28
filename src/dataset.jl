@@ -27,35 +27,6 @@ const jlType = Dict(
 # Inverse mapping
 const ncType = Dict(value => key for (key, value) in jlType)
 
-"""
-    fillvalue(::Type{Int8})
-    fillvalue(::Type{UInt8})
-    fillvalue(::Type{Int16})
-    fillvalue(::Type{UInt16})
-    fillvalue(::Type{Int32})
-    fillvalue(::Type{UInt32})
-    fillvalue(::Type{Int64})
-    fillvalue(::Type{UInt64})
-    fillvalue(::Type{Float32})
-    fillvalue(::Type{Float64})
-    fillvalue(::Type{Char})
-    fillvalue(::Type{String})
-
-Default fill-value for the given type.
-"""
-@inline fillvalue(::Type{Int8})    = NC_FILL_BYTE
-@inline fillvalue(::Type{UInt8})   = NC_FILL_UBYTE
-@inline fillvalue(::Type{Int16})   = NC_FILL_SHORT
-@inline fillvalue(::Type{UInt16})  = NC_FILL_USHORT
-@inline fillvalue(::Type{Int32})   = NC_FILL_INT
-@inline fillvalue(::Type{UInt32})  = NC_FILL_UINT
-@inline fillvalue(::Type{Int64})   = NC_FILL_INT64
-@inline fillvalue(::Type{UInt64})  = NC_FILL_UINT64
-@inline fillvalue(::Type{Float32}) = NC_FILL_FLOAT
-@inline fillvalue(::Type{Float64}) = NC_FILL_DOUBLE
-@inline fillvalue(::Type{Char})    = NC_FILL_CHAR
-@inline fillvalue(::Type{String})  = NC_FILL_STRING
-
 iswritable(ds::NCDataset) = ds.iswritable
 
 function isopen(ds::NCDataset)
