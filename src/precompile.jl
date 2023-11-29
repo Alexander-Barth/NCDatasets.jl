@@ -1,41 +1,78 @@
+
+
+
+
+
 @compile_workload begin
-    println("Precompile NCDatasets 4");
+    function sample(sizes,types)
+        fname = tempname()
+        ds = NCDataset(fname,"c");
 
-    fname = tempname()
-    ds = NCDataset(fname,"c");
-    sz = (2,2)
+        dimnames = "dim-" .* string.(1:length(sizes))
 
-    ds.dim["lon"] = sz[1]
-    ds.dim["lat"] = sz[2]
+        for (dn,len) in zip(dimnames,sizes)
+            ds.dim[dn] = len
+        end
 
-    for T in [UInt8,Int8,UInt16,Int16,
-              UInt32,Int32,UInt64,Int64,
-              Float32,Float64,
-              Char,String]
-        local data, scalar_data
-        data, scalar_data =
-            if T == String
-                [Char(i+60) * Char(j+60) for i = 1:sz[1], j = 1:sz[2]], "abcde"
-            else
-                [T(i+2*j) for i = 1:sz[1], j = 1:sz[2]], T(100)
+        for T in [UInt8,Int8,UInt16,Int16,
+                  UInt32,Int32,UInt64,Int64,
+                  Float32,Float64,
+                  Char,String]
+
+            scalar_data =
+                if T == String
+                    "abcde"
+                elseif T == Char
+                    'a'
+                else
+                    T(100)
+                end
+
+            for nd = 1:length(sizes)
+                sz = sizes[1:nd]
+                data = fill(scalar_data,sz)
+
+                v = defVar(ds,"var-$nd-$T",T,dimnames[1:nd])
+                ind = ntuple(i -> :,length(sz))
+                v[ind...] = data
+                data2 = v[ind...]
+
+                ind = ntuple(i -> 1,length(sz))
+                v[ind...] = scalar_data
+                scalar_data2 = v[ind...]
+
+                # attributes
+                v.attrib["attrib-$T"] = scalar_data
+                v.attrib["attrib-vec-$T"] = [scalar_data]
+                scalar_data2 = v.attrib["attrib-$T"]
+                vec_data2 = v.attrib["attrib-vec-$T"]
+
+                v2 = ds["var-$nd-$T"]
             end
 
-        v = NCDatasets.defVar(ds,"var-$T",T,("lon","lat"))
-        v[:,:] = data
-        v[1,1] = scalar_data
-        data2 = data[:,:]
-        scalar_data2 = data[1,1]
+            ds.attrib["attrib-vec-$T"] = [scalar_data]
+            ds.attrib["attrib-$T"] = scalar_data
+            scalar_data2 = ds.attrib["attrib-$T"]
+            vec_data2 = ds.attrib["attrib-vec-$T"]
+        end
 
-        v.attrib["attrib-$T"] = scalar_data
-        ds.attrib["attrib-$T"] = scalar_data
+        io = IOBuffer();
+        show(io,ds);
+        close(ds);
 
-        scalar_data2 = v.attrib["attrib-$T"]
-        scalar_data2 = ds.attrib["attrib-$T"]
+        ds = NCDataset(fname,"r");
+        close(ds)
+        rm(fname)
     end
 
-    io = IOBuffer();
-    show(io,ds);
-    close(ds);
+    types = [
+        UInt8,Int8,
+        UInt16,Int16,
+        UInt32,Int32,
+        UInt64,Int64,
+        Float32,Float64,
+        Char,String
+    ]
 
+    sample((2,2,2),types)
 end
-
