@@ -30,7 +30,7 @@ ncvar = ds["analysed_sst"];
 SST = ncvar[:,:,1]
 lon = ds["lon"][:]
 lat = ds["lat"][:]
-time = ds["time"][1]
+SST_time = ds["time"][1]
 
 clf()
 pcolormesh(lon,lat,nomissing(SST,NaN)')
@@ -38,7 +38,7 @@ cbar = colorbar(orientation="horizontal")
 cbar.set_label(ncvar.attrib["units"])
 gca().set_aspect(1/cosd(mean(lat)))
 
-title("$(ncvar.attrib["long_name"]) $time")
+title("$(ncvar.attrib["long_name"]) $SST_time")
 ```
 
 Alternatively, one can also create the files `.netrc` and `.ncrc` in the your home directory with your credentials as explained for the NASA EarthData example which allows you to manage your passwords in a central configuration file and reduce the risk to accidentally share your credentials.
