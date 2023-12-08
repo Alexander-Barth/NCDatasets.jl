@@ -5,7 +5,7 @@ sz = (4,5)
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
 
-NCDatasets.NCDataset(filename,"c") do ds
+NCDataset(filename,"c") do ds
     # define the dimension "lon" and "lat"
     ds.dim["lon"] = sz[1]
     ds.dim["lat"] = Inf
@@ -15,7 +15,7 @@ NCDatasets.NCDataset(filename,"c") do ds
         local data
         data = zeros(T,sz)
 
-        v = NCDatasets.defVar(ds,"var-$T",T,("lon","lat"))
+        v = defVar(ds,"var-$T",T,("lon","lat"))
 
         for j = 1:sz[2]
             data[:,j] .= T(j)

@@ -6,11 +6,11 @@ ncfile2 = tempname()
 jlfile = tempname()
 #jlfile = "/tmp/out.jl"
 
-ds = NCDatasets.NCDataset(ncfile1,"c")
+ds = NCDataset(ncfile1,"c")
 ds.dim["lon"] = 3;
 ds.dim["lat"] = 4;
 ds.dim["unlimited"] = Inf;
-nclon = NCDatasets.defVar(ds,"variable with space", Float32, ("lon",))
+nclon = defVar(ds,"variable with space", Float32, ("lon",))
 nclon.attrib["string"] = "degrees_east";
 nclon.attrib["float32"] = Float32(1.)
 nclon.attrib["float64"] = 1.
@@ -23,19 +23,19 @@ ds.attrib["dollar"] = "a dollar \$ stop";
 ds.attrib["backslash"] = "a backslash \\ stop";
 ds.attrib["doublequote"] = "a doublequote \" stop";
 
-ncmatrix = NCDatasets.defVar(ds,"matrix", Float32,("lon","lat"))
+ncmatrix = defVar(ds,"matrix", Float32,("lon","lat"))
 
 
 close(ds)
 
-NCDatasets.ncgen(ncfile1,jlfile; newfname = ncfile2)
+ncgen(ncfile1,jlfile; newfname = ncfile2)
 include(jlfile)
 
 buf1 = IOBuffer()
 buf2 = IOBuffer()
 
-NCDatasets.ncgen(buf1,ncfile1)
-NCDatasets.ncgen(buf2,ncfile2)
+ncgen(buf1,ncfile1)
+ncgen(buf2,ncfile2)
 
 @test String(take!(buf1)) == String(take!(buf2))
 

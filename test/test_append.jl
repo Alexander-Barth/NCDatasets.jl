@@ -3,19 +3,19 @@ filename = tempname()
 
 # The mode "c" stands for creating a new file (clobber)
 
-NCDatasets.NCDataset(filename,"c") do ds
-    # define the dimension "lon" and "lat" 
+NCDataset(filename,"c") do ds
+    # define the dimension "lon" and "lat"
     ds.dim["lon"] = sz[1]
     ds.dim["lat"] = sz[2]
 
-    v = NCDatasets.defVar(ds,"var1",UInt8,("lon","lat"))
+    v = defVar(ds,"var1",UInt8,("lon","lat"))
     v[:,:] = fill(123,size(v))
 end
 
 # The "a" stands for appending to an existing file
 
-NCDatasets.NCDataset(filename,"a") do ds
-    v = NCDatasets.defVar(ds,"var2",UInt16,("lon","lat"))
+NCDataset(filename,"a") do ds
+    v = defVar(ds,"var2",UInt16,("lon","lat"))
     v[:,:] = fill(1234,size(v))
 
     # check if there are two variables

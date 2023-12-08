@@ -3,11 +3,11 @@ using Test
 
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
-ds = NCDatasets.NCDataset(filename,"c")
+ds = NCDataset(filename,"c")
 
 # define the dimension "lon" and "lat" with the size 10 and 11 resp.
-NCDatasets.defDim(ds,"lon",10)
-NCDatasets.defDim(ds,"lat",11)
+defDim(ds,"lon",10)
+defDim(ds,"lat",11)
 
 for T in [Int32,Float32]
 
@@ -16,7 +16,7 @@ for T in [Int32,Float32]
     offset = 20.
     factor = 0.1
 
-    v = NCDatasets.defVar(ds,"scaled_var_$(T)",T,("lon","lat"), attrib = [
+    v = defVar(ds,"scaled_var_$(T)",T,("lon","lat"), attrib = [
         "add_offset" => offset,
         "scale_factor" => factor,
     ])
@@ -39,5 +39,5 @@ for T in [Int32,Float32]
     end
 end
 
-NCDatasets.close(ds)
+close(ds)
 rm(filename)

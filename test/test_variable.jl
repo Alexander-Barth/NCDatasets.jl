@@ -12,13 +12,13 @@ filename = tempname()
 #end
 
 # The mode "c" stands for creating a new file (clobber)
-NCDatasets.NCDataset(filename,"c") do ds
+NCDataset(filename,"c") do ds
 
     # define the dimension "lon" and "lat"
     ds.dim["lon"] = sz[1]
     ds.dim["lat"] = sz[2]
 
-    v = NCDatasets.defVar(ds,"small",Float64,("lon","lat"))
+    v = defVar(ds,"small",Float64,("lon","lat"))
 #    @test_throws Union{NCDatasets.NetCDFError,DimensionMismatch} v[:] = zeros(sz[1]+1,sz[2])
     @test_throws DimensionMismatch v[1:sz[1],1:sz[2]] = zeros(sz[1]+1,sz[2])
     @test_throws NCDatasets.NetCDFError v[sz[1]+1,1] = 1
@@ -36,7 +36,7 @@ NCDatasets.NCDataset(filename,"c") do ds
                 [T(i+2*j) for i = 1:sz[1], j = 1:sz[2]], T(100)
             end
 
-        v = NCDatasets.defVar(ds,"var-$T",T,("lon","lat"))
+        v = defVar(ds,"var-$T",T,("lon","lat"))
         v[:,:] = data
         @test v[:,:] == data[:,:]
 

@@ -5,12 +5,12 @@ filename = tempname()
 #filename = "/tmp/mytest.nc"
 
 
-NCDatasets.NCDataset(filename,"c") do ds
+NCDataset(filename,"c") do ds
 
     ds.dim["lon"] = sz[1]
     ds.dim["lat"] = sz[2]
 
-    v = NCDatasets.defVar(ds,"temperature",Float32,("lon","lat"),
+    v = defVar(ds,"temperature",Float32,("lon","lat"),
                           attrib = ["long_name" => "Temperature",
                                     "test_vector_attrib" => [1,2,3]])
 
@@ -19,14 +19,14 @@ NCDatasets.NCDataset(filename,"c") do ds
     v.attrib["comment"] = "this is a string attribute with unicode Ω ∈ ∑ ∫ f(x) dx "
 
     # check presence of attribute
-    @test NCDatasets.haskey(v.attrib,"comment")
+    @test haskey(v.attrib,"comment")
     @test v.attrib["long_name"] == "Temperature"
     @test v.attrib[:long_name] == "Temperature"
     @test v.attrib["test_vector_attrib"] == [1,2,3]
     @test v.attrib["comment"] == "this is a string attribute with unicode Ω ∈ ∑ ∫ f(x) dx "
 
-    @test NCDatasets.get(v.attrib,"does-not-exist","default") == "default"
-    @test NCDatasets.get(v.attrib,"units","default") == "degree Celsius"
+    @test get(v.attrib,"does-not-exist","default") == "default"
+    @test get(v.attrib,"units","default") == "degree Celsius"
 
     # test deletion of attributes
     v.attrib["todelete"] = "foobar"
@@ -103,7 +103,7 @@ NCDatasets.NCDataset(filename,"c") do ds
     @test_throws ErrorException v.attrib["error_attrib"] = zeros(2,2)
 
     # symbols in the attrib dict
-    foo = NCDatasets.defVar(ds,"foovar",Int64,("lon","lat"),
+    foo = defVar(ds,"foovar",Int64,("lon","lat"),
                             attrib = [:long_name => "foo variable"])
     @test foo.attrib["long_name"] == "foo variable"
 
@@ -113,12 +113,12 @@ rm(filename)
 
 filename = tempname()
 
-NCDatasets.NCDataset(filename,"c",format = :netcdf3_classic) do ds
+NCDataset(filename,"c",format = :netcdf3_classic) do ds
     # test deletion of attributes
     ds.attrib["todelete"] = "foobar"
 end
 
-NCDatasets.NCDataset(filename,"a") do ds
+NCDataset(filename,"a") do ds
     @test haskey(ds.attrib,"todelete")
     delete!(ds.attrib,"todelete")
     @test !haskey(ds.attrib,"todelete")

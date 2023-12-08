@@ -5,7 +5,7 @@ sz = (4,5)
 filename = tempname()
 
 # The mode "c" stands for creating a new file (clobber)
-NCDatasets.NCDataset(filename,"c") do ds
+NCDataset(filename,"c") do ds
 
     # define the dimension "lon" and "lat"
     ds.dim["lon"] = sz[1]
@@ -36,7 +36,7 @@ NCDatasets.NCDataset(filename,"c") do ds
                     Dict(:attrib => Dict("_FillValue" => fv))
                 end
 
-            v = NCDatasets.defVar(ds,"var-$T-$define_type",T,("lon","lat"); kwargs...)
+            v = defVar(ds,"var-$T-$define_type",T,("lon","lat"); kwargs...)
 
             @test fillvalue(v) == fv
             @test v.attrib["_FillValue"] == fv
@@ -60,14 +60,14 @@ end
 
 filename = tempname()
 # The mode "c" stands for creating a new file (clobber)
-ds = NCDatasets.NCDataset(filename,"c")
+ds = NCDataset(filename,"c")
 
 # define the dimension "lon" and "lat" with the size 10 and 11 resp.
 ds.dim["lon"] = 10
 ds.dim["lat"] = 11
 
 fv = NaN32
-v = NCDatasets.defVar(ds,"var_with_missing_data",Float32,("lon","lat"), fillvalue = fv)
+v = defVar(ds,"var_with_missing_data",Float32,("lon","lat"), fillvalue = fv)
 
 data = [Float32(i+j) for i = 1:10, j = 1:11]
 # mask the frist element
@@ -81,14 +81,14 @@ v[:,:] = datam
 # load without transformation
 @test isnan(v.var[1,1])
 
-NCDatasets.close(ds)
+close(ds)
 
 # all fill-values
 filename = tempname()
-ds = NCDatasets.NCDataset(filename,"c")
+ds = NCDataset(filename,"c")
 ds.dim["lon"] = 3
 
-v = NCDatasets.defVar(ds,"var_with_all_missing_data",Float32,("lon",), fillvalue = fv)
+v = defVar(ds,"var_with_all_missing_data",Float32,("lon",), fillvalue = fv)
 data = [missing, missing, missing]
 
 v[:] = data
@@ -104,20 +104,20 @@ v[1] = 1234.
 v[1:1] .= missing
 @test ismissing(v[1])
 
-NCDatasets.close(ds)
+close(ds)
 
 # test nomissing
 
 data = [missing, Float64(1.), Float64(2.)]
-@test_throws ErrorException NCDatasets.nomissing(data)
+@test_throws ErrorException nomissing(data)
 
-dataf = NCDatasets.nomissing(data,-9999.)
+dataf = nomissing(data,-9999.)
 @test eltype(dataf) == Float64
 @test dataf == [-9999., 1., 2.]
 
 
 data = Union{Float64,Missing}[1., 2.]
-dataf = NCDatasets.nomissing(data)
+dataf = nomissing(data)
 @test eltype(dataf) == Float64
 @test dataf == [1., 2.]
 
@@ -166,4 +166,3 @@ v = defVar(ds,"instrument_mode",String,("mode_items",),fillvalue = "UNDEFINED MO
 @test fillvalue(v) == "UNDEFINED MODE"
 close(ds)
 rm(filename)
-

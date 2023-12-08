@@ -8,7 +8,7 @@ dimlen = 10
 T = Int32
 data = Vector{Vector{T}}(undef,dimlen)
 for i = 1:length(data)
-    data[i] = T.(collect(1:i) .+ 100 * i) 
+    data[i] = T.(collect(1:i) .+ 100 * i)
 end
 
 
@@ -17,9 +17,9 @@ vlentypename = "name-vlen"
 
 # write data
 
-ds = NCDatasets.NCDataset(filename,"c",format=:netcdf4)
+ds = NCDataset(filename,"c",format=:netcdf4)
 ds.dim["casts"] = dimlen
-v = NCDatasets.defVar(ds,varname,Vector{T},("casts",); typename = vlentypename)
+v = defVar(ds,varname,Vector{T},("casts",); typename = vlentypename)
 @test eltype(v.var) == Vector{T}
 
 #for i = 1:dimlen
@@ -34,8 +34,8 @@ close(ds)
 
 # load data
 
-ds = NCDatasets.NCDataset(filename)
-vv = NCDatasets.variable(ds,"varname")
+ds = NCDataset(filename)
+vv = variable(ds,"varname")
 @test eltype(vv) == Vector{T}
 data2 = vv[:]
 
@@ -45,7 +45,7 @@ data2 = vv[:]
 @test data[1:2] == vv[1:2]
 
 
-NCDatasets.close(ds)
+close(ds)
 
 #@show data
 #@show data2
