@@ -474,7 +474,8 @@ end
 
 @inline size_getindex(array,indexes...) = _size_getindex(array,(),1,indexes...)
 @inline _size_getindex(array,sh,n,i::Integer,indexes...) = _size_getindex(array,sh,                   n+1,indexes...)
-@inline _size_getindex(array,sh,n,i::Colon,  indexes...) = _size_getindex(array,(sh...,size(array,n)),n+1,indexes...)
+@inline _size_getindex(array::AbstractArray,sh,n,i::Colon,  indexes...) = _size_getindex(array,(sh...,size(array,n)),n+1,indexes...)
+@inline _size_getindex(sz::Tuple,sh,n,i::Colon,  indexes...) = _size_getindex(sz,(sh...,sz[n]),n+1,indexes...)
 @inline _size_getindex(array,sh,n,i,         indexes...) = _size_getindex(array,(sh...,length(i)),    n+1,indexes...)
 @inline _size_getindex(array,sh,n) = sh
 
