@@ -1,6 +1,6 @@
 The NCDatasets.jl package is licensed under the MIT "Expat" License:
 
-> Copyright (c) 2017: Alexander Barth.
+> Copyright (c) 2017-2023: Alexander Barth.
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
