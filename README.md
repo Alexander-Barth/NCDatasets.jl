@@ -162,7 +162,7 @@ close(ds)
 
 It is also possible to create the dimensions, the define the variable and set its value with a single call to `defVar`:
 
-```
+```julia
 using NCDatasets
 ds = Dataset("/tmp/test2.nc","c")
 data = [Float32(i+j) for i = 1:100, j = 1:110]
