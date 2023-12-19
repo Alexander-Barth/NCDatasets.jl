@@ -4,11 +4,9 @@ In the NetCDF data model, dimensions have names and a length (but possibly an un
 For a given `Variable` or `CFVariable`,the names of the corresponding dimensions are obtained with using [`dimnames`](@ref).
 
 ```@docs
-keys(d::NCDatasets.Dimensions)
 haskey(a::NCDatasets.NCIterable,name::AbstractString)
 defDim
-unlimited(d::NCDatasets.Dimensions)
-setindex!(d::NCDatasets.Dimensions,len,name::AbstractString)
+unlimited(d::NCDatasets.NCDataset)
 ```
 
 One can iterate over a list of dimensions as follows:
