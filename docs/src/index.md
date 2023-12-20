@@ -297,3 +297,8 @@ end
 units = get(v,"units","adimensional")
 close(ds)
 ```
+
+# API and semantic versioning
+
+The package aims to following [semantic versioning](https://semver.org/).
+[As in julia](https://docs.julialang.org/en/v1/manual/faq/#How-does-Julia-define-its-public-API), what is considered as public API and covered by semantic versioning is what documented and not marked as experimental or internal. 
