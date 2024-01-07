@@ -132,6 +132,14 @@ data = NCDataset(filename,"r") do ds
 end # ds is closed
 ```
 
+In general, names (variable names, dimension names, attributes name and group names) can either by `"strings"` or `:symbols`.
+
+```julia
+data_units = ds[:temperature].attrib[:units]
+# is the same as
+data_units = ds["temperature"].attrib["units"]
+```
+
 ### Create a netCDF file
 
 The following gives an example of how to create a netCDF file by defining dimensions, variables and attributes.
