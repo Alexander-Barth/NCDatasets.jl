@@ -48,10 +48,10 @@ For interactive use, the following commands (without ending semicolon) display t
 
 ```julia
 using NCDatasets
-ds = Dataset("file.nc")
+ds = NCDataset("file.nc")
 ```
 
-This creates the central structure of NCDatasets.jl, `Dataset`, which represents the contents of the netCDF file (without immediatelly loading everything in memory). `NCDataset` is an alias for `Dataset`.
+This creates the central structure of NCDatasets.jl, `NCDataset`, which represents the contents of the netCDF file (without immediatelly loading everything in memory). `NCDataset` is an alias for `Dataset`.
 
 The following displays the information just for the variable `varname`:
 
@@ -89,7 +89,7 @@ Loading a variable with known structure can be achieved by accessing the variabl
 
 ```julia
 # The mode "r" stands for read-only. The mode "r" is the default mode and the parameter can be omitted.
-ds = Dataset("/tmp/test.nc","r")
+ds = NCDataset("/tmp/test.nc","r")
 v = ds["temperature"]
 
 # load a subset
@@ -110,7 +110,7 @@ close(ds)
 In the example above, the subset can also be loaded with:
 
 ```julia
-subdata = Dataset("/tmp/test.nc")["temperature"][10:30,30:5:end]
+subdata = NCDataset("/tmp/test.nc")["temperature"][10:30,30:5:end]
 ```
 
 This might be useful in an interactive session. However, the file `test.nc` is not directly closed (closing the file will be triggered by Julia's garbage collector), which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
@@ -118,7 +118,7 @@ This might be useful in an interactive session. However, the file `test.nc` is n
 An alternative way to ensure the file has been closed is to use a `do` block: the file will be closed automatically when leaving the block.
 
 ```julia
-data = Dataset(filename,"r") do ds
+data = NCDataset(filename,"r") do ds
     ds["temperature"][:,:]
 end # ds is closed
 ```
@@ -132,7 +132,7 @@ using NCDatasets
 using DataStructures
 # This creates a new NetCDF file /tmp/test.nc.
 # The mode "c" stands for creating a new file (clobber)
-ds = Dataset("/tmp/test.nc","c")
+ds = NCDataset("/tmp/test.nc","c")
 
 # Define the dimension "lon" and "lat" with the size 100 and 110 resp.
 defDim(ds,"lon",100)
@@ -164,7 +164,7 @@ It is also possible to create the dimensions, the define the variable and set it
 
 ```julia
 using NCDatasets
-ds = Dataset("/tmp/test2.nc","c")
+ds = NCDataset("/tmp/test2.nc","c")
 data = [Float32(i+j) for i = 1:100, j = 1:110]
 v = defVar(ds,"temperature",data,("lon","lat"))
 close(ds)
@@ -178,7 +178,7 @@ to open it with the `"a"` option. Here, for example, we add a global attribute *
 file created in the previous step.
 
 ```julia
-ds = Dataset("/tmp/test.nc","a")
+ds = NCDataset("/tmp/test.nc","a")
 ds.attrib["creator"] = "your name"
 close(ds);
 ```

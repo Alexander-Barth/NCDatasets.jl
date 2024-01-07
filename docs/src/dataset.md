@@ -30,6 +30,22 @@ Otherwise, we attempt to use standard structures from the Julia standard library
 
 ## Groups
 
+A NetCDF group is a dataset (with variables, attributes, dimensions and sub-groups) and
+can be arbitrarily nested.
+A group is created with `defGroup` and accessed via the `group` property of
+a `NCDataset`.
+
+```julia
+# create the variable "temperature" inside the group "forecast"
+ds = NCDataset("results.nc", "c");
+ds_forecast = defGroup(ds,"forecast")
+defVar(ds_forecast,"temperature",randn(10,11,12),("lon","lat","time"))
+
+# load the variable "temperature" inside the group "forecast"
+forecast_temp = ds.group["forecast"]["temperature"][:,:,:]
+close(ds)
+```
+
 ```@docs
 defGroup
 getindex(g::NCDatasets.Groups,groupname::AbstractString)

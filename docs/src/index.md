@@ -1,6 +1,12 @@
 # NCDatasets.jl
 
-Documentation for NCDatasets.jl, a Julia package for loading and writing NetCDF ([Network Common Data Form](https://www.unidata.ucar.edu/software/netcdf/)) files.
+Documentation for [NCDatasets.jl](https://github.com/Alexander-Barth/NCDatasets.jl), a Julia package for loading and writing NetCDF ([Network Common Data Form](https://www.unidata.ucar.edu/software/netcdf/)) files.
+NCDatasets.jl implements the for the NetCDF format the interface defined
+in [CommonDataModel.jl](https://github.com/JuliaGeo/CommonDataModel.jl).
+All functions defined by CommonDataModel.jl are also available for NetCDF data, including:
+* virtually concatenating multiple files along a given dimension
+* create a virtual subset (`view`) by indices or by values of coordinate variables (`CommonDataModel.select`, `CommonDataModel.@select`)
+* group, map and reduce (with `mean`, standard deviation `std`, ...) a variable (`CommonDataModel.groupby`, `CommonDataModel.@groupby`) and rolling reductions like running means `CommonDataModel.rolling`). 
 
 ## Installation
 
@@ -10,6 +16,8 @@ Inside the Julia shell, you can download and install using the following command
 using Pkg
 Pkg.add("NCDatasets")
 ```
+
+Or by typing `]add NCDatasets` using the package manager mode.
 
 ### Latest development version
 
@@ -30,9 +38,9 @@ To get started quickly see the [Quickstart](@ref) section. Otherwise see the fol
 * [Attributes](@ref) : accessing/creating NetCDF attributes
 * See [Performance tips](@ref performance_tips), [Known issues](@ref), [Experimental features](@ref) for more information.
 
-## Quickstart
+## Quick start
 
-This is a quickstart guide that outlines basic loading, reading, etc. usage.
+This is a quick start guide that outlines basic loading, reading, etc. usage.
 For more details please see the individual pages of the documentation.
 
 
@@ -183,9 +191,9 @@ using NCDatasets
 using DataStructures
 data = [Float32(i+j) for i = 1:100, j = 1:110]
 
-Dataset("/tmp/test2.nc","c",attrib = OrderedDict("title" => "this is a test file")) do ds
+NCDataset("/tmp/test2.nc","c",attrib = OrderedDict("title" => "this is a test file")) do ds
     # Define the variable temperature. The dimension "lon" and "lat" with the
-    # size 100 and 110 resp are implicetly created
+    # size 100 and 110 resp are implicitly created
     defVar(ds,"temperature",data,("lon","lat"), attrib = OrderedDict(
            "units" => "degree Celsius",
            "comments" => "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
@@ -209,10 +217,12 @@ close(ds);
 
 The utility function [`ncgen`](https://alexander-barth.github.io/NCDatasets.jl/stable/#NCDatasets.ncgen)
 generates the Julia code that would produce a netCDF file with the same metadata as a template netCDF file.
-It is thus similar to the [command line tool `ncgen`](https://www.unidata.ucar.edu/software/netcdf/netcdf/ncgen.html).
+It is thus similar to the [command line tool `ncgen`](https://www.unidata.ucar.edu/software/netcdf/netcdf/ncgen.html)
+which can generate C or Fortran code from the output of [`ncdump`](https://www.unidata.ucar.edu/software/netcdf/netcdf/ncdump.html).
 
 ```julia
-# download example file
+using Downloads: download
+# download an example file
 ncfile = download("https://www.unidata.ucar.edu/software/netcdf/examples/sresa1b_ncar_ccsm3-example.nc")
 # generate Julia code
 ncgen(ncfile)
@@ -240,8 +250,8 @@ ncarea.attrib["units"] = "meter2";
 
 ### Get one or several variables by specifying the value of an attribute
 
-The variable names are not always standardized. For example, for the longitude we can
-find: `lon`, `LON`, `longitude`, ...
+The variable names are not always standardized. For example, the longitude can
+be named: `lon`, `LON`, `longitude`, `łøñgitüdè`, ...
 
 The solution implemented in the function `varbyattrib` consists in searching for the
 variables that have specified value for a given attribute.
@@ -256,6 +266,24 @@ attribute `standard_name` equal to `"longitude"` one can do the following:
 ```julia
 data = varbyattrib(ds, standard_name = "longitude")[1][:]
 ```
+
+As looking-up a variable by standard name is quite common, one can also use the
+`@CF_str` macro and index the dataset using a string prefixed by `CF`.
+
+```julia
+using NCDatasets: @CF_str
+ds[CF"longitude"]
+```
+
+If multiple variables share the same standard name, such statements `ds[CF"longitude"]` are ambiguous and an error is returned.
+This is typically the case for e.g. ocean models like ROMS where different variables (u, v and w velocity) are defined on different staggered grids (i.e. shifted by a half grid-cell from each other).
+To disambiguate, one can first index the dataset `ds` with main data variable (e.g. vertical velocity) and then again extract the longitude associated to the data variable.
+
+```julia
+ds[CF"upward_sea_water_velocity"][CF"longitude"]
+```
+
+Such statement is no longer ambiguous as from the dimension names it is clear which longitude has to be accessed.
 
 ### Load a file with unknown structure
 

@@ -35,6 +35,7 @@ A scalar variable can be loaded using `[]`, for example:
 ```julia
 using NCDatasets
 NCDataset("test_scalar.nc","c") do ds
+    # the list of dimension names is simple `()` as a scalar does not have dimensions
     defVar(ds,"scalar",42,())
 end
 
