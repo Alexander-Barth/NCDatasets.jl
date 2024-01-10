@@ -76,9 +76,9 @@ Note choosing the `_experimental_missing_value` affects the element type of the 
 ```
 
 is a vector with the element type `Float64` and not `Union{Float64,Int}`. All integers
-are thus promoted to floating point number as NaN is a Float64.
+are thus promoted to floating point number as `NaN` is a `Float64`.
 
-Note that since NaN is considered as a `Float64` in Julia, we have also a promotion to Float64 in such cases:
+Note that since NaN is considered as a `Float64` in Julia, we have also a promotion to `Float64` in such cases:
 
 ```julia
 [1f0, NaN]
@@ -87,7 +87,7 @@ Note that since NaN is considered as a `Float64` in Julia, we have also a promot
 # NaN
 ```
 
-where `1f0` is a `Float32`. Consider to use NaN32 to avoid this promotion (which is automatically converted to 64-bit NaN for a Float64 array):
+where `1f0` is the `Float32` number 1. Consider to use `NaN32` to avoid this promotion (which is automatically converted to 64-bit NaN for a `Float64` array):
 
 ```julia
 using NCDatasets
@@ -120,6 +120,3 @@ Float64(9_007_199_254_740_993) == 9_007_199_254_740_993 # false
 ```
 
 The use of `missing` as fill value, is thus preferable generally.
-If you come accross a julia package which does not well with `missing` type, considered to fill an issue.
-
-
