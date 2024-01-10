@@ -28,6 +28,7 @@ const jlType = Dict(
 const ncType = Dict(value => key for (key, value) in jlType)
 
 iswritable(ds::NCDataset) = ds.iswritable
+_experimental_missing_value(ds::NCDataset) = ds._experimental_missing_value
 
 function isopen(ds::NCDataset)
     try
@@ -64,7 +65,9 @@ end
 function NCDataset(ncid::Integer,
                    iswritable::Bool,
                    isdefmode::Ref{Bool};
-                   parentdataset = nothing)
+                   parentdataset = nothing,
+                   _experimental_missing_value = missing,
+                   )
 
     function _finalize(ds)
         # only close open root group
@@ -72,13 +75,15 @@ function NCDataset(ncid::Integer,
             close(ds)
         end
     end
-
-    ds = NCDataset{typeof(parentdataset)}(
+    @debug "_experimental_missing_value" _experimental_missing_value
+    ds = NCDataset{typeof(parentdataset),typeof(_experimental_missing_value)}(
         parentdataset,
         ncid,
         iswritable,
         isdefmode,
-        Dict{String,String}())
+        Dict{String,String}(),
+        _experimental_missing_value,
+    )
 
     if !iswritable
         initboundsmap!(ds)
@@ -169,6 +174,7 @@ function NCDataset(filename::AbstractString,
                    diskless::Bool = false,
                    persist::Bool = false,
                    memory::Union{Vector{UInt8},Nothing} = nothing,
+                   _experimental_missing_value = missing,
                    attrib = [])
 
     ncid = -1
@@ -226,7 +232,9 @@ function NCDataset(filename::AbstractString,
     end
 
     iswritable = mode != "r"
-    ds = NCDataset(ncid,iswritable,isdefmode)
+    ds = NCDataset(
+        ncid,iswritable,isdefmode,
+        _experimental_missing_value = _experimental_missing_value)
 
     # set global attributes
     for (attname,attval) in attrib

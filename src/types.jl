@@ -24,7 +24,7 @@ struct Variable{NetCDFType,N,TDS} <: AbstractNCVariable{NetCDFType, N}
 end
 
 # must be mutable to register a finalizer
-mutable struct NCDataset{TDS} <: AbstractNCDataset where TDS <: Union{AbstractNCDataset,Nothing}
+mutable struct NCDataset{TDS,T_experimental_missing_value} <: AbstractNCDataset where TDS <: Union{AbstractNCDataset,Nothing}
     # parent_dataset is nothing for the root dataset
     parentdataset::TDS
     ncid::Cint
@@ -35,6 +35,7 @@ mutable struct NCDataset{TDS} <: AbstractNCDataset where TDS <: Union{AbstractNC
     # mapping between variables related via the bounds attribute
     # It is only used for read-only datasets to improve performance
     _boundsmap::Dict{String,String}
+    _experimental_missing_value::T_experimental_missing_value
 end
 
 "Alias to `NCDataset`"
