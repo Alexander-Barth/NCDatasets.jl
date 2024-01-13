@@ -37,7 +37,4 @@ mutable struct NCDataset{TDS} <: AbstractNCDataset where TDS <: Union{AbstractNC
     _boundsmap::Dict{String,String}
 end
 
-"""
-    `Dataset` is an alias to `NCDataset`
-"""
 const Dataset = NCDataset
