@@ -230,7 +230,7 @@ The package [NetCDF.jl](https://github.com/JuliaGeo/NetCDF.jl) from Fabian Gans 
 
 # Credits
 
-`netcdf_c.jl`, `build.jl` and the error handling code of the NetCDF C API are from NetCDF.jl by Fabian Gans (Max-Planck-Institut für Biogeochemie, Jena, Germany) released under the MIT license.
+`netcdf_c.jl` and the error handling code of the NetCDF C API are from NetCDF.jl by Fabian Gans (Max-Planck-Institut für Biogeochemie, Jena, Germany) released under the MIT license.
 
 
 
