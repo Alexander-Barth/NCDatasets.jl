@@ -48,8 +48,8 @@ close(ds)
 
 ```@docs
 defGroup
-getindex(g::NCDatasets.Groups,groupname::AbstractString)
-Base.keys(g::NCDatasets.Groups)
+getindex(g::NCDatasets.Groups,groupname)
+keys(g::NCDatasets.Groups)
 ```
 
 ## Common methods

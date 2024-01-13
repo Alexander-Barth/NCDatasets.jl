@@ -30,7 +30,7 @@ Pkg.add(PackageSpec(name="NCDatasets", rev="master"))
 
 ## Contents
 
-To get started quickly see the [Quickstart](@ref) section. Otherwise see the following pages for details:
+To get started quickly see the [Quick start](@ref) section. Otherwise see the following pages for details:
 
 * [Datasets](@ref) : reading/writing NetCDF datasets (including NetCDF groups) and examining their contents.
 * [Dimensions](@ref) : accessing/creating NetCDF dimensions

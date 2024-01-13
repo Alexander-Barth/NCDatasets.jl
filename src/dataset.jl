@@ -343,7 +343,12 @@ name `temperature` and a dimension with the name `lon`.
 """
 Base.haskey(a::NCIterable,name::AbstractString) = name in keys(a)
 
+"""
+    names = dimnames(ds::AbstractNCDataset; parents = false)
 
+Return all names defined in `ds`. When `parents` is `true`,
+also the names of parent groups are returned (default is `false`).
+"""
 function dimnames(ds::AbstractNCDataset; parents = false)
     dn = keys(ds.dim)
 
@@ -357,10 +362,12 @@ function dimnames(ds::AbstractNCDataset; parents = false)
     return dn
 end
 
+"""
+    len = dim(ds::AbstractNCDataset,name::SymbolOrString)
+
+Return the (current) length of the dimension `name` of the dataset `ds`.
+"""
 dim(ds::AbstractNCDataset,name::SymbolOrString) = ds.dim[name]
-
-
-#     write(dest_filename::AbstractString, src::AbstractNCDataset; include = keys(src), exclude = [])
 
 
 function Base.write(dest_filename::AbstractString, src::AbstractDataset; kwargs...)
