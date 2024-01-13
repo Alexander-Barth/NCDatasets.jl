@@ -1037,6 +1037,24 @@ function nc_def_var_deflate(ncid::Integer,varid::Integer,shuffle::Bool,deflate::
     check(ccall((:nc_def_var_deflate,libnetcdf),Cint,(Cint,Cint,Cint,Cint,Cint),ncid,varid,shuffle,deflate,deflate_level))
 end
 
+# filters
+function nc_inq_filter_avail(ncid::Integer,id::Integer)
+    ret = ccall((:nc_inq_filter_avail,libnetcdf),Cint,(Cint,Cuint),ncid,id)
+    return ret == NC_NOERR
+end
+
+function nc_def_var_zstandard(ncid::Integer,varid::Integer,level::Integer)
+    check(ccall((:nc_def_var_zstandard,libnetcdf),Cint,(Cint,Cint,Cint),ncid,varid,level))
+end
+
+function nc_inq_var_zstandard(ncid::Integer,varid::Integer)
+    hasfilterp = Ref(Cint(0))
+    levelp = Ref(Cint(0))
+    check(ccall((:nc_inq_var_zstandard,libnetcdf),Cint,(Cint,Cint,Ptr{Cint},Ptr{Cint}),ncid,varid,hasfilterp,levelp))
+
+    return hasfilterp[] == 1, levelp[]
+end
+
 function nc_inq_var_deflate(ncid::Integer,varid::Integer)
     shufflep = Ref(Cint(0))
     deflatep = Ref(Cint(0))
