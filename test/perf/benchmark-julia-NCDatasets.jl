@@ -14,6 +14,9 @@ function compute(v)
 end
 
 function process(fname)
+    # drop file caches; requires root
+    write("/proc/sys/vm/drop_caches","3")
+
     ds = NCDataset(fname,"r") do ds
         v = ds["v1"];
         tot = compute(v)
@@ -24,7 +27,7 @@ end
 fname = "filename_fv.nc"
 tot = process(fname)
 
-@show tot
+println("result ",tot)
 
 bm = run(@benchmarkable process(fname) samples=100 seconds=10000)
 

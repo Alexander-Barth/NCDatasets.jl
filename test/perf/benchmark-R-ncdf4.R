@@ -11,6 +11,11 @@ print(paste("ncdf4 version: ",packageVersion("ncdf4")))
 fname = "filename_fv.nc"
 
 process <- function(fname) {
+  # drop file caches; requires root
+  fileConn<-file("/proc/sys/vm/drop_caches",open = "wt")
+  writeLines("3", fileConn)
+  close(fileConn)
+
   nc = nc_open(fname)
 
   # how do you get the dimension from the file?
