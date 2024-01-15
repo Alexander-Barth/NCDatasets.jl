@@ -1,4 +1,4 @@
-# Install dependencies via:
+# Install dependencies via the R commands:
 #
 # install.packages("microbenchmark")
 # install.packages("ncdf4")

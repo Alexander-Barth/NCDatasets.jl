@@ -1,3 +1,7 @@
+# Install dependencies via the shell commands:
+#
+# pip install netCDF4 numpy
+
 import netCDF4
 import numpy as np
 import timeit
