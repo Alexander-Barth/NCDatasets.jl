@@ -192,16 +192,14 @@ and computes the maximum of each slice and the average of each maximum over all 
 This operation is repeated 100 times.
 The code is available at https://github.com/Alexander-Barth/NCDatasets.jl/tree/master/test/perf .
 
-
 | Module           | median | minimum |  mean | std. dev. |
 |:---------------- | ------:| -------:| -----:| ---------:|
-| R-ncdf4          |  0.362 |   0.342 | 0.364 |     0.013 |
-| python-netCDF4   |  0.557 |   0.534 | 0.561 |     0.013 |
-| julia-NCDatasets |  0.164 |   0.161 | 0.170 |     0.011 |
+| R-ncdf4          |  0.407 |   0.384 | 0.407 |     0.010 |
+| python-netCDF4   |  0.475 |   0.463 | 0.476 |     0.010 |
+| julia-NCDatasets |  0.265 |   0.249 | 0.267 |     0.011 |
 
-All runtimes are in seconds.
-Julia 1.9.0 (with NCDatasets 0.12.16), R 4.1.2 (with ncdf4 1.21) and Python 3.10.6 (with netCDF4 1.6.1).
-This CPU is a i7-7700.
+All runtimes are in seconds. We use Julia 1.10.0 (with NCDatasets 0.14.0), R 4.1.2 (with ncdf4 1.22) and Python 3.10.12 (with netCDF4 1.6.5)
+on a i5-1135G7 CPU and NVMe SSD (WDC WDS100T2B0C).
 
 
 # Filing an issue
