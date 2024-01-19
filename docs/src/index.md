@@ -6,7 +6,7 @@ in [CommonDataModel.jl](https://github.com/JuliaGeo/CommonDataModel.jl).
 All functions defined by CommonDataModel.jl are also available for NetCDF data, including:
 * virtually concatenating multiple files along a given dimension
 * create a virtual subset (`view`) by indices or by values of coordinate variables (`CommonDataModel.select`, `CommonDataModel.@select`)
-* group, map and reduce (with `mean`, standard deviation `std`, ...) a variable (`CommonDataModel.groupby`, `CommonDataModel.@groupby`) and rolling reductions like running means `CommonDataModel.rolling`). 
+* group, map and reduce (with `mean`, standard deviation `std`, ...) a variable (`CommonDataModel.groupby`, `CommonDataModel.@groupby`) and rolling reductions like running means `CommonDataModel.rolling`).
 
 ## Installation
 
@@ -30,13 +30,13 @@ Pkg.add(PackageSpec(name="NCDatasets", rev="master"))
 
 ## Contents
 
-To get started quickly see the [Quickstart](@ref) section. Otherwise see the following pages for details:
+To get started quickly see the [Quick start](@ref) section. Otherwise see the following pages for details:
 
 * [Datasets](@ref) : reading/writing NetCDF datasets (including NetCDF groups) and examining their contents.
 * [Dimensions](@ref) : accessing/creating NetCDF dimensions
 * [Variables](@ref) : accessing/examining the variables (or dimensions) stored within a NetCDF dataset.
 * [Attributes](@ref) : accessing/creating NetCDF attributes
-* See [Fill values and missing values](@ref), [Performance tips](@ref performance_tips), [Known issues](@ref), [Experimental features](@ref) for more information.
+* See [Fill values and missing values](@ref), [Performance tips](@ref performance_tips), [Other features](@ref) and [Known issues](@ref) for more information.
 
 ## Quick start
 
@@ -337,4 +337,4 @@ close(ds)
 ## API and semantic versioning
 
 The package aims to following [semantic versioning](https://semver.org/).
-[As in julia](https://docs.julialang.org/en/v1/manual/faq/#How-does-Julia-define-its-public-API), what is considered as public API and covered by semantic versioning is what documented and not marked as experimental or internal. 
+[As in julia](https://docs.julialang.org/en/v1/manual/faq/#How-does-Julia-define-its-public-API), what is considered as public API and covered by semantic versioning is what documented and not marked as experimental or internal.

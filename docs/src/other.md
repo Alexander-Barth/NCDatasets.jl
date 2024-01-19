@@ -1,4 +1,4 @@
-# Experimental features
+# Other features
 
 ## Multi-file support
 

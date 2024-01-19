@@ -72,7 +72,7 @@ Having outdated versions of HDF5 or NetCDF libraries installed can be an issue o
 
 ## Using a custom NetCDF library
 
-The NetCDF library `libnetcdf.so` is installed as an artifact via the package `NetCDF_jll`.
+The NetCDF library `libnetcdf.so` is installed as an artifact via the package [NetCDF_jll](https://github.com/JuliaBinaryWrappers/NetCDF_jll.jl).
 You can override which `libnetcdf.so` gets loaded through the `Preferences` package, as follows:
 
 ``` julia
@@ -126,7 +126,7 @@ Julia need to be restarted after this file is placed in the your working directo
 
 ## Using non-official julia builds
 
-Julia and NetCDF_jll have several common dependencies (curl, MbedTLS, zlib).
+Julia and [NetCDF_jll](https://github.com/JuliaBinaryWrappers/NetCDF_jll.jl) have several common dependencies (curl, MbedTLS, zlib).
 Non-official julia builds will work only if they use exactly the same library version as those used to compile NetCDF. This is unlikely to be the case in general and outside of our control. Therefore non-official julia builds are not supported.
 Official julia builds are available at [https://julialang.org/downloads/](https://julialang.org/downloads/).
 

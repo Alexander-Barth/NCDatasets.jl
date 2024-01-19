@@ -61,7 +61,6 @@ const default_timeunits = "days since 1900-00-00 00:00:00"
 const SymbolOrString = Union{Symbol, AbstractString}
 
 include("types.jl")
-include("colors.jl")
 include("errorhandling.jl")
 include("netcdf_c.jl")
 include("dataset.jl")

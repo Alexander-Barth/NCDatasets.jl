@@ -38,5 +38,4 @@ mutable struct NCDataset{TDS,T_experimental_missing_value} <: AbstractNCDataset 
     _experimental_missing_value::T_experimental_missing_value
 end
 
-"Alias to `NCDataset`"
 const Dataset = NCDataset
