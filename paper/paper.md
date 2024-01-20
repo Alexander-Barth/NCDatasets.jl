@@ -11,8 +11,8 @@ tags:
   - climate-and-forecast-conventions
 authors:
   - name: Alexander Barth
-	orcid: 0000-0003-2952-5997
-	affiliation: 1
+    orcid: 0000-0003-2952-5997
+    affiliation: 1
 affiliations:
  - name: GHER, University of Liège, Liège, Belgium
    index: 1
