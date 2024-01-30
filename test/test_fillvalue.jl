@@ -182,14 +182,14 @@ defDim(ds,"lat",size(data,2))
 ncv = defVar(ds,"data",Float64,("lon","lat"),fillvalue = fv)
 ncv.var[:,:] = data
 
-ncv = cfvariable(ds,"data",_experimental_missing_value = NaN)
+ncv = cfvariable(ds,"data",maskingvalue = NaN)
 @test eltype(ncv) == Float64
 @test ncv[1,1] == data[1,1]
 @test isnan(ncv[2,2])
 close(ds)
 
 
-ds = NCDataset(fname,"r",_experimental_missing_value = NaN)
+ds = NCDataset(fname,"r",maskingvalue = NaN)
 ncv = ds["data"]
 
 @test ncv[1,1] == data[1,1]

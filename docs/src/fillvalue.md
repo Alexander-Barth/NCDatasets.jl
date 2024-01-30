@@ -41,12 +41,12 @@ var_nan = nomissing(ds["var"][:,:],NaN)
 close(ds)
 ```
 
-Such substitution can also be made more automatically using the experimental parameter` _experimental_missing_value` (suggestion for a good name for this parameter are welcome, please make a [github issue](https://github.com/Alexander-Barth/NCDatasets.jl/issues/188)) that can be user per variable:
+Such substitution can also be made more automatically using the experimental parameter` maskingvalue` that can be user per variable:
 
 
 ```julia
 ds = NCDataset("example.nc","r")
-ncvar_nan = cfvariable(ds,"var",_experimental_missing_value = NaN)
+ncvar_nan = cfvariable(ds,"var",maskingvalue = NaN)
 ncvar_nan[:,:]
 # 2×3 Matrix{Float64}:
 #   1.0   2.0   3.0
@@ -57,7 +57,7 @@ close(ds)
 Or per data-set:
 
 ```julia
-ds = NCDataset("example.nc","r", _experimental_missing_value = NaN)
+ds = NCDataset("example.nc","r", maskingvalue = NaN)
 ds["var"][:,:]
 # 2×3 Matrix{Float64}:
 #   1.0   2.0   3.0
@@ -65,7 +65,7 @@ ds["var"][:,:]
 close(ds)
 ```
 
-Note choosing the `_experimental_missing_value` affects the element type of the NetCDF variable using julia type promotion rules, in particular note that following vector:
+Note choosing the `maskingvalue` affects the element type of the NetCDF variable using julia type promotion rules, in particular note that following vector:
 
 
 ```julia
@@ -98,7 +98,7 @@ defVar(ds,"var32",data32,("lon","lat"),fillvalue = 9999f0)
 defVar(ds,"var64",data64,("lon","lat"),fillvalue = 9999.)
 close(ds)
 
-ds = NCDataset("example_float32_64.nc","r", _experimental_missing_value = NaN32)
+ds = NCDataset("example_float32_64.nc","r", maskingvalue = NaN32)
 ds["var32"][:,:]
 # 2×3 Matrix{Float32}:
 #   1.0   2.0   3.0
