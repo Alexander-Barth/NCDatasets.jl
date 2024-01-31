@@ -277,7 +277,7 @@ Float32(16_777_217) == 16_777_217 # false
 Float64(9_007_199_254_740_993) == 9_007_199_254_740_993 # false
 ```
 
-`NaN` should be used for an array of dates, character or strings as it will result in an array with the element type `Any` following julia's promotion rules.
+`NaN` should not be used for an array of dates, character or strings as it will result in an array with the element type `Any` following julia's promotion rules.
 The use of `missing` as fill value, is thus preferable in the general case.
 
 
