@@ -163,10 +163,9 @@ NCDatasets.@select
 
 ## Fill values and missing values
 
-In the NetCDF [CF conventions](https://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#missing-data) there are the attributes `_FillValue` (single scalar)  and `missing_value` (single scalar or possibly a vector with multiple missing values).
-While missing values are represented as a special [`Missing` type](https://docs.julialang.org/en/v1/manual/missing/) in Julia, for some application it is more convenient to use another special value like the special floating point number `NaN`.
-For example:
+In the NetCDF [CF conventions](https://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#missing-data) there are the attributes `_FillValue` (single scalar)  and `missing_value` (single scalar or possibly a vector with multiple missing values). Value in the netCDF file matching, these attributes are replaced by the [`Missing` type](https://docs.julialang.org/en/v1/manual/missing/) in Julia per default. However, for some applications, it is more convenient to use another special value like the special floating point number `NaN`.
 
+For example, this is a netCDF file where the variable `var` contains a `missing` which is automatically replaced by the fill value 9999.
 
 ```julia
 using NCDatasets
@@ -175,7 +174,7 @@ ds = NCDataset("example.nc","c")
 defVar(ds,"var",data,("lon","lat"),fillvalue = 9999.)
 ```
 
-Get the raw data as stored in the NetCDF file:
+The raw data as stored in the NetCDF file is available using the property `.var`:
 
 ```julia
 ds["var"].var[:,:]
@@ -184,7 +183,7 @@ ds["var"].var[:,:]
 #  9999.0  20.0  30.0
 ```
 
-Get the data using CF transformation, in particular the fill value is replaced by `missing`:
+Per default, the fill value is replaced by `missing` when indexing `ds["var"]`:
 
 ```julia
 ds["var"][:,:]
@@ -193,7 +192,7 @@ ds["var"][:,:]
 #  missing  20.0  30.0
 ```
 
-The function `nomissing` allows to replace all missing value with a different values:
+The function `nomissing` allows to replace all missing value with a different value like `NaN`:
 
 ```julia
 var_nan = nomissing(ds["var"][:,:],NaN)
@@ -203,7 +202,7 @@ var_nan = nomissing(ds["var"][:,:],NaN)
 close(ds)
 ```
 
-Such substitution can also be made more automatically using the experimental parameter` maskingvalue` that can be user per variable:
+Such substitution can also be made more automatic using the experimental parameter `maskingvalue` that can be user per variable:
 
 
 ```julia
@@ -227,7 +226,7 @@ ds["var"][:,:]
 close(ds)
 ```
 
-Note choosing the `maskingvalue` affects the element type of the NetCDF variable using julia type promotion rules, in particular note that following vector:
+Note, choosing the `maskingvalue` affects the element type of the NetCDF variable using julia type promotion rules, in particular note that following vector:
 
 
 ```julia
@@ -239,8 +238,7 @@ Note choosing the `maskingvalue` affects the element type of the NetCDF variable
 
 is a vector with the element type `Float64` and not `Union{Float64,Int}`. All integers
 are thus promoted to floating point number as `NaN` is a `Float64`.
-
-Note that since NaN is considered as a `Float64` in Julia, we have also a promotion to `Float64` in such cases:
+Since NaN is considered as a `Float64` in Julia, we have also a promotion to `Float64` in such cases:
 
 ```julia
 [1f0, NaN]
@@ -272,8 +270,6 @@ ds["var64"][:,:]
 # NaN    20.0  30.0
 ```
 
-#### Precision when converting integers to floats
-
 Promoting an integer to a floating point number can lead to loss of precision. These are the smallest integers that cannot be represented as 32 and 64-bit floating numbers:
 
 ```julia
@@ -281,7 +277,8 @@ Float32(16_777_217) == 16_777_217 # false
 Float64(9_007_199_254_740_993) == 9_007_199_254_740_993 # false
 ```
 
-The use of `missing` as fill value, is thus preferable generally.
+`NaN` should be used for an array of dates, character or strings as it will result in an array with the element type `Any` following julia's promotion rules.
+The use of `missing` as fill value, is thus preferable in the general case.
 
 
 ## Experimental functions
