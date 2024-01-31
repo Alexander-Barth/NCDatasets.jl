@@ -16,7 +16,6 @@ makedocs(
         "Dimensions" => "dimensions.md",
         "Variables" => "variables.md",
         "Attributes" => "attributes.md",
-        "Fill values" => "fillvalue.md",
         "Performance tips" => "performance.md",
         "Other features" => "other.md",
         "Known issues" => "issues.md",
