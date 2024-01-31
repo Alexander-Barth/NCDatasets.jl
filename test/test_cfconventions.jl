@@ -130,7 +130,7 @@ function myplot(height::NCDatasets.AbstractVariable)
 end
 myplot(height)
 =#
-
+close(ds)
 
 fname = tempname()
 
@@ -164,7 +164,6 @@ close(ds)
 
 
 ds = NCDataset(fname)
-
 # This produces an error because it is unclear if we should load lon_u or lon_v
 @test_throws KeyError ds[CF"longitude"] # error
 
@@ -177,3 +176,4 @@ nclon_u2 = ds["ubar"]["lon_u"]
 
 nclon_u2 = ds["ubar"][:lon_u]
 @test name(nclon_u2) == "lon_u"
+close(ds)
