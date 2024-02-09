@@ -547,8 +547,14 @@ function nc_inq_user_type(ncid::Integer,xtype::Integer)
 end
 
 
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,typeid::Integer,data::Vector)
+    check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Nothing}),
+                ncid,varid,name,typeid,length(data),data))
+end
+
+
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::AbstractString)
-    if name == "_FillValue"
+    if Symbol(name) == :_FillValue
         nc_put_att_string(ncid,varid,"_FillValue",[data])
     else
         check(ccall((:nc_put_att_text,libnetcdf),Cint,(Cint,Cint,Cstring,Csize_t,Cstring),
@@ -561,8 +567,13 @@ function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vect
 end
 
 # NetCDF does not necessarily support 64 bit attributes
-nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Int64) =
-    nc_put_att(ncid,varid,name,Int32(data))
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Int64)
+    if Symbol(name) == :_FillValue
+        nc_put_att(ncid,varid,name,ncType[Int64],[data])
+    else
+        nc_put_att(ncid,varid,name,Int32(data))
+    end
+end
 
 nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vector{Int64}) =
     nc_put_att(ncid,varid,name,Int32.(data))
@@ -589,11 +600,6 @@ function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vect
     nc_put_att(ncid,varid,name,ncType[T],data)
 end
 
-function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,typeid::Integer,data::Vector)
-    check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Nothing}),
-                ncid,varid,name,typeid,length(data),data))
-end
-
 # convert e.g. ranges to vectors
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::AbstractVector)
     nc_put_att(ncid,varid,name,Vector(data))
@@ -602,6 +608,7 @@ end
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data)
     error("attributes can only be scalars or vectors")
 end
+
 
 function nc_get_att(ncid::Integer,varid::Integer,name)
     xtype,len = nc_inq_att(ncid,varid,name)
