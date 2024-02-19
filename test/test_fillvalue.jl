@@ -194,3 +194,11 @@ ncv = ds["data"]
 
 @test ncv[1,1] == data[1,1]
 @test isnan(ncv[2,2])
+
+# issue 264
+fname = tempname()
+ds = NCDataset(fname,"c")
+defDim(ds,"mydim", 2)
+defVar(ds,"test_array_i64_missing", [missing, 2], ("mydim", ))
+close(ds)
+rm(fname)
