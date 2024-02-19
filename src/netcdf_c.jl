@@ -175,6 +175,13 @@ const NC_HAVE_NEW_CHUNKING_API = 1
 const NC_EURL = NC_EDAPURL
 const NC_ECONSTRAINT = NC_EDAPCONSTRAINT
 
+const NC_INDEPENDENT = 0
+const NC_COLLECTIVE = 1
+# OpenMPI
+const MPI_Comm = Ptr{Cvoid}
+const MPI_Info = Ptr{Cvoid}
+
+
 const NC_ENTOOL = NC_EMAXNAME
 const NC_EXDR = -32
 const NC_SYSERR = -31
