@@ -288,3 +288,31 @@ data2 = zeros(Int,10)
 # asking too many elements
 @test_throws BoundsError NCDatasets.load!(ds["data"].var,data2,1:10)
 close(ds)
+
+# issue 250
+
+fname = tempname()
+ds = NCDataset(fname,"c")
+defDim(ds,"lon",100)
+defDim(ds,"lat",110)
+v = defVar(ds,"temperature",Float32,("lon","lat"))
+data = [Float32(i+j) for i = 1:100, j = 1:110];
+v[:,:] = data;
+close(ds)
+
+# reading
+ds = NCDataset(fname)
+
+# works:
+ds["temperature"][CartesianIndices((1:10,10:30))]
+ds["temperature"][CartesianIndex(1,1)]
+
+# read in-place
+v = zeros(Float32, 10, 21);
+NCDatasets.load!(variable(ds, "temperature"), v, CartesianIndices((1:10,10:30)))
+@test v[:,:] == data[CartesianIndices((1:10,10:30))]
+
+
+vv = [1.0f0]
+NCDatasets.load!(variable(ds, "temperature"), vv, CartesianIndex(5,5))
+@test vv[1] == data[CartesianIndex(5,5)]

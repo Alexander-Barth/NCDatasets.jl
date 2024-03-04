@@ -92,10 +92,9 @@ function checkbuffer(len,data)
     end
 end
 
-@inline function unsafe_load!(ncvar::Variable, data, indices::Union{Integer, UnitRange, StepRange, Colon}...)
+@inline function unsafe_load!(ncvar::Variable, data, indices::Union{Integer, UnitRange, StepRange, CartesianIndex, CartesianIndices, Colon}...)
     sizes = size(ncvar)
-    normalizedindices = normalizeindexes(sizes, indices)
-    ind = to_indices(ncvar,normalizedindices)
+    ind = to_indices(ncvar,indices)
 
     start,count,stride,jlshape = ncsub(ncvar,ind)
 
@@ -137,7 +136,7 @@ load!(ds["temp"].var,data,:,1) # loads the 1st column
     array must be `UInt8` and cannot be the julia `Char` type, because the
     julia `Char` type uses 4 bytes and the NetCDF `NC_CHAR` only 1 byte.
 """
-@inline function load!(ncvar::Variable{T,N}, data::AbstractArray{T}, indices::Union{Integer, UnitRange, StepRange, Colon}...) where {T,N}
+@inline function load!(ncvar::Variable{T,N}, data::AbstractArray{T}, indices::Union{Integer, UnitRange, StepRange, CartesianIndex, CartesianIndices, Colon}...) where {T,N}
     unsafe_load!(ncvar, data, indices...)
 end
 
