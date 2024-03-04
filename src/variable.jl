@@ -426,14 +426,11 @@ end
 
 _write_data_to_nc(v::Variable, data) = _write_data_to_nc(v, data, 1)
 
-function _write_data_to_nc(v::Variable{T, N}, data, indexes::StepRange{<:Integer,<:Integer}...) where {T, N}
-    start,count,stride,jlshape = ncsub(v,indexes)
-    nc_put_vars(v.ds.ncid,v.varid,start,count,stride,T.(data))
-end
+function _write_data_to_nc(v::Variable{T}, data, indexes::AbstractRange{<:Integer}...) where T
+    ind = prod(length.(indexes)) == 1 ? first.(indexes) : to_indices(v,indexes)
 
-function _write_data_to_nc(v::Variable, data, indexes::Union{AbstractRange{<:Integer}}...)
-    ind = prod(length.(indexes)) == 1 ? first.(indexes) : normalizeindexes(size(v),indexes)
-    return _write_data_to_nc(v, data, ind...)
+    start,count,stride,jlshape = ncsub(v,indexes)
+    return nc_put_vars(v.ds.ncid,v.varid,start,count,stride,T.(data))
 end
 
 function eachchunk(v::Variable)
@@ -450,19 +447,6 @@ haschunks(v::Variable) = (_chunking(v)[1] == :contiguous ? DiskArrays.Unchunked(
 
 eachchunk(v::CFVariable{T,N,<:Variable}) where {T,N} = eachchunk(v.var)
 haschunks(v::CFVariable{T,N,<:Variable}) where {T,N} = haschunks(v.var)
-
-_normalizeindex(n,ind::Base.OneTo) = 1:1:ind.stop
-_normalizeindex(n,ind::Colon) = 1:1:n
-_normalizeindex(n,ind::Integer) = ind:1:ind
-_normalizeindex(n,ind::UnitRange) = StepRange(ind)
-_normalizeindex(n,ind::StepRange) = ind
-_normalizeindex(n,ind) = error("unsupported index")
-
-# indexes can be longer than sz
-function normalizeindexes(sz,indexes)
-    return ntuple(i -> _normalizeindex(sz[i],indexes[i]), length(sz))
-end
-
 
 # computes the size of the array `a` after applying the indexes
 # size(a[indexes...]) == size_getindex(a,indexes...)
