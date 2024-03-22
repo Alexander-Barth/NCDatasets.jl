@@ -48,7 +48,7 @@ The script will output a markdown table with the benchmark statistics.
 ## Dropping file caches
 
 The operating systems typically caches access to the file system.
-To make these benchmarks more realistic, the file system caches can be dropped at every iteration using the benchmark script with the option `--drop-caches`.
+To make these benchmarks more realistic, the file system caches can be dropped at every iteration using the benchmark script with the option `--drop-caches`
 so that the disk IO *is* included in the reported run times.
 On Linux, the caches are dropped by writing `3` to the file `/proc/sys/vm/drop_caches` however this requires super user privileges.
 In this case, these benchmarks require a Linux operating system (as dropping file caches is OS-specific).
@@ -65,3 +65,5 @@ If all packages are installed in the home directory of an unpriviledges user e.g
 ```bash
 HOME=/home/my_user_name ./benchmark.sh --drop-caches
 ```
+
+The table in the [README file](https://github.com/Alexander-Barth/NCDatasets.jl/blob/master/README.md) are obtained with this option enabled.
