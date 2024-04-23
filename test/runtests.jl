@@ -74,3 +74,7 @@ end
     include("test_select.jl")
     include("test_multifile_select.jl")
 end
+
+@testset "MPI" begin
+    include("test_mpi_netcdf.jl")
+end
