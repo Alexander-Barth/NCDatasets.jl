@@ -593,6 +593,11 @@ function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vect
     nc_put_att(ncid,varid,name,ncType[T],data)
 end
 
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vector{Any})
+    T = promote_type(typeof.(data)...)
+    nc_put_att(ncid,varid,name,ncType[T],data)
+end
+
 # convert e.g. ranges to vectors
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::AbstractVector)
     nc_put_att(ncid,varid,name,Vector(data))
