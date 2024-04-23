@@ -6,10 +6,6 @@ using MPI
 using NCDatasets
 using Test
 
-# only tested so far with OpenMPI
-# and NetCDF_jll v400.902.211+0
-@assert MPIPreferences.binary == "OpenMPI_jll"
-
 mpiexec = realpath(joinpath(dirname(pathof(MPI)),"..","bin","mpiexecjl"))
 
 #println("mpiexec ",mpiexec)
