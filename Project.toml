@@ -15,11 +15,18 @@ NetCDF_jll = "7243133f-43d8-5620-bbf4-c2c921802cf3"
 NetworkOptions = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
+[weakdeps]
+MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
+
+[extensions]
+NCDatasetsMPIExt = "MPI"
+
 [compat]
 CFTime = "0.1.1"
 CommonDataModel = "0.3.4"
 DataStructures = "0.17, 0.18"
 DiskArrays = "0.3.22"
+MPI = "0.20"
 NetCDF_jll = "=400.701.400, =400.702.400, =400.902.5, =400.902.208, =400.902.209, =400.902.211"
 NetworkOptions = "1.2"
 julia = "1.6"

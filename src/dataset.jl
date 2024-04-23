@@ -93,6 +93,51 @@ function NCDataset(ncid::Integer,
     return ds
 end
 
+function _dataset_ncmode(filename,mode,format;
+                         diskless::Bool = false,
+                         persist::Bool = false,
+                         share::Bool = false)
+
+    ncmode =
+        if mode == "r"
+            NC_NOWRITE
+        elseif mode == "a"
+            NC_WRITE
+        elseif mode == "c"
+            NC_CLOBBER
+        else
+            throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
+        end
+
+    if diskless
+        ncmode = ncmode | NC_DISKLESS
+
+        if persist
+            ncmode = ncmode | NC_PERSIST
+        end
+    end
+
+    if share
+        @debug "share mode"
+        ncmode = ncmode | NC_SHARE
+    end
+
+    if format == :netcdf5_64bit_data
+        ncmode = ncmode | NC_64BIT_DATA
+    elseif format == :netcdf3_64bit_offset
+        ncmode = ncmode | NC_64BIT_OFFSET
+    elseif format == :netcdf4_classic
+        ncmode = ncmode | NC_NETCDF4 | NC_CLASSIC_MODEL
+    elseif format == :netcdf4
+        ncmode = ncmode | NC_NETCDF4
+    elseif format == :netcdf3_classic
+        # do nothing
+    else
+        throw(NetCDFError(-1, "Unkown format '$(format)' for filename '$(filename)'"))
+    end
+
+    return ncmode
+end
 
 ############################################################
 # High-level
@@ -179,30 +224,10 @@ function NCDataset(filename::AbstractString,
 
     ncid = -1
     isdefmode = Ref(false)
-
-    ncmode =
-        if mode == "r"
-            NC_NOWRITE
-        elseif mode == "a"
-            NC_WRITE
-        elseif mode == "c"
-            NC_CLOBBER
-        else
-            throw(NetCDFError(-1, "Unsupported mode '$(mode)' for filename '$(filename)'"))
-        end
-
-    if diskless
-        ncmode = ncmode | NC_DISKLESS
-
-        if persist
-            ncmode = ncmode | NC_PERSIST
-        end
-    end
-
-    if share
-        @debug "share mode"
-        ncmode = ncmode | NC_SHARE
-    end
+    ncmode = _dataset_ncmode(filename,mode,format;
+                             diskless = diskless,
+                             persist = persist,
+                             share = share)
 
     @debug "ncmode: $ncmode"
 
@@ -213,20 +238,6 @@ function NCDataset(filename::AbstractString,
             ncid = nc_open_mem(filename,ncmode,memory)
         end
     elseif mode == "c"
-        if format == :netcdf5_64bit_data
-            ncmode = ncmode | NC_64BIT_DATA
-        elseif format == :netcdf3_64bit_offset
-            ncmode = ncmode | NC_64BIT_OFFSET
-        elseif format == :netcdf4_classic
-            ncmode = ncmode | NC_NETCDF4 | NC_CLASSIC_MODEL
-        elseif format == :netcdf4
-            ncmode = ncmode | NC_NETCDF4
-        elseif format == :netcdf3_classic
-            # do nothing
-        else
-            throw(NetCDFError(-1, "Unkown format '$(format)' for filename '$(filename)'"))
-        end
-
         ncid = nc_create(filename,ncmode)
         isdefmode[] = true
     end
