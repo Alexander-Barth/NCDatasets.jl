@@ -76,5 +76,9 @@ end
 end
 
 @testset "MPI" begin
-    include("test_mpi_netcdf.jl")
+    # Windows does not work, HDF5_jll seems to miss MPI support
+    # https://github.com/Alexander-Barth/NCDatasets.jl/issues/122#issuecomment-2074267048
+    if !Sys.iswindows()
+        include("test_mpi_netcdf.jl")
+    end
 end
