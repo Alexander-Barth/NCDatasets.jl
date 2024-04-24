@@ -152,7 +152,7 @@ end
               memory::Union{Vector{UInt8},Nothing} = nothing,
               attrib = [])
 
-Load, create, or even overwrite a NetCDF file at `filename`, depending on `mode`
+Load, create or overwrite a NetCDF file at `filename`, depending on `mode`
 
 * `"r"` (default) : open an existing netCDF file or OPeNDAP URL
    in read-only mode.

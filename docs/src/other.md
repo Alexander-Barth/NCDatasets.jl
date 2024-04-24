@@ -287,3 +287,53 @@ The use of `missing` as fill value, is thus preferable in the general case.
 NCDatasets.ancillaryvariables
 NCDatasets.filter
 ```
+
+
+## Experimental MPI support
+
+Experimental MPI support is available as a package extension. It is important to load `MPI` in addition to `NCDatasets` to enable this package extension.
+All metadata operators (creating dimensions, variables, attributes, groups or types) must be done *collectively*.
+Reading and writing data of netCDF variables can be done *independently* (default) or *collectively*. If a variable (or whole dataset) is marked for *collectively* data access, the underlying HDF5 library can enable additional optimization.
+More information is available in the [NetCDF documentation](https://web.archive.org/web/20240414204638/https://docs.unidata.ucar.edu/netcdf-c/current/parallel_io.html).
+
+Only the NetCDF 4 format can be currently use for parallel access.
+
+```julia
+using MPI
+using NCDatasets
+
+MPI.Init()
+
+mpi_comm = MPI.COMM_WORLD
+mpi_comm_size = MPI.Comm_size(mpi_comm)
+mpi_rank = MPI.Comm_rank(mpi_comm)
+
+# The file needs to be the same for all processes
+filename = "file.nc"
+
+# index based on MPI rank
+i = mpi_rank + 1
+
+# create the netCDF file
+ds = NCDataset(mpi_comm,filename,"c")
+
+# define the dimensions
+defDim(ds,"lon",10)
+defDim(ds,"lat",mpi_comm_size)
+ncv = defVar(ds,"temp",Int32,("lon","lat"))
+
+# enable colletive access (:independent is the default)
+NCDatasets.access(ncv.var,:collective)
+
+ncv[:,i] .= mpi_rank
+
+ncv.attrib["units"] = "degree Celsius"
+ds.attrib["comment"] = "MPI test"
+close(ds)
+```
+
+
+```@docs
+NCDataset(comm::MPI.Comm,filename::AbstractString,mode::AbstractString)
+NCDatasets.access
+```

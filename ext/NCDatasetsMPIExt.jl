@@ -49,15 +49,14 @@ function parallel_access_mode(par_access::Symbol)
     end
 end
 
-# https://web.archive.org/web/20240414204638/https://docs.unidata.ucar.edu/netcdf-c/current/parallel_io.html
+"""
+    NCDatasets.access(ncv::Variable,par_access::Symbol)
+    NCDatasets.access(ds::NCDataset,par_access::Symbol)
 
+Change the parallel access mode of the variable `ncv` or all variables of the dataset `ds` for writing or reading data. `par_access` is either `:collective` or `:independent`. `NCDatasets.access` will raise an error if `MPI` is not loaded.
 
-# Parallel file access is either collective (all processors must participate)
-# or independent (any processor may access the data without waiting for others).
-# All netCDF metadata writing operations are collective. That is, all creation
-# of groups, types, variables, dimensions, or attributes. Data reads and writes
-# (e.g. calls to nc_put_vara_int() and nc_get_vara_int()) may be independent,
-# the default) or collective.
+More information is available in the [NetCDF documentation](https://web.archive.org/web/20240414204638/https://docs.unidata.ucar.edu/netcdf-c/current/parallel_io.html).
+"""
 function access(ncv::Variable,par_access::Symbol)
     varid = ncv.varid
     ncid = dataset(ncv).ncid
@@ -69,6 +68,21 @@ function access(ds::NCDataset,par_access::Symbol)
     nc_var_par_access(ds.ncid,NC_GLOBAL,parallel_access_mode(par_access))
 end
 
+"""
+    ds = NCDataset(comm::MPI.Comm,filename::AbstractString,
+                   mode::AbstractString = "r";
+                   info = MPI.INFO_NULL,
+                   maskingvalue = missing,
+                   attrib = [])
+
+Open or create a netCDF file `filename` for parallel IO using the MPI
+communicator `comm`. `info` is a
+[MPI info object](https://juliaparallel.org/MPI.jl/stable/reference/advanced/#Info-objects)
+containing IO hints or `MPI.INFO_NULL` (default). The `mode` is either `"r"` (default) to open an
+existing netCDF file in read-only mode, `"c"`  to create a new netCDF file  (an
+existing file with the same name will be overwritten) or `"a"` to append to an
+existing file.
+"""
 function NCDataset(comm::MPI.Comm,filename::AbstractString,
                    mode::AbstractString = "r";
                    info = MPI.INFO_NULL,

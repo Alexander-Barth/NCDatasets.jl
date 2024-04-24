@@ -9,7 +9,11 @@ CommonDataModel_remote = (
 
 
 makedocs(
-    modules = [NCDatasets, CommonDataModel],
+    modules = [
+        NCDatasets,
+        CommonDataModel,
+        Base.get_extension(NCDatasets, :NCDatasetsMPIExt)
+    ],
     remotes = Dict(
         CommonDataModel_path => CommonDataModel_remote,
     ),
