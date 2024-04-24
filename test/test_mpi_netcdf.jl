@@ -1,6 +1,6 @@
 using MPI
-using Test
 using NCDatasets
+using Test
 
 nprocs = 4
 testdir = @__DIR__
