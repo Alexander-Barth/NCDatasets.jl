@@ -19,7 +19,7 @@ ds = NCDataset(mpi_comm,path,"c")
 
 defDim(ds,"lon",10)
 defDim(ds,"lat",mpi_comm_size)
-ncv = defVar(ds,"temp",Float32,("lon","lat"))
+ncv = defVar(ds,"temp",Int32,("lon","lat"))
 
 # see
 # https://web.archive.org/web/20240414204638/https://docs.unidata.ucar.edu/netcdf-c/current/parallel_io.html
