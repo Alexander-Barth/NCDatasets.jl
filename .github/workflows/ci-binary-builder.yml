@@ -66,16 +66,15 @@ jobs:
            end
            using NetCDF_jll
            @show NetCDF_jll.libnetcdf
-        shell: julia --color=yes --project=@. {0}
+        shell: julia --color=yes --project=test {0}
       - name: Pkg Status
         run: |
            using Pkg
            Pkg.status(;mode = PKGMODE_MANIFEST)
-           Pkg.add("IntervalSets")
-        shell: julia --color=yes --project=@. {0}
+        shell: julia --color=yes --project=test {0}
       - name: Test
         run: |
            using NetCDF_jll, NCDatasets
            @show NetCDF_jll.libnetcdf
            include(joinpath(dirname(pathof(NCDatasets)),"..","test","runtests.jl"))
-        shell: julia --color=yes --project=@. {0}
+        shell: julia --color=yes --project=test {0}
