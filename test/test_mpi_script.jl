@@ -12,10 +12,11 @@ mpi_comm_size = MPI.Comm_size(mpi_comm)
 mpi_rank = MPI.Comm_rank(mpi_comm)
 
 # need to be the same file for all processes
-path = ARGS[1]
+filename = ARGS[1]
+
 i = mpi_rank + 1
 
-ds = NCDataset(mpi_comm,path,"c")
+ds = NCDataset(mpi_comm,filename,"c")
 
 defDim(ds,"lon",10)
 defDim(ds,"lat",mpi_comm_size)
@@ -34,7 +35,7 @@ ds.attrib["comment"] = "MPI test"
 close(ds)
 
 
-ds = NCDataset(mpi_comm,path,"r")
+ds = NCDataset(mpi_comm,filename,"r")
 ncv = ds["temp"]
 
 @test size(ncv) == (10,mpi_comm_size)
