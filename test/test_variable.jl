@@ -3,6 +3,7 @@ using Dates
 using Printf
 using NCDatasets
 using DataStructures
+import JET
 
 sz = (4,5)
 filename = tempname()
@@ -316,3 +317,20 @@ NCDatasets.load!(variable(ds, "temperature"), v, CartesianIndices((1:10,10:30)))
 vv = [1.0f0]
 NCDatasets.load!(variable(ds, "temperature"), vv, CartesianIndex(5,5))
 @test vv[1] == data[CartesianIndex(5,5)]
+
+### Test type stability of `variable(ds, varname, DType, dimnames)`
+JET.@test_opt variable(ds, "temperature", Float32, ("lon", "lat"))
+# Note: Incorrect order of `dimnames` doesn't error if slices are within bounds...
+var1 = variable(ds, "temperature", Float32, ("lon", "lat"))[1:5, 1:10]
+var2 = variable(ds, "temperature", Float32, ("lat", "lon"))[1:5, 1:10]  # TODO: Ensure this errors
+@test var1 == var2
+# ... but incorrect order of `dimnames` and out-of-bounds slices errors
+@test_throws NCDatasets.NetCDFError variable(ds, "temperature", Float32, ("lat", "lon"))[:, 1]  # `:` is actually `1:110`
+# incorrect `dimnames` errors
+@test_throws NCDatasets.NetCDFError variable(ds, "temperature", Float32, ("lon", "lat", "time"))
+variable(ds, "temperature", Float32, ("lon",))  # This errors in REPL, but not in Tests(!)
+# @test_throws MethodError variable(ds, "temperature", Float32, ("lon",))
+# Incorrect `DType` doesn't error, but gives incorrect result
+d1 = variable(ds, "temperature", Float32, ("lon", "lat"))[1:5, 1:3]
+d2 = variable(ds, "temperature", Float64, ("lon", "lat"))[1:5, 1:3]
+@test d1 != d2  # TODO: Ensure this errors

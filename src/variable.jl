@@ -75,13 +75,34 @@ end
 
 """
     v = variable(ds::NCDataset,varname::String)
+    v = variable(ds, varname, DType, dimnames)
 
 Return the NetCDF variable `varname` in the dataset `ds` as a
 `NCDataset.Variable`. No scaling or other transformations are applied when the
 variable `v` is indexed.
+
+With the second form, supplying the correct data `DType` (e.g. `Float32`) 
+and `dimnames` (a tuple, e.g. `("lat", "lon")`) can lets you read in a type-stable way.
+
+!!! note
+
+    Incorrectly specified `DType` or `dimnames` can lead to incorrect
+    results (e.g. "garbage" output) with no errors, so proceed with caution.
 """
 variable(ds::NCDataset,varname::AbstractString) = _variable(ds,varname)
 variable(ds::NCDataset,varname::Symbol) = _variable(ds,varname)
+
+function variable(
+    ds::NCDataset, 
+    varname::Union{AbstractString, Symbol}, 
+    DType::DataType, 
+    dimnames::NTuple{N, AbstractString},
+) where {N}
+    dimids = nc_inq_dimid.(ds.ncid, dimnames)
+    varid = nc_inq_varid(ds.ncid, varname)
+    Variable{DType, N, typeof(ds)}(ds, varid, dimids)
+end
+
 
 export variable
 
