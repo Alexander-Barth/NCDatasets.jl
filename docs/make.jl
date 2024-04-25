@@ -1,6 +1,10 @@
 using Pkg
 Pkg.activate(@__DIR__)
-using Documenter, NCDatasets, CommonDataModel, UUIDs
+using CommonDataModel
+using Documenter
+using MPI
+using NCDatasets
+using UUIDs
 
 CommonDataModel_path = realpath(joinpath(dirname(pathof(CommonDataModel)),".."))
 CommonDataModel_remote = (
@@ -12,7 +16,7 @@ makedocs(
     modules = [
         NCDatasets,
         CommonDataModel,
-        Base.get_extension(NCDatasets, :NCDatasetsMPIExt)
+        Base.get_extension(NCDatasets, :NCDatasetsMPIExt),
     ],
     remotes = Dict(
         CommonDataModel_path => CommonDataModel_remote,
