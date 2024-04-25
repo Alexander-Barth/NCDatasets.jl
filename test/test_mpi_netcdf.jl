@@ -7,7 +7,7 @@ testdir = @__DIR__
 prog = joinpath(testdir, "test_mpi_script.jl")
 fn = tempname()
 
-run(`$(mpiexec()) -n $nprocs $(Base.julia_cmd()) --startup-file=no $prog $fn`)
+run(`$(mpiexec()) -n $nprocs $(Base.julia_cmd()) --project=$testdir --startup-file=no $prog $fn`)
 # run with raise an error if prog fails
 
 ds = NCDataset(fn)
