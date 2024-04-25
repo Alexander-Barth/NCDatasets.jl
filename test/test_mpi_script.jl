@@ -24,8 +24,8 @@ ncv = defVar(ds,"temp",Int32,("lon","lat"))
 
 # see
 # https://web.archive.org/web/20240414204638/https://docs.unidata.ucar.edu/netcdf-c/current/parallel_io.html
-NCDatasets.access(ncv.var,:collective)
-NCDatasets.access(ds,:collective)
+NCDatasets.paraccess(ncv.var,:collective)
+NCDatasets.paraccess(ds,:collective)
 
 @debug("rank $(mpi_rank) writing to netCDF variable")
 ncv[:,i] .= mpi_rank

@@ -323,7 +323,7 @@ defDim(ds,"lat",mpi_comm_size)
 ncv = defVar(ds,"temp",Int32,("lon","lat"))
 
 # enable colletive access (:independent is the default)
-NCDatasets.access(ncv.var,:collective)
+NCDatasets.paraccess(ncv.var,:collective)
 
 ncv[:,i] .= mpi_rank
 
@@ -335,5 +335,5 @@ close(ds)
 
 ```@docs
 NCDataset(comm::MPI.Comm,filename::AbstractString,mode::AbstractString)
-NCDatasets.access
+NCDatasets.paraccess
 ```

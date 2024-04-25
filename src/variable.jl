@@ -335,7 +335,7 @@ end
 export fillvalue
 
 
-access() = error("This function is available after importing MPI")
+paraccess() = error("This function is available after importing MPI")
 
 """
     a = nomissing(da)
