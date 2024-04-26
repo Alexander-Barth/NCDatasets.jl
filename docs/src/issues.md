@@ -124,7 +124,7 @@ You can run `pwd()` to determine the current working directory. Note that the in
 can be different depending you how you start julia (from the command line or from jupyter notebook for example).
 Julia need to be restarted after this file is placed in the your working directory.
 
-## Using non-official julia builds
+## version `CURL_4' not found
 
 Julia and [NetCDF_jll](https://github.com/JuliaBinaryWrappers/NetCDF_jll.jl) have several common dependencies (curl, MbedTLS, zlib).
 Non-official julia builds will work only if they use exactly the same library version as those used to compile NetCDF. This is unlikely to be the case in general and outside of our control. Therefore non-official julia builds are not supported.
@@ -150,23 +150,22 @@ You will likely have similar issues with julia installed from other package mana
 the [offical julia builds](https://julialang.org/downloads/).
 
 
-## version `CURL_4' not found
-
-If you see the following error:
+Even when the official build of julia, this error can occur on Linux if an incompatible library is loaded when the user set `LD_LIBRARY_PATH` and `LD_PRELOAD`:
 
 ```
 ERROR: LoadError: InitError: could not load library "/home/user/.julia/artifacts/461703969206dd426cc6b4d99f69f6ffab2a9779/lib/libnetcdf.so"
 /usr/lib/x86_64-linux-gnu/libcurl.so: version `CURL_4' not found (required by /home/user/.julia/artifacts/461703969206dd426cc6b4d99f69f6ffab2a9779/lib/libnetcdf.so)
 ```
 
-make sure that you are using the [offical julia builds](https://julialang.org/downloads/) (see above) and that your `LD_LIBRARY_PATH` and `LD_PRELOAD` are empty.
-You can verify this by running the following commands in a terminal:
+Please make sure that your `LD_LIBRARY_PATH` and `LD_PRELOAD` are empty or verify that the all loaded libraries are binary compatible.
+You can check these environement variables by running the following commands in a terminal:
 
 ```bash
 echo $LD_PRELOAD
 echo $LD_LIBRARY_PATH
 ```
 
+If you must set `$LD_LIBRARY_PATH` for some application, consider to use a [wrapper script](https://www.hpc.dtu.dk/?page_id=1180) for this application or recompiling the application with the `-rpath` linker option rather than setting this variable globally.
 
 
 ## Corner cases

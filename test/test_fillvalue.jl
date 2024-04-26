@@ -166,3 +166,39 @@ v = defVar(ds,"instrument_mode",String,("mode_items",),fillvalue = "UNDEFINED MO
 @test fillvalue(v) == "UNDEFINED MODE"
 close(ds)
 rm(filename)
+
+
+
+# Alternative to Missing for NetCDF fillvalue
+
+fname = tempname()
+data = randn(3,4)
+fv = 9999
+data[2,2] = fv
+
+ds = NCDataset(fname,"c")
+defDim(ds,"lon",size(data,1))
+defDim(ds,"lat",size(data,2))
+ncv = defVar(ds,"data",Float64,("lon","lat"),fillvalue = fv)
+ncv.var[:,:] = data
+
+ncv = cfvariable(ds,"data",maskingvalue = NaN)
+@test eltype(ncv) == Float64
+@test ncv[1,1] == data[1,1]
+@test isnan(ncv[2,2])
+close(ds)
+
+
+ds = NCDataset(fname,"r",maskingvalue = NaN)
+ncv = ds["data"]
+
+@test ncv[1,1] == data[1,1]
+@test isnan(ncv[2,2])
+
+# issue 264
+fname = tempname()
+ds = NCDataset(fname,"c")
+defDim(ds,"mydim", 2)
+defVar(ds,"test_array_i64_missing", [missing, 2], ("mydim", ))
+close(ds)
+rm(fname)

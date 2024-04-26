@@ -175,6 +175,13 @@ const NC_HAVE_NEW_CHUNKING_API = 1
 const NC_EURL = NC_EDAPURL
 const NC_ECONSTRAINT = NC_EDAPCONSTRAINT
 
+const NC_INDEPENDENT = 0
+const NC_COLLECTIVE = 1
+# OpenMPI
+const MPI_Comm = Ptr{Cvoid}
+const MPI_Info = Ptr{Cvoid}
+
+
 const NC_ENTOOL = NC_EMAXNAME
 const NC_EXDR = -32
 const NC_SYSERR = -31
@@ -194,12 +201,6 @@ const NC_FILL_UINT   = UInt32(4294967295)
 const NC_FILL_INT64  = Int64(-9223372036854775806)
 const NC_FILL_UINT64 = UInt64(18446744073709551614)
 const NC_FILL_STRING = ""
-
-# deprecated by e.g. fillvalue(Int8)
-#export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,
-#    NC_FILL_DOUBLE, NC_FILL_UBYTE, NC_FILL_USHORT, NC_FILL_UINT, NC_FILL_INT64,
-#    NC_FILL_UINT64, NC_FILL_STRING
-
 
 const nc_type = Cint
 
@@ -497,10 +498,8 @@ function nc_def_vlen(ncid::Integer,name,base_typeid::Integer)
     return xtypep[]
 end
 
-"""
-datum_size is sizeof(nc_vlen_t)
-"""
 function nc_inq_vlen(ncid::Integer,xtype::Integer)
+    # datum_size is sizeof(nc_vlen_t)
     datum_sizep = Ref(Csize_t(0))
     base_nc_typep = Ref(nc_type(0))
     name = zeros(UInt8,NC_MAX_NAME+1)
@@ -546,9 +545,13 @@ function nc_inq_user_type(ncid::Integer,xtype::Integer)
     return unsafe_string(pointer(name)),sizep[],base_nc_typep[],nfieldsp[],classp[]
 end
 
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,typeid::Integer,data::Vector)
+    check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Nothing}),
+                ncid,varid,name,typeid,length(data),data))
+end
 
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::AbstractString)
-    if name == "_FillValue"
+    if Symbol(name) == :_FillValue
         nc_put_att_string(ncid,varid,"_FillValue",[data])
     else
         check(ccall((:nc_put_att_text,libnetcdf),Cint,(Cint,Cint,Cstring,Csize_t,Cstring),
@@ -560,38 +563,39 @@ function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vect
     nc_put_att(ncid,varid,name,join(data))
 end
 
-# NetCDF does not necessarily support 64 bit attributes
-nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Int64) =
-    nc_put_att(ncid,varid,name,Int32(data))
+# NetCDF does not necessarily support 64 bit integer attributes
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Int64)
+    if Symbol(name) == :_FillValue
+        nc_put_att(ncid,varid,name,ncType[Int64],[data])
+    else
+        nc_put_att(ncid,varid,name,Int32(data))
+    end
+end
 
 nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vector{Int64}) =
     nc_put_att(ncid,varid,name,Int32.(data))
 
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Number)
-    check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Nothing}),
-                ncid,varid,name,ncType[typeof(data)],1,[data]))
+    nc_put_att(ncid,varid,name,ncType[typeof(data)],[data])
 end
 
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Char)
     # UInt8('α')
     # ERROR: InexactError: trunc(UInt8, 945)
-    check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Nothing}),
-                ncid,varid,name,ncType[typeof(data)],1,[UInt8(data)]))
+    nc_put_att(ncid,varid,name,ncType[typeof(data)],[UInt8(data)])
 end
 
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vector{T}) where T <: AbstractString
-    check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,
-                                              nc_type,Csize_t,Ptr{Nothing}),
-                ncid,varid,name,ncType[eltype(data)],length(data),pointer.(data)))
+    nc_put_att(ncid,varid,name,ncType[String],pointer.(data))
 end
 
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vector{T}) where {T}
     nc_put_att(ncid,varid,name,ncType[T],data)
 end
 
-function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,typeid::Integer,data::Vector)
-    check(ccall((:nc_put_att,libnetcdf),Cint,(Cint,Cint,Cstring,nc_type,Csize_t,Ptr{Nothing}),
-                ncid,varid,name,typeid,length(data),data))
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vector{Any})
+    T = promote_type(typeof.(data)...)
+    nc_put_att(ncid,varid,name,ncType[T],data)
 end
 
 # convert e.g. ranges to vectors
@@ -602,6 +606,7 @@ end
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data)
     error("attributes can only be scalars or vectors")
 end
+
 
 function nc_get_att(ncid::Integer,varid::Integer,name)
     xtype,len = nc_inq_att(ncid,varid,name)

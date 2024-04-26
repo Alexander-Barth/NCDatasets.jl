@@ -1,14 +1,23 @@
 using Pkg
 Pkg.activate(@__DIR__)
-CI = get(ENV, "CI", nothing) == "true"
-using Documenter, NCDatasets, CommonDataModel
+using Documenter, NCDatasets, CommonDataModel, UUIDs
+
+CommonDataModel_path = realpath(joinpath(dirname(pathof(CommonDataModel)),".."))
+CommonDataModel_remote = (
+    Remotes.GitHub("JuliaGeo","CommonDataModel.jl"),
+    string("v",Pkg.dependencies()[UUID("1fbeeb36-5f17-413c-809b-666fb144f157")].version))
+
 
 makedocs(
     modules = [NCDatasets, CommonDataModel],
+    remotes = Dict(
+        CommonDataModel_path => CommonDataModel_remote,
+    ),
     sitename = "NCDatasets.jl",
     doctest = false,
     format = Documenter.HTML(
-        prettyurls = CI,
+        prettyurls = get(ENV, "CI", nothing) == "true",
+        canonical = "https://alexander-barth.github.io/NCDatasets.jl",
     ),
     pages = [
         "Introduction" => "index.md",
@@ -24,7 +33,4 @@ makedocs(
     checkdocs = :none,
 )
 
-if CI
-    deploydocs(repo = "github.com/Alexander-Barth/NCDatasets.jl.git",
-               target = "build")
-end
+deploydocs(repo = "github.com/Alexander-Barth/NCDatasets.jl.git")

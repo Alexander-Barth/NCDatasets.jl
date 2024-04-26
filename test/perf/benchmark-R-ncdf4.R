@@ -6,15 +6,18 @@
 library(ncdf4)
 library(microbenchmark)
 
+print(R.version.string)
 print(paste("ncdf4 version: ",packageVersion("ncdf4")))
 
 fname = "filename_fv.nc"
 
-process <- function(fname) {
-  # drop file caches; requires root
-  fileConn<-file("/proc/sys/vm/drop_caches",open = "wt")
-  writeLines("3", fileConn)
-  close(fileConn)
+process <- function(fname,drop_caches) {
+  if (drop_caches) {
+    # drop file caches; requires root
+    fileConn<-file("/proc/sys/vm/drop_caches",open = "wt")
+    writeLines("3", fileConn)
+    close(fileConn)
+  }
 
   nc = nc_open(fname)
 
@@ -29,14 +32,16 @@ process <- function(fname) {
   return(tot/nmax)
 }
 
+drop_caches <- "--drop-caches" %in% commandArgs(trailingOnly=TRUE)
+print(paste("drop caches: ",drop_caches))
 start_time <- Sys.time()
-tot = process(fname)
+tot = process(fname,drop_caches)
 end_time <- Sys.time()
 print(paste("time ",end_time - start_time))
 
 print(paste("result ",tot))
 
-mbm <- microbenchmark("ncdf4" = process(fname),times=100)
+mbm <- microbenchmark("ncdf4" = process(fname,drop_caches),times=100)
 
 fileConn<-file("R-ncdf4.txt",open = "wt")
 
