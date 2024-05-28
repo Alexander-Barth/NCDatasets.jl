@@ -595,7 +595,8 @@ end
 
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vector{Any})
     T = promote_type(typeof.(data)...)
-    nc_put_att(ncid,varid,name,ncType[T],data)
+    @debug "promoted type for attribute $T"
+    nc_put_att(ncid,varid,name,ncType[T],T.(data))
 end
 
 # convert e.g. ranges to vectors
