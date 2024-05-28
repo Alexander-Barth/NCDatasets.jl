@@ -52,7 +52,7 @@ This will automatically install all dependencies and in particular the Unidata n
 
 # Features
 
-The main objects in the netCDF data model are the dataset (typically representing a whole file), variables (named n-dimensional arrays with named dimensions), dimensions (mapping the dimension names to the corresponding length), attributes and groups (a dataset contained within a dataset). Groups can be recursively nested. Variable names must be unique within a given group, but two different groups can re-use the same name. Current features of NCDatasets include:
+The main objects in the netCDF data model are the dataset (typically representing a whole file), variables (named n-dimensional arrays with named dimensions), dimensions (mapping the dimension names to the corresponding length), attributes and groups (a dataset contained within a dataset). Groups can be recursively nested. Variable names must be unique within a given group, but in two different groups, variable names can be re-used. Current features of NCDatasets include:
 
 * Attributes, dimensions and groups are exposed to users as dictionary-like objects. Modifying them will directly modify the underlying NetCDF file as long as the file is open in write mode.
 * Variables are exposed as array-like objects. Indexing these arrays with the usual Julia syntax will result in loading the corresponding subset into memory. Likewise, assigning a value to a subset will write the data to the disk.
