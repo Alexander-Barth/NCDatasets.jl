@@ -77,6 +77,11 @@ for sampledata in samples
     NCDatasets.nc_get_vara!(ncid,varid,start,count,sampledata2)
     @test sampledata == sampledata2
 
+    # test nc_get_var1
+    index = [1 for i in 1:ndims(sampledata)] .- 1
+    var1 = NCDatasets.nc_get_var1(T,ncid,varid,index)
+    @test first(sampledata) == var1
+
     NCDatasets.nc_close(ncid)
 end
 
