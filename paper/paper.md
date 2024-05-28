@@ -70,7 +70,7 @@ The Julia package [NetCDF.jl](https://github.com/JuliaGeo/NetCDF.jl) from Fabian
 
 # Acknowledgements
 
-I thank [all contributors](https://github.com/Alexander-Barth/NCDatasets.jl/graphs/contributors) to this package, among others, George Datseris, Tristan Carion, Martijn Visser and Charles Troupin as well as Unidata for the [netCDF C library](https://github.com/Unidata/netcdf-c) and their time and efforts responding to my questions and issues. All contributors to the [Yggdrasil.jl](https://github.com/JuliaPackaging/Yggdrasil/) project for their effort in building the netCDF library and the required dependencies are also acknowledged.
+I thank [all contributors](https://github.com/Alexander-Barth/NCDatasets.jl/graphs/contributors) to this package, among others, George Datseris, Tristan Carion, Martijn Visser, Charles Troupin, Rafael Schouten, Argel Ramírez Reyes, Kenechukwu Uba, Philippe Roy, Gregory L. Wagner, Gael Forget and Haakon Ludvig Langeland Ervik as well as Unidata for the [netCDF C library](https://github.com/Unidata/netcdf-c) and their time and efforts responding to my questions and issues. All contributors to the [Yggdrasil.jl](https://github.com/JuliaPackaging/Yggdrasil/) project for their effort in building the netCDF library and the required dependencies are also acknowledged.
 
 # Funding
 
