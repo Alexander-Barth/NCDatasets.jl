@@ -100,3 +100,13 @@ if NCDatasets.netcdf_version() > v"4.9.0"
 end
 
 @test_throws ErrorException NCDatasets.nc_rc_get("does_not_exists")
+
+# test NCDatasets.nc_inq_filter_avail
+
+filename = tempname()
+mode = NCDatasets.NC_CLOBBER
+ncid = NCDatasets.nc_create(filename,mode)
+id = 32015 # Zstandard
+# Zstandard is not available for NetCDF 3 files
+@test !NCDatasets.nc_inq_filter_avail(ncid,id)
+NCDatasets.nc_close(ncid)
