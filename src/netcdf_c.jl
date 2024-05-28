@@ -2183,7 +2183,8 @@ end
 
 function nc_rc_get(key)
     p = ccall((:nc_rc_get,libnetcdf),Cstring,(Cstring,),key)
-    if p !== C_NULL
+
+    if p != C_NULL
         unsafe_string(p)
     else
         error("NetCDF: nc_rc_get: unable to get key $key")

@@ -89,3 +89,12 @@ NCDatasets.nc_close(ncid)
 
 ncid = NCDatasets.nc_open(split("$(filename)#foo",'#')[1],NCDatasets.NC_NOWRITE)
 NCDatasets.nc_close(ncid)
+
+
+# Set/get netcdf rc configuration
+# https://github.com/Unidata/netcdf-c/blob/main/docs/auth.md
+
+if NCDatasets.netcdf_version() > v"4.9.0"
+    NCDatasets.nc_rc_set("HTTP.SSL.VALIDATE","1")
+    @test NCDatasets.nc_rc_get("HTTP.SSL.VALIDATE") == "1"
+end
