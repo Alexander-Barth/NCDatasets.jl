@@ -98,3 +98,5 @@ if NCDatasets.netcdf_version() > v"4.9.0"
     NCDatasets.nc_rc_set("HTTP.SSL.VALIDATE","1")
     @test NCDatasets.nc_rc_get("HTTP.SSL.VALIDATE") == "1"
 end
+
+@test_throws ErrorException NCDatasets.nc_rc_get("does_not_exists")
