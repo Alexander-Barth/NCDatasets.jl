@@ -48,7 +48,18 @@ for sampledata in samples
     # reverse order
     varid = NCDatasets.nc_def_var(ncid, varname, xtype, reverse(dimids))
     NCDatasets.nc_put_att(ncid, varid, "attr-string-list",["one","two"])
+
+    # test nc_put_var1
+    # test nc_get_var1
+    index = [1 for i in 1:ndims(sampledata)] .- 1
+    NCDatasets.nc_put_var1(ncid,varid,index,first(sampledata))
+    @test NCDatasets.nc_get_var1(T,ncid,varid,index) == first(sampledata)
+
+    # test nc_put_var
     NCDatasets.nc_put_var(ncid, varid, sampledata)
+
+    #@test first(sampledata) == var1
+
     NCDatasets.nc_close(ncid)
 
     # load data
@@ -76,11 +87,6 @@ for sampledata in samples
     count = reverse(collect(size(sampledata)))
     NCDatasets.nc_get_vara!(ncid,varid,start,count,sampledata2)
     @test sampledata == sampledata2
-
-    # test nc_get_var1
-    index = [1 for i in 1:ndims(sampledata)] .- 1
-    var1 = NCDatasets.nc_get_var1(T,ncid,varid,index)
-    @test first(sampledata) == var1
 
     NCDatasets.nc_close(ncid)
 end
