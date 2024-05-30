@@ -4,6 +4,7 @@
 [![codecov.io](http://codecov.io/github/Alexander-Barth/NCDatasets.jl/coverage.svg?branch=master)](http://app.codecov.io/github/Alexander-Barth/NCDatasets.jl?branch=master)
 [![documentation stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/stable/)
 [![documentation dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/dev/)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.06504/status.svg)](https://doi.org/10.21105/joss.06504)
 
 
 `NCDatasets` allows one to read and create netCDF files.
