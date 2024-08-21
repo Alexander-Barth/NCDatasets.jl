@@ -593,6 +593,12 @@ function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vect
     nc_put_att(ncid,varid,name,ncType[T],data)
 end
 
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vector{Any})
+    T = promote_type(typeof.(data)...)
+    @debug "promoted type for attribute $T"
+    nc_put_att(ncid,varid,name,ncType[T],T.(data))
+end
+
 # convert e.g. ranges to vectors
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::AbstractVector)
     nc_put_att(ncid,varid,name,Vector(data))
@@ -868,7 +874,7 @@ function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,
 end
 
 function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip)
-    @debug "nc_get_vara!",startp,indexp
+    @debug "nc_get_vara!",startp,countp
     check(ccall((:nc_get_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Nothing}),ncid,varid,startp,countp,ip))
 end
 
@@ -2177,7 +2183,8 @@ end
 
 function nc_rc_get(key)
     p = ccall((:nc_rc_get,libnetcdf),Cstring,(Cstring,),key)
-    if p !== C_NULL
+
+    if p != C_NULL
         unsafe_string(p)
     else
         error("NetCDF: nc_rc_get: unable to get key $key")
