@@ -1,7 +1,8 @@
+using NCDatasets
+using Test
+
 sz = (4,5)
 filename = tempname()
-#filename = "/tmp/test-10.nc"
-# The mode "c" stands for creating a new file (clobber)
 
 NCDataset(filename,"c") do ds
     # define the dimension "lon" and "lat"
@@ -28,4 +29,16 @@ NCDataset(filename) do ds
     show(s,ds)
     @test occursin("Groups",String(take!(s)))
 
+end
+
+# test shadowing of dimensions
+NCDataset(filename,"c") do ds
+    ds.dim["lon"] = 1
+    ds.dim["lat"] = 1
+
+    forecast = defGroup(ds,"forecast")
+    forecast.dim["lon"] = sz[1]
+    forecast.dim["lat"] = sz[2]
+    v = defVar(forecast,"var",Float64,("lon","lat"))
+    @test size(v) == sz
 end

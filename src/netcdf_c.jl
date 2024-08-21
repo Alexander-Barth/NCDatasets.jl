@@ -175,6 +175,13 @@ const NC_HAVE_NEW_CHUNKING_API = 1
 const NC_EURL = NC_EDAPURL
 const NC_ECONSTRAINT = NC_EDAPCONSTRAINT
 
+const NC_INDEPENDENT = 0
+const NC_COLLECTIVE = 1
+# OpenMPI
+const MPI_Comm = Ptr{Cvoid}
+const MPI_Info = Ptr{Cvoid}
+
+
 const NC_ENTOOL = NC_EMAXNAME
 const NC_EXDR = -32
 const NC_SYSERR = -31
@@ -194,12 +201,6 @@ const NC_FILL_UINT   = UInt32(4294967295)
 const NC_FILL_INT64  = Int64(-9223372036854775806)
 const NC_FILL_UINT64 = UInt64(18446744073709551614)
 const NC_FILL_STRING = ""
-
-# deprecated by e.g. fillvalue(Int8)
-#export NC_FILL_BYTE, NC_FILL_CHAR, NC_FILL_SHORT, NC_FILL_INT, NC_FILL_FLOAT,
-#    NC_FILL_DOUBLE, NC_FILL_UBYTE, NC_FILL_USHORT, NC_FILL_UINT, NC_FILL_INT64,
-#    NC_FILL_UINT64, NC_FILL_STRING
-
 
 const nc_type = Cint
 
@@ -592,6 +593,12 @@ function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vect
     nc_put_att(ncid,varid,name,ncType[T],data)
 end
 
+function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::Vector{Any})
+    T = promote_type(typeof.(data)...)
+    @debug "promoted type for attribute $T"
+    nc_put_att(ncid,varid,name,ncType[T],T.(data))
+end
+
 # convert e.g. ranges to vectors
 function nc_put_att(ncid::Integer,varid::Integer,name::SymbolOrString,data::AbstractVector)
     nc_put_att(ncid,varid,name,Vector(data))
@@ -867,7 +874,7 @@ function nc_put_vara(ncid::Integer,varid::Integer,startp,countp,
 end
 
 function nc_get_vara!(ncid::Integer,varid::Integer,startp,countp,ip)
-    @debug "nc_get_vara!",startp,indexp
+    @debug "nc_get_vara!",startp,countp
     check(ccall((:nc_get_vara,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Nothing}),ncid,varid,startp,countp,ip))
 end
 
@@ -2176,7 +2183,8 @@ end
 
 function nc_rc_get(key)
     p = ccall((:nc_rc_get,libnetcdf),Cstring,(Cstring,),key)
-    if p !== C_NULL
+
+    if p != C_NULL
         unsafe_string(p)
     else
         error("NetCDF: nc_rc_get: unable to get key $key")

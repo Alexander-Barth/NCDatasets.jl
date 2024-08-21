@@ -114,6 +114,7 @@ function defVar(ds::NCDataset,name::SymbolOrString,vtype::DataType,dimnames;
             typeid = nc_def_vlen(ds.ncid, typename, ncType[eltype(vtype)])
         else
             # base-type
+            haskey(ncType, vtype) || error("$vtype not supported")
             ncType[vtype]
         end
 

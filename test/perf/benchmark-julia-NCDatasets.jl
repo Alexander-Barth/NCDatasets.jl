@@ -13,9 +13,11 @@ function compute(v)
     return tot/size(v,3)
 end
 
-function process(fname)
-    # drop file caches; requires root
-    write("/proc/sys/vm/drop_caches","3")
+function process(fname,drop_caches)
+    if drop_caches
+        # drop file caches; requires root
+        write("/proc/sys/vm/drop_caches","3")
+    end
 
     ds = NCDataset(fname,"r") do ds
         v = ds["v1"];
@@ -24,12 +26,15 @@ function process(fname)
     end
 end
 
-fname = "filename_fv.nc"
-tot = process(fname)
+drop_caches = "--drop-caches" in ARGS
+println("Julia ",VERSION)
+println("drop caches: ",drop_caches)
 
+fname = "filename_fv.nc"
+tot = process(fname,drop_caches)
 println("result ",tot)
 
-bm = run(@benchmarkable process(fname) samples=100 seconds=10000)
+bm = run(@benchmarkable process(fname,drop_caches) samples=100 seconds=10000)
 
 @show bm
 

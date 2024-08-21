@@ -51,7 +51,7 @@ defDim(ds,"time",Inf)
 defVar(ds,"unlimited_variable",Float64,("lon","lat","time"))
 @show ds.dim["time"]
 # returns 0 as no data is added
-ds["unlimited_variable"][:,:,:] = randn(10,10,4)
+ds["unlimited_variable"][:,:,1:4] = randn(10,10,4)
 @show ds.dim["time"]
 # returns now 4 as 4 time slice have been added
 close(ds)
