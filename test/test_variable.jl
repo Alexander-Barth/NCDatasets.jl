@@ -19,8 +19,8 @@ NCDataset(filename,"c") do ds
     ds.dim["lat"] = sz[2]
 
     v = defVar(ds,"small",Float64,("lon","lat"))
-#    @test_throws Union{NCDatasets.NetCDFError,DimensionMismatch} v[:] = zeros(sz[1]+1,sz[2])
-    @test_throws DimensionMismatch v[1:sz[1],1:sz[2]] = zeros(sz[1]+1,sz[2])
+    @test_throws Union{NCDatasets.NetCDFError,DimensionMismatch} v[:] = zeros(sz[1]+1,sz[2])
+    #@test_throws DimensionMismatch v[1:sz[1],1:sz[2]] = zeros(sz[1]+1,sz[2])
     @test_throws NCDatasets.NetCDFError v[sz[1]+1,1] = 1
     @test_throws NCDatasets.NetCDFError v[-1,1] = 1
 
