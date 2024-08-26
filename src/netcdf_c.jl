@@ -1026,7 +1026,26 @@ end
 
 function nc_get_vars!(ncid::Integer,varid::Integer,startp,countp,stridep,ip)
     @debug "nc_get_vars!: $startp,$countp,$stridep"
-    check(ccall((:nc_get_vars,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,stridep,ip))
+
+    if any(<(0),stridep)
+        reverse_dim = stridep .< 0
+        strider = copy(stridep)
+        startr = copy(startp)
+
+        for i = 1:length(stridep)
+            if reverse_dim[i]
+                strider[i] = -stridep[i]
+                startr[i] = startp[i] + (countp[i]-1)*stridep[i]
+            end
+        end
+
+        check(ccall((:nc_get_vars,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Cint},Ptr{Nothing}),ncid,varid,startr,countp,strider,ip))
+
+        # reverse(reverse_dim) is necessary because stride uses the C ordering
+        reverse!(ip,dims=Tuple(findall(reverse(reverse_dim))))
+    else
+        check(ccall((:nc_get_vars,libnetcdf),Cint,(Cint,Cint,Ptr{Csize_t},Ptr{Csize_t},Ptr{Cint},Ptr{Nothing}),ncid,varid,startp,countp,stridep,ip))
+    end
 end
 
 
