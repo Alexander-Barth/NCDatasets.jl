@@ -310,3 +310,21 @@ vv = [1.0f0]
 NCDatasets.load!(variable(ds, "temperature"), vv, CartesianIndex(5,5))
 @test vv[1] == data[CartesianIndex(5,5)]
 close(ds)
+
+# issue 262
+fname = tempname()
+ds = NCDataset(fname,"c")
+defDim(ds,"lon",10)
+defDim(ds,"lat",11)
+data = [Float32(i+j) for i = 1:10, j = 1:11];
+data2 = similar(data)
+v = defVar(ds,"temperature",data,("lon","lat"))
+
+@test v[:,end:-1:1] == data[:,end:-1:1]
+@test v[:,end:-2:1] == data[:,end:-2:1]
+@test v[:,5:-1:1] == data[:,5:-1:1]
+@test v[:,5:-1:3] == data[:,5:-1:3]
+@test v[end:-1:1,:] == data[end:-1:1,:]
+
+NCDatasets.load!(variable(ds, "temperature"), data2, :,11:-1:1)
+@test data2 == data[:,end:-1:1]

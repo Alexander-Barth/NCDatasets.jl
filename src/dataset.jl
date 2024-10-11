@@ -118,8 +118,9 @@ Load, create, or even overwrite a NetCDF file at `filename`, depending on `mode`
 
 
 If `share` is true, the `NC_SHARE` flag is set allowing to have multiple
-processes to read the file and one writer process. Likewise setting `diskless`
-or `persist` to `true` will enable the flags `NC_DISKLESS` or `NC_PERSIST` flag.
+processes to read the file and one writer process (netcdf classic files only).
+Likewise setting `diskless` or `persist` to `true` will enable the flags
+`NC_DISKLESS` or `NC_PERSIST` flag.
 More information is available in the [NetCDF C-API](https://www.unidata.ucar.edu/software/netcdf/docs/).
 
 Notice that this does not close the dataset, use `close` on the
