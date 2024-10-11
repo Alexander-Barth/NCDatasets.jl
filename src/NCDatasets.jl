@@ -51,7 +51,7 @@ import CommonDataModel: AbstractDataset, AbstractVariable,
 
 
 import DiskArrays
-import DiskArrays: readblock!, writeblock!, eachchunk, haschunks, batchgetindex
+import DiskArrays: readblock!, writeblock!, eachchunk, haschunks
 
 function __init__()
     NetCDF_jll.is_available() && init_certificate_authority()
