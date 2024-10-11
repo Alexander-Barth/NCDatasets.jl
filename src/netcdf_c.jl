@@ -252,6 +252,7 @@ end
 # end
 
 function nc_create(path,cmode::Integer)
+    @debug "nc_create $path with mode $cmode"
     ncidp = Ref(Cint(0))
     check(ccall((:nc_create,libnetcdf),Cint,(Cstring,Cint,Ptr{Cint}),path,cmode,ncidp))
     return ncidp[]
