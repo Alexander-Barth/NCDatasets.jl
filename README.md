@@ -1,9 +1,10 @@
 # NCDatasets
 
 [![Build Status](https://github.com/Alexander-Barth/NCDatasets.jl/workflows/CI/badge.svg)](https://github.com/Alexander-Barth/NCDatasets.jl/actions)
-[![codecov.io](http://codecov.io/github/Alexander-Barth/NCDatasets.jl/coverage.svg?branch=master)](http://app.codecov.io/github/Alexander-Barth/NCDatasets.jl?branch=master)
+[![codecov](https://codecov.io/github/Alexander-Barth/NCDatasets.jl/graph/badge.svg?token=SXpIBsfRrI)](https://codecov.io/github/Alexander-Barth/NCDatasets.jl)
 [![documentation stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/stable/)
 [![documentation dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://alexander-barth.github.io/NCDatasets.jl/dev/)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.06504/status.svg)](https://doi.org/10.21105/joss.06504)
 
 
 `NCDatasets` allows one to read and create netCDF files.
@@ -35,11 +36,59 @@ Pkg.add("NCDatasets")
 
 This Manual is a quick introduction in using NCDatasets.jl. For more details you can read the [stable](https://alexander-barth.github.io/NCDatasets.jl/stable/) or [latest](https://alexander-barth.github.io/NCDatasets.jl/latest/) documentation.
 
+* [Create a netCDF file](#create-a-netcdf-file)
 * [Explore the content of a netCDF file](#explore-the-content-of-a-netcdf-file)
 * [Load a netCDF file](#load-a-netcdf-file)
-* [Create a netCDF file](#create-a-netcdf-file)
 * [Edit an existing netCDF file](#edit-an-existing-netcdf-file)
 
+## Create a netCDF file
+
+The following gives an example of how to create a netCDF file by defining dimensions, variables and attributes.
+
+```julia
+using NCDatasets
+using DataStructures: OrderedDict
+# This creates a new NetCDF file called file.nc.
+# The mode "c" stands for creating a new file (clobber)
+ds = NCDataset("file.nc","c")
+
+# Define the dimension "lon" and "lat" with the size 100 and 110 resp.
+defDim(ds,"lon",100)
+defDim(ds,"lat",110)
+
+# Define a global attribute
+ds.attrib["title"] = "this is a test file"
+
+# Define the variables temperature with the attribute units
+v = defVar(ds,"temperature",Float32,("lon","lat"), attrib = OrderedDict(
+    "units" => "degree Celsius",
+    "scale_factor" => 10,
+))
+
+# add additional attributes
+v.attrib["comments"] = "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
+
+# Generate some example data
+data = [Float32(i+j) for i = 1:100, j = 1:110];
+
+# write a single column
+v[:,1] = data[:,1];
+
+# write a the complete data set
+v[:,:] = data;
+
+close(ds)
+```
+
+It is also possible to create the dimensions, the define the variable and set its value with a single call to `defVar`:
+
+```julia
+using NCDatasets
+ds = NCDataset("/tmp/test2.nc","c")
+data = [Float32(i+j) for i = 1:100, j = 1:110]
+v = defVar(ds,"temperature",data,("lon","lat"))
+close(ds)
+```
 ## Explore the content of a netCDF file
 
 Before reading the data from a netCDF file, it is often useful to explore the list of variables and attributes defined in it.
@@ -63,24 +112,28 @@ while to get the global attributes you can do:
 ```julia
 ds.attrib
 ```
-which produces a listing like:
+
+`NCDataset("file.nc")` produces a listing like:
 
 ```
 Dataset: file.nc
 Group: /
 
 Dimensions
-   time = 115
+   lon = 100
+   lat = 110
 
 Variables
-  time   (115)
-    Datatype:    Float64
-    Dimensions:  time
+  temperature   (100 × 110)
+    Datatype:    Float32 (Float32)
+    Dimensions:  lon × lat
     Attributes:
-     calendar             = gregorian
-     standard_name        = time
-     units                = days since 1950-01-01 00:00:00
-[...]
+     units                = degree Celsius
+     scale_factor         = 10
+     comments             = this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx
+
+Global attributes
+  title                = this is a test file
 ```
 
 ## Load a netCDF file
@@ -89,7 +142,7 @@ Loading a variable with known structure can be achieved by accessing the variabl
 
 ```julia
 # The mode "r" stands for read-only. The mode "r" is the default mode and the parameter can be omitted.
-ds = NCDataset("/tmp/test.nc","r")
+ds = NCDataset("file.nc","r")
 v = ds["temperature"]
 
 # load a subset
@@ -99,7 +152,7 @@ subdata = v[10:30,30:5:end]
 data = v[:,:]
 
 # load all data ignoring attributes like scale_factor, add_offset, _FillValue and time units
-data2 = v.var[:,:]
+data2 = v.var[:,:];
 
 
 # load an attribute
@@ -110,7 +163,7 @@ close(ds)
 In the example above, the subset can also be loaded with:
 
 ```julia
-subdata = NCDataset("/tmp/test.nc")["temperature"][10:30,30:5:end]
+subdata = NCDataset("file.nc")["temperature"][10:30,30:5:end]
 ```
 
 This might be useful in an interactive session. However, the file `test.nc` is not directly closed (closing the file will be triggered by Julia's garbage collector), which can be a problem if you open many files. On Linux the number of opened files is often limited to 1024 (soft limit). If you write to a file, you should also always close the file to make sure that the data is properly written to the disk.
@@ -123,52 +176,7 @@ data = NCDataset(filename,"r") do ds
 end # ds is closed
 ```
 
-## Create a netCDF file
 
-The following gives an example of how to create a netCDF file by defining dimensions, variables and attributes.
-
-```julia
-using NCDatasets
-using DataStructures
-# This creates a new NetCDF file /tmp/test.nc.
-# The mode "c" stands for creating a new file (clobber)
-ds = NCDataset("/tmp/test.nc","c")
-
-# Define the dimension "lon" and "lat" with the size 100 and 110 resp.
-defDim(ds,"lon",100)
-defDim(ds,"lat",110)
-
-# Define a global attribute
-ds.attrib["title"] = "this is a test file"
-
-# Define the variables temperature with the attribute units
-v = defVar(ds,"temperature",Float32,("lon","lat"), attrib = OrderedDict(
-    "units" => "degree Celsius"))
-
-# add additional attributes
-v.attrib["comments"] = "this is a string attribute with Unicode Ω ∈ ∑ ∫ f(x) dx"
-
-# Generate some example data
-data = [Float32(i+j) for i = 1:100, j = 1:110]
-
-# write a single column
-v[:,1] = data[:,1]
-
-# write a the complete data set
-v[:,:] = data
-
-close(ds)
-```
-
-It is also possible to create the dimensions, the define the variable and set its value with a single call to `defVar`:
-
-```julia
-using NCDatasets
-ds = NCDataset("/tmp/test2.nc","c")
-data = [Float32(i+j) for i = 1:100, j = 1:110]
-v = defVar(ds,"temperature",data,("lon","lat"))
-close(ds)
-```
 
 
 ## Edit an existing netCDF file
@@ -178,7 +186,7 @@ to open it with the `"a"` option. Here, for example, we add a global attribute *
 file created in the previous step.
 
 ```julia
-ds = NCDataset("/tmp/test.nc","a")
+ds = NCDataset("file.nc","a")
 ds.attrib["creator"] = "your name"
 close(ds);
 ```
