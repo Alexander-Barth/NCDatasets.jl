@@ -14,7 +14,7 @@ The module `NCDatasets` provides support for the following [netCDF CF convention
 * `_FillValue` will be returned as `missing` ([more information](https://docs.julialang.org/en/v1/manual/missing/))
 * `scale_factor` and `add_offset` are applied if present
 * time variables (recognized by the `units` attribute) are returned as `DateTime` objects.
-* support of the [CF calendars](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#calendar) (standard, gregorian, proleptic gregorian, julian, all leap, no leap, 360 day) using (CFTime)[https://github.com/JuliaGeo/CFTime.jl]
+* support of the [CF calendars](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#calendar) (standard, gregorian, proleptic gregorian, julian, all leap, no leap, 360 day) using [CFTime](https://github.com/JuliaGeo/CFTime.jl)
 * the raw data can also be accessed (without the transformations above).
 * [contiguous ragged array representation](http://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#_contiguous_ragged_array_representation)
 
