@@ -10,14 +10,14 @@ All functions defined by CommonDataModel.jl are also available for NetCDF data, 
 
 ## Installation
 
-Inside the Julia shell, you can download and install using the following commands:
+Inside the Julia shell, you can download and install NCDatasets using the following commands:
 
 ```julia
 using Pkg
 Pkg.add("NCDatasets")
 ```
 
-Or by typing `]add NCDatasets` using the package manager mode.
+Or by typing `]add NCDatasets` using the package manager REPL-mode.
 
 ### Latest development version
 
