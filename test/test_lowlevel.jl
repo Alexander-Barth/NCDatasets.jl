@@ -40,14 +40,14 @@ for sampledata in samples
 
     dimids = zeros(Cint,ndims(sampledata))
     for i = 1:ndims(sampledata)
-        dimids[i] = NCDatasets.nc_def_dim(ncid, "dim-$(i)", size(sampledata,i))
+        dimids[i] = NCDatasets.nc_def_dim(ncid, "dim_$(i)", size(sampledata,i))
     end
 
     T = eltype(sampledata)
     xtype = NCDatasets.ncType[T]
     # reverse order
     varid = NCDatasets.nc_def_var(ncid, varname, xtype, reverse(dimids))
-    NCDatasets.nc_put_att(ncid, varid, "attr-string-list",["one","two"])
+    NCDatasets.nc_put_att(ncid, varid, "attr_string_list",["one","two"])
 
     # test nc_put_var1
     # test nc_get_var1
