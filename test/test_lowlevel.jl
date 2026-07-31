@@ -66,7 +66,7 @@ for sampledata in samples
     ncid = NCDatasets.nc_open(filename,NCDatasets.NC_NOWRITE)
     varid = NCDatasets.nc_inq_varid(ncid,varname)
     xtype2 = NCDatasets.nc_inq_vartype(ncid,varid)
-    @test xtype == xtype
+    @test xtype == xtype2
 
     name2,xtype2,dimids2,natts2 = NCDatasets.nc_inq_var(ncid,varid)
     @test name2 == varname
