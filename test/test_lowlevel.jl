@@ -74,7 +74,7 @@ for sampledata in samples
     @test dimids2 == reverse(dimids)
     @test natts2 == 1
 
-    attrval = NCDatasets.nc_get_att(ncid, varid, "attr-string-list")
+    attrval = NCDatasets.nc_get_att(ncid, varid, "attr_string_list")
     @test attrval == ["one","two"]
 
     # test nc_get_var!
